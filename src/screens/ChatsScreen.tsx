@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal, Menu, Edit3 } from "lucide-react";
 import { mockChats, type ChatPreview } from "@/data/mockData";
 
 interface ChatsScreenProps {
@@ -14,33 +14,35 @@ const ChatsScreen = ({ onOpenChat }: ChatsScreenProps) => {
   );
 
   return (
-    <div className="pb-24">
-      {/* Header */}
-      <div className="px-5 pt-12 pb-2 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Чаты</h1>
-          <p className="text-sm text-muted-foreground">{mockChats.length} диалогов</p>
-        </div>
-        <button className="w-10 h-10 rounded-xl bg-surface-3 flex items-center justify-center">
-          <SlidersHorizontal size={18} className="text-muted-foreground" />
+    <div className="pb-28">
+      {/* Header - exact match to reference */}
+      <div className="px-5 pt-14 pb-2 flex items-center justify-between">
+        <button className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
+          <Menu size={18} className="text-muted-foreground" />
+        </button>
+        <button className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
+          <Search size={18} className="text-muted-foreground" />
         </button>
       </div>
 
-      {/* Search */}
-      <div className="px-5 py-3">
-        <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Поиск по чатам..."
-            className="w-full bg-surface-3 rounded-xl py-2.5 pl-9 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary/50 transition-shadow"
-          />
-        </div>
+      <div className="px-5 pt-4 pb-5">
+        <h1 className="text-3xl font-bold text-foreground tracking-tight">Чаты</h1>
+        <p className="text-sm text-muted-foreground mt-1">({mockChats.length} диалогов)</p>
+      </div>
+
+      {/* New Message Button - gradient like reference */}
+      <div className="px-5 pb-5 flex gap-3">
+        <button className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl gradient-primary text-primary-foreground font-semibold text-sm">
+          <Edit3 size={16} />
+          Новое сообщение
+        </button>
+        <button className="w-12 h-12 rounded-2xl neu-raised flex items-center justify-center">
+          <SlidersHorizontal size={16} className="text-muted-foreground" />
+        </button>
       </div>
 
       {/* Chat List */}
-      <div className="px-5 space-y-1">
+      <div className="px-5 space-y-1.5">
         {filtered.map((chat, i) => (
           <motion.div
             key={chat.id}
@@ -48,13 +50,13 @@ const ChatsScreen = ({ onOpenChat }: ChatsScreenProps) => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.04 }}
             onClick={() => onOpenChat(chat)}
-            className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer active:scale-[0.98] transition-all ${
-              chat.unread > 0 ? "bg-surface-3" : "hover:bg-surface-3/50"
+            className={`flex items-center gap-3 p-3.5 rounded-2xl cursor-pointer active:scale-[0.98] transition-all duration-200 ${
+              chat.unread > 0 ? "neu-flat" : "hover:bg-surface-3/30"
             }`}
           >
             {/* Avatar */}
             <div className="relative flex-shrink-0">
-              <div className="w-12 h-12 rounded-full bg-surface-4 flex items-center justify-center text-sm font-semibold text-muted-foreground">
+              <div className="w-12 h-12 rounded-full neu-raised flex items-center justify-center text-sm font-semibold text-muted-foreground">
                 {chat.avatar}
               </div>
               {chat.online && (
@@ -73,7 +75,7 @@ const ChatsScreen = ({ onOpenChat }: ChatsScreenProps) => {
 
             {/* Unread Badge */}
             {chat.unread > 0 && (
-              <div className="w-5 h-5 rounded-full gradient-cyan flex items-center justify-center text-[10px] font-bold text-primary-foreground flex-shrink-0">
+              <div className="w-5 h-5 rounded-full gradient-primary flex items-center justify-center text-[10px] font-bold text-primary-foreground flex-shrink-0">
                 {chat.unread}
               </div>
             )}
