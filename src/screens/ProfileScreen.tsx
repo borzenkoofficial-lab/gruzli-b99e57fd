@@ -1,26 +1,36 @@
 import { motion } from "framer-motion";
-import { Star, Briefcase, Wallet, Calendar, ChevronRight, Settings, LogOut, Shield } from "lucide-react";
+import { Star, Briefcase, Wallet, Calendar, ChevronRight, Settings, LogOut, Shield, Menu, Bell } from "lucide-react";
 
-const skills = ["Переезды", "Такелаж", "Сборка мебели", "Погрузка/Разгрузка", "Межэтаж"];
+const skills = ["Переезды", "Такелаж", "Сборка мебели", "Погрузка", "Межэтаж"];
 
 const ProfileScreen = () => {
   return (
-    <div className="pb-24">
-      <div className="px-5 pt-12 pb-6">
+    <div className="pb-28">
+      {/* Header */}
+      <div className="px-5 pt-14 pb-2 flex items-center justify-between">
+        <button className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
+          <Menu size={18} className="text-muted-foreground" />
+        </button>
+        <button className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
+          <Bell size={18} className="text-muted-foreground" />
+        </button>
+      </div>
+
+      <div className="px-5 pt-6 pb-6">
         <div className="flex items-center gap-4">
-          <div className="w-20 h-20 rounded-full gradient-cyan flex items-center justify-center text-2xl font-bold text-primary-foreground shadow-soft">
+          <div className="w-20 h-20 rounded-full gradient-primary flex items-center justify-center text-2xl font-bold text-primary-foreground" style={{ boxShadow: '6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%), 0 4px 20px hsl(230 60% 58% / 0.35)' }}>
             ИС
           </div>
           <div>
             <h1 className="text-xl font-bold text-foreground">Иван Смирнов</h1>
-            <div className="flex items-center gap-1 mt-0.5">
+            <div className="flex items-center gap-1 mt-1">
               <Star size={14} className="text-primary fill-primary" />
-              <span className="text-sm font-semibold text-foreground">4.9</span>
+              <span className="text-sm font-bold text-foreground">4.9</span>
               <span className="text-xs text-muted-foreground ml-1">· 156 отзывов</span>
             </div>
             <div className="flex items-center gap-1 mt-1">
-              <Shield size={12} className="text-primary" />
-              <span className="text-xs text-primary font-medium">Верифицирован</span>
+              <Shield size={12} className="text-online" />
+              <span className="text-xs text-online font-semibold">Верифицирован</span>
             </div>
           </div>
         </div>
@@ -39,10 +49,10 @@ const ProfileScreen = () => {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08 }}
-              className="bg-card rounded-2xl p-3 shadow-card text-center"
+              className="neu-card rounded-2xl p-3 text-center"
             >
-              <stat.icon size={18} className="text-primary mx-auto mb-1.5" />
-              <p className="text-base font-bold text-foreground">{stat.value}</p>
+              <stat.icon size={18} className="text-primary mx-auto mb-2" />
+              <p className="text-sm font-bold text-foreground">{stat.value}</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">{stat.label}</p>
             </motion.div>
           ))}
@@ -51,10 +61,10 @@ const ProfileScreen = () => {
 
       {/* Skills */}
       <div className="px-5 pb-5">
-        <h2 className="text-sm font-semibold text-foreground mb-3">Навыки</h2>
+        <h2 className="text-sm font-bold text-foreground mb-3">Навыки</h2>
         <div className="flex flex-wrap gap-2">
           {skills.map((skill) => (
-            <span key={skill} className="px-3 py-1.5 rounded-xl bg-surface-3 text-xs font-medium text-muted-foreground">
+            <span key={skill} className="px-3 py-2 rounded-xl neu-raised-sm text-xs font-medium text-muted-foreground">
               {skill}
             </span>
           ))}
@@ -63,15 +73,15 @@ const ProfileScreen = () => {
 
       {/* Calendar */}
       <div className="px-5 pb-5">
-        <h2 className="text-sm font-semibold text-foreground mb-3">Доступность на неделю</h2>
+        <h2 className="text-sm font-bold text-foreground mb-3">Доступность</h2>
         <div className="grid grid-cols-7 gap-2">
           {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((day, i) => {
             const available = [0, 1, 2, 4, 5].includes(i);
             return (
               <div
                 key={day}
-                className={`py-2 rounded-xl text-center text-xs font-medium ${
-                  available ? "gradient-cyan text-primary-foreground" : "bg-surface-3 text-muted-foreground"
+                className={`py-2.5 rounded-xl text-center text-xs font-semibold transition-all ${
+                  available ? "gradient-primary text-primary-foreground" : "neu-raised-sm text-muted-foreground"
                 }`}
               >
                 {day}
@@ -82,17 +92,17 @@ const ProfileScreen = () => {
       </div>
 
       {/* Menu */}
-      <div className="px-5 space-y-1">
+      <div className="px-5 space-y-2">
         {[
           { label: "Настройки", icon: Settings },
           { label: "Выйти", icon: LogOut },
         ].map((item) => (
           <button
             key={item.label}
-            className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-surface-3/50 transition-colors"
+            className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all"
           >
             <item.icon size={18} className="text-muted-foreground" />
-            <span className="text-sm text-foreground flex-1 text-left">{item.label}</span>
+            <span className="text-sm font-medium text-foreground flex-1 text-left">{item.label}</span>
             <ChevronRight size={16} className="text-muted-foreground" />
           </button>
         ))}
