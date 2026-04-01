@@ -14,7 +14,7 @@ const ProfileScreen = () => {
           <div>
             <h1 className="text-xl font-bold text-foreground">Иван Смирнов</h1>
             <div className="flex items-center gap-1 mt-0.5">
-              <Star size={14} className="text-yellow-400 fill-yellow-400" />
+              <Star size={14} className="text-primary fill-primary" />
               <span className="text-sm font-semibold text-foreground">4.9</span>
               <span className="text-xs text-muted-foreground ml-1">· 156 отзывов</span>
             </div>

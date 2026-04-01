@@ -56,7 +56,7 @@ const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => 
                   {d.online && <span className="text-[10px] text-online font-medium">Онлайн</span>}
                 </div>
                 <div className="flex items-center gap-1 mt-0.5">
-                  <Star size={12} className="text-yellow-400 fill-yellow-400" />
+                  <Star size={12} className="text-primary fill-primary" />
                   <span className="text-xs font-medium text-foreground">{d.rating}</span>
                   <span className="text-xs text-muted-foreground ml-2">{d.activeOrders} активных заказов</span>
                 </div>

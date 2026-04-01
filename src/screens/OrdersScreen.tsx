@@ -85,7 +85,7 @@ const OrdersScreen = () => {
             )}
 
             {order.progress === 0 && (
-              <span className="inline-block px-2 py-1 rounded-md bg-yellow-500/15 text-yellow-400 text-[11px] font-medium">
+              <span className="inline-block px-2 py-1 rounded-md bg-primary/15 text-primary text-[11px] font-medium">
                 {order.status}
               </span>
             )}
