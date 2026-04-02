@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
+import FAB from "@/components/FAB";
 import FeedScreen from "@/screens/FeedScreen";
 import ChatsScreen from "@/screens/ChatsScreen";
 import ChatDetailScreen from "@/screens/ChatDetailScreen";
@@ -27,7 +28,6 @@ const Index = () => {
     });
   };
 
-  // Full-screen overlays
   if (openChat) {
     return <ChatDetailScreen chat={openChat} onBack={() => setOpenChat(null)} />;
   }
@@ -53,6 +53,7 @@ const Index = () => {
           {tab === "profile" && <ProfileScreen />}
         </motion.div>
       </AnimatePresence>
+      <FAB />
       <BottomNav active={tab} onNavigate={setTab} />
     </div>
   );
