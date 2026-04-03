@@ -1,20 +1,29 @@
-import { Home, ClipboardList, MessageCircle, Users, User } from "lucide-react";
+import { Home, ClipboardList, MessageCircle, Users, User, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface BottomNavProps {
   active: string;
   onNavigate: (tab: string) => void;
+  isDispatcher?: boolean;
 }
 
-const tabs = [
-  { id: "feed", label: "Главная", icon: Home },
-  { id: "orders", label: "Заказы", icon: ClipboardList },
-  { id: "chats", label: "Чаты", icon: MessageCircle, badge: 3 },
-  { id: "dispatchers", label: "Диспетчеры", icon: Users },
-  { id: "profile", label: "Профиль", icon: User },
-];
+const BottomNav = ({ active, onNavigate, isDispatcher }: BottomNavProps) => {
+  const workerTabs = [
+    { id: "feed", label: "Главная", icon: Home },
+    { id: "orders", label: "Заказы", icon: ClipboardList },
+    { id: "chats", label: "Чаты", icon: MessageCircle },
+    { id: "dispatchers", label: "Диспетчеры", icon: Users },
+    { id: "profile", label: "Профиль", icon: User },
+  ];
 
-const BottomNav = ({ active, onNavigate }: BottomNavProps) => {
+  const dispatcherTabs = [
+    { id: "feed", label: "Заявки", icon: ClipboardList },
+    { id: "chats", label: "Чаты", icon: MessageCircle },
+    { id: "profile", label: "Профиль", icon: User },
+  ];
+
+  const tabs = isDispatcher ? dispatcherTabs : workerTabs;
+
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50">
       <div className="max-w-lg mx-auto">
@@ -31,17 +40,10 @@ const BottomNav = ({ active, onNavigate }: BottomNavProps) => {
                     isActive ? "neu-inset" : ""
                   }`}
                 >
-                  <div className="relative">
-                    <Icon
-                      size={20}
-                      className={isActive ? "text-primary" : "text-muted-foreground"}
-                    />
-                    {tab.badge && (
-                      <span className="absolute -top-1.5 -right-2.5 w-4 h-4 rounded-full gradient-primary text-[9px] font-bold flex items-center justify-center text-primary-foreground">
-                        {tab.badge}
-                      </span>
-                    )}
-                  </div>
+                  <Icon
+                    size={20}
+                    className={isActive ? "text-primary" : "text-muted-foreground"}
+                  />
                   <span
                     className={`text-[10px] font-medium ${
                       isActive ? "text-primary" : "text-muted-foreground"

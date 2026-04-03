@@ -2,38 +2,99 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import FAB from "@/components/FAB";
+import { useAuth } from "@/contexts/AuthContext";
+
+// Worker screens
 import FeedScreen from "@/screens/FeedScreen";
-import ChatsScreen from "@/screens/ChatsScreen";
-import ChatDetailScreen from "@/screens/ChatDetailScreen";
 import OrdersScreen from "@/screens/OrdersScreen";
-import DispatchersScreen from "@/screens/DispatchersScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
-import JobDetailScreen from "@/screens/JobDetailScreen";
-import type { Job, ChatPreview } from "@/data/mockData";
+
+// Dispatcher screens
+import DispatcherFeedScreen from "@/screens/DispatcherFeedScreen";
+import CreateJobScreen from "@/screens/CreateJobScreen";
+import JobResponsesScreen from "@/screens/JobResponsesScreen";
+
+// Shared screens
+import RealChatsScreen from "@/screens/RealChatsScreen";
+import RealChatScreen from "@/screens/RealChatScreen";
+import DispatchersScreen from "@/screens/DispatchersScreen";
+
+import type { Tables } from "@/integrations/supabase/types";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
+  const { role, user } = useAuth();
   const [tab, setTab] = useState("feed");
-  const [openChat, setOpenChat] = useState<ChatPreview | null>(null);
-  const [openJob, setOpenJob] = useState<Job | null>(null);
+  const [openChatId, setOpenChatId] = useState<string | null>(null);
+  const [openChatTitle, setOpenChatTitle] = useState("");
+  const [showCreateJob, setShowCreateJob] = useState(false);
+  const [viewResponsesJob, setViewResponsesJob] = useState<Tables<"jobs"> | null>(null);
 
-  const handleChatDispatcher = (d: { name: string; avatar: string; id: string }) => {
-    setOpenChat({
-      id: d.id,
-      name: d.name,
-      avatar: d.avatar,
-      lastMessage: "",
-      time: "",
-      unread: 0,
-      online: true,
-    });
+  const isDispatcher = role === "dispatcher";
+
+  const handleOpenChat = (conversationId: string, title: string) => {
+    setOpenChatId(conversationId);
+    setOpenChatTitle(title);
   };
 
-  if (openChat) {
-    return <ChatDetailScreen chat={openChat} onBack={() => setOpenChat(null)} />;
+  const handleChatWithUser = async (otherUserId: string, otherName: string) => {
+    if (!user) return;
+    // Check if conversation already exists between these two users
+    const { data: myConvs } = await supabase
+      .from("conversation_participants")
+      .select("conversation_id")
+      .eq("user_id", user.id);
+
+    if (myConvs) {
+      for (const mc of myConvs) {
+        const { data: otherParticipant } = await supabase
+          .from("conversation_participants")
+          .select("id")
+          .eq("conversation_id", mc.conversation_id)
+          .eq("user_id", otherUserId)
+          .single();
+        if (otherParticipant) {
+          handleOpenChat(mc.conversation_id, otherName);
+          return;
+        }
+      }
+    }
+
+    // Create new conversation
+    const { data: conv } = await supabase
+      .from("conversations")
+      .insert({ title: otherName })
+      .select()
+      .single();
+    if (conv) {
+      await supabase.from("conversation_participants").insert([
+        { conversation_id: conv.id, user_id: user.id },
+        { conversation_id: conv.id, user_id: otherUserId },
+      ]);
+      handleOpenChat(conv.id, otherName);
+    }
+  };
+
+  // Full-screen overlays
+  if (openChatId) {
+    return <RealChatScreen conversationId={openChatId} title={openChatTitle} onBack={() => setOpenChatId(null)} />;
   }
 
-  if (openJob) {
-    return <JobDetailScreen job={openJob} onBack={() => setOpenJob(null)} />;
+  if (showCreateJob) {
+    return <CreateJobScreen onBack={() => setShowCreateJob(false)} onCreated={() => { setShowCreateJob(false); setTab("feed"); }} />;
+  }
+
+  if (viewResponsesJob) {
+    return (
+      <JobResponsesScreen
+        job={viewResponsesJob}
+        onBack={() => setViewResponsesJob(null)}
+        onChatWithWorker={(workerId, workerName) => {
+          setViewResponsesJob(null);
+          handleChatWithUser(workerId, workerName);
+        }}
+      />
+    );
   }
 
   return (
@@ -46,15 +107,26 @@ const Index = () => {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
         >
-          {tab === "feed" && <FeedScreen onOpenJob={setOpenJob} />}
-          {tab === "chats" && <ChatsScreen onOpenChat={setOpenChat} />}
+          {tab === "feed" && (
+            isDispatcher ? (
+              <DispatcherFeedScreen
+                onCreateJob={() => setShowCreateJob(true)}
+                onViewResponses={setViewResponsesJob}
+              />
+            ) : (
+              <FeedScreen />
+            )
+          )}
           {tab === "orders" && <OrdersScreen />}
-          {tab === "dispatchers" && <DispatchersScreen onChatWithDispatcher={handleChatDispatcher} />}
+          {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} />}
+          {tab === "dispatchers" && !isDispatcher && (
+            <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />
+          )}
           {tab === "profile" && <ProfileScreen />}
         </motion.div>
       </AnimatePresence>
-      <FAB />
-      <BottomNav active={tab} onNavigate={setTab} />
+      {!isDispatcher && <FAB />}
+      <BottomNav active={tab} onNavigate={setTab} isDispatcher={isDispatcher} />
     </div>
   );
 };
