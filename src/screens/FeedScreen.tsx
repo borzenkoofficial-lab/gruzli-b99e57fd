@@ -1,47 +1,94 @@
-import { useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import { MapPin, Clock, Users, Zap, ChevronRight, Mic, Wallet, ArrowRight, ArrowLeft, Ban, UserPlus } from "lucide-react";
-import { mockJobs, type Job } from "@/data/mockData";
+import { MapPin, Clock, Users, Zap, ChevronRight, Mic, Wallet, ArrowRight, Ban, UserPlus, Train } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+import type { Tables } from "@/integrations/supabase/types";
 
-const filters = ["Все", "Переезд", "Такелаж", "Погрузка", "Межэтаж", "Срочные", "Без лифта", "В паре"];
+const filters = ["Все", "Срочные", "Быстрая минималка"];
 
-interface FeedScreenProps {
-  onOpenJob: (job: Job) => void;
-}
-
-const FeedScreen = ({ onOpenJob }: FeedScreenProps) => {
+const FeedScreen = () => {
+  const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState("Все");
-  const [swipedJobs, setSwipedJobs] = useState<Set<string>>(new Set());
-  const [takenJobs, setTakenJobs] = useState<Set<string>>(new Set());
-  const [recordingJobId, setRecordingJobId] = useState<string | null>(null);
+  const [jobs, setJobs] = useState<Tables<"jobs">[]>([]);
+  const [respondedJobs, setRespondedJobs] = useState<Set<string>>(new Set());
+  const [skippedJobs, setSkippedJobs] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
 
-  const nearbyCount = 7;
-  const maxEarnings = mockJobs.reduce((sum, j) => sum + j.netPay, 0);
+  const fetchJobs = async () => {
+    const { data } = await supabase
+      .from("jobs")
+      .select("*")
+      .eq("status", "active")
+      .order("created_at", { ascending: false });
+    if (data) setJobs(data);
 
-  const filtered = (activeFilter === "Все"
-    ? mockJobs
-    : activeFilter === "Срочные"
-    ? mockJobs.filter((j) => j.urgent)
-    : activeFilter === "Погрузка"
-    ? mockJobs.filter((j) => j.type === "Погрузка/Разгрузка")
-    : activeFilter === "Без лифта"
-    ? mockJobs.filter((j) => j.noElevator)
-    : activeFilter === "В паре"
-    ? mockJobs.filter((j) => j.pairWork)
-    : mockJobs.filter((j) => j.type === activeFilter)
-  ).filter(j => !swipedJobs.has(j.id));
-
-  const handleTakeJob = (jobId: string) => {
-    setTakenJobs(prev => new Set(prev).add(jobId));
-    if (navigator.vibrate) navigator.vibrate(50);
+    // Fetch user's existing responses
+    if (user) {
+      const { data: responses } = await supabase
+        .from("job_responses")
+        .select("job_id")
+        .eq("worker_id", user.id);
+      if (responses) {
+        setRespondedJobs(new Set(responses.map((r) => r.job_id)));
+      }
+    }
+    setLoading(false);
   };
 
-  const handleSwipeLeft = (jobId: string) => {
-    setSwipedJobs(prev => new Set(prev).add(jobId));
-  };
+  useEffect(() => {
+    fetchJobs();
+  }, [user]);
 
-  const handleSwipeRight = (jobId: string) => {
-    handleTakeJob(jobId);
+  const filtered = jobs
+    .filter((j) => !skippedJobs.has(j.id))
+    .filter((j) => {
+      if (activeFilter === "Срочные") return j.urgent;
+      if (activeFilter === "Быстрая минималка") return j.quick_minimum;
+      return true;
+    });
+
+  const nearbyCount = jobs.length;
+  const maxEarnings = jobs.reduce((sum, j) => sum + j.hourly_rate * (Number(j.duration_hours) || 4), 0);
+
+  const handleRespond = async (jobId: string) => {
+    if (!user) return;
+    if (respondedJobs.has(jobId)) return;
+
+    const { error } = await supabase.from("job_responses").insert({
+      job_id: jobId,
+      worker_id: user.id,
+      message: "",
+    });
+
+    if (error) {
+      if (error.code === "23505") {
+        toast.info("Вы уже откликнулись");
+      } else {
+        toast.error("Ошибка отклика");
+      }
+    } else {
+      setRespondedJobs((prev) => new Set(prev).add(jobId));
+      toast.success("Отклик отправлен!");
+      if (navigator.vibrate) navigator.vibrate(50);
+
+      // Create conversation between worker and dispatcher
+      const job = jobs.find((j) => j.id === jobId);
+      if (job) {
+        const { data: conv } = await supabase
+          .from("conversations")
+          .insert({ job_id: jobId, title: job.title })
+          .select()
+          .single();
+        if (conv) {
+          await supabase.from("conversation_participants").insert([
+            { conversation_id: conv.id, user_id: user.id },
+            { conversation_id: conv.id, user_id: job.dispatcher_id },
+          ]);
+        }
+      }
+    }
   };
 
   return (
@@ -57,10 +104,10 @@ const FeedScreen = ({ onOpenJob }: FeedScreenProps) => {
             <span className="text-white/80 text-xs font-medium">Рядом с вами</span>
           </div>
           <h2 className="text-white text-xl font-bold mb-1">
-            Сейчас рядом {nearbyCount} заказов
+            Сейчас {nearbyCount} заказов
           </h2>
           <p className="text-white/70 text-sm">
-            Сегодня можно заработать до <span className="text-white font-bold">{maxEarnings.toLocaleString("ru-RU")} ₽</span>
+            Можно заработать до <span className="text-white font-bold">{maxEarnings.toLocaleString("ru-RU")} ₽</span>
           </p>
           <div className="flex items-center gap-2 mt-3">
             <Wallet size={14} className="text-white/80" />
@@ -95,51 +142,50 @@ const FeedScreen = ({ onOpenJob }: FeedScreenProps) => {
 
       {/* Job Cards */}
       <div className="px-5 space-y-4">
-        <AnimatePresence mode="popLayout">
-          {filtered.map((job, i) => (
-            <SwipeableJobCard
-              key={job.id}
-              job={job}
-              index={i}
-              taken={takenJobs.has(job.id)}
-              recording={recordingJobId === job.id}
-              onOpen={() => onOpenJob(job)}
-              onTake={() => handleTakeJob(job.id)}
-              onSwipeLeft={() => handleSwipeLeft(job.id)}
-              onSwipeRight={() => handleSwipeRight(job.id)}
-              onRecord={() => setRecordingJobId(recordingJobId === job.id ? null : job.id)}
-            />
-          ))}
-        </AnimatePresence>
+        {loading ? (
+          <div className="text-center py-12 text-muted-foreground text-sm">Загрузка заявок...</div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground text-sm">
+            {jobs.length === 0 ? "Пока нет заявок. Диспетчеры ещё не разместили заказы." : "Нет подходящих заявок"}
+          </div>
+        ) : (
+          <AnimatePresence mode="popLayout">
+            {filtered.map((job, i) => (
+              <SwipeableJobCard
+                key={job.id}
+                job={job}
+                index={i}
+                responded={respondedJobs.has(job.id)}
+                onRespond={() => handleRespond(job.id)}
+                onSkip={() => setSkippedJobs((prev) => new Set(prev).add(job.id))}
+              />
+            ))}
+          </AnimatePresence>
+        )}
       </div>
     </div>
   );
 };
 
 interface SwipeableJobCardProps {
-  job: Job;
+  job: Tables<"jobs">;
   index: number;
-  taken: boolean;
-  recording: boolean;
-  onOpen: () => void;
-  onTake: () => void;
-  onSwipeLeft: () => void;
-  onSwipeRight: () => void;
-  onRecord: () => void;
+  responded: boolean;
+  onRespond: () => void;
+  onSkip: () => void;
 }
 
-const SwipeableJobCard = ({ job, index, taken, recording, onOpen, onTake, onSwipeLeft, onSwipeRight, onRecord }: SwipeableJobCardProps) => {
+const SwipeableJobCard = ({ job, index, responded, onRespond, onSkip }: SwipeableJobCardProps) => {
   const x = useMotionValue(0);
   const bgLeft = useTransform(x, [-150, 0], [1, 0]);
   const bgRight = useTransform(x, [0, 150], [0, 1]);
 
   const handleDragEnd = (_: any, info: PanInfo) => {
-    if (info.offset.x > 100) {
-      onSwipeRight();
-    } else if (info.offset.x < -100) {
-      onSwipeLeft();
-    }
+    if (info.offset.x > 100) onRespond();
+    else if (info.offset.x < -100) onSkip();
   };
+
+  const totalPay = job.hourly_rate * (Number(job.duration_hours) || 4);
 
   return (
     <motion.div
@@ -149,17 +195,10 @@ const SwipeableJobCard = ({ job, index, taken, recording, onOpen, onTake, onSwip
       transition={{ delay: index * 0.05 }}
       className="relative"
     >
-      {/* Swipe indicators */}
-      <motion.div
-        className="absolute inset-0 rounded-2xl flex items-center justify-start pl-6 z-0"
-        style={{ opacity: bgLeft, background: 'hsl(0 72% 51% / 0.15)' }}
-      >
+      <motion.div className="absolute inset-0 rounded-2xl flex items-center justify-start pl-6 z-0" style={{ opacity: bgLeft, background: 'hsl(0 72% 51% / 0.15)' }}>
         <Ban size={28} className="text-destructive" />
       </motion.div>
-      <motion.div
-        className="absolute inset-0 rounded-2xl flex items-center justify-end pr-6 z-0"
-        style={{ opacity: bgRight, background: 'hsl(145 65% 50% / 0.15)' }}
-      >
+      <motion.div className="absolute inset-0 rounded-2xl flex items-center justify-end pr-6 z-0" style={{ opacity: bgRight, background: 'hsl(145 65% 50% / 0.15)' }}>
         <ArrowRight size={28} className="text-online" />
       </motion.div>
 
@@ -169,7 +208,6 @@ const SwipeableJobCard = ({ job, index, taken, recording, onOpen, onTake, onSwip
         dragElastic={0.4}
         style={{ x }}
         onDragEnd={handleDragEnd}
-        onClick={onOpen}
         className="neu-card rounded-2xl p-4 cursor-pointer active:scale-[0.98] transition-transform relative z-10"
       >
         <div className="flex items-start justify-between mb-3">
@@ -180,95 +218,59 @@ const SwipeableJobCard = ({ job, index, taken, recording, onOpen, onTake, onSwip
                   <Zap size={10} /> Срочно
                 </span>
               )}
-              <span className="text-[11px] text-muted-foreground neu-raised-sm px-2 py-0.5 rounded-lg">
-                {job.type}
-              </span>
-              {job.noElevator && (
-                <span className="text-[11px] text-muted-foreground neu-raised-sm px-2 py-0.5 rounded-lg">🚫 Без лифта</span>
-              )}
-              {job.pairWork && (
-                <span className="text-[11px] text-muted-foreground neu-raised-sm px-2 py-0.5 rounded-lg flex items-center gap-1">
-                  <UserPlus size={10} /> В паре
+              {job.quick_minimum && (
+                <span className="px-2 py-0.5 rounded-lg bg-online/20 text-online text-[11px] font-semibold">
+                  Быстрая минималка
                 </span>
               )}
             </div>
             <h3 className="text-[15px] font-semibold text-foreground leading-tight">{job.title}</h3>
           </div>
-          <div className="w-8 h-8 rounded-xl neu-raised-sm flex items-center justify-center ml-2 flex-shrink-0">
-            <ChevronRight size={14} className="text-muted-foreground" />
-          </div>
         </div>
 
-        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{job.description}</p>
+        {job.description && (
+          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{job.description}</p>
+        )}
 
         {/* Earnings calculator */}
         <div className="neu-inset rounded-xl px-3 py-2.5 mb-3">
           <div className="flex items-center gap-2">
             <Wallet size={14} className="text-primary" />
             <span className="text-xs text-muted-foreground">Ты получишь</span>
-            <span className="text-lg font-extrabold text-gradient-primary ml-auto">{job.netPay.toLocaleString("ru-RU")} ₽</span>
+            <span className="text-lg font-extrabold text-gradient-primary ml-auto">{totalPay.toLocaleString("ru-RU")} ₽</span>
           </div>
+          <p className="text-[11px] text-muted-foreground mt-1">{job.hourly_rate} ₽/час × {job.duration_hours || 4}ч</p>
         </div>
 
-        <div className="flex items-center gap-3 text-[11px] text-muted-foreground mb-4">
-          <span className="flex items-center gap-1"><MapPin size={11} /> {job.distance}</span>
-          <span className="flex items-center gap-1"><Clock size={11} /> {job.date}</span>
-          <span className="flex items-center gap-1"><Users size={11} /> {job.workersNeeded} чел.</span>
+        <div className="flex items-center gap-3 text-[11px] text-muted-foreground mb-4 flex-wrap">
+          {job.address && <span className="flex items-center gap-1"><MapPin size={11} /> {job.address}</span>}
+          {job.metro && <span className="flex items-center gap-1"><Train size={11} /> {job.metro}</span>}
+          {job.start_time && (
+            <span className="flex items-center gap-1">
+              <Clock size={11} /> {new Date(job.start_time).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+            </span>
+          )}
+          <span className="flex items-center gap-1"><Users size={11} /> {job.workers_needed} чел.</span>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Voice response button */}
-          <button
-            onClick={(e) => { e.stopPropagation(); onRecord(); }}
-            className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all ${
-              recording ? "gradient-primary animate-pulse" : "neu-raised"
-            }`}
-          >
-            <Mic size={16} className={recording ? "text-primary-foreground" : "text-muted-foreground"} />
-          </button>
-
           <div className="flex-1" />
-
-          <span className="text-xl font-extrabold text-gradient-primary">{job.price.toLocaleString("ru-RU")} ₽</span>
-
+          <span className="text-xl font-extrabold text-gradient-primary">{job.hourly_rate} ₽/час</span>
           <button
-            onClick={(e) => { e.stopPropagation(); onTake(); }}
-            disabled={taken}
+            onClick={(e) => { e.stopPropagation(); onRespond(); }}
+            disabled={responded}
             className={`px-6 py-3 rounded-xl text-sm font-bold active:scale-95 transition-all ${
-              taken
+              responded
                 ? "bg-online/20 text-online"
                 : "gradient-primary text-primary-foreground"
             }`}
-            style={!taken ? {
+            style={!responded ? {
               boxShadow: '6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%), 0 4px 20px hsl(230 60% 58% / 0.35)',
             } : {}}
           >
-            {taken ? "✓ Взято" : "Беру!"}
+            {responded ? "✓ Отклик" : "Беру!"}
           </button>
         </div>
-
-        {job.responses > 0 && (
-          <p className="text-[11px] text-muted-foreground mt-2.5">
-            👥 {job.responses} откликов
-          </p>
-        )}
-
-        {recording && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            className="mt-3 neu-inset rounded-xl px-4 py-3 flex items-center gap-3"
-          >
-            <div className="w-3 h-3 rounded-full bg-destructive animate-pulse" />
-            <span className="text-xs text-muted-foreground">Запись... 0:03</span>
-            <button
-              onClick={(e) => { e.stopPropagation(); onRecord(); }}
-              className="ml-auto px-3 py-1.5 rounded-lg gradient-primary text-primary-foreground text-xs font-semibold"
-            >
-              Отправить
-            </button>
-          </motion.div>
-        )}
       </motion.div>
     </motion.div>
   );
