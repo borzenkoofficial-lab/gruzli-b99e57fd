@@ -14,16 +14,270 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      conversation_participants: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_participants_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          is_group: boolean | null
+          job_id: string | null
+          title: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_group?: boolean | null
+          job_id?: string | null
+          title?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_group?: boolean | null
+          job_id?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_responses: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          message: string | null
+          status: string | null
+          worker_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          message?: string | null
+          status?: string | null
+          worker_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          message?: string | null
+          status?: string | null
+          worker_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_responses_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jobs: {
+        Row: {
+          address: string | null
+          created_at: string
+          description: string | null
+          dispatcher_id: string
+          duration_hours: number | null
+          hourly_rate: number
+          id: string
+          metro: string | null
+          quick_minimum: boolean | null
+          start_time: string | null
+          status: string | null
+          title: string
+          updated_at: string
+          urgent: boolean | null
+          workers_needed: number | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          description?: string | null
+          dispatcher_id: string
+          duration_hours?: number | null
+          hourly_rate?: number
+          id?: string
+          metro?: string | null
+          quick_minimum?: boolean | null
+          start_time?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+          urgent?: boolean | null
+          workers_needed?: number | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          description?: string | null
+          dispatcher_id?: string
+          duration_hours?: number | null
+          hourly_rate?: number
+          id?: string
+          metro?: string | null
+          quick_minimum?: boolean | null
+          start_time?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+          urgent?: boolean | null
+          workers_needed?: number | null
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          message_type: string | null
+          sender_id: string
+          text: string | null
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          message_type?: string | null
+          sender_id: string
+          text?: string | null
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          message_type?: string | null
+          sender_id?: string
+          text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          balance: number | null
+          completed_orders: number | null
+          created_at: string
+          full_name: string
+          id: string
+          phone: string | null
+          rating: number | null
+          skills: string[] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          balance?: number | null
+          completed_orders?: number | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          rating?: number | null
+          skills?: string[] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          balance?: number | null
+          completed_orders?: number | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          rating?: number | null
+          skills?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "worker" | "dispatcher"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +404,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["worker", "dispatcher"],
+    },
   },
 } as const
