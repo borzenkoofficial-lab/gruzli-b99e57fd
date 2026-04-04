@@ -90,6 +90,25 @@ const RealChatsScreen = ({ onOpenChat }: RealChatsScreenProps) => {
 
   useEffect(() => {
     fetchConversations();
+
+    // Realtime: refresh when new conversation_participants or messages arrive
+    const channel = supabase
+      .channel('chats-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'conversation_participants' },
+        () => fetchConversations()
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages' },
+        () => fetchConversations()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const filtered = conversations.filter((c) =>

@@ -18,6 +18,7 @@ import JobResponsesScreen from "@/screens/JobResponsesScreen";
 import RealChatsScreen from "@/screens/RealChatsScreen";
 import RealChatScreen from "@/screens/RealChatScreen";
 import DispatchersScreen from "@/screens/DispatchersScreen";
+import KartotekaScreen from "@/screens/KartotekaScreen";
 
 import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -114,11 +115,12 @@ const Index = () => {
                 onViewResponses={setViewResponsesJob}
               />
             ) : (
-              <FeedScreen />
+              <FeedScreen onOpenChat={handleOpenChat} />
             )
           )}
           {tab === "orders" && <OrdersScreen />}
           {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} />}
+          {tab === "kartoteka" && <KartotekaScreen />}
           {tab === "dispatchers" && !isDispatcher && (
             <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />
           )}
