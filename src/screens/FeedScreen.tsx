@@ -39,6 +39,27 @@ const FeedScreen = () => {
 
   useEffect(() => {
     fetchJobs();
+
+    // Real-time subscription for new jobs
+    const channel = supabase
+      .channel('new-jobs-feed')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'jobs' },
+        (payload) => {
+          const newJob = payload.new as Tables<"jobs">;
+          setJobs((prev) => [newJob, ...prev]);
+          toast.success(`🆕 Новый заказ: ${newJob.title}`, {
+            description: `${newJob.hourly_rate}₽/ч · ${newJob.address || 'Адрес не указан'}`,
+            duration: 5000,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const filtered = jobs
