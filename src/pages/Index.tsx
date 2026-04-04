@@ -115,11 +115,12 @@ const Index = () => {
                 onViewResponses={setViewResponsesJob}
               />
             ) : (
-              <FeedScreen />
+              <FeedScreen onOpenChat={handleOpenChat} />
             )
           )}
           {tab === "orders" && <OrdersScreen />}
           {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} />}
+          {tab === "kartoteka" && <KartotekaScreen />}
           {tab === "dispatchers" && !isDispatcher && (
             <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />
           )}

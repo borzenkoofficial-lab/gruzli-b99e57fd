@@ -12,13 +12,14 @@ const BottomNav = ({ active, onNavigate, isDispatcher }: BottomNavProps) => {
     { id: "feed", label: "Главная", icon: Home },
     { id: "orders", label: "Заказы", icon: ClipboardList },
     { id: "chats", label: "Чаты", icon: MessageCircle },
-    { id: "dispatchers", label: "Диспетчеры", icon: Users },
+    { id: "kartoteka", label: "Картотека", icon: FolderOpen },
     { id: "profile", label: "Профиль", icon: User },
   ];
 
   const dispatcherTabs = [
     { id: "feed", label: "Заявки", icon: ClipboardList },
     { id: "chats", label: "Чаты", icon: MessageCircle },
+    { id: "kartoteka", label: "Картотека", icon: FolderOpen },
     { id: "profile", label: "Профиль", icon: User },
   ];
 

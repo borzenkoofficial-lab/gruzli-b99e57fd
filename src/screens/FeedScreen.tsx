@@ -95,12 +95,34 @@ const FeedScreen = ({ onOpenChat }: FeedScreenProps) => {
       }
     } else {
       setRespondedJobs((prev) => new Set(prev).add(jobId));
-      toast.success("Отклик отправлен!");
+      toast.success("Отклик отправлен! Открываем чат...");
       if (navigator.vibrate) navigator.vibrate(50);
 
-      // Create conversation between worker and dispatcher
+      // Create conversation and open chat immediately
       const job = jobs.find((j) => j.id === jobId);
       if (job) {
+        // Check if conversation already exists for this job+worker
+        const { data: myConvs } = await supabase
+          .from("conversation_participants")
+          .select("conversation_id")
+          .eq("user_id", user.id);
+        
+        if (myConvs) {
+          for (const mc of myConvs) {
+            const { data: otherP } = await supabase
+              .from("conversation_participants")
+              .select("user_id")
+              .eq("conversation_id", mc.conversation_id)
+              .eq("user_id", job.dispatcher_id)
+              .single();
+            if (otherP) {
+              // Conversation exists, open it
+              onOpenChat?.(mc.conversation_id, job.title);
+              return;
+            }
+          }
+        }
+
         const { data: conv } = await supabase
           .from("conversations")
           .insert({ job_id: jobId, title: job.title })
@@ -111,6 +133,14 @@ const FeedScreen = ({ onOpenChat }: FeedScreenProps) => {
             { conversation_id: conv.id, user_id: user.id },
             { conversation_id: conv.id, user_id: job.dispatcher_id },
           ]);
+          // Auto-send first message
+          await supabase.from("messages").insert({
+            conversation_id: conv.id,
+            sender_id: user.id,
+            text: `Здравствуйте! Хочу взять заказ "${job.title}"`,
+            message_type: "text",
+          });
+          onOpenChat?.(conv.id, job.title);
         }
       }
     }
