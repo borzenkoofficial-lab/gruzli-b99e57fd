@@ -164,6 +164,48 @@ export type Database = {
         }
         Relationships: []
       }
+      kartoteka: {
+        Row: {
+          author_id: string
+          birth_year: number | null
+          created_at: string
+          description: string | null
+          full_name: string
+          id: string
+          phone: string | null
+          photo_url: string | null
+          social_links: string[] | null
+          target_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          birth_year?: number | null
+          created_at?: string
+          description?: string | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          photo_url?: string | null
+          social_links?: string[] | null
+          target_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          birth_year?: number | null
+          created_at?: string
+          description?: string | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          photo_url?: string | null
+          social_links?: string[] | null
+          target_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           conversation_id: string
