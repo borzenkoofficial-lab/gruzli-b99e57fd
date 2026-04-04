@@ -8,7 +8,11 @@ import type { Tables } from "@/integrations/supabase/types";
 
 const filters = ["Все", "Срочные", "Быстрая минималка"];
 
-const FeedScreen = () => {
+interface FeedScreenProps {
+  onOpenChat?: (conversationId: string, title: string) => void;
+}
+
+const FeedScreen = ({ onOpenChat }: FeedScreenProps) => {
   const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState("Все");
   const [jobs, setJobs] = useState<Tables<"jobs">[]>([]);
