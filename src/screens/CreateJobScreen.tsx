@@ -65,14 +65,6 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
     setLoading(false);
   };
 
-  const Field = ({ label, icon: Icon, children }: { label: string; icon: any; children: React.ReactNode }) => (
-    <div>
-      <label className="text-xs font-semibold text-muted-foreground mb-1.5 flex items-center gap-1.5">
-        <Icon size={12} /> {label}
-      </label>
-      {children}
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-background pb-8">
