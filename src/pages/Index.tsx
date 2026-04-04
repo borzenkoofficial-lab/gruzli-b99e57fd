@@ -18,6 +18,7 @@ import JobResponsesScreen from "@/screens/JobResponsesScreen";
 import RealChatsScreen from "@/screens/RealChatsScreen";
 import RealChatScreen from "@/screens/RealChatScreen";
 import DispatchersScreen from "@/screens/DispatchersScreen";
+import KartotekaScreen from "@/screens/KartotekaScreen";
 
 import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
