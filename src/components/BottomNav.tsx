@@ -1,4 +1,4 @@
-import { Home, ClipboardList, MessageCircle, Users, User, Plus } from "lucide-react";
+import { Home, ClipboardList, MessageCircle, Users, User, Plus, FolderOpen } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface BottomNavProps {
