@@ -1,9 +1,19 @@
 import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
-import { ArrowLeft, Send, Mic, Play, Phone, Video, Plus } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import type { Tables } from "@/integrations/supabase/types";
+import { toast } from "sonner";
+
+interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  text: string | null;
+  media_url?: string | null;
+  message_type: string | null;
+  created_at: string;
+}
 
 interface RealChatScreenProps {
   conversationId: string;
@@ -13,11 +23,21 @@ interface RealChatScreenProps {
 
 const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) => {
   const { user } = useAuth();
-  const [messages, setMessages] = useState<Tables<"messages">[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [senderNames, setSenderNames] = useState<Record<string, string>>({});
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [showAttach, setShowAttach] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [voiceActive, setVoiceActive] = useState(false);
+  const [inVoiceRoom, setInVoiceRoom] = useState(false);
+  const [voiceRoomId, setVoiceRoomId] = useState<string | null>(null);
+  const [peerConnected, setPeerConnected] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
+  const peerRef = useRef<RTCPeerConnection | null>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
 
   const fetchMessages = async () => {
     const { data } = await supabase
@@ -26,8 +46,7 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
       .eq("conversation_id", conversationId)
       .order("created_at", { ascending: true });
     if (data) {
-      setMessages(data);
-      // fetch sender names
+      setMessages(data as Message[]);
       const senderIds = [...new Set(data.map((m) => m.sender_id))];
       const { data: profiles } = await supabase
         .from("profiles")
@@ -44,7 +63,6 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
   useEffect(() => {
     fetchMessages();
 
-    // Realtime subscription
     const channel = supabase
       .channel(`messages:${conversationId}`)
       .on(
@@ -56,9 +74,11 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
           filter: `conversation_id=eq.${conversationId}`,
         },
         async (payload) => {
-          const newMsg = payload.new as Tables<"messages">;
-          setMessages((prev) => [...prev, newMsg]);
-          // fetch sender name if unknown
+          const newMsg = payload.new as Message;
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
           if (!senderNames[newMsg.sender_id]) {
             const { data: profile } = await supabase
               .from("profiles")
@@ -82,6 +102,14 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Cleanup voice on unmount
+  useEffect(() => {
+    return () => {
+      localStreamRef.current?.getTracks().forEach((t) => t.stop());
+      peerRef.current?.close();
+    };
+  }, []);
+
   const handleSend = async () => {
     if (!text.trim() || !user || sending) return;
     setSending(true);
@@ -102,8 +130,176 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
     }
   };
 
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("Файл слишком большой (макс 10МБ)");
+      return;
+    }
+
+    setUploading(true);
+    setShowAttach(false);
+
+    const ext = file.name.split(".").pop();
+    const path = `${conversationId}/${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("chat-media")
+      .upload(path, file);
+
+    if (uploadError) {
+      toast.error("Ошибка загрузки файла");
+      setUploading(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
+
+    const isVideo = file.type.startsWith("video/");
+    const isImage = file.type.startsWith("image/");
+    const msgType = isVideo ? "video" : isImage ? "image" : "file";
+
+    await supabase.from("messages").insert({
+      conversation_id: conversationId,
+      sender_id: user.id,
+      text: file.name,
+      media_url: urlData.publicUrl,
+      message_type: msgType,
+    });
+
+    setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const startVoiceRoom = async () => {
+    if (!user) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      localStreamRef.current = stream;
+      setInVoiceRoom(true);
+      setVoiceActive(true);
+
+      // Create voice room record
+      const { data: room } = await supabase
+        .from("voice_rooms")
+        .insert({ conversation_id: conversationId, created_by: user.id })
+        .select()
+        .single();
+
+      if (room) {
+        setVoiceRoomId(room.id);
+        // Send system message
+        await supabase.from("messages").insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          text: "📞 Начал голосовой звонок. Нажмите 📞 чтобы присоединиться.",
+          message_type: "voice_room",
+        });
+      }
+      toast.success("Голосовая комната создана");
+    } catch {
+      toast.error("Нет доступа к микрофону");
+    }
+  };
+
+  const joinVoiceRoom = async () => {
+    if (!user) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      localStreamRef.current = stream;
+      setInVoiceRoom(true);
+      setVoiceActive(true);
+      toast.success("Вы в голосовой комнате");
+
+      await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        text: "📞 Присоединился к звонку",
+        message_type: "system",
+      });
+    } catch {
+      toast.error("Нет доступа к микрофону");
+    }
+  };
+
+  const leaveVoiceRoom = () => {
+    localStreamRef.current?.getTracks().forEach((t) => t.stop());
+    localStreamRef.current = null;
+    peerRef.current?.close();
+    peerRef.current = null;
+    setInVoiceRoom(false);
+    setVoiceActive(false);
+    setPeerConnected(false);
+    toast.info("Вы покинули звонок");
+  };
+
+  const toggleMic = () => {
+    if (localStreamRef.current) {
+      const track = localStreamRef.current.getAudioTracks()[0];
+      if (track) {
+        track.enabled = !track.enabled;
+        setVoiceActive(track.enabled);
+      }
+    }
+  };
+
+  const hasActiveVoiceRoom = messages.some(
+    (m) => m.message_type === "voice_room" && m.sender_id !== user?.id
+  );
+
+  const renderMediaMessage = (msg: Message) => {
+    if (msg.message_type === "image" && msg.media_url) {
+      return (
+        <img
+          src={msg.media_url}
+          alt="Фото"
+          className="max-w-full rounded-xl max-h-60 object-cover cursor-pointer"
+          onClick={() => window.open(msg.media_url!, "_blank")}
+        />
+      );
+    }
+    if (msg.message_type === "video" && msg.media_url) {
+      return (
+        <video
+          src={msg.media_url}
+          controls
+          className="max-w-full rounded-xl max-h-60"
+        />
+      );
+    }
+    if (msg.message_type === "voice_room") {
+      return (
+        <div className="flex items-center gap-2">
+          <Phone size={14} className="text-primary" />
+          <span className="text-sm">{msg.text}</span>
+          {!inVoiceRoom && msg.sender_id !== user?.id && (
+            <button
+              onClick={joinVoiceRoom}
+              className="ml-2 px-3 py-1 rounded-lg gradient-primary text-primary-foreground text-xs font-semibold"
+            >
+              Войти
+            </button>
+          )}
+        </div>
+      );
+    }
+    return <p className="text-sm text-foreground leading-relaxed">{msg.text}</p>;
+  };
+
   return (
     <div className="flex flex-col h-screen bg-background">
+      <audio ref={remoteAudioRef} autoPlay />
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*,video/*"
+        className="hidden"
+        onChange={handleFileSelect}
+      />
+
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-14 pb-4">
         <button onClick={onBack} className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center active:neu-inset transition-all">
@@ -114,14 +310,54 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
           <p className="text-[11px] text-online font-medium">● Онлайн</p>
         </div>
         <div className="flex gap-2">
-          <button className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center">
-            <Video size={16} className="text-muted-foreground" />
-          </button>
-          <button className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center">
-            <Phone size={16} className="text-muted-foreground" />
-          </button>
+          {inVoiceRoom ? (
+            <>
+              <button
+                onClick={toggleMic}
+                className={`w-10 h-10 rounded-2xl flex items-center justify-center ${voiceActive ? "gradient-primary" : "neu-raised"}`}
+              >
+                {voiceActive ? <Mic size={16} className="text-primary-foreground" /> : <MicOff size={16} className="text-destructive" />}
+              </button>
+              <button
+                onClick={leaveVoiceRoom}
+                className="w-10 h-10 rounded-2xl bg-destructive/20 flex items-center justify-center"
+              >
+                <Phone size={16} className="text-destructive" />
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={hasActiveVoiceRoom ? joinVoiceRoom : startVoiceRoom}
+              className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center"
+            >
+              <Phone size={16} className="text-muted-foreground" />
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Voice room banner */}
+      <AnimatePresence>
+        {inVoiceRoom && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="mx-4 mb-2 rounded-2xl overflow-hidden"
+            style={{ background: "linear-gradient(135deg, hsl(145 65% 40%), hsl(160 60% 45%))" }}
+          >
+            <div className="px-4 py-3 flex items-center gap-3">
+              <div className="w-3 h-3 rounded-full bg-white animate-pulse" />
+              <span className="text-white text-sm font-semibold flex-1">
+                Голосовой звонок {voiceActive ? "· Микрофон вкл" : "· Микрофон выкл"}
+              </span>
+              <button onClick={leaveVoiceRoom} className="text-white/80 text-xs font-medium">
+                Завершить
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 scrollbar-hide">
@@ -132,6 +368,14 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
         )}
         {messages.map((msg) => {
           const isOwn = msg.sender_id === user?.id;
+          const isSystem = msg.message_type === "system";
+          if (isSystem) {
+            return (
+              <div key={msg.id} className="text-center">
+                <span className="text-[11px] text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">{msg.text}</span>
+              </div>
+            );
+          }
           return (
             <motion.div
               key={msg.id}
@@ -146,7 +390,7 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
                   </p>
                 )}
                 <div className={`px-4 py-3 rounded-2xl ${isOwn ? "neu-flat rounded-br-md" : "neu-flat rounded-bl-md"}`}>
-                  <p className="text-sm text-foreground leading-relaxed">{msg.text}</p>
+                  {renderMediaMessage(msg)}
                 </div>
                 <p className={`text-[10px] text-muted-foreground mt-1.5 ${isOwn ? "text-right" : "text-left"}`}>
                   {new Date(msg.created_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
@@ -158,11 +402,66 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
         <div ref={bottomRef} />
       </div>
 
+      {/* Attach popup */}
+      <AnimatePresence>
+        {showAttach && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="absolute bottom-24 left-4 right-4 neu-card rounded-2xl p-4 z-50"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold text-foreground">Прикрепить</span>
+              <button onClick={() => setShowAttach(false)}>
+                <X size={16} className="text-muted-foreground" />
+              </button>
+            </div>
+            <div className="flex gap-4">
+              <button
+                onClick={() => {
+                  if (fileInputRef.current) {
+                    fileInputRef.current.accept = "image/*";
+                    fileInputRef.current.click();
+                  }
+                }}
+                className="flex flex-col items-center gap-2"
+              >
+                <div className="w-14 h-14 rounded-2xl neu-raised flex items-center justify-center">
+                  <Image size={22} className="text-primary" />
+                </div>
+                <span className="text-[11px] text-muted-foreground">Фото</span>
+              </button>
+              <button
+                onClick={() => {
+                  if (fileInputRef.current) {
+                    fileInputRef.current.accept = "video/*";
+                    fileInputRef.current.click();
+                  }
+                }}
+                className="flex flex-col items-center gap-2"
+              >
+                <div className="w-14 h-14 rounded-2xl neu-raised flex items-center justify-center">
+                  <Video size={22} className="text-primary" />
+                </div>
+                <span className="text-[11px] text-muted-foreground">Видео</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Input */}
       <div className="px-4 pb-8 pt-3">
+        {uploading && (
+          <div className="text-center text-xs text-primary mb-2 animate-pulse">Загрузка файла...</div>
+        )}
         <div className="flex items-center gap-2.5">
-          <button className="w-11 h-11 rounded-xl neu-raised flex items-center justify-center active:neu-inset transition-all">
-            <Plus size={18} className="text-muted-foreground" />
+          <button
+            onClick={() => setShowAttach(!showAttach)}
+            className="w-11 h-11 rounded-xl neu-raised flex items-center justify-center active:neu-inset transition-all"
+          >
+            <Paperclip size={18} className="text-muted-foreground" />
           </button>
           <div className="flex-1 flex items-center neu-inset rounded-2xl px-4 py-3">
             <input
