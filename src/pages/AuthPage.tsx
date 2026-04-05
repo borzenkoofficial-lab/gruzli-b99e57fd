@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Truck, User, Users, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
+import { User, Users, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 
 type Mode = "login" | "register";
 type Role = "worker" | "dispatcher";
@@ -56,12 +57,7 @@ const AuthPage = () => {
         animate={{ opacity: 1, y: 0 }}
         className="mb-8 text-center"
       >
-        <div className="w-20 h-20 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4" style={{
-          boxShadow: '6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%), 0 4px 20px hsl(230 60% 58% / 0.4)',
-        }}>
-          <Truck size={36} className="text-primary-foreground" />
-        </div>
-        <h1 className="text-3xl font-extrabold text-foreground">ГрузПро</h1>
+        <img src={gruzliLogo} alt="Gruzli" className="h-20 mx-auto mb-4 rounded-2xl" width={200} height={80} />
         <p className="text-sm text-muted-foreground mt-1">Платформа для грузчиков и диспетчеров</p>
       </motion.div>
 

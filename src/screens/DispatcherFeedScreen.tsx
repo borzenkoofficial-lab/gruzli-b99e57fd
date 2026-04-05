@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Clock, MapPin, Users, Zap, ChevronRight, Trash2, Eye, MessageCircle } from "lucide-react";
+import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -59,9 +60,12 @@ const DispatcherFeedScreen = ({ onCreateJob, onViewResponses }: DispatcherFeedSc
 
   return (
     <div className="pb-28">
-      <div className="px-5 pt-14 pb-2">
-        <h1 className="text-3xl font-bold text-foreground tracking-tight">Мои заявки</h1>
-        <p className="text-sm text-muted-foreground mt-1">Управление заказами</p>
+      <div className="px-5 pt-14 pb-2 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">Мои заявки</h1>
+          <p className="text-sm text-muted-foreground mt-1">Управление заказами</p>
+        </div>
+        <img src={gruzliLogo} alt="Gruzli" className="h-10 rounded-xl" loading="lazy" />
       </div>
 
       {/* Create job button */}
