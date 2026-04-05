@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { Truck, User, Users, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
+import { User, Users, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 
 type Mode = "login" | "register";
 type Role = "worker" | "dispatcher";
