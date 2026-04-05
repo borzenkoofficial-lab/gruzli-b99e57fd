@@ -149,8 +149,17 @@ const FeedScreen = ({ onOpenChat }: FeedScreenProps) => {
 
   return (
     <div className="pb-28">
+      {/* Header with logo */}
+      <div className="px-5 pt-14 pb-2 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">Заявки</h1>
+          <p className="text-sm text-muted-foreground mt-1">Свайп вправо = Беру, влево = Пропустить</p>
+        </div>
+        <img src={gruzliLogo} alt="Gruzli" className="h-10 rounded-xl" loading="lazy" />
+      </div>
+
       {/* Hero Banner */}
-      <div className="mx-5 mt-14 mb-4 rounded-2xl overflow-hidden" style={{
+      <div className="mx-5 mt-2 mb-4 rounded-2xl overflow-hidden" style={{
         background: 'linear-gradient(135deg, hsl(240 55% 55%), hsl(220 65% 58%), hsl(195 100% 50%))',
         boxShadow: '0 8px 32px hsl(230 60% 58% / 0.4), 6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%)',
       }}>
