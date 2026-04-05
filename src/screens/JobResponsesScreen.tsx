@@ -118,28 +118,31 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
                 <p className="text-xs text-muted-foreground mb-3 neu-inset rounded-xl px-3 py-2">{r.message}</p>
               )}
 
-              {r.status === "pending" && (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => updateStatus(r.id, "accepted")}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl gradient-primary text-primary-foreground text-sm font-semibold active:scale-95 transition-transform"
-                  >
-                    <Check size={14} /> Принять
-                  </button>
-                  <button
-                    onClick={() => updateStatus(r.id, "rejected")}
-                    className="w-12 h-12 rounded-xl neu-raised flex items-center justify-center active:neu-inset transition-all"
-                  >
-                    <X size={16} className="text-destructive" />
-                  </button>
-                  <button
-                    onClick={() => onChatWithWorker(r.worker_id, r.profile?.full_name || "Грузчик")}
-                    className="w-12 h-12 rounded-xl neu-raised flex items-center justify-center active:neu-inset transition-all"
-                  >
-                    <MessageCircle size={16} className="text-primary" />
-                  </button>
-                </div>
-              )}
+              <div className="flex gap-2">
+                {r.status === "pending" && (
+                  <>
+                    <button
+                      onClick={() => updateStatus(r.id, "accepted")}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl gradient-primary text-primary-foreground text-sm font-semibold active:scale-95 transition-transform"
+                    >
+                      <Check size={14} /> Принять
+                    </button>
+                    <button
+                      onClick={() => updateStatus(r.id, "rejected")}
+                      className="w-12 h-12 rounded-xl neu-raised flex items-center justify-center active:neu-inset transition-all"
+                    >
+                      <X size={16} className="text-destructive" />
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => onChatWithWorker(r.worker_id, r.profile?.full_name || "Грузчик")}
+                  className={`${r.status === "pending" ? "w-12 h-12" : "flex-1 py-3"} rounded-xl neu-raised flex items-center justify-center gap-2 active:neu-inset transition-all`}
+                >
+                  <MessageCircle size={16} className="text-primary" />
+                  {r.status !== "pending" && <span className="text-sm font-semibold text-foreground">Написать</span>}
+                </button>
+              </div>
             </motion.div>
           ))}
         </div>

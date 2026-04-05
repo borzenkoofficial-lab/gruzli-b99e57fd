@@ -211,6 +211,7 @@ export type Database = {
           conversation_id: string
           created_at: string
           id: string
+          media_url: string | null
           message_type: string | null
           sender_id: string
           text: string | null
@@ -219,6 +220,7 @@ export type Database = {
           conversation_id: string
           created_at?: string
           id?: string
+          media_url?: string | null
           message_type?: string | null
           sender_id: string
           text?: string | null
@@ -227,6 +229,7 @@ export type Database = {
           conversation_id?: string
           created_at?: string
           id?: string
+          media_url?: string | null
           message_type?: string | null
           sender_id?: string
           text?: string | null
@@ -300,6 +303,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      voice_rooms: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          created_by: string
+          id: string
+          is_active: boolean | null
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          created_by: string
+          id?: string
+          is_active?: boolean | null
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          is_active?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_rooms_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
