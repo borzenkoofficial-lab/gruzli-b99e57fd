@@ -124,10 +124,6 @@ const FeedScreen = ({ onOpenChat }: FeedScreenProps) => {
         </div>
       </div>
 
-      <div className="px-5 pb-2">
-        <h1 className="text-3xl font-bold text-foreground tracking-tight">Заявки</h1>
-        <p className="text-sm text-muted-foreground mt-1">Свайп вправо = Беру, влево = Пропустить</p>
-      </div>
 
       {/* Filters */}
       <div className="px-5 pb-5 overflow-x-auto scrollbar-hide">
