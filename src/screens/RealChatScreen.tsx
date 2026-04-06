@@ -29,6 +29,7 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [showAttach, setShowAttach] = useState(false);
+  const [linkedJob, setLinkedJob] = useState<Tables<"jobs"> | null>(null);
   const [uploading, setUploading] = useState(false);
   const [voiceActive, setVoiceActive] = useState(false);
   const [inVoiceRoom, setInVoiceRoom] = useState(false);
