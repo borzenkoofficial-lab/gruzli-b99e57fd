@@ -39,12 +39,16 @@ const Index = () => {
   };
 
   const handleChatWithUser = async (otherUserId: string, otherName: string) => {
-    if (!user) return;
-    // Check if conversation already exists between these two users
-    const { data: myConvs } = await supabase
+    if (!user) return false;
+
+    const { data: myConvs, error: myConvsError } = await supabase
       .from("conversation_participants")
       .select("conversation_id")
       .eq("user_id", user.id);
+
+    if (myConvsError) {
+      return false;
+    }
 
     if (myConvs) {
       for (const mc of myConvs) {
@@ -54,26 +58,35 @@ const Index = () => {
           .eq("conversation_id", mc.conversation_id)
           .eq("user_id", otherUserId)
           .single();
+
         if (otherParticipant) {
           handleOpenChat(mc.conversation_id, otherName);
-          return;
+          return true;
         }
       }
     }
 
-    // Create new conversation
-    const { data: conv } = await supabase
+    const { data: conv, error: convError } = await supabase
       .from("conversations")
       .insert({ title: otherName })
       .select()
       .single();
-    if (conv) {
-      await supabase.from("conversation_participants").insert([
-        { conversation_id: conv.id, user_id: user.id },
-        { conversation_id: conv.id, user_id: otherUserId },
-      ]);
-      handleOpenChat(conv.id, otherName);
+
+    if (convError || !conv) {
+      return false;
     }
+
+    const { error: participantsError } = await supabase.from("conversation_participants").insert([
+      { conversation_id: conv.id, user_id: user.id },
+      { conversation_id: conv.id, user_id: otherUserId },
+    ]);
+
+    if (participantsError) {
+      return false;
+    }
+
+    handleOpenChat(conv.id, otherName);
+    return true;
   };
 
   // Full-screen overlays
@@ -91,8 +104,10 @@ const Index = () => {
         job={viewResponsesJob}
         onBack={() => setViewResponsesJob(null)}
         onChatWithWorker={async (workerId, workerName) => {
-          await handleChatWithUser(workerId, workerName);
-          setViewResponsesJob(null);
+          const opened = await handleChatWithUser(workerId, workerName);
+          if (opened) {
+            setViewResponsesJob(null);
+          }
         }}
       />
     );
