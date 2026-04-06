@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "
 import { MapPin, Clock, Users, Zap, ChevronRight, Mic, Wallet, ArrowRight, Ban, UserPlus, Train } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRespondToJob } from "@/hooks/useRespondToJob";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
@@ -15,6 +16,7 @@ interface FeedScreenProps {
 
 const FeedScreen = ({ onOpenChat }: FeedScreenProps) => {
   const { user } = useAuth();
+  const { respondAndOpenChat } = useRespondToJob(onOpenChat);
   const [activeFilter, setActiveFilter] = useState("Все");
   const [jobs, setJobs] = useState<Tables<"jobs">[]>([]);
   const [respondedJobs, setRespondedJobs] = useState<Set<string>>(new Set());
@@ -80,70 +82,11 @@ const FeedScreen = ({ onOpenChat }: FeedScreenProps) => {
 
   const handleRespond = async (jobId: string) => {
     if (!user) return;
-    if (respondedJobs.has(jobId)) return;
-
-    const { error } = await supabase.from("job_responses").insert({
-      job_id: jobId,
-      worker_id: user.id,
-      message: "",
-    });
-
-    if (error) {
-      if (error.code === "23505") {
-        toast.info("Вы уже откликнулись");
-      } else {
-        toast.error("Ошибка отклика");
-      }
-    } else {
+    const job = jobs.find((j) => j.id === jobId);
+    if (!job) return;
+    const success = await respondAndOpenChat(job);
+    if (success) {
       setRespondedJobs((prev) => new Set(prev).add(jobId));
-      toast.success("Отклик отправлен! Открываем чат...");
-      if (navigator.vibrate) navigator.vibrate(50);
-
-      // Create conversation and open chat immediately
-      const job = jobs.find((j) => j.id === jobId);
-      if (job) {
-        // Check if conversation already exists for this job+worker
-        const { data: myConvs } = await supabase
-          .from("conversation_participants")
-          .select("conversation_id")
-          .eq("user_id", user.id);
-        
-        if (myConvs) {
-          for (const mc of myConvs) {
-            const { data: otherP } = await supabase
-              .from("conversation_participants")
-              .select("user_id")
-              .eq("conversation_id", mc.conversation_id)
-              .eq("user_id", job.dispatcher_id)
-              .single();
-            if (otherP) {
-              // Conversation exists, open it
-              onOpenChat?.(mc.conversation_id, job.title);
-              return;
-            }
-          }
-        }
-
-        const { data: conv } = await supabase
-          .from("conversations")
-          .insert({ job_id: jobId, title: job.title })
-          .select()
-          .single();
-        if (conv) {
-          await supabase.from("conversation_participants").insert([
-            { conversation_id: conv.id, user_id: user.id },
-            { conversation_id: conv.id, user_id: job.dispatcher_id },
-          ]);
-          // Auto-send first message
-          await supabase.from("messages").insert({
-            conversation_id: conv.id,
-            sender_id: user.id,
-            text: `Здравствуйте! Хочу взять заказ "${job.title}"`,
-            message_type: "text",
-          });
-          onOpenChat?.(conv.id, job.title);
-        }
-      }
     }
   };
 
@@ -181,10 +124,6 @@ const FeedScreen = ({ onOpenChat }: FeedScreenProps) => {
         </div>
       </div>
 
-      <div className="px-5 pb-2">
-        <h1 className="text-3xl font-bold text-foreground tracking-tight">Заявки</h1>
-        <p className="text-sm text-muted-foreground mt-1">Свайп вправо = Беру, влево = Пропустить</p>
-      </div>
 
       {/* Filters */}
       <div className="px-5 pb-5 overflow-x-auto scrollbar-hide">

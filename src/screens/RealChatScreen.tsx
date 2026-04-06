@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Clock, Users, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import type { Tables } from "@/integrations/supabase/types";
 
 interface Message {
   id: string;
@@ -28,6 +29,7 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [showAttach, setShowAttach] = useState(false);
+  const [linkedJob, setLinkedJob] = useState<Tables<"jobs"> | null>(null);
   const [uploading, setUploading] = useState(false);
   const [voiceActive, setVoiceActive] = useState(false);
   const [inVoiceRoom, setInVoiceRoom] = useState(false);
@@ -40,6 +42,21 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
 
   const fetchMessages = async () => {
+    // Fetch linked job
+    const { data: convData } = await supabase
+      .from("conversations")
+      .select("job_id")
+      .eq("id", conversationId)
+      .single();
+    if (convData?.job_id) {
+      const { data: jobData } = await supabase
+        .from("jobs")
+        .select("*")
+        .eq("id", convData.job_id)
+        .single();
+      if (jobData) setLinkedJob(jobData);
+    }
+
     const { data } = await supabase
       .from("messages")
       .select("*")
@@ -361,6 +378,18 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 scrollbar-hide">
+        {/* Linked job card */}
+        {linkedJob && (
+          <div className="neu-flat rounded-2xl p-3 mb-2">
+            <p className="text-[11px] text-muted-foreground mb-1">Заказ</p>
+            <p className="text-sm font-bold text-foreground">{linkedJob.title}</p>
+            <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground flex-wrap">
+              {linkedJob.address && <span className="flex items-center gap-1"><MapPin size={10} /> {linkedJob.address}</span>}
+              <span className="flex items-center gap-1"><Users size={10} /> {linkedJob.workers_needed || 1} чел.</span>
+              <span className="flex items-center gap-1"><Wallet size={10} /> {linkedJob.hourly_rate} ₽/ч</span>
+            </div>
+          </div>
+        )}
         {messages.length === 0 && (
           <div className="text-center py-8 text-muted-foreground text-sm">
             Начните диалог — напишите сообщение
