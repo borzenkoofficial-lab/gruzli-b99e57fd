@@ -90,9 +90,9 @@ const Index = () => {
       <JobResponsesScreen
         job={viewResponsesJob}
         onBack={() => setViewResponsesJob(null)}
-        onChatWithWorker={(workerId, workerName) => {
+        onChatWithWorker={async (workerId, workerName) => {
+          await handleChatWithUser(workerId, workerName);
           setViewResponsesJob(null);
-          handleChatWithUser(workerId, workerName);
         }}
       />
     );
