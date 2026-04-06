@@ -1,13 +1,30 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Clock, Users, Zap, MessageCircle, User } from "lucide-react";
-import type { Job } from "@/data/mockData";
+import { ArrowLeft, MapPin, Clock, Users, Zap, MessageCircle, User, Wallet } from "lucide-react";
+import { useRespondToJob } from "@/hooks/useRespondToJob";
+import type { Tables } from "@/integrations/supabase/types";
 
 interface JobDetailScreenProps {
-  job: Job;
+  job: Tables<"jobs">;
   onBack: () => void;
+  onOpenChat?: (conversationId: string, title: string) => void;
 }
 
-const JobDetailScreen = ({ job, onBack }: JobDetailScreenProps) => {
+const JobDetailScreen = ({ job, onBack, onOpenChat }: JobDetailScreenProps) => {
+  const { respondAndOpenChat } = useRespondToJob(onOpenChat);
+  const [responding, setResponding] = useState(false);
+  const [responded, setResponded] = useState(false);
+
+  const totalPay = job.hourly_rate * (Number(job.duration_hours) || 4);
+
+  const handleRespond = async () => {
+    if (responding) return;
+    setResponding(true);
+    const success = await respondAndOpenChat(job);
+    if (success) setResponded(true);
+    setResponding(false);
+  };
+
   return (
     <div className="min-h-screen bg-background pb-8">
       {/* Header */}
@@ -19,11 +36,6 @@ const JobDetailScreen = ({ job, onBack }: JobDetailScreenProps) => {
       </div>
 
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="px-5">
-        {/* Photo placeholder */}
-        <div className="w-full h-44 rounded-2xl neu-inset mb-5 flex items-center justify-center">
-          <span className="text-muted-foreground text-sm">📦 Фото объекта</span>
-        </div>
-
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1.5">
@@ -32,23 +44,32 @@ const JobDetailScreen = ({ job, onBack }: JobDetailScreenProps) => {
                   <Zap size={10} /> Срочно
                 </span>
               )}
-              <span className="text-[11px] text-muted-foreground neu-raised-sm px-2.5 py-1 rounded-lg">{job.type}</span>
             </div>
             <h1 className="text-lg font-bold text-foreground">{job.title}</h1>
           </div>
         </div>
 
-        <p className="text-2xl font-extrabold text-gradient-primary mb-4">{job.price.toLocaleString("ru-RU")} ₽</p>
-        <p className="text-sm text-muted-foreground mb-5 leading-relaxed">{job.description}</p>
+        {/* Earnings */}
+        <div className="neu-inset rounded-xl px-4 py-3 mb-4">
+          <div className="flex items-center gap-2">
+            <Wallet size={16} className="text-primary" />
+            <span className="text-sm text-muted-foreground">Ты получишь</span>
+            <span className="text-2xl font-extrabold text-gradient-primary ml-auto">{totalPay.toLocaleString("ru-RU")} ₽</span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">{job.hourly_rate} ₽/час × {job.duration_hours || 4}ч</p>
+        </div>
+
+        {job.description && (
+          <p className="text-sm text-muted-foreground mb-5 leading-relaxed">{job.description}</p>
+        )}
 
         {/* Details */}
         <div className="space-y-3 mb-6">
           {[
-            { icon: MapPin, label: "Адрес", value: job.address },
-            { icon: Clock, label: "Дата и время", value: `${job.date}, ${job.time}` },
-            { icon: Users, label: "Грузчиков", value: `${job.workersNeeded} человек` },
-            { icon: MapPin, label: "Расстояние", value: job.distance },
-          ].map((detail) => (
+            job.address && { icon: MapPin, label: "Адрес", value: job.address },
+            job.start_time && { icon: Clock, label: "Дата и время", value: new Date(job.start_time).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) },
+            { icon: Users, label: "Грузчиков", value: `${job.workers_needed || 1} человек` },
+          ].filter(Boolean).map((detail: any) => (
             <div key={detail.label} className="flex items-center gap-3 p-3.5 neu-flat rounded-2xl">
               <div className="w-9 h-9 rounded-xl neu-raised-sm flex items-center justify-center flex-shrink-0">
                 <detail.icon size={15} className="text-primary" />
@@ -61,30 +82,21 @@ const JobDetailScreen = ({ job, onBack }: JobDetailScreenProps) => {
           ))}
         </div>
 
-        {/* Responses */}
-        <div className="mb-6">
-          <h3 className="text-sm font-bold text-foreground mb-3">Откликнулись ({job.responses})</h3>
-          <div className="flex -space-x-2">
-            {Array.from({ length: Math.min(job.responses, 5) }).map((_, i) => (
-              <div key={i} className="w-10 h-10 rounded-full neu-raised border-2 border-background flex items-center justify-center">
-                <User size={14} className="text-muted-foreground" />
-              </div>
-            ))}
-            {job.responses > 5 && (
-              <div className="w-10 h-10 rounded-full neu-raised-sm border-2 border-background flex items-center justify-center text-[10px] font-bold text-muted-foreground">
-                +{job.responses - 5}
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* Actions */}
         <div className="flex gap-3">
-          <button className="flex-1 gradient-primary text-primary-foreground py-3.5 rounded-2xl text-sm font-bold active:scale-[0.98] transition-transform">
-            Откликнуться
-          </button>
-          <button className="w-14 h-14 rounded-2xl neu-raised flex items-center justify-center active:neu-inset transition-all">
-            <MessageCircle size={18} className="text-primary" />
+          <button
+            onClick={handleRespond}
+            disabled={responding || responded}
+            className={`flex-1 py-3.5 rounded-2xl text-sm font-bold active:scale-[0.98] transition-all ${
+              responded
+                ? "bg-online/20 text-online"
+                : "gradient-primary text-primary-foreground"
+            }`}
+            style={!responded ? {
+              boxShadow: '6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%), 0 4px 20px hsl(230 60% 58% / 0.35)',
+            } : {}}
+          >
+            {responding ? "Отправка..." : responded ? "✓ Отклик отправлен" : "Откликнуться"}
           </button>
         </div>
       </motion.div>
