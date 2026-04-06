@@ -103,8 +103,10 @@ const Index = () => {
         job={viewResponsesJob}
         onBack={() => setViewResponsesJob(null)}
         onChatWithWorker={async (workerId, workerName) => {
-          await handleChatWithUser(workerId, workerName);
-          setViewResponsesJob(null);
+          const opened = await handleChatWithUser(workerId, workerName);
+          if (opened) {
+            setViewResponsesJob(null);
+          }
         }}
       />
     );
