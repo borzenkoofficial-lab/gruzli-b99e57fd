@@ -42,6 +42,21 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
 
   const fetchMessages = async () => {
+    // Fetch linked job
+    const { data: convData } = await supabase
+      .from("conversations")
+      .select("job_id")
+      .eq("id", conversationId)
+      .single();
+    if (convData?.job_id) {
+      const { data: jobData } = await supabase
+        .from("jobs")
+        .select("*")
+        .eq("id", convData.job_id)
+        .single();
+      if (jobData) setLinkedJob(jobData);
+    }
+
     const { data } = await supabase
       .from("messages")
       .select("*")
