@@ -378,6 +378,18 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 scrollbar-hide">
+        {/* Linked job card */}
+        {linkedJob && (
+          <div className="neu-flat rounded-2xl p-3 mb-2">
+            <p className="text-[11px] text-muted-foreground mb-1">Заказ</p>
+            <p className="text-sm font-bold text-foreground">{linkedJob.title}</p>
+            <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground flex-wrap">
+              {linkedJob.address && <span className="flex items-center gap-1"><MapPin size={10} /> {linkedJob.address}</span>}
+              <span className="flex items-center gap-1"><Users size={10} /> {linkedJob.workers_needed || 1} чел.</span>
+              <span className="flex items-center gap-1"><Wallet size={10} /> {linkedJob.hourly_rate} ₽/ч</span>
+            </div>
+          </div>
+        )}
         {messages.length === 0 && (
           <div className="text-center py-8 text-muted-foreground text-sm">
             Начните диалог — напишите сообщение
