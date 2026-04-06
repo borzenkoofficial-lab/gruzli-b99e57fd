@@ -40,7 +40,7 @@ const Index = () => {
 
   const handleChatWithUser = async (otherUserId: string, otherName: string) => {
     if (!user) return false;
-    // Check if conversation already exists between these two users
+
     const { data: myConvs, error: myConvsError } = await supabase
       .from("conversation_participants")
       .select("conversation_id")
@@ -58,6 +58,7 @@ const Index = () => {
           .eq("conversation_id", mc.conversation_id)
           .eq("user_id", otherUserId)
           .single();
+
         if (otherParticipant) {
           handleOpenChat(mc.conversation_id, otherName);
           return true;
