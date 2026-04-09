@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Star, Briefcase, Wallet, Calendar, ChevronRight, Settings, LogOut, Shield, Bell, CreditCard, Trophy, Copy, CheckCircle2, MessageSquare, Hash, ShieldCheck, Headphones, BadgeCheck } from "lucide-react";
+import { Star, Briefcase, Wallet, Calendar, ChevronRight, Settings, LogOut, Shield, Bell, CreditCard, Trophy, Copy, CheckCircle2, MessageSquare, Hash, ShieldCheck, Headphones, BadgeCheck, Banknote } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,7 +12,7 @@ const skills = ["Переезды", "Такелаж", "Сборка мебели
 interface ProfileScreenProps {
   onOpenSettings?: () => void;
   onOpenNotifications?: () => void;
-  onOpenSupport?: () => void;
+  onOpenSupport?: (prefillMessage?: string) => void;
 }
 
 interface Review {
@@ -94,6 +94,8 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
   const [avgRating, setAvgRating] = useState(0);
   const [idCopied, setIdCopied] = useState(false);
   const [showVerified, setShowVerified] = useState(false);
+  const [showTopUp, setShowTopUp] = useState(false);
+  const [topUpAmount, setTopUpAmount] = useState("");
 
   const isDispatcher = role === "dispatcher";
 
@@ -205,6 +207,82 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
     return (
       <>
         <VerifiedPopup open={showVerified} onClose={() => setShowVerified(false)} />
+        {/* Top-up popup */}
+        {showTopUp && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center px-6" onClick={() => setShowTopUp(false)}>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.85, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 350 }}
+              className="relative neu-card rounded-3xl p-6 max-w-sm w-full space-y-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-center">
+                <div className="mx-auto w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-3">
+                  <Banknote size={28} className="text-primary" />
+                </div>
+                <h3 className="text-lg font-bold text-foreground">Пополнение баланса</h3>
+                <p className="text-xs text-muted-foreground mt-1">Введите сумму пополнения, заявка будет отправлена администратору</p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="neu-inset rounded-2xl p-1">
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    placeholder="Введите сумму в ₽"
+                    value={topUpAmount}
+                    onChange={(e) => setTopUpAmount(e.target.value)}
+                    className="w-full bg-transparent px-4 py-3 text-center text-lg font-bold text-foreground placeholder:text-muted-foreground/50 outline-none"
+                    autoFocus
+                  />
+                </div>
+
+                <div className="flex gap-2">
+                  {[500, 1000, 2000, 5000].map((amount) => (
+                    <button
+                      key={amount}
+                      onClick={() => setTopUpAmount(String(amount))}
+                      className="flex-1 py-2 rounded-xl neu-raised-sm text-xs font-semibold text-foreground active:neu-inset transition-all"
+                    >
+                      {amount} ₽
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => setShowTopUp(false)}
+                  className="flex-1 py-2.5 rounded-2xl neu-raised text-sm font-semibold text-muted-foreground active:neu-inset transition-all"
+                >
+                  Отмена
+                </button>
+                <button
+                  onClick={() => {
+                    const amt = parseInt(topUpAmount);
+                    if (!amt || amt <= 0) {
+                      toast.error("Введите корректную сумму");
+                      return;
+                    }
+                    setShowTopUp(false);
+                    onOpenSupport?.(`💰 Заявка на пополнение баланса\n\nСумма: ${amt} ₽\nID пользователя: ${user?.id?.slice(0, 8).toUpperCase()}\nИмя: ${profile?.full_name || "—"}\n\nПрошу пополнить баланс.`);
+                  }}
+                  className="flex-1 py-2.5 rounded-2xl gradient-primary text-sm font-bold text-primary-foreground active:scale-95 transition-transform"
+                >
+                  Пополнить
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
         <div className="pb-28">
         <div className="px-5 pt-14 pb-2 flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Профиль</h1>
@@ -259,7 +337,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
             <p className="text-primary-foreground/50 text-xs">Для оплаты размещения заявок</p>
           </div>
           <div className="px-5 pb-4">
-            <button className="w-full py-3 rounded-xl bg-primary-foreground/20 text-primary-foreground text-sm font-bold active:scale-95 transition-transform">
+            <button onClick={() => { setTopUpAmount(""); setShowTopUp(true); }} className="w-full py-3 rounded-xl bg-primary-foreground/20 text-primary-foreground text-sm font-bold active:scale-95 transition-transform">
               💳 Пополнить баланс
             </button>
           </div>
@@ -355,7 +433,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
 
         {/* Menu */}
         <div className="px-5 space-y-2">
-          <button onClick={onOpenSupport} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
+          <button onClick={() => onOpenSupport?.()} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
             <Headphones size={18} className="text-primary" />
             <span className="text-sm font-medium text-foreground flex-1 text-left">Тех. поддержка</span>
             <ChevronRight size={16} className="text-muted-foreground" />
@@ -516,7 +594,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
 
       {/* Menu */}
       <div className="px-5 space-y-2">
-        <button onClick={onOpenSupport} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
+        <button onClick={() => onOpenSupport?.()} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
           <Headphones size={18} className="text-primary" />
           <span className="text-sm font-medium text-foreground flex-1 text-left">Тех. поддержка</span>
           <ChevronRight size={16} className="text-muted-foreground" />
