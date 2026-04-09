@@ -26,6 +26,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
   const [userRole, setUserRole] = useState<string | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [avgRating, setAvgRating] = useState(0);
+  const [postedJobsCount, setPostedJobsCount] = useState(0);
   const [idCopied, setIdCopied] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -53,6 +54,14 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
 
       // Fetch reviews if dispatcher
       if (roleData?.role === "dispatcher") {
+        // Fetch posted jobs count
+        const { count } = await supabase
+          .from("jobs")
+          .select("id", { count: "exact", head: true })
+          .eq("dispatcher_id", userId);
+        setPostedJobsCount(count || 0);
+
+        // Fetch reviews
         const { data: reviewsData } = await supabase
           .from("dispatcher_reviews")
           .select("*")
@@ -186,6 +195,11 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
           {!isDispatcher && (
             <p className="text-[11px] text-muted-foreground">
               {profile.completed_orders || 0} выполненных заказов
+            </p>
+          )}
+          {isDispatcher && !reviews.length && (
+            <p className="text-[11px] text-muted-foreground">
+              {postedJobsCount} размещённых заказов
             </p>
           )}
           {isDispatcher && (
