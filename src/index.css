@@ -250,4 +250,12 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  .safe-top {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+  }
+
+  .safe-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+  }
 }
