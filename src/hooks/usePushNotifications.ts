@@ -149,9 +149,14 @@ export function usePushNotifications() {
       }
 
       const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      const applicationServerKeyBuffer = applicationServerKey.buffer.slice(
+        applicationServerKey.byteOffset,
+        applicationServerKey.byteOffset + applicationServerKey.byteLength
+      ) as ArrayBuffer;
+
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey,
+        applicationServerKey: applicationServerKeyBuffer,
       });
 
       const saved = await saveSubscription(subscription);
