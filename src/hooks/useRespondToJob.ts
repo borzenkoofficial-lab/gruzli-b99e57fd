@@ -70,26 +70,27 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
 
       // Create new conversation if none found
       if (!conversationId) {
-        const { data: newConv, error: convError } = await supabase
-          .from("conversations")
-          .insert({ job_id: job.id, title: job.title })
-          .select()
-          .single();
+        conversationId = crypto.randomUUID();
 
-        if (convError || !newConv) {
+        const { error: convError } = await supabase
+          .from("conversations")
+          .insert({ id: conversationId, job_id: job.id, title: job.title });
+
+        if (convError) {
           toast.error("Не удалось создать чат");
           return false;
         }
 
-        conversationId = newConv.id;
-
-        // Add participants
-        await supabase.from("conversation_participants").insert([
+        const { error: participantsError } = await supabase.from("conversation_participants").insert([
           { conversation_id: conversationId, user_id: user.id },
           { conversation_id: conversationId, user_id: job.dispatcher_id },
         ]);
 
-        // Auto-send first message
+        if (participantsError) {
+          toast.error("Не удалось добавить участников чата");
+          return false;
+        }
+
         await supabase.from("messages").insert({
           conversation_id: conversationId,
           sender_id: user.id,

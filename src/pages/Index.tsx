@@ -66,26 +66,25 @@ const Index = () => {
       }
     }
 
-    const { data: conv, error: convError } = await supabase
+    const conversationId = crypto.randomUUID();
+    const { error: convError } = await supabase
       .from("conversations")
-      .insert({ title: otherName })
-      .select()
-      .single();
+      .insert({ id: conversationId, title: otherName });
 
-    if (convError || !conv) {
+    if (convError) {
       return false;
     }
 
     const { error: participantsError } = await supabase.from("conversation_participants").insert([
-      { conversation_id: conv.id, user_id: user.id },
-      { conversation_id: conv.id, user_id: otherUserId },
+      { conversation_id: conversationId, user_id: user.id },
+      { conversation_id: conversationId, user_id: otherUserId },
     ]);
 
     if (participantsError) {
       return false;
     }
 
-    handleOpenChat(conv.id, otherName);
+    handleOpenChat(conversationId, otherName);
     return true;
   };
 
