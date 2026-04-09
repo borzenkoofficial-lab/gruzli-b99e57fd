@@ -30,6 +30,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const { role, user } = useAuth();
+  const { unreadMessages, newJobsCount, resetMessages, resetJobs } = useUnreadCounts();
   const SUPPORT_USER_ID = "de95eea5-d75b-4693-af15-020c58422126";
   const SUPPORT_NAME = "Gruzli Official";
   const [tab, setTab] = useState("feed");
