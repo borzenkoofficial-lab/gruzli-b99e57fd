@@ -18,6 +18,7 @@ import JobResponsesScreen from "@/screens/JobResponsesScreen";
 // Shared screens
 import RealChatsScreen from "@/screens/RealChatsScreen";
 import RealChatScreen from "@/screens/RealChatScreen";
+import ChannelScreen from "@/screens/ChannelScreen";
 import DispatchersScreen from "@/screens/DispatchersScreen";
 import KartotekaScreen from "@/screens/KartotekaScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
@@ -44,6 +45,7 @@ const Index = () => {
   const [viewResponsesJob, setViewResponsesJob] = useState<Tables<"jobs"> | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showChannel, setShowChannel] = useState(false);
   const [viewProfileUserId, setViewProfileUserId] = useState<string | null>(null);
   const isDispatcher = role === "dispatcher";
 
@@ -107,6 +109,10 @@ const Index = () => {
     return <NotificationsScreen onBack={() => setShowNotifications(false)} />;
   }
 
+  if (showChannel) {
+    return <ChannelScreen onBack={() => setShowChannel(false)} />;
+  }
+
   if (showSettings) {
     return <SettingsScreen onBack={() => setShowSettings(false)} />;
   }
@@ -168,7 +174,7 @@ const Index = () => {
             )
           )}
           {tab === "orders" && <OrdersScreen />}
-          {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} />}
+          {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} />}
           {tab === "kartoteka" && <KartotekaScreen />}
           {tab === "dispatchers" && !isDispatcher && (
             <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />
