@@ -101,6 +101,28 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
     });
   }, []);
 
+  const handleResponseUpdate = useCallback((payload: any) => {
+    const resp = payload.new;
+    if (!resp) return;
+    // Only notify the worker whose response was accepted
+    if (resp.worker_id !== userIdRef.current) return;
+    if (resp.status !== "accepted") return;
+
+    playNotificationSound();
+    vibrate();
+
+    toast("🎉 Вас выбрали!", {
+      description: "Диспетчер принял вас на заказ. Подтвердите участие.",
+      duration: 8000,
+    });
+
+    pushNotification({
+      type: "response",
+      title: "Вас выбрали на заказ!",
+      body: "Перейдите в «Мои заказы» чтобы подтвердить участие",
+    });
+  }, []);
+
   useEffect(() => {
     if (!user) return;
 
@@ -108,10 +130,11 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
       .channel("realtime-notifications")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "jobs" }, handleNewJob)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, handleNewMessage)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "job_responses" }, handleResponseUpdate)
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, handleNewJob, handleNewMessage]);
+  }, [user, handleNewJob, handleNewMessage, handleResponseUpdate]);
 }
