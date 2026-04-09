@@ -1,48 +1,35 @@
 
-Цель: полностью починить настоящие push-уведомления, чтобы они приходили на телефон даже когда приложение закрыто.
 
-Что уже подтверждено по проекту:
-- Система фоновых уведомлений уже есть: сервис-воркер, таблица подписок, триггеры на новые заявки и сообщения, backend-функция отправки push.
-- В логах backend-функции есть точная ошибка `VapidPkHashMismatch`.
-- В клиенте `src/hooks/usePushNotifications.ts` захардкожен публичный VAPID-ключ.
-- В backend уже есть секреты `VAPID_PUBLIC_KEY` и `VAPID_PRIVATE_KEY`.
-- Простая замена ключа недостаточна: текущий код повторно сохраняет старую браузерную подписку, если она уже существует на устройстве.
+# Plan: Expand Profile and Settings with Working Features
 
-План реализации:
-1. Сгенерировать новую пару VAPID-ключей и заменить ими текущие backend-секреты.
-2. Обновить публичный VAPID-ключ в `src/hooks/usePushNotifications.ts`.
-3. Доработать логику подписки, чтобы приложение не переиспользовало старую подписку:
-   - при наличии существующей подписки проверять, создана ли она с текущим ключом;
-   - если нет — удалить старую подписку в браузере и создать новую;
-   - только после этого сохранять её в таблицу `push_subscriptions`.
-4. Очистить старые записи из `push_subscriptions`, потому что они уже невалидны после ротации ключей.
-5. Задеплоить backend-функцию отправки push, чтобы она начала использовать новую пару ключей.
-6. Проверить доставку end-to-end:
-   - включить уведомления на опубликованной версии;
-   - создать тестовую заявку;
-   - отправить сообщение в личный чат;
-   - убедиться, что уведомления приходят при закрытом приложении;
-   - проверить, что в логах больше нет `VapidPkHashMismatch`.
+## What we're adding
 
-Что именно изменю в коде:
-- `src/hooks/usePushNotifications.ts`
-  - добавлю проверку актуальности существующей push-подписки;
-  - добавлю принудительный resubscribe при несовпадении ключа;
-  - сохраню новую подписку в базу только после успешного пересоздания.
-- backend-конфигурация
-  - обновлю runtime-секреты VAPID.
-- данные
-  - удалю старые записи из `push_subscriptions`.
+### Profile Screen Enhancements
+1. **Editable avatar** — tap avatar to upload photo via `kartoteka-photos` storage bucket, save URL to `profiles.avatar_url`
+2. **Editable skills** — add/remove skill chips with inline editing, saved to `profiles.skills`
+3. **Availability saved to DB** — persist weekly availability (new `availability` column in profiles as `boolean[]`)
+4. **Weekly stats from real data** — fetch `job_responses` for week/month stats instead of showing zeros
 
-Технические детали:
-- Проблема не в триггерах и не в самой отправке — цепочка уже собрана правильно.
-- Корень проблемы: публичный ключ, с которым устройство подписалось, не совпадает с приватным ключом, которым backend подписывает push.
-- После ротации ключей старые браузерные подписки становятся бесполезными, поэтому нужен не только cleanup таблицы, но и пересоздание подписки на устройстве.
-- Изменения схемы базы не нужны; требуется только обновление данных и логики клиента.
+### Settings Screen — New Sections
+5. **Language setting** — Russian/English toggle (localStorage-based, affects UI labels)
+6. **Blocked users list** — view and unblock users from `blocked_users` table
+7. **About app** — version, links to support, privacy policy placeholder
+8. **Cache/data clear** — button to clear localStorage and reload
+9. **Profile photo in edit section** — upload/change avatar from settings
 
-Результат после выполнения:
-- Новая заявка → worker получает push на телефон.
-- Новое личное сообщение → второй участник получает push на телефон.
-- Уведомления работают даже когда приложение свернуто или полностью закрыто.
+## Technical Details
 
-После вашего подтверждения я переключусь в режим внесения изменений и сделаю это сам полностью.
+### Database Migration
+- Add `availability boolean[] default '{true,true,true,true,true,true,true}'` to `profiles` table
+
+### Files Modified
+- `src/screens/ProfileScreen.tsx` — avatar display from DB, editable skills, availability persistence, real weekly stats query
+- `src/screens/SettingsScreen.tsx` — new sections: blocked users, language, about, cache clear, avatar upload
+- `src/hooks/useNotificationSettings.ts` — no changes needed
+
+### Files Created
+- Migration for `availability` column
+
+### Storage
+- Use existing `kartoteka-photos` bucket for avatar uploads (already public)
+
