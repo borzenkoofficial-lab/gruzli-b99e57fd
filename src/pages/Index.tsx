@@ -31,6 +31,8 @@ import { supabase } from "@/integrations/supabase/client";
 const Index = () => {
   const { role, user } = useAuth();
   const { unreadMessages, newJobsCount, resetMessages, resetJobs } = useUnreadCounts();
+  const SUPPORT_USER_ID = "de95eea5-d75b-4693-af15-020c58422126";
+  const SUPPORT_NAME = "Gruzli Official";
   const [tab, setTab] = useState("feed");
 
   // Listen for navigate-to-feed events from NewJobAlert
@@ -179,7 +181,13 @@ const Index = () => {
           {tab === "dispatchers" && !isDispatcher && (
             <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />
           )}
-          {tab === "profile" && <ProfileScreen onOpenSettings={() => setShowSettings(true)} onOpenNotifications={() => setShowNotifications(true)} />}
+          {tab === "profile" && (
+            <ProfileScreen
+              onOpenSettings={() => setShowSettings(true)}
+              onOpenNotifications={() => setShowNotifications(true)}
+              onOpenSupport={() => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME)}
+            />
+          )}
         </motion.div>
       </AnimatePresence>
       {!isDispatcher && <FAB />}

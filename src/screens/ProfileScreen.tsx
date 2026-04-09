@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Star, Briefcase, Wallet, Calendar, ChevronRight, Settings, LogOut, Shield, Bell, CreditCard, Trophy, Copy, CheckCircle2, MessageSquare, Hash, ShieldCheck } from "lucide-react";
+import { Star, Briefcase, Wallet, Calendar, ChevronRight, Settings, LogOut, Shield, Bell, CreditCard, Trophy, Copy, CheckCircle2, MessageSquare, Hash, ShieldCheck, Headphones, BadgeCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +12,7 @@ const skills = ["Переезды", "Такелаж", "Сборка мебели
 interface ProfileScreenProps {
   onOpenSettings?: () => void;
   onOpenNotifications?: () => void;
+  onOpenSupport?: () => void;
 }
 
 interface Review {
@@ -34,7 +35,7 @@ const AdminButton = () => {
   );
 };
 
-const ProfileScreen = ({ onOpenSettings, onOpenNotifications }: ProfileScreenProps) => {
+const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: ProfileScreenProps) => {
   const { user, profile, role, signOut } = useAuth();
   const [availability, setAvailability] = useState([true, true, true, false, true, true, false]);
   const [statsPeriod, setStatsPeriod] = useState<"today" | "week" | "month">("today");
@@ -86,6 +87,64 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications }: ProfileScreenPro
     toast.success("ID скопирован");
     setTimeout(() => setIdCopied(false), 2000);
   };
+
+  const isAdmin = role === "admin";
+
+  // ─── ADMIN PROFILE ───
+  if (isAdmin) {
+    return (
+      <div className="pb-28">
+        <div className="px-5 pt-14 pb-2 flex items-center justify-between">
+          <h1 className="text-xl font-bold text-foreground">Профиль</h1>
+          <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
+            <Bell size={18} className="text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* Avatar & Name */}
+        <div className="px-5 py-4">
+          <div className="flex items-center gap-4">
+            <div className="w-18 h-18 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-2xl font-bold text-primary-foreground" style={{ width: 72, height: 72 }}>
+              G
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-1.5">
+                <h2 className="text-lg font-bold text-foreground">Gruzli Official</h2>
+                <BadgeCheck size={18} className="text-primary" />
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">Официальный аккаунт</p>
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-xs text-primary font-semibold">Администрация</span>
+                <span className="ml-1 px-2 py-0.5 rounded-full bg-primary/10 text-[10px] text-primary font-bold">✓ Верифицирован</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Description */}
+        <div className="mx-5 mb-4 neu-card rounded-2xl p-4">
+          <p className="text-sm text-foreground leading-relaxed">
+            Официальный аккаунт платформы Gruzli. Публикуем обновления, новости и отвечаем на вопросы пользователей.
+          </p>
+        </div>
+
+        {/* Menu */}
+        <div className="px-5 space-y-2">
+          <AdminButton />
+          <button onClick={onOpenSettings} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
+            <Settings size={18} className="text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground flex-1 text-left">Настройки</span>
+            <ChevronRight size={16} className="text-muted-foreground" />
+          </button>
+          <button onClick={signOut} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
+            <LogOut size={18} className="text-destructive" />
+            <span className="text-sm font-medium text-destructive flex-1 text-left">Выйти</span>
+            <ChevronRight size={16} className="text-muted-foreground" />
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ─── DISPATCHER PROFILE ───
   if (isDispatcher) {
@@ -240,6 +299,11 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications }: ProfileScreenPro
 
         {/* Menu */}
         <div className="px-5 space-y-2">
+          <button onClick={onOpenSupport} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
+            <Headphones size={18} className="text-primary" />
+            <span className="text-sm font-medium text-foreground flex-1 text-left">Тех. поддержка</span>
+            <ChevronRight size={16} className="text-muted-foreground" />
+          </button>
           <button onClick={onOpenSettings} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
             <Settings size={18} className="text-muted-foreground" />
             <span className="text-sm font-medium text-foreground flex-1 text-left">Настройки</span>
@@ -395,9 +459,11 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications }: ProfileScreenPro
 
       {/* Menu */}
       <div className="px-5 space-y-2">
-        {role === "admin" && (
-          <AdminButton />
-        )}
+        <button onClick={onOpenSupport} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
+          <Headphones size={18} className="text-primary" />
+          <span className="text-sm font-medium text-foreground flex-1 text-left">Тех. поддержка</span>
+          <ChevronRight size={16} className="text-muted-foreground" />
+        </button>
         <button onClick={onOpenSettings} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
           <Settings size={18} className="text-muted-foreground" />
           <span className="text-sm font-medium text-foreground flex-1 text-left">Настройки</span>
