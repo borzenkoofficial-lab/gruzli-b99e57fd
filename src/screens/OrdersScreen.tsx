@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, CheckCircle2, MapPin, Navigation, AlertTriangle, Loader2 } from "lucide-react";
+import { Clock, CheckCircle2, MapPin, Navigation, AlertTriangle, Loader2, PartyPopper, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -57,7 +57,6 @@ const OrdersScreen = () => {
       return;
     }
 
-    // Fetch dispatcher names
     const dispatcherIds = [...new Set(jobsData.map((j) => j.dispatcher_id))];
     const { data: profiles } = await supabase
       .from("profiles")
@@ -81,8 +80,10 @@ const OrdersScreen = () => {
       };
     });
 
-    // Sort by start_time
     mapped.sort((a, b) => {
+      // Unconfirmed first
+      if (!a.workerStatus && b.workerStatus) return -1;
+      if (a.workerStatus && !b.workerStatus) return 1;
       if (!a.startTime) return 1;
       if (!b.startTime) return -1;
       return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
@@ -96,7 +97,6 @@ const OrdersScreen = () => {
     fetchAcceptedJobs();
 
     if (!user) return;
-    // Realtime: listen for acceptance updates
     const channel = supabase
       .channel("my-orders")
       .on(
@@ -118,6 +118,24 @@ const OrdersScreen = () => {
 
     return () => { supabase.removeChannel(channel); };
   }, [user?.id]);
+
+  const confirmJob = async (responseId: string) => {
+    const { error } = await supabase
+      .from("job_responses")
+      .update({ worker_status: "confirmed" })
+      .eq("id", responseId);
+
+    if (error) {
+      toast.error("Ошибка подтверждения");
+      return;
+    }
+
+    setJobs((prev) =>
+      prev.map((j) => (j.responseId === responseId ? { ...j, workerStatus: "confirmed" } : j))
+    );
+    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    toast.success("🎉 Заказ подтверждён!");
+  };
 
   const setWorkerStatus = async (responseId: string, status: string) => {
     const { error } = await supabase
@@ -151,6 +169,9 @@ const OrdersScreen = () => {
     );
   }
 
+  const unconfirmed = jobs.filter((j) => !j.workerStatus);
+  const confirmed = jobs.filter((j) => j.workerStatus);
+
   return (
     <div className="pb-28">
       <div className="px-5 pt-14 pb-4">
@@ -159,8 +180,77 @@ const OrdersScreen = () => {
       </div>
 
       <div className="px-5 space-y-3">
+        {/* Unconfirmed — need worker confirmation */}
+        {unconfirmed.length > 0 && (
+          <>
+            <p className="text-xs font-bold text-primary flex items-center gap-1.5">
+              <PartyPopper size={13} /> Ожидают подтверждения ({unconfirmed.length})
+            </p>
+            <AnimatePresence mode="popLayout">
+              {unconfirmed.map((job, i) => (
+                <motion.div
+                  key={job.responseId}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="rounded-2xl p-4 border-2 border-primary/30"
+                  style={{
+                    background: "linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--background)))",
+                  }}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1">
+                      <h3 className="text-sm font-bold text-foreground">{job.title}</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">{job.dispatcherName}</p>
+                    </div>
+                    <div className="flex items-center gap-1 ml-2">
+                      <Wallet size={14} className="text-primary" />
+                      <span className="text-base font-extrabold text-gradient-primary">
+                        {(job.hourlyRate * job.durationHours).toLocaleString("ru-RU")} ₽
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3 flex-wrap">
+                    {job.startTime && (
+                      <span className="flex items-center gap-1">
+                        <Clock size={11} />
+                        {new Date(job.startTime).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    )}
+                    {job.address && (
+                      <span className="flex items-center gap-1">
+                        <MapPin size={11} /> {job.address}
+                      </span>
+                    )}
+                  </div>
+
+                  {job.startTime && new Date(job.startTime) > new Date() && (
+                    <CountdownToJob startTime={job.startTime} />
+                  )}
+
+                  <button
+                    onClick={() => confirmJob(job.responseId)}
+                    className="w-full py-3.5 rounded-xl gradient-primary text-primary-foreground text-sm font-bold active:scale-95 transition-all"
+                    style={{
+                      boxShadow: "6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%), 0 4px 20px hsl(230 60% 58% / 0.35)",
+                    }}
+                  >
+                    ✅ Подтвердить заказ
+                  </button>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </>
+        )}
+
+        {/* Confirmed — with status controls */}
+        {confirmed.length > 0 && unconfirmed.length > 0 && (
+          <p className="text-xs font-bold text-foreground pt-2">Подтверждённые</p>
+        )}
         <AnimatePresence mode="popLayout">
-          {jobs.map((job, i) => (
+          {confirmed.map((job, i) => (
             <motion.div
               key={job.responseId}
               initial={{ opacity: 0, y: 12 }}
@@ -169,7 +259,6 @@ const OrdersScreen = () => {
               transition={{ delay: i * 0.05 }}
               className="neu-card rounded-2xl p-4"
             >
-              {/* Header */}
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
                   <h3 className="text-sm font-bold text-foreground">{job.title}</h3>
@@ -180,7 +269,6 @@ const OrdersScreen = () => {
                 </span>
               </div>
 
-              {/* Info */}
               <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3 flex-wrap">
                 {job.startTime && (
                   <span className="flex items-center gap-1">
@@ -195,12 +283,10 @@ const OrdersScreen = () => {
                 )}
               </div>
 
-              {/* Countdown timer */}
               {job.startTime && new Date(job.startTime) > new Date() && (
                 <CountdownToJob startTime={job.startTime} />
               )}
 
-              {/* Status buttons */}
               <div className="grid grid-cols-4 gap-1.5">
                 {STATUS_STEPS.map((step) => {
                   const isActive = job.workerStatus === step.key;
@@ -252,7 +338,6 @@ const CountdownToJob = ({ startTime }: { startTime: string }) => {
   const hours = Math.floor(diff / 3600);
   const mins = Math.floor((diff % 3600) / 60);
   const secs = diff % 60;
-
   const isUrgent = diff < 3600;
 
   return (
