@@ -24,6 +24,7 @@ import KartotekaScreen from "@/screens/KartotekaScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
 import UserProfileScreen from "@/screens/UserProfileScreen";
 import NotificationsScreen from "@/screens/NotificationsScreen";
+import PremiumScreen from "@/screens/PremiumScreen";
 
 import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,6 +50,7 @@ const Index = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChannel, setShowChannel] = useState(false);
   const [viewProfileUserId, setViewProfileUserId] = useState<string | null>(null);
+  const [showPremium, setShowPremium] = useState(false);
   const isDispatcher = role === "dispatcher" || role === "admin";
 
   const handleOpenChat = (conversationId: string, title: string) => {
@@ -118,6 +120,10 @@ const Index = () => {
   // Full-screen overlays
   if (showNotifications) {
     return <NotificationsScreen onBack={() => setShowNotifications(false)} />;
+  }
+
+  if (showPremium) {
+    return <PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, msg); }} />;
   }
 
   if (showChannel) {
@@ -196,7 +202,9 @@ const Index = () => {
                 onOpenSettings={() => setShowSettings(true)}
                 onOpenNotifications={() => setShowNotifications(true)}
                 onOpenSupport={(prefillMessage) => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, prefillMessage)}
+                onOpenPremium={() => setShowPremium(true)}
               />
+            )}
             )}
           </motion.div>
         </AnimatePresence>
