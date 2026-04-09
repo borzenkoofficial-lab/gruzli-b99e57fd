@@ -20,6 +20,7 @@ import RealChatsScreen from "@/screens/RealChatsScreen";
 import RealChatScreen from "@/screens/RealChatScreen";
 import DispatchersScreen from "@/screens/DispatchersScreen";
 import KartotekaScreen from "@/screens/KartotekaScreen";
+import SettingsScreen from "@/screens/SettingsScreen";
 
 import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +33,7 @@ const Index = () => {
   const [openChatTitle, setOpenChatTitle] = useState("");
   const [showCreateJob, setShowCreateJob] = useState(false);
   const [viewResponsesJob, setViewResponsesJob] = useState<Tables<"jobs"> | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   const isDispatcher = role === "dispatcher";
 
@@ -91,6 +93,10 @@ const Index = () => {
   };
 
   // Full-screen overlays
+  if (showSettings) {
+    return <SettingsScreen onBack={() => setShowSettings(false)} />;
+  }
+
   if (openChatId) {
     return <RealChatScreen conversationId={openChatId} title={openChatTitle} onBack={() => setOpenChatId(null)} />;
   }
@@ -140,7 +146,7 @@ const Index = () => {
           {tab === "dispatchers" && !isDispatcher && (
             <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />
           )}
-          {tab === "profile" && <ProfileScreen />}
+          {tab === "profile" && <ProfileScreen onOpenSettings={() => setShowSettings(true)} />}
         </motion.div>
       </AnimatePresence>
       {!isDispatcher && <FAB />}
