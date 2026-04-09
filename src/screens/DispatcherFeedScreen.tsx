@@ -60,7 +60,7 @@ const DispatcherFeedScreen = ({ onCreateJob, onViewResponses }: DispatcherFeedSc
   const closedJobs = jobs.filter((j) => j.status !== "active");
 
   return (
-    <div className="pb-28">
+    <div >
       <div className="px-5 safe-top pb-2 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground tracking-tight">Мои заявки</h1>

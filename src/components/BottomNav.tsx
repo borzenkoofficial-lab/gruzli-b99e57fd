@@ -38,7 +38,7 @@ const BottomNav = ({ active, onNavigate, isDispatcher, unreadMessages = 0, newJo
 
   return (
     <div className="bottom-docked">
-      <div className="max-w-lg mx-auto px-3 safe-bottom">
+      <div className="max-w-lg mx-auto px-3 pt-2">
         <div className="rounded-2xl neu-card px-2 py-2">
           <div className="flex items-center justify-around">
             {tabs.map((tab) => {

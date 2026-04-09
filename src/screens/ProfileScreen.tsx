@@ -149,7 +149,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
     return (
       <>
         <VerifiedPopup open={showVerified} onClose={() => setShowVerified(false)} />
-        <div className="pb-28">
+        <div >
         <div className="px-5 safe-top pb-2 flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Профиль</h1>
           <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
@@ -284,7 +284,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             </motion.div>
           </div>
         )}
-        <div className="pb-28">
+        <div >
         <div className="px-5 safe-top pb-2 flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Профиль</h1>
           <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
@@ -464,7 +464,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
   const stats = statsData[statsPeriod];
 
   return (
-    <div className="pb-28">
+    <div >
       <div className="px-5 safe-top pb-2 flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground">Профиль</h1>
         <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">

@@ -99,7 +99,7 @@ const NotificationsScreen = ({ onBack }: Props) => {
       </div>
 
       {/* List */}
-      <div className="px-4 pb-28">
+      <div className="px-4">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-16 h-16 rounded-full neu-inset flex items-center justify-center mb-4">
