@@ -1,19 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Clock, Users, Zap, MessageCircle, User, Wallet } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Users, Zap, MessageCircle, User, Wallet, UserPlus } from "lucide-react";
 import { useRespondToJob } from "@/hooks/useRespondToJob";
+import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
 interface JobDetailScreenProps {
   job: Tables<"jobs">;
   onBack: () => void;
   onOpenChat?: (conversationId: string, title: string) => void;
+  onOpenProfile?: (userId: string) => void;
 }
 
-const JobDetailScreen = ({ job, onBack, onOpenChat }: JobDetailScreenProps) => {
+const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailScreenProps) => {
   const { respondAndOpenChat } = useRespondToJob(onOpenChat);
   const [responding, setResponding] = useState(false);
   const [responded, setResponded] = useState(false);
+  const [dispatcherName, setDispatcherName] = useState("Диспетчер");
+
+  useEffect(() => {
+    const fetchName = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", job.dispatcher_id)
+        .single();
+      if (data) setDispatcherName(data.full_name || "Диспетчер");
+    };
+    fetchName();
+  }, [job.dispatcher_id]);
 
   const totalPay = job.hourly_rate * (Number(job.duration_hours) || 4);
 
@@ -46,6 +61,13 @@ const JobDetailScreen = ({ job, onBack, onOpenChat }: JobDetailScreenProps) => {
               )}
             </div>
             <h1 className="text-lg font-bold text-foreground">{job.title}</h1>
+            <button
+              onClick={() => onOpenProfile?.(job.dispatcher_id)}
+              className="flex items-center gap-1.5 mt-1.5 active:opacity-70"
+            >
+              <UserPlus size={12} className="text-primary" />
+              <span className="text-xs text-primary font-medium">{dispatcherName}</span>
+            </button>
           </div>
         </div>
 

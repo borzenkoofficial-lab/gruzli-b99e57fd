@@ -13,13 +13,15 @@ const filters = ["Все", "Срочные", "Быстрая минималка"
 
 interface FeedScreenProps {
   onOpenChat?: (conversationId: string, title: string) => void;
+  onOpenProfile?: (userId: string) => void;
 }
 
-const FeedScreen = ({ onOpenChat }: FeedScreenProps) => {
+const FeedScreen = ({ onOpenChat, onOpenProfile }: FeedScreenProps) => {
   const { user } = useAuth();
   const { respondAndOpenChat } = useRespondToJob(onOpenChat);
   const [activeFilter, setActiveFilter] = useState("Все");
   const [jobs, setJobs] = useState<Tables<"jobs">[]>([]);
+  const [dispatcherNames, setDispatcherNames] = useState<Record<string, string>>({});
   const [respondedJobs, setRespondedJobs] = useState<Set<string>>(new Set());
   const [skippedJobs, setSkippedJobs] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -30,7 +32,22 @@ const FeedScreen = ({ onOpenChat }: FeedScreenProps) => {
       .select("*")
       .eq("status", "active")
       .order("created_at", { ascending: false });
-    if (data) setJobs(data);
+    if (data) {
+      setJobs(data);
+      // Fetch dispatcher names
+      const dispatcherIds = [...new Set(data.map((j) => j.dispatcher_id))];
+      if (dispatcherIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", dispatcherIds);
+        if (profiles) {
+          const map: Record<string, string> = {};
+          profiles.forEach((p) => { map[p.user_id] = p.full_name; });
+          setDispatcherNames(map);
+        }
+      }
+    }
 
     // Fetch user's existing responses
     if (user) {
@@ -164,8 +181,10 @@ const FeedScreen = ({ onOpenChat }: FeedScreenProps) => {
                 job={job}
                 index={i}
                 responded={respondedJobs.has(job.id)}
+                dispatcherName={dispatcherNames[job.dispatcher_id] || "Диспетчер"}
                 onRespond={() => handleRespond(job.id)}
                 onSkip={() => setSkippedJobs((prev) => new Set(prev).add(job.id))}
+                onOpenProfile={onOpenProfile ? () => onOpenProfile(job.dispatcher_id) : undefined}
               />
             ))}
           </AnimatePresence>
@@ -179,11 +198,13 @@ interface SwipeableJobCardProps {
   job: Tables<"jobs">;
   index: number;
   responded: boolean;
+  dispatcherName: string;
   onRespond: () => void;
   onSkip: () => void;
+  onOpenProfile?: () => void;
 }
 
-const SwipeableJobCard = ({ job, index, responded, onRespond, onSkip }: SwipeableJobCardProps) => {
+const SwipeableJobCard = ({ job, index, responded, dispatcherName, onRespond, onSkip, onOpenProfile }: SwipeableJobCardProps) => {
   const x = useMotionValue(0);
   const bgLeft = useTransform(x, [-150, 0], [1, 0]);
   const bgRight = useTransform(x, [0, 150], [0, 1]);
@@ -233,6 +254,13 @@ const SwipeableJobCard = ({ job, index, responded, onRespond, onSkip }: Swipeabl
               )}
             </div>
             <h3 className="text-[15px] font-semibold text-foreground leading-tight">{job.title}</h3>
+            <button
+              onClick={(e) => { e.stopPropagation(); onOpenProfile?.(); }}
+              className="flex items-center gap-1 mt-1 active:opacity-70"
+            >
+              <UserPlus size={11} className="text-primary" />
+              <span className="text-[11px] text-primary font-medium">{dispatcherName}</span>
+            </button>
           </div>
         </div>
 

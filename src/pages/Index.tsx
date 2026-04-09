@@ -21,6 +21,7 @@ import RealChatScreen from "@/screens/RealChatScreen";
 import DispatchersScreen from "@/screens/DispatchersScreen";
 import KartotekaScreen from "@/screens/KartotekaScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
+import UserProfileScreen from "@/screens/UserProfileScreen";
 
 import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,7 +35,7 @@ const Index = () => {
   const [showCreateJob, setShowCreateJob] = useState(false);
   const [viewResponsesJob, setViewResponsesJob] = useState<Tables<"jobs"> | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-
+  const [viewProfileUserId, setViewProfileUserId] = useState<string | null>(null);
   const isDispatcher = role === "dispatcher";
 
   const handleOpenChat = (conversationId: string, title: string) => {
@@ -97,6 +98,19 @@ const Index = () => {
     return <SettingsScreen onBack={() => setShowSettings(false)} />;
   }
 
+  if (viewProfileUserId) {
+    return (
+      <UserProfileScreen
+        userId={viewProfileUserId}
+        onBack={() => setViewProfileUserId(null)}
+        onChat={async (userId, name) => {
+          const opened = await handleChatWithUser(userId, name);
+          if (opened) setViewProfileUserId(null);
+        }}
+      />
+    );
+  }
+
   if (openChatId) {
     return <RealChatScreen conversationId={openChatId} title={openChatTitle} onBack={() => setOpenChatId(null)} />;
   }
@@ -137,7 +151,7 @@ const Index = () => {
                 onViewResponses={setViewResponsesJob}
               />
             ) : (
-              <FeedScreen onOpenChat={handleOpenChat} />
+              <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} />
             )
           )}
           {tab === "orders" && <OrdersScreen />}
