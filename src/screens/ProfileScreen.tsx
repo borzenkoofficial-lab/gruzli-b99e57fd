@@ -94,6 +94,8 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
   const [avgRating, setAvgRating] = useState(0);
   const [idCopied, setIdCopied] = useState(false);
   const [showVerified, setShowVerified] = useState(false);
+  const [showTopUp, setShowTopUp] = useState(false);
+  const [topUpAmount, setTopUpAmount] = useState("");
 
   const isDispatcher = role === "dispatcher";
 
