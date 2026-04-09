@@ -165,7 +165,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background max-w-lg mx-auto relative">
+    <div className="h-full bg-background max-w-lg mx-auto relative flex flex-col overflow-hidden">
       <AnimatePresence mode="wait">
         <motion.div
           key={tab}
