@@ -67,13 +67,20 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
         }
       }
 
-      // Create new conversation if none found
       if (!conversationId) {
+        // New conversation — first time working with this dispatcher
         conversationId = crypto.randomUUID();
+
+        // Fetch dispatcher name for chat title
+        const { data: dispProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("user_id", job.dispatcher_id)
+          .single();
 
         const { error: convError } = await supabase
           .from("conversations")
-          .insert({ id: conversationId, job_id: job.id, title: job.title });
+          .insert({ id: conversationId, title: dispProfile?.full_name || job.title });
 
         if (convError) {
           toast.error("Не удалось создать чат");
@@ -89,14 +96,15 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
           toast.error("Не удалось добавить участников чата");
           return false;
         }
-
-        await supabase.from("messages").insert({
-          conversation_id: conversationId,
-          sender_id: user.id,
-          text: `Здравствуйте! Откликнулся на ваш заказ «${job.title}». Готов обсудить детали и условия.`,
-          message_type: "text",
-        });
       }
+
+      // Always send a message about the job in the chat
+      await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        text: `Здравствуйте! Откликнулся на ваш заказ «${job.title}». Готов обсудить детали и условия.`,
+        message_type: "text",
+      });
 
       // 3. Open chat
       if (navigator.vibrate) navigator.vibrate(50);
