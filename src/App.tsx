@@ -1,3 +1,4 @@
+import { useState, useCallback } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -5,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import SplashScreen from "@/components/SplashScreen";
 
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
@@ -14,20 +16,14 @@ const queryClient = new QueryClient();
 
 const AppRoutes = () => {
   const { user, loading } = useAuth();
+  const [splashDone, setSplashDone] = useState(false);
   useRealtimeNotifications();
 
+  const handleSplashFinished = useCallback(() => setSplashDone(true), []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <span className="text-2xl">📦</span>
-          </div>
-          <p className="text-muted-foreground text-sm">Загрузка...</p>
-        </div>
-      </div>
-    );
+  // Show splash while loading auth
+  if (loading || !splashDone) {
+    return <SplashScreen onFinished={handleSplashFinished} />;
   }
 
   if (!user) {
