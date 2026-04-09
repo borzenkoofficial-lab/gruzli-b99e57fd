@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import FAB from "@/components/FAB";
@@ -25,6 +25,7 @@ import SettingsScreen from "@/screens/SettingsScreen";
 import UserProfileScreen from "@/screens/UserProfileScreen";
 import NotificationsScreen from "@/screens/NotificationsScreen";
 import PremiumScreen from "@/screens/PremiumScreen";
+import PullToRefresh from "@/components/PullToRefresh";
 
 import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,6 +53,13 @@ const Index = () => {
   const [viewProfileUserId, setViewProfileUserId] = useState<string | null>(null);
   const [showPremium, setShowPremium] = useState(false);
   const isDispatcher = role === "dispatcher" || role === "admin";
+  const feedRefreshRef = useRef<(() => Promise<void>) | null>(null);
+
+  const handlePullRefresh = useCallback(async () => {
+    if (feedRefreshRef.current) {
+      await feedRefreshRef.current();
+    }
+  }, []);
 
   const handleOpenChat = (conversationId: string, title: string) => {
     setOpenChatId(conversationId);
@@ -172,7 +180,8 @@ const Index = () => {
 
   return (
     <div className="app-shell">
-      <div className="app-scroll">
+      {tab === "feed" ? (
+      <PullToRefresh onRefresh={handlePullRefresh}>
         <AnimatePresence mode="wait">
           <motion.div
             key={tab}
@@ -186,9 +195,10 @@ const Index = () => {
                 <DispatcherFeedScreen
                   onCreateJob={() => setShowCreateJob(true)}
                   onViewResponses={setViewResponsesJob}
+                  onRefreshRef={feedRefreshRef}
                 />
               ) : (
-                <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} />
+                <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onRefreshRef={feedRefreshRef} />
               )
             )}
             {tab === "orders" && <OrdersScreen />}
@@ -207,7 +217,35 @@ const Index = () => {
             )}
           </motion.div>
         </AnimatePresence>
+      </PullToRefresh>
+      ) : (
+      <div className="app-scroll">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            {tab === "orders" && <OrdersScreen />}
+            {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} />}
+            {tab === "kartoteka" && <KartotekaScreen />}
+            {tab === "dispatchers" && !isDispatcher && (
+              <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />
+            )}
+            {tab === "profile" && (
+              <ProfileScreen
+                onOpenSettings={() => setShowSettings(true)}
+                onOpenNotifications={() => setShowNotifications(true)}
+                onOpenSupport={(prefillMessage) => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, prefillMessage)}
+                onOpenPremium={() => setShowPremium(true)}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
+      )}
       {!isDispatcher && <FAB />}
       <BottomNav
         active={tab}
