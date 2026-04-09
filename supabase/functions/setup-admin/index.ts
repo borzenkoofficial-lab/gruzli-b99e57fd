@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
     email,
     password,
     email_confirm: true,
-    user_metadata: { full_name: "Gruzli Official", role: "admin" },
+    user_metadata: { full_name: "Gruzli Official" },
   });
 
   if (error) {
