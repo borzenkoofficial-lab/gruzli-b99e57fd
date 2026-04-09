@@ -459,6 +459,7 @@ export type Database = {
           blocked: boolean
           completed_orders: number | null
           created_at: string
+          display_id: string | null
           full_name: string
           id: string
           phone: string | null
@@ -474,6 +475,7 @@ export type Database = {
           blocked?: boolean
           completed_orders?: number | null
           created_at?: string
+          display_id?: string | null
           full_name?: string
           id?: string
           phone?: string | null
@@ -489,6 +491,7 @@ export type Database = {
           blocked?: boolean
           completed_orders?: number | null
           created_at?: string
+          display_id?: string | null
           full_name?: string
           id?: string
           phone?: string | null
