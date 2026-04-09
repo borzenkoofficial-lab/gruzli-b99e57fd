@@ -144,7 +144,17 @@ const Index = () => {
         </motion.div>
       </AnimatePresence>
       {!isDispatcher && <FAB />}
-      <BottomNav active={tab} onNavigate={setTab} isDispatcher={isDispatcher} />
+      <BottomNav
+        active={tab}
+        onNavigate={(t) => {
+          if (t === "chats") resetMessages();
+          if (t === "feed" && !isDispatcher) resetJobs();
+          setTab(t);
+        }}
+        isDispatcher={isDispatcher}
+        unreadMessages={unreadMessages}
+        newJobsCount={newJobsCount}
+      />
     </div>
   );
 };
