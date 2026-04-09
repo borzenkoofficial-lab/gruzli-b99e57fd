@@ -6,7 +6,7 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
-  const email = "support@noty.gruzli.official";
+  const email = "admin@gruzli.app";
   const password = "GruzliAdmin2026!Secure";
 
   // Check if already exists
