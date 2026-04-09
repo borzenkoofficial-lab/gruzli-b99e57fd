@@ -74,9 +74,9 @@ const AuthPage = () => {
   // ─── WELCOME / ONBOARDING ───
   if (mode === "welcome") {
     return (
-      <div className="h-[100vh] h-[100svh] bg-background overflow-hidden">
-        <div className="mx-auto flex h-full w-full max-w-sm flex-col px-5 safe-top pb-5">
-          <div className="flex flex-1 flex-col justify-between gap-5 min-h-0">
+      <div className="bg-background overflow-hidden" style={{ height: "var(--app-height)" }}>
+        <div className="mx-auto flex h-full w-full max-w-sm flex-col px-5 safe-top">
+          <div className="flex flex-1 flex-col justify-between gap-4 min-h-0 pb-3">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -136,7 +136,7 @@ const AuthPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
-            className="space-y-3 w-full pt-2"
+            className="space-y-3 w-full"
           >
             <button
               onClick={() => setMode("register")}
@@ -159,7 +159,7 @@ const AuthPage = () => {
 
   // ─── AUTH FORM ───
   return (
-    <div className="min-h-[100vh] min-h-[100svh] h-[100vh] h-[100svh] bg-background flex flex-col items-center px-6 safe-top pb-4 overflow-y-auto">
+    <div className="bg-background flex flex-col items-center px-6 safe-top pb-4 overflow-y-auto" style={{ minHeight: "var(--app-height)", height: "var(--app-height)" }}>
       {/* Back + Logo */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}

@@ -1,5 +1,4 @@
-import { Home, ClipboardList, MessageCircle, Users, User, Plus, FolderOpen } from "lucide-react";
-import { motion } from "framer-motion";
+import { Home, ClipboardList, MessageCircle, User, FolderOpen } from "lucide-react";
 
 interface BottomNavProps {
   active: string;
@@ -38,39 +37,35 @@ const BottomNav = ({ active, onNavigate, isDispatcher, unreadMessages = 0, newJo
 
   return (
     <div className="bottom-docked">
-      <div className="max-w-lg mx-auto px-3 pt-2">
-        <div className="rounded-2xl neu-card px-2 py-2">
-          <div className="flex items-center justify-around">
-            {tabs.map((tab) => {
-              const isActive = active === tab.id;
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => onNavigate(tab.id)}
-                  className={`relative flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl transition-all duration-200 ${
-                    isActive ? "neu-inset" : ""
-                  }`}
-                >
-                  <div className="relative">
-                    <Icon
-                      size={20}
-                      className={isActive ? "text-primary" : "text-muted-foreground"}
-                    />
-                    <Badge count={tab.badge} />
-                  </div>
-                  <span
-                    className={`text-[10px] font-medium ${
-                      isActive ? "text-primary" : "text-muted-foreground"
-                    }`}
-                  >
-                    {tab.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+      <div className="mx-auto flex w-full max-w-lg items-center justify-around px-2 py-2">
+        {tabs.map((tab) => {
+          const isActive = active === tab.id;
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onNavigate(tab.id)}
+              className={`relative flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-2 py-2 transition-all duration-200 ${
+                isActive ? "neu-inset" : ""
+              }`}
+            >
+              <div className="relative">
+                <Icon
+                  size={20}
+                  className={isActive ? "text-primary" : "text-muted-foreground"}
+                />
+                <Badge count={tab.badge} />
+              </div>
+              <span
+                className={`truncate text-[10px] font-medium ${
+                  isActive ? "text-primary" : "text-muted-foreground"
+                }`}
+              >
+                {tab.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
