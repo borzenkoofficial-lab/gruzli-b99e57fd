@@ -105,9 +105,9 @@ export function usePushNotifications() {
         }
 
         // Register SW
-        let registration = await navigator.serviceWorker.getRegistration("/progressier.js");
+        let registration = await navigator.serviceWorker.getRegistration("/sw.js");
         if (!registration) {
-          registration = await navigator.serviceWorker.register("/progressier.js", { scope: "/" });
+          registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
           await navigator.serviceWorker.ready;
         }
 
