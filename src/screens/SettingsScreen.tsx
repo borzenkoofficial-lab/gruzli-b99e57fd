@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, User, Phone, Bell, Shield, Palette, LogOut, Camera, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, User, Phone, Bell, Shield, Palette, LogOut, Camera, Check, Loader2, Volume2, Vibrate, Layers } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useNotificationSettings } from "@/hooks/useNotificationSettings";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -28,7 +29,8 @@ type Section = "main" | "profile" | "notifications" | "security" | "appearance";
 
 const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   const { user, profile, signOut } = useAuth();
-  const { permissionState, isSubscribed, requestPermission } = usePushNotifications();
+  const { permissionState, isSubscribed, loading: pushLoading, requestPermission, unsubscribe } = usePushNotifications();
+  const { settings: notifSettings, update: updateNotif } = useNotificationSettings();
   const [section, setSection] = useState<Section>("main");
 
   // Profile edit state
@@ -193,29 +195,42 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
 
   // Notifications section
   if (section === "notifications") {
+    const Toggle = ({ enabled, onToggle, disabled }: { enabled: boolean; onToggle: () => void; disabled?: boolean }) => (
+      <button
+        onClick={onToggle}
+        disabled={disabled}
+        className={`w-11 h-6 rounded-full flex items-center px-0.5 transition-colors ${enabled ? "bg-primary" : "bg-muted"} ${disabled ? "opacity-50" : ""}`}
+      >
+        <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${enabled ? "translate-x-5" : "translate-x-0"}`} />
+      </button>
+    );
+
     return (
       <div className="min-h-screen bg-background pb-12">
         <Header title="Уведомления" onBack={() => setSection("main")} />
         <div className="px-5 space-y-4">
+          {/* Push notifications */}
           <div className="neu-card rounded-2xl p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-foreground">Push-уведомления</p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {permissionState === "granted"
-                    ? isSubscribed ? "✅ Включены и активны" : "⏳ Подключение..."
-                    : permissionState === "denied" ? "❌ Заблокированы в браузере" : "Не включены"}
+                  {permissionState === "unsupported"
+                    ? "❌ Не поддерживается браузером"
+                    : permissionState === "granted"
+                      ? isSubscribed ? "✅ Включены и активны" : "⏳ Подключение..."
+                      : permissionState === "denied" ? "❌ Заблокированы в браузере" : "Не включены"}
                 </p>
               </div>
               {permissionState === "default" && (
-                <button onClick={requestPermission} className="px-4 py-2 rounded-xl gradient-primary text-primary-foreground text-xs font-bold">
-                  Включить
+                <button onClick={requestPermission} disabled={pushLoading} className="px-4 py-2 rounded-xl gradient-primary text-primary-foreground text-xs font-bold disabled:opacity-50">
+                  {pushLoading ? <Loader2 size={14} className="animate-spin" /> : "Включить"}
                 </button>
               )}
               {permissionState === "granted" && isSubscribed && (
-                <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center">
-                  <Check size={18} className="text-green-500" />
-                </div>
+                <button onClick={unsubscribe} disabled={pushLoading} className="px-4 py-2 rounded-xl bg-destructive/10 text-destructive text-xs font-bold disabled:opacity-50">
+                  {pushLoading ? <Loader2 size={14} className="animate-spin" /> : "Отключить"}
+                </button>
               )}
             </div>
           </div>
@@ -223,26 +238,46 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
           {permissionState === "denied" && (
             <div className="neu-card rounded-2xl p-4">
               <p className="text-xs text-muted-foreground">
-                Push-уведомления заблокированы в настройках браузера. Чтобы включить их, откройте настройки сайта в браузере и разрешите уведомления для этого сайта.
+                Push-уведомления заблокированы в настройках браузера. Откройте настройки сайта и разрешите уведомления.
               </p>
             </div>
           )}
 
+          {/* In-app notification settings */}
           <div className="neu-card rounded-2xl p-4 space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Что приходит</p>
-            {[
-              { label: "Новые заказы", desc: "Уведомления о новых заявках" },
-              { label: "Сообщения", desc: "Уведомления о новых сообщениях в чатах" },
-              { label: "Отклики", desc: "Когда кто-то откликнулся на вашу заявку" },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center justify-between py-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">В приложении</p>
+            {([
+              { key: "sound" as const, label: "Звук", desc: "Звуковой сигнал при новых событиях", icon: Volume2 },
+              { key: "vibration" as const, label: "Вибрация", desc: "Вибрация при уведомлениях", icon: Vibrate },
+              { key: "overlay" as const, label: "Оверлей заказов", desc: "Полноэкранное уведомление о новом заказе", icon: Layers },
+            ]).map((item) => (
+              <div key={item.key} className="flex items-center justify-between py-1">
+                <div className="flex items-center gap-3">
+                  <item.icon size={16} className="text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{item.label}</p>
+                    <p className="text-[11px] text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+                <Toggle enabled={notifSettings[item.key]} onToggle={() => updateNotif(item.key, !notifSettings[item.key])} />
+              </div>
+            ))}
+          </div>
+
+          {/* Push categories */}
+          <div className="neu-card rounded-2xl p-4 space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Категории push</p>
+            {([
+              { key: "pushJobs" as const, label: "Новые заказы", desc: "Уведомления о новых заявках" },
+              { key: "pushMessages" as const, label: "Сообщения", desc: "Уведомления о новых сообщениях" },
+              { key: "pushResponses" as const, label: "Отклики", desc: "Когда кто-то откликнулся на заявку" },
+            ]).map((item) => (
+              <div key={item.key} className="flex items-center justify-between py-1">
                 <div>
                   <p className="text-sm font-medium text-foreground">{item.label}</p>
                   <p className="text-[11px] text-muted-foreground">{item.desc}</p>
                 </div>
-                <div className="w-10 h-6 rounded-full bg-primary/20 flex items-center justify-end px-0.5">
-                  <div className="w-5 h-5 rounded-full bg-primary" />
-                </div>
+                <Toggle enabled={notifSettings[item.key]} onToggle={() => updateNotif(item.key, !notifSettings[item.key])} />
               </div>
             ))}
           </div>
