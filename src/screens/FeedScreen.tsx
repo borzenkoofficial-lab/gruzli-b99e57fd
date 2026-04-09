@@ -7,6 +7,7 @@ import { useRespondToJob } from "@/hooks/useRespondToJob";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
+import PushNotificationBanner from "@/components/PushNotificationBanner";
 
 const filters = ["Все", "Срочные", "Быстрая минималка"];
 
@@ -100,6 +101,9 @@ const FeedScreen = ({ onOpenChat }: FeedScreenProps) => {
         </div>
         <img src={gruzliLogo} alt="Gruzli" className="h-10 rounded-xl" loading="lazy" />
       </div>
+
+      {/* Push notification banner */}
+      <PushNotificationBanner />
 
       {/* Hero Banner */}
       <div className="mx-5 mt-2 mb-4 rounded-2xl overflow-hidden" style={{
