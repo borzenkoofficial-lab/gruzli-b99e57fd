@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import FAB from "@/components/FAB";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 
 // Worker screens
 import FeedScreen from "@/screens/FeedScreen";
@@ -25,6 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const { role, user } = useAuth();
+  const { unreadMessages, newJobsCount, resetMessages, resetJobs } = useUnreadCounts();
   const [tab, setTab] = useState("feed");
   const [openChatId, setOpenChatId] = useState<string | null>(null);
   const [openChatTitle, setOpenChatTitle] = useState("");
@@ -142,7 +144,17 @@ const Index = () => {
         </motion.div>
       </AnimatePresence>
       {!isDispatcher && <FAB />}
-      <BottomNav active={tab} onNavigate={setTab} isDispatcher={isDispatcher} />
+      <BottomNav
+        active={tab}
+        onNavigate={(t) => {
+          if (t === "chats") resetMessages();
+          if (t === "feed" && !isDispatcher) resetJobs();
+          setTab(t);
+        }}
+        isDispatcher={isDispatcher}
+        unreadMessages={unreadMessages}
+        newJobsCount={newJobsCount}
+      />
     </div>
   );
 };
