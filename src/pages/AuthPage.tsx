@@ -74,16 +74,16 @@ const AuthPage = () => {
   // ─── WELCOME / ONBOARDING ───
   if (mode === "welcome") {
     return (
-      <div className="min-h-[100vh] min-h-[100svh] h-[100vh] h-[100svh] bg-background flex flex-col overflow-y-auto">
-        {/* Hero section */}
-        <div className="flex-1 flex flex-col items-center justify-center px-6 pb-4">
+      <div className="h-[100vh] h-[100svh] bg-background overflow-hidden">
+        <div className="mx-auto flex h-full w-full max-w-sm flex-col px-5 safe-top pb-5">
+          <div className="flex flex-1 flex-col justify-between gap-5 min-h-0">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            className="mb-8"
+            className="mb-2"
           >
-            <div className="w-28 h-28 rounded-3xl overflow-hidden shadow-lg mx-auto">
+            <div className="w-24 h-24 rounded-3xl overflow-hidden shadow-lg mx-auto">
               <img
                 src={gruzliLogo}
                 alt="Gruzli"
@@ -96,12 +96,12 @@ const AuthPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-center mb-10"
+            className="text-center mb-1"
           >
-            <h1 className="text-3xl font-extrabold text-foreground mb-2">
+            <h1 className="text-2xl font-extrabold text-foreground mb-2">
               Gruzli<span className="text-primary">.</span>
             </h1>
-            <p className="text-base text-muted-foreground max-w-xs mx-auto leading-relaxed">
+            <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
               Платформа, которая соединяет грузчиков и диспетчеров. Быстро, удобно, надёжно.
             </p>
           </motion.div>
@@ -111,7 +111,7 @@ const AuthPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="grid grid-cols-2 gap-3 w-full max-w-sm mb-8"
+            className="grid grid-cols-2 gap-3 w-full"
           >
             {features.map((f, i) => (
               <motion.div
@@ -119,46 +119,47 @@ const AuthPage = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 + i * 0.1 }}
-                className="neu-card rounded-2xl p-4 text-center"
+                className="neu-card rounded-2xl p-3 text-center"
               >
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                  <f.icon size={20} className="text-primary" />
+                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2">
+                  <f.icon size={18} className="text-primary" />
                 </div>
                 <p className="text-xs font-bold text-foreground">{f.title}</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">{f.desc}</p>
               </motion.div>
             ))}
           </motion.div>
-        </div>
+          </div>
 
-        {/* CTA buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="px-6 pb-10 space-y-3 max-w-sm mx-auto w-full"
-        >
-          <button
-            onClick={() => setMode("register")}
-            className="w-full py-4 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"
+          {/* CTA buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="space-y-3 w-full pt-2"
           >
-            Начать работу
-            <ArrowRight size={16} />
-          </button>
-          <button
-            onClick={() => setMode("login")}
-            className="w-full py-3.5 rounded-2xl neu-card text-foreground text-sm font-semibold active:scale-95 transition-transform"
-          >
-            У меня есть аккаунт
-          </button>
-        </motion.div>
+            <button
+              onClick={() => setMode("register")}
+              className="w-full py-4 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"
+            >
+              Начать работу
+              <ArrowRight size={16} />
+            </button>
+            <button
+              onClick={() => setMode("login")}
+              className="w-full py-3.5 rounded-2xl neu-card text-foreground text-sm font-semibold active:scale-95 transition-transform"
+            >
+              У меня есть аккаунт
+            </button>
+          </motion.div>
+        </div>
       </div>
     );
   }
 
   // ─── AUTH FORM ───
   return (
-    <div className="min-h-[100vh] min-h-[100svh] h-[100vh] h-[100svh] bg-background flex flex-col items-center px-6 safe-top pb-8 overflow-y-auto">
+    <div className="min-h-[100vh] min-h-[100svh] h-[100vh] h-[100svh] bg-background flex flex-col items-center px-6 safe-top pb-4 overflow-y-auto">
       {/* Back + Logo */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
