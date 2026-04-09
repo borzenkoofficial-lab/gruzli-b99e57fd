@@ -82,6 +82,18 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
   const [newComment, setNewComment] = useState("");
   const [sendingComment, setSendingComment] = useState(false);
   const [showCompose, setShowCompose] = useState(false);
+  const [subscriberCount, setSubscriberCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from("app_settings")
+      .select("value")
+      .eq("id", "fake_subscribers")
+      .single()
+      .then(({ data }) => {
+        if (data) setSubscriberCount((data.value as any)?.count ?? null);
+      });
+  }, []);
 
   const fetchPosts = useCallback(async () => {
     if (!user) return;
@@ -257,7 +269,9 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
               <h1 className="text-[17px] font-extrabold text-foreground">Gruzli Official</h1>
               <BadgeCheck size={18} className="text-primary fill-primary/20" />
             </div>
-            <p className="text-[12px] text-muted-foreground">{posts.length} постов</p>
+            <p className="text-[12px] text-muted-foreground">
+              {subscriberCount ? `${subscriberCount.toLocaleString("ru-RU")} подписчиков · ` : ""}{posts.length} постов
+            </p>
           </div>
         </div>
 
