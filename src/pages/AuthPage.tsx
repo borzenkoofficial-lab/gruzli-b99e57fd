@@ -1,15 +1,22 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Users, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
+import { User, Users, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Zap, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 
-type Mode = "login" | "register";
+type Mode = "welcome" | "login" | "register";
 type Role = "worker" | "dispatcher";
 
+const features = [
+  { icon: Briefcase, title: "Заказы", desc: "Находите работу мгновенно" },
+  { icon: Shield, title: "Безопасно", desc: "Проверенные диспетчеры" },
+  { icon: Zap, title: "Быстро", desc: "Отклик в одно нажатие" },
+  { icon: MessageSquare, title: "Чат", desc: "Общайтесь напрямую" },
+];
+
 const AuthPage = () => {
-  const [mode, setMode] = useState<Mode>("login");
+  const [mode, setMode] = useState<Mode>("welcome");
   const [role, setRole] = useState<Role>("worker");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -49,34 +56,120 @@ const AuthPage = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-6">
-      {/* Logo */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8 text-center"
-      >
-        <img src={gruzliLogo} alt="Gruzli" className="h-20 mx-auto mb-4 rounded-2xl" width={200} height={80} />
-        <p className="text-sm text-muted-foreground mt-1">Платформа для грузчиков и диспетчеров</p>
-      </motion.div>
+  // ─── WELCOME / ONBOARDING ───
+  if (mode === "welcome") {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        {/* Hero section */}
+        <div className="flex-1 flex flex-col items-center justify-center px-6 pb-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="mb-8"
+          >
+            <div className="w-28 h-28 rounded-3xl overflow-hidden shadow-lg mx-auto">
+              <img
+                src={gruzliLogo}
+                alt="Gruzli"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </motion.div>
 
-      {/* Mode toggle */}
-      <div className="w-full max-w-sm mb-6">
-        <div className="flex gap-1.5 neu-inset rounded-2xl p-1.5">
-          {(["login", "register"] as const).map((m) => (
-            <button
-              key={m}
-              onClick={() => setMode(m)}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                mode === m ? "gradient-primary text-primary-foreground" : "text-muted-foreground"
-              }`}
-            >
-              {m === "login" ? "Вход" : "Регистрация"}
-            </button>
-          ))}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-center mb-10"
+          >
+            <h1 className="text-3xl font-extrabold text-foreground mb-2">
+              Gruzli<span className="text-primary">.</span>
+            </h1>
+            <p className="text-base text-muted-foreground max-w-xs mx-auto leading-relaxed">
+              Платформа, которая соединяет грузчиков и диспетчеров. Быстро, удобно, надёжно.
+            </p>
+          </motion.div>
+
+          {/* Feature grid */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="grid grid-cols-2 gap-3 w-full max-w-sm mb-8"
+          >
+            {features.map((f, i) => (
+              <motion.div
+                key={f.title}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 + i * 0.1 }}
+                className="neu-card rounded-2xl p-4 text-center"
+              >
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2">
+                  <f.icon size={20} className="text-primary" />
+                </div>
+                <p className="text-xs font-bold text-foreground">{f.title}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{f.desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
+
+        {/* CTA buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="px-6 pb-10 space-y-3 max-w-sm mx-auto w-full"
+        >
+          <button
+            onClick={() => setMode("register")}
+            className="w-full py-4 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"
+          >
+            Начать работу
+            <ArrowRight size={16} />
+          </button>
+          <button
+            onClick={() => setMode("login")}
+            className="w-full py-3.5 rounded-2xl neu-card text-foreground text-sm font-semibold active:scale-95 transition-transform"
+          >
+            У меня есть аккаунт
+          </button>
+        </motion.div>
       </div>
+    );
+  }
+
+  // ─── AUTH FORM ───
+  return (
+    <div className="min-h-screen bg-background flex flex-col items-center px-6 pt-14 pb-8">
+      {/* Back + Logo */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-sm mb-6"
+      >
+        <button
+          onClick={() => setMode("welcome")}
+          className="text-sm text-muted-foreground mb-6 flex items-center gap-1"
+        >
+          ← Назад
+        </button>
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-12 h-12 rounded-xl overflow-hidden">
+            <img src={gruzliLogo} alt="Gruzli" className="w-full h-full object-cover" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-foreground">
+              {mode === "login" ? "Вход" : "Регистрация"}
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              {mode === "login" ? "Войдите в свой аккаунт" : "Создайте аккаунт за минуту"}
+            </p>
+          </div>
+        </div>
+      </motion.div>
 
       <motion.form
         key={mode}
@@ -110,7 +203,7 @@ const AuthPage = () => {
                   >
                     <r.icon size={24} className="mx-auto mb-2" />
                     <p className="text-sm font-bold">{r.label}</p>
-                    <p className={`text-[11px] mt-0.5 ${role === r.id ? "text-white/70" : "text-muted-foreground"}`}>{r.desc}</p>
+                    <p className={`text-[11px] mt-0.5 ${role === r.id ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{r.desc}</p>
                   </button>
                 ))}
               </div>
