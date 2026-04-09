@@ -71,6 +71,7 @@ const placeholderPosts: Omit<Post, "liked">[] = [
 const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
   const { user, role } = useAuth();
   const isDispatcher = role === "dispatcher";
+  const canPost = role === "dispatcher" || role === "admin";
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [newPostText, setNewPostText] = useState("");
@@ -285,8 +286,8 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
         </div>
       </div>
 
-      {/* Compose button for dispatchers */}
-      {isDispatcher && (
+      {/* Compose button for dispatchers and admins */}
+      {canPost && (
         <>
           <AnimatePresence>
             {showCompose && (
