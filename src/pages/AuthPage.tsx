@@ -75,8 +75,8 @@ const AuthPage = () => {
   if (mode === "welcome") {
     return (
       <div className="bg-background overflow-hidden" style={{ height: "var(--app-height)" }}>
-        <div className="mx-auto flex h-full w-full max-w-sm flex-col px-5 safe-top">
-          <div className="flex flex-1 flex-col justify-between gap-4 min-h-0 pb-3">
+        <div className="mx-auto flex h-full w-full max-w-sm flex-col justify-between px-5 safe-top pb-0">
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 min-h-0">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -136,7 +136,7 @@ const AuthPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
-            className="space-y-3 w-full"
+           className="space-y-3 w-full shrink-0 pb-2"
           >
             <button
               onClick={() => setMode("register")}
