@@ -45,7 +45,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
 
   // Theme state
   const [theme, setTheme] = useState<"dark" | "light">(() => {
-    return document.documentElement.classList.contains("light") ? "light" : "dark";
+    return localStorage.getItem("theme") === "light" ? "light" : "dark";
   });
 
   useEffect(() => {
