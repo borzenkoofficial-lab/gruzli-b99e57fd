@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Star, Briefcase, Wallet, Calendar, ChevronRight, Settings, LogOut, Shield, Bell, CreditCard, Trophy, Copy, CheckCircle2, MessageSquare, Hash, ShieldCheck, Headphones, BadgeCheck, Banknote } from "lucide-react";
+import { Star, Briefcase, Wallet, Calendar, ChevronRight, Settings, LogOut, Shield, Bell, CreditCard, Trophy, Copy, CheckCircle2, MessageSquare, Hash, ShieldCheck, Headphones, BadgeCheck, Banknote, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +13,7 @@ interface ProfileScreenProps {
   onOpenSettings?: () => void;
   onOpenNotifications?: () => void;
   onOpenSupport?: (prefillMessage?: string) => void;
+  onOpenPremium?: () => void;
 }
 
 interface Review {
@@ -85,7 +86,7 @@ const VerifiedPopup = ({ open, onClose }: { open: boolean; onClose: () => void }
   );
 };
 
-const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: ProfileScreenProps) => {
+const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onOpenPremium }: ProfileScreenProps) => {
   const { user, profile, role, signOut } = useAuth();
   const [availability, setAvailability] = useState([true, true, true, false, true, true, false]);
   const [statsPeriod, setStatsPeriod] = useState<"today" | "week" | "month">("today");
@@ -485,11 +486,19 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
       {/* Profile info */}
       <div className="px-5 pb-4">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center text-xl font-bold text-primary-foreground">
-            {initials}
+          <div className="relative">
+            {profile?.is_premium && (
+              <div className="absolute -inset-[3px] rounded-full bg-gradient-to-tr from-yellow-400 via-amber-500 to-orange-500 animate-pulse opacity-80" />
+            )}
+            <div className="relative w-16 h-16 rounded-full gradient-primary flex items-center justify-center text-xl font-bold text-primary-foreground">
+              {initials}
+            </div>
           </div>
           <div>
-            <h2 className="text-lg font-bold text-foreground">{profile?.full_name || "Пользователь"}</h2>
+            <div className="flex items-center gap-1.5">
+              <h2 className="text-lg font-bold text-foreground">{profile?.full_name || "Пользователь"}</h2>
+              {profile?.is_premium && <Crown size={16} className="text-yellow-500 fill-yellow-500" />}
+            </div>
             <div className="flex items-center gap-1 mt-0.5">
               <Star size={14} className="text-primary fill-primary" />
               <span className="text-sm font-bold text-foreground">{profile?.rating || "5.00"}</span>
@@ -498,10 +507,44 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
             <div className="flex items-center gap-1 mt-0.5">
               <Shield size={12} className="text-primary" />
               <span className="text-xs text-primary font-semibold">Грузчик</span>
+              {profile?.is_premium && (
+                <span className="ml-1 px-2 py-0.5 rounded-full bg-yellow-500/15 text-[10px] text-yellow-500 font-bold">Premium</span>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Premium card */}
+      {!profile?.is_premium ? (
+        <div className="mx-5 mb-4">
+          <button onClick={onOpenPremium} className="w-full rounded-2xl overflow-hidden" style={{
+            background: "linear-gradient(135deg, hsl(43 96% 56%), hsl(38 92% 50%), hsl(25 95% 53%))",
+            boxShadow: "0 4px 20px hsl(38 92% 50% / 0.3)",
+          }}>
+            <div className="px-5 py-4 flex items-center gap-3">
+              <Crown size={24} className="text-white" />
+              <div className="flex-1 text-left">
+                <p className="text-white text-sm font-bold">Gruzli Premium</p>
+                <p className="text-white/70 text-[11px]">Безлимитные заказы и золотой аккаунт</p>
+              </div>
+              <ChevronRight size={18} className="text-white/60" />
+            </div>
+          </button>
+        </div>
+      ) : (
+        <div className="mx-5 mb-4 neu-card rounded-2xl p-4 border border-yellow-500/20">
+          <div className="flex items-center gap-3">
+            <Crown size={18} className="text-yellow-500" />
+            <div className="flex-1">
+              <p className="text-sm font-bold text-foreground">Premium активен</p>
+              <p className="text-[11px] text-muted-foreground">
+                До {profile?.premium_until ? new Date(profile.premium_until).toLocaleDateString("ru-RU") : "∞"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="px-5 pb-3">
