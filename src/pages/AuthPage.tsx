@@ -74,9 +74,10 @@ const AuthPage = () => {
   // ─── WELCOME / ONBOARDING ───
   if (mode === "welcome") {
     return (
-      <div className="bg-background overflow-hidden" style={{ height: "var(--app-height)" }}>
-        <div className="mx-auto flex h-full w-full max-w-sm flex-col px-5 safe-top">
-          <div className="flex flex-1 flex-col justify-between gap-4 min-h-0 pb-3">
+      <div className="bg-background overflow-hidden flex flex-col" style={{ height: "var(--app-height)" }}>
+        <div className="mx-auto flex flex-1 w-full max-w-sm flex-col px-5 min-h-0" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)", paddingBottom: "env(safe-area-inset-bottom, 4px)" }}>
+          {/* Content area - centered vertically */}
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 w-full min-h-0">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -129,14 +130,12 @@ const AuthPage = () => {
               </motion.div>
             ))}
           </motion.div>
-          </div>
-
           {/* CTA buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
-            className="space-y-3 w-full"
+           className="space-y-2.5 w-full shrink-0"
           >
             <button
               onClick={() => setMode("register")}
@@ -152,6 +151,7 @@ const AuthPage = () => {
               У меня есть аккаунт
             </button>
           </motion.div>
+          </div>
         </div>
       </div>
     );
