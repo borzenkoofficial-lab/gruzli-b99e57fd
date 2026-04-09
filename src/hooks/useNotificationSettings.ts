@@ -7,6 +7,9 @@ export interface NotificationSettings {
   pushJobs: boolean;
   pushMessages: boolean;
   pushResponses: boolean;
+  emailJobs: boolean;
+  emailMessages: boolean;
+  notificationEmail: string;
 }
 
 const STORAGE_KEY = "gruzli_notification_settings";
@@ -18,6 +21,9 @@ const defaults: NotificationSettings = {
   pushJobs: true,
   pushMessages: true,
   pushResponses: true,
+  emailJobs: true,
+  emailMessages: true,
+  notificationEmail: "",
 };
 
 function load(): NotificationSettings {
@@ -35,7 +41,7 @@ function save(s: NotificationSettings) {
 export function useNotificationSettings() {
   const [settings, setSettings] = useState<NotificationSettings>(load);
 
-  const update = useCallback((key: keyof NotificationSettings, value: boolean) => {
+  const update = useCallback((key: keyof NotificationSettings, value: boolean | string) => {
     setSettings((prev) => {
       const next = { ...prev, [key]: value };
       save(next);
