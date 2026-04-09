@@ -5,13 +5,14 @@ import type { Tables } from "@/integrations/supabase/types";
 
 interface NewJobAlertProps {
   job: Tables<"jobs"> | null;
+  queueSize?: number;
   onRespond: (job: Tables<"jobs">) => void;
   onDismiss: () => void;
 }
 
 const AUTO_DISMISS_MS = 30000;
 
-const NewJobAlert = ({ job, onRespond, onDismiss }: NewJobAlertProps) => {
+const NewJobAlert = ({ job, queueSize = 0, onRespond, onDismiss }: NewJobAlertProps) => {
   const [timeLeft, setTimeLeft] = useState(AUTO_DISMISS_MS / 1000);
 
   useEffect(() => {
@@ -71,7 +72,7 @@ const NewJobAlert = ({ job, onRespond, onDismiss }: NewJobAlertProps) => {
           {/* Header */}
           <div className="text-center mb-4">
             <span className="text-3xl">🆕</span>
-            <h2 className="text-lg font-bold text-foreground mt-2">Новый заказ!</h2>
+            <h2 className="text-lg font-bold text-foreground mt-2">Новый заказ!{queueSize > 1 && ` (1 из ${queueSize})`}</h2>
             <p className="text-xs text-muted-foreground">Автоскрытие через {timeLeft}с</p>
           </div>
 
