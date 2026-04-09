@@ -261,7 +261,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
             <p className="text-primary-foreground/50 text-xs">Для оплаты размещения заявок</p>
           </div>
           <div className="px-5 pb-4">
-            <button className="w-full py-3 rounded-xl bg-primary-foreground/20 text-primary-foreground text-sm font-bold active:scale-95 transition-transform">
+            <button onClick={() => { setTopUpAmount(""); setShowTopUp(true); }} className="w-full py-3 rounded-xl bg-primary-foreground/20 text-primary-foreground text-sm font-bold active:scale-95 transition-transform">
               💳 Пополнить баланс
             </button>
           </div>
