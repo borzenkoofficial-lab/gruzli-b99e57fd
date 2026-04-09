@@ -12,10 +12,23 @@ interface JobDetailScreenProps {
   onOpenProfile?: (userId: string) => void;
 }
 
-const JobDetailScreen = ({ job, onBack, onOpenChat }: JobDetailScreenProps) => {
+const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailScreenProps) => {
   const { respondAndOpenChat } = useRespondToJob(onOpenChat);
   const [responding, setResponding] = useState(false);
   const [responded, setResponded] = useState(false);
+  const [dispatcherName, setDispatcherName] = useState("Диспетчер");
+
+  useEffect(() => {
+    const fetchName = async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", job.dispatcher_id)
+        .single();
+      if (data) setDispatcherName(data.full_name || "Диспетчер");
+    };
+    fetchName();
+  }, [job.dispatcher_id]);
 
   const totalPay = job.hourly_rate * (Number(job.duration_hours) || 4);
 
