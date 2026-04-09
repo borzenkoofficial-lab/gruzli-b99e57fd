@@ -106,7 +106,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
     .slice(0, 2)
     .toUpperCase() || "?";
 
-  const shortId = user?.id?.slice(0, 8).toUpperCase() || "—";
+  const shortId = profile?.display_id || user?.id?.slice(0, 8).toUpperCase() || "—";
 
   // Fetch reviews for dispatcher
   useEffect(() => {
