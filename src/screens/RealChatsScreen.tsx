@@ -52,7 +52,7 @@ const SwipeableChatItem = ({
       >
         <button
           onClick={() => { close(); onBlock(); }}
-          className="flex items-center justify-center w-14 bg-amber-600 text-primary-foreground"
+          className="flex items-center justify-center w-14 bg-muted text-foreground"
         >
           <Ban size={18} />
         </button>
