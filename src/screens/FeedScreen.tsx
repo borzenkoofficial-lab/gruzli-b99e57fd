@@ -13,13 +13,15 @@ const filters = ["Все", "Срочные", "Быстрая минималка"
 
 interface FeedScreenProps {
   onOpenChat?: (conversationId: string, title: string) => void;
+  onOpenProfile?: (userId: string) => void;
 }
 
-const FeedScreen = ({ onOpenChat }: FeedScreenProps) => {
+const FeedScreen = ({ onOpenChat, onOpenProfile }: FeedScreenProps) => {
   const { user } = useAuth();
   const { respondAndOpenChat } = useRespondToJob(onOpenChat);
   const [activeFilter, setActiveFilter] = useState("Все");
   const [jobs, setJobs] = useState<Tables<"jobs">[]>([]);
+  const [dispatcherNames, setDispatcherNames] = useState<Record<string, string>>({});
   const [respondedJobs, setRespondedJobs] = useState<Set<string>>(new Set());
   const [skippedJobs, setSkippedJobs] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -30,7 +32,22 @@ const FeedScreen = ({ onOpenChat }: FeedScreenProps) => {
       .select("*")
       .eq("status", "active")
       .order("created_at", { ascending: false });
-    if (data) setJobs(data);
+    if (data) {
+      setJobs(data);
+      // Fetch dispatcher names
+      const dispatcherIds = [...new Set(data.map((j) => j.dispatcher_id))];
+      if (dispatcherIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", dispatcherIds);
+        if (profiles) {
+          const map: Record<string, string> = {};
+          profiles.forEach((p) => { map[p.user_id] = p.full_name; });
+          setDispatcherNames(map);
+        }
+      }
+    }
 
     // Fetch user's existing responses
     if (user) {
