@@ -33,10 +33,9 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
         }
       }
 
-      // 2. Find or create conversation
+      // 2. Find or create conversation with this dispatcher (reuse existing 1-on-1 chat)
       let conversationId: string | null = null;
 
-      // Check existing conversations for this job between these two users
       const { data: myConvs } = await supabase
         .from("conversation_participants")
         .select("conversation_id")
@@ -44,23 +43,23 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
 
       if (myConvs) {
         for (const mc of myConvs) {
-          // Check if dispatcher is also in this conversation AND it's linked to this job
-          const { data: conv } = await supabase
-            .from("conversations")
-            .select("id, job_id")
-            .eq("id", mc.conversation_id)
-            .eq("job_id", job.id)
+          // Check if dispatcher is in this conversation (any shared conversation)
+          const { data: dispatcherIn } = await supabase
+            .from("conversation_participants")
+            .select("id")
+            .eq("conversation_id", mc.conversation_id)
+            .eq("user_id", job.dispatcher_id)
             .single();
 
-          if (conv) {
-            const { data: dispatcherIn } = await supabase
-              .from("conversation_participants")
-              .select("id")
-              .eq("conversation_id", conv.id)
-              .eq("user_id", job.dispatcher_id)
+          if (dispatcherIn) {
+            // Verify it's not a group chat
+            const { data: conv } = await supabase
+              .from("conversations")
+              .select("id, is_group")
+              .eq("id", mc.conversation_id)
               .single();
 
-            if (dispatcherIn) {
+            if (conv && !conv.is_group) {
               conversationId = conv.id;
               break;
             }
