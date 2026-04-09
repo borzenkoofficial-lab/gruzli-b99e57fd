@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, User, Phone, Bell, Shield, Palette, LogOut, Camera, Check, Loader2, Volume2, Vibrate, Layers } from "lucide-react";
+import { ArrowLeft, User, Phone, Bell, Shield, Palette, LogOut, Camera, Check, Loader2, Volume2, Vibrate, Layers, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -276,6 +276,43 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
                 <div>
                   <p className="text-sm font-medium text-foreground">{item.label}</p>
                   <p className="text-[11px] text-muted-foreground">{item.desc}</p>
+                </div>
+                <Toggle enabled={notifSettings[item.key]} onToggle={() => updateNotif(item.key, !notifSettings[item.key])} />
+              </div>
+            ))}
+          </div>
+
+          {/* Email notifications */}
+          <div className="neu-card rounded-2xl p-4 space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">📧 Email-уведомления</p>
+            
+            <div className="mb-2">
+              <label className="text-xs text-muted-foreground mb-1.5 block">Почта для уведомлений</label>
+              <input
+                type="email"
+                value={notifSettings.notificationEmail}
+                onChange={(e) => updateNotif("notificationEmail", e.target.value)}
+                placeholder={user?.email || "email@example.com"}
+                className="w-full neu-inset rounded-2xl py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none"
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                {notifSettings.notificationEmail
+                  ? `Уведомления будут приходить на ${notifSettings.notificationEmail}`
+                  : `По умолчанию: ${user?.email || "ваш email аккаунта"}`}
+              </p>
+            </div>
+
+            {([
+              { key: "emailJobs" as const, label: "Новые заказы", desc: "Email при появлении нового заказа" },
+              { key: "emailMessages" as const, label: "Сообщения", desc: "Email при новых сообщениях в чате" },
+            ]).map((item) => (
+              <div key={item.key} className="flex items-center justify-between py-1">
+                <div className="flex items-center gap-3">
+                  <Mail size={16} className="text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{item.label}</p>
+                    <p className="text-[11px] text-muted-foreground">{item.desc}</p>
+                  </div>
                 </div>
                 <Toggle enabled={notifSettings[item.key]} onToggle={() => updateNotif(item.key, !notifSettings[item.key])} />
               </div>
