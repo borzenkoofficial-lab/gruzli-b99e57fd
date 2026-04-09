@@ -2,77 +2,84 @@ import { useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-
-const NOTIFICATION_SOUND_FREQ = 880;
-const NOTIFICATION_SOUND_DURATION = 0.15;
+import type { Tables } from "@/integrations/supabase/types";
 
 function playNotificationSound() {
   try {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const oscillator = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    oscillator.connect(gain);
-    gain.connect(ctx.destination);
-
-    oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(NOTIFICATION_SOUND_FREQ, ctx.currentTime);
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + NOTIFICATION_SOUND_DURATION);
-
-    oscillator.start(ctx.currentTime);
-    oscillator.stop(ctx.currentTime + NOTIFICATION_SOUND_DURATION);
-
-    // Second beep
-    const osc2 = ctx.createOscillator();
-    const gain2 = ctx.createGain();
-    osc2.connect(gain2);
-    gain2.connect(ctx.destination);
-    osc2.type = "sine";
-    osc2.frequency.setValueAtTime(1100, ctx.currentTime + 0.18);
-    gain2.gain.setValueAtTime(0.3, ctx.currentTime + 0.18);
-    gain2.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.18 + NOTIFICATION_SOUND_DURATION);
-    osc2.start(ctx.currentTime + 0.18);
-    osc2.stop(ctx.currentTime + 0.18 + NOTIFICATION_SOUND_DURATION);
-
-    setTimeout(() => ctx.close(), 1000);
-  } catch (e) {
+    const freqs = [880, 1100, 1320];
+    freqs.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      const start = ctx.currentTime + i * 0.18;
+      osc.frequency.setValueAtTime(freq, start);
+      gain.gain.setValueAtTime(0.35, start);
+      gain.gain.exponentialRampToValueAtTime(0.01, start + 0.15);
+      osc.start(start);
+      osc.stop(start + 0.15);
+    });
+    setTimeout(() => ctx.close(), 1500);
+  } catch {
     // Audio not available
   }
 }
 
-export function useRealtimeNotifications() {
+function vibrate() {
+  try {
+    navigator.vibrate?.([200, 100, 200, 100, 300]);
+  } catch {
+    // Vibration not supported
+  }
+}
+
+interface UseRealtimeNotificationsOptions {
+  onNewJob?: (job: Tables<"jobs">) => void;
+}
+
+export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptions) {
   const { user, role } = useAuth();
   const userIdRef = useRef(user?.id);
   const roleRef = useRef(role);
+  const onNewJobRef = useRef(options?.onNewJob);
 
   useEffect(() => {
     userIdRef.current = user?.id;
     roleRef.current = role;
   }, [user, role]);
 
-  const handleNewJob = useCallback((payload: any) => {
-    // Only notify workers about new jobs
-    if (roleRef.current !== "worker") return;
+  useEffect(() => {
+    onNewJobRef.current = options?.onNewJob;
+  }, [options?.onNewJob]);
 
-    const job = payload.new;
+  const handleNewJob = useCallback((payload: any) => {
+    if (roleRef.current !== "worker") return;
+    const job = payload.new as Tables<"jobs">;
     if (!job) return;
 
     playNotificationSound();
+    vibrate();
+
+    // Show toast as backup
     toast("🆕 Новый заказ", {
       description: `${job.title} · ${job.hourly_rate}₽/ч`,
       duration: 6000,
     });
+
+    // Trigger overlay callback
+    onNewJobRef.current?.(job);
   }, []);
 
   const handleNewMessage = useCallback((payload: any) => {
     const msg = payload.new;
     if (!msg) return;
-
-    // Don't notify about own messages
     if (msg.sender_id === userIdRef.current) return;
 
     playNotificationSound();
+    vibrate();
+
     toast("💬 Новое сообщение", {
       description: msg.text || "Медиа-сообщение",
       duration: 5000,
