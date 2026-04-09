@@ -54,6 +54,14 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
 
       // Fetch reviews if dispatcher
       if (roleData?.role === "dispatcher") {
+        // Fetch posted jobs count
+        const { count } = await supabase
+          .from("jobs")
+          .select("id", { count: "exact", head: true })
+          .eq("dispatcher_id", userId);
+        setPostedJobsCount(count || 0);
+
+        // Fetch reviews
         const { data: reviewsData } = await supabase
           .from("dispatcher_reviews")
           .select("*")
