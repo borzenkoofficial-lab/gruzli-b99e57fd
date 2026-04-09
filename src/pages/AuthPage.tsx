@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Users, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Zap, MessageSquare } from "lucide-react";
+import { User, Users, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Zap, MessageSquare, Phone } from "lucide-react";
 import { toast } from "sonner";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 
@@ -21,6 +21,7 @@ const AuthPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -35,14 +36,28 @@ const AuthPage = () => {
           setLoading(false);
           return;
         }
-        const { error } = await supabase.auth.signUp({
+        if (!phone.trim() || phone.replace(/\D/g, "").length < 10) {
+          toast.error("Укажите корректный номер телефона");
+          setLoading(false);
+          return;
+        }
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: { full_name: fullName, role },
+            data: { full_name: fullName, role, phone: phone.trim() },
           },
         });
         if (error) throw error;
+
+        // Update phone in profile after signup
+        if (data.user) {
+          await supabase
+            .from("profiles")
+            .update({ phone: phone.trim() })
+            .eq("user_id", data.user.id);
+        }
+
         toast.success("Регистрация успешна!");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -59,7 +74,7 @@ const AuthPage = () => {
   // ─── WELCOME / ONBOARDING ───
   if (mode === "welcome") {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="h-full bg-background flex flex-col overflow-y-auto">
         {/* Hero section */}
         <div className="flex-1 flex flex-col items-center justify-center px-6 pb-4">
           <motion.div
@@ -143,7 +158,7 @@ const AuthPage = () => {
 
   // ─── AUTH FORM ───
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center px-6 pt-14 pb-8">
+    <div className="h-full bg-background flex flex-col items-center px-6 pt-14 pb-8 overflow-y-auto">
       {/* Back + Logo */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -216,6 +231,22 @@ const AuthPage = () => {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Иван Смирнов"
+                    className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Phone number */}
+              <div className="mt-3">
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Номер телефона</label>
+                <div className="neu-inset rounded-xl px-4 py-3 flex items-center gap-2">
+                  <Phone size={16} className="text-muted-foreground shrink-0" />
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+7 (999) 123-45-67"
                     className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
                   />
                 </div>
