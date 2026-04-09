@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Star, Briefcase, Wallet, Calendar, ChevronRight, Settings, LogOut, Shield, Bell, CreditCard, Trophy, Copy, CheckCircle2, MessageSquare, Hash, ShieldCheck, Headphones, BadgeCheck, Banknote } from "lucide-react";
+import { Star, Briefcase, Wallet, Calendar, ChevronRight, Settings, LogOut, Shield, Bell, CreditCard, Trophy, Copy, CheckCircle2, MessageSquare, Hash, ShieldCheck, Headphones, BadgeCheck, Banknote, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +13,7 @@ interface ProfileScreenProps {
   onOpenSettings?: () => void;
   onOpenNotifications?: () => void;
   onOpenSupport?: (prefillMessage?: string) => void;
+  onOpenPremium?: () => void;
 }
 
 interface Review {
@@ -85,7 +86,7 @@ const VerifiedPopup = ({ open, onClose }: { open: boolean; onClose: () => void }
   );
 };
 
-const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: ProfileScreenProps) => {
+const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onOpenPremium }: ProfileScreenProps) => {
   const { user, profile, role, signOut } = useAuth();
   const [availability, setAvailability] = useState([true, true, true, false, true, true, false]);
   const [statsPeriod, setStatsPeriod] = useState<"today" | "week" | "month">("today");
