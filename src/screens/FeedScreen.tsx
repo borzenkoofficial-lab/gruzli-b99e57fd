@@ -204,7 +204,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onRefreshRef }: FeedScreenProps
 };
 
 interface SwipeableJobCardProps {
-  job: Tables<"jobs">;
+  job: Tables<"jobs"> & { is_bot?: boolean };
   index: number;
   responded: boolean;
   dispatcherName: string;
@@ -248,6 +248,14 @@ const SwipeableJobCard = ({ job, index, responded, dispatcherName, onRespond, on
         onDragEnd={handleDragEnd}
         className="neu-card rounded-2xl p-4 cursor-pointer active:scale-[0.98] transition-transform relative z-10"
       >
+        {/* Bot job overlay */}
+        {(job as any).is_bot && (
+          <div className="absolute top-3 right-3 z-20 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-destructive/15 border border-destructive/20">
+            <Ban size={12} className="text-destructive" />
+            <span className="text-[11px] font-semibold text-destructive">Место занято</span>
+          </div>
+        )}
+
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
