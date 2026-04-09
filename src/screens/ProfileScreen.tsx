@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Star, Briefcase, Wallet, Calendar, ChevronRight, Settings, LogOut, Shield, Bell, CreditCard, Trophy, Copy, CheckCircle2, MessageSquare, Hash } from "lucide-react";
+import { Star, Briefcase, Wallet, Calendar, ChevronRight, Settings, LogOut, Shield, Bell, CreditCard, Trophy, Copy, CheckCircle2, MessageSquare, Hash, ShieldCheck } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { leaderboard } from "@/data/mockData";
@@ -383,6 +384,9 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications }: ProfileScreenPro
 
       {/* Menu */}
       <div className="px-5 space-y-2">
+        {role === "admin" && (
+          <AdminButton />
+        )}
         <button onClick={onOpenSettings} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
           <Settings size={18} className="text-muted-foreground" />
           <span className="text-sm font-medium text-foreground flex-1 text-left">Настройки</span>
