@@ -66,6 +66,19 @@ export function usePushNotifications() {
     return true;
   }, [user]);
 
+  const isSubscriptionMatchingKey = useCallback((sub: PushSubscription): boolean => {
+    try {
+      const key = sub.options?.applicationServerKey;
+      if (!key) return false;
+      const currentKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      const subKey = new Uint8Array(key instanceof ArrayBuffer ? key : (key as any).buffer);
+      if (currentKey.length !== subKey.length) return false;
+      return currentKey.every((v, i) => v === subKey[i]);
+    } catch {
+      return false;
+    }
+  }, []);
+
   const checkExistingSubscription = useCallback(async () => {
     if (!user || !("serviceWorker" in navigator)) return;
 
@@ -75,6 +88,13 @@ export function usePushNotifications() {
 
       const sub = await registration.pushManager.getSubscription();
       if (!sub) return;
+
+      // If subscription was created with a different VAPID key, unsubscribe and let user re-enable
+      if (!isSubscriptionMatchingKey(sub)) {
+        console.log("Push sub VAPID mismatch, unsubscribing stale subscription");
+        await sub.unsubscribe();
+        return;
+      }
 
       const { data } = await supabase
         .from("push_subscriptions")
@@ -92,7 +112,7 @@ export function usePushNotifications() {
     } catch (err) {
       console.error("Check push sub:", err);
     }
-  }, [saveSubscription, user]);
+  }, [saveSubscription, isSubscriptionMatchingKey, user]);
 
   useEffect(() => {
     if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
