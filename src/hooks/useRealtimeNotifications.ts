@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { getNotificationSettings } from "@/hooks/useNotificationSettings";
+import { pushNotification } from "@/screens/NotificationsScreen";
 import type { Tables } from "@/integrations/supabase/types";
 
 function playNotificationSound() {
@@ -68,6 +69,12 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
       duration: 6000,
     });
 
+    pushNotification({
+      type: "job",
+      title: "Новый заказ",
+      body: `${job.title} · ${job.hourly_rate}₽/ч · ${job.address || ""}`,
+    });
+
     const { overlay } = getNotificationSettings();
     if (overlay) {
       onNewJobRef.current?.(job);
@@ -85,6 +92,12 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
     toast("💬 Новое сообщение", {
       description: msg.text || "Медиа-сообщение",
       duration: 5000,
+    });
+
+    pushNotification({
+      type: "message",
+      title: "Новое сообщение",
+      body: msg.text || "Медиа-сообщение",
     });
   }, []);
 

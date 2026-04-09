@@ -10,6 +10,7 @@ const skills = ["Переезды", "Такелаж", "Сборка мебели
 
 interface ProfileScreenProps {
   onOpenSettings?: () => void;
+  onOpenNotifications?: () => void;
 }
 
 interface Review {
@@ -21,7 +22,7 @@ interface Review {
   reviewer_name?: string;
 }
 
-const ProfileScreen = ({ onOpenSettings }: ProfileScreenProps) => {
+const ProfileScreen = ({ onOpenSettings, onOpenNotifications }: ProfileScreenProps) => {
   const { user, profile, role, signOut } = useAuth();
   const [availability, setAvailability] = useState([true, true, true, false, true, true, false]);
   const [statsPeriod, setStatsPeriod] = useState<"today" | "week" | "month">("today");
@@ -80,7 +81,7 @@ const ProfileScreen = ({ onOpenSettings }: ProfileScreenProps) => {
       <div className="pb-28">
         <div className="px-5 pt-14 pb-2 flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Профиль</h1>
-          <button className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
+          <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
             <Bell size={18} className="text-muted-foreground" />
           </button>
         </div>
@@ -254,7 +255,7 @@ const ProfileScreen = ({ onOpenSettings }: ProfileScreenProps) => {
     <div className="pb-28">
       <div className="px-5 pt-14 pb-2 flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground">Профиль</h1>
-        <button className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
+        <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
           <Bell size={18} className="text-muted-foreground" />
         </button>
       </div>
