@@ -156,6 +156,7 @@
     -webkit-touch-callout: none;
     user-select: none;
     -webkit-user-select: none;
+    padding: 0;
   }
 
   #root {
@@ -165,6 +166,7 @@
     min-height: 100vh;
     min-height: 100svh;
     overflow: hidden;
+    margin: 0 auto;
   }
 
   input, textarea, [contenteditable] {
@@ -262,7 +264,7 @@
   }
 
   .safe-top {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 20px);
+    padding-top: calc(env(safe-area-inset-top, 0px) + 24px);
   }
 
   .safe-bottom {
@@ -283,6 +285,7 @@
     min-height: 100vh;
     min-height: 100svh;
     max-height: 100svh;
+    padding-bottom: 0;
   }
 
   .app-scroll {
@@ -299,6 +302,7 @@
     position: relative;
     flex-shrink: 0;
     z-index: 50;
+    margin-top: 0;
   }
 
   .fab-docked {
