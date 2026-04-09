@@ -194,7 +194,7 @@ const Index = () => {
             <ProfileScreen
               onOpenSettings={() => setShowSettings(true)}
               onOpenNotifications={() => setShowNotifications(true)}
-              onOpenSupport={() => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME)}
+              onOpenSupport={(prefillMessage) => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, prefillMessage)}
             />
           )}
         </motion.div>
