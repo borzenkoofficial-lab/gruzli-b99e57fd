@@ -475,6 +475,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          availability: boolean[] | null
           avatar_url: string | null
           balance: number | null
           blocked: boolean
@@ -493,6 +494,7 @@ export type Database = {
           verified: boolean | null
         }
         Insert: {
+          availability?: boolean[] | null
           avatar_url?: string | null
           balance?: number | null
           blocked?: boolean
@@ -511,6 +513,7 @@ export type Database = {
           verified?: boolean | null
         }
         Update: {
+          availability?: boolean[] | null
           avatar_url?: string | null
           balance?: number | null
           blocked?: boolean

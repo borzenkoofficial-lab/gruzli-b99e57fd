@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN availability boolean[] DEFAULT '{true,true,true,true,true,true,true}';

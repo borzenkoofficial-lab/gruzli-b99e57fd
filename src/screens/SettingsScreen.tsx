@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, User, Phone, Bell, Shield, Palette, LogOut, Camera, Check, Loader2, Volume2, Vibrate, Layers, Mail } from "lucide-react";
+import { ArrowLeft, User, Phone, Bell, Shield, Palette, LogOut, Camera, Check, Loader2, Volume2, Vibrate, Layers, Mail, Ban, Trash2, Info, Globe, Database } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -25,7 +25,7 @@ interface SettingsScreenProps {
   onBack: () => void;
 }
 
-type Section = "main" | "profile" | "notifications" | "security" | "appearance";
+type Section = "main" | "profile" | "notifications" | "security" | "appearance" | "blocked" | "about" | "language";
 
 const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   const { user, profile, signOut } = useAuth();
@@ -38,6 +38,8 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   const [phone, setPhone] = useState(profile?.phone || "");
   const [saving, setSaving] = useState(false);
   const [profileErrors, setProfileErrors] = useState<Record<string, string>>({});
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarRef = useRef<HTMLInputElement>(null);
 
   // Password state
   const [password, setPassword] = useState("");
@@ -46,9 +48,14 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
 
   // Theme state
-  const [theme, setTheme] = useState<"dark" | "light">(() => {
-    return localStorage.getItem("theme") === "light" ? "light" : "dark";
-  });
+  const [theme, setTheme] = useState<"dark" | "light">(() => localStorage.getItem("theme") === "light" ? "light" : "dark");
+
+  // Language state
+  const [language, setLanguage] = useState(() => localStorage.getItem("app_language") || "ru");
+
+  // Blocked users
+  const [blockedUsers, setBlockedUsers] = useState<{ id: string; blocked_id: string; full_name: string }[]>([]);
+  const [loadingBlocked, setLoadingBlocked] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -56,6 +63,22 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
       setPhone(profile.phone || "");
     }
   }, [profile]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setAvatarUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `avatars/${user.id}.${ext}`;
+    const { error: uploadErr } = await supabase.storage.from("kartoteka-photos").upload(path, file, { upsert: true });
+    if (uploadErr) { toast.error("Ошибка загрузки"); setAvatarUploading(false); return; }
+    const { data: urlData } = supabase.storage.from("kartoteka-photos").getPublicUrl(path);
+    const avatarUrl = urlData.publicUrl + "?t=" + Date.now();
+    await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("user_id", user.id);
+    toast.success("Фото обновлено");
+    setAvatarUploading(false);
+    window.location.reload();
+  };
 
   const handleSaveProfile = async () => {
     const result = profileSchema.safeParse({ full_name: fullName, phone });
@@ -67,16 +90,10 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
     }
     setProfileErrors({});
     setSaving(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ full_name: result.data.full_name, phone: result.data.phone || "" })
-      .eq("user_id", user!.id);
+    const { error } = await supabase.from("profiles").update({ full_name: result.data.full_name, phone: result.data.phone || "" }).eq("user_id", user!.id);
     setSaving(false);
-    if (error) {
-      toast.error("Не удалось сохранить");
-    } else {
-      toast.success("Профиль обновлён");
-    }
+    if (error) toast.error("Не удалось сохранить");
+    else toast.success("Профиль обновлён");
   };
 
   const handleChangePassword = async () => {
@@ -91,13 +108,8 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
     setChangingPassword(true);
     const { error } = await supabase.auth.updateUser({ password: result.data.password });
     setChangingPassword(false);
-    if (error) {
-      toast.error("Ошибка: " + error.message);
-    } else {
-      toast.success("Пароль изменён");
-      setPassword("");
-      setConfirmPassword("");
-    }
+    if (error) toast.error("Ошибка: " + error.message);
+    else { toast.success("Пароль изменён"); setPassword(""); setConfirmPassword(""); }
   };
 
   const handleDeleteAccount = async () => {
@@ -108,12 +120,45 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
 
   const toggleTheme = (newTheme: "dark" | "light") => {
     setTheme(newTheme);
-    if (newTheme === "light") {
-      document.documentElement.classList.add("light");
-    } else {
-      document.documentElement.classList.remove("light");
-    }
+    if (newTheme === "light") document.documentElement.classList.add("light");
+    else document.documentElement.classList.remove("light");
     localStorage.setItem("theme", newTheme);
+  };
+
+  const changeLanguage = (lang: string) => {
+    setLanguage(lang);
+    localStorage.setItem("app_language", lang);
+    toast.success(lang === "ru" ? "Язык: Русский" : "Language: English");
+  };
+
+  const fetchBlockedUsers = async () => {
+    if (!user) return;
+    setLoadingBlocked(true);
+    const { data: blocks } = await supabase.from("blocked_users").select("id, blocked_id").eq("blocker_id", user.id);
+    if (blocks && blocks.length > 0) {
+      const ids = blocks.map((b) => b.blocked_id);
+      const { data: profiles } = await supabase.from("profiles").select("user_id, full_name").in("user_id", ids);
+      const nameMap: Record<string, string> = {};
+      profiles?.forEach((p) => { nameMap[p.user_id] = p.full_name; });
+      setBlockedUsers(blocks.map((b) => ({ id: b.id, blocked_id: b.blocked_id, full_name: nameMap[b.blocked_id] || "Пользователь" })));
+    } else {
+      setBlockedUsers([]);
+    }
+    setLoadingBlocked(false);
+  };
+
+  const unblockUser = async (blockId: string) => {
+    await supabase.from("blocked_users").delete().eq("id", blockId);
+    toast.success("Пользователь разблокирован");
+    fetchBlockedUsers();
+  };
+
+  const clearCache = () => {
+    const theme = localStorage.getItem("theme");
+    localStorage.clear();
+    if (theme) localStorage.setItem("theme", theme);
+    toast.success("Кеш очищен");
+    setTimeout(() => window.location.reload(), 500);
   };
 
   const InputField = ({ label, value, onChange, error, placeholder, type = "text" }: {
@@ -121,19 +166,13 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   }) => (
     <div className="mb-4">
       <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="w-full neu-inset rounded-2xl py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none"
-      />
+      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full neu-inset rounded-2xl py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none" />
       {error && <p className="text-xs text-destructive mt-1">{error}</p>}
     </div>
   );
 
-  const MenuItem = ({ icon: Icon, label, desc, onClick, destructive }: {
-    icon: any; label: string; desc: string; onClick: () => void; destructive?: boolean;
+  const MenuItem = ({ icon: Icon, label, desc, onClick, destructive, badge }: {
+    icon: any; label: string; desc: string; onClick: () => void; destructive?: boolean; badge?: string;
   }) => (
     <button onClick={onClick} className="w-full flex items-center gap-3 p-4 rounded-2xl neu-flat active:neu-inset transition-all">
       <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${destructive ? "bg-destructive/10" : "neu-raised"}`}>
@@ -143,6 +182,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
         <p className={`text-sm font-semibold ${destructive ? "text-destructive" : "text-foreground"}`}>{label}</p>
         <p className="text-[11px] text-muted-foreground">{desc}</p>
       </div>
+      {badge && <span className="px-2 py-0.5 rounded-full bg-primary/10 text-[10px] text-primary font-bold">{badge}</span>}
     </button>
   );
 
@@ -155,18 +195,31 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
     </div>
   );
 
+  const Toggle = ({ enabled, onToggle, disabled }: { enabled: boolean; onToggle: () => void; disabled?: boolean }) => (
+    <button onClick={onToggle} disabled={disabled} className={`w-11 h-6 rounded-full flex items-center px-0.5 transition-colors ${enabled ? "bg-primary" : "bg-muted"} ${disabled ? "opacity-50" : ""}`}>
+      <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${enabled ? "translate-x-5" : "translate-x-0"}`} />
+    </button>
+  );
+
   // Profile section
   if (section === "profile") {
+    const initials = (fullName || "?").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
     return (
       <div className="min-h-screen bg-background pb-12">
         <Header title="Редактировать профиль" onBack={() => setSection("main")} />
         <div className="px-5">
-          {/* Avatar */}
+          {/* Avatar with upload */}
           <div className="flex justify-center mb-6">
-            <div className="relative">
-              <div className="w-20 h-20 rounded-full gradient-primary flex items-center justify-center text-2xl font-bold text-primary-foreground">
-                {(fullName || "?").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()}
+            <div className="relative cursor-pointer" onClick={() => avatarRef.current?.click()}>
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="" className="w-20 h-20 rounded-full object-cover" />
+              ) : (
+                <div className="w-20 h-20 rounded-full gradient-primary flex items-center justify-center text-2xl font-bold text-primary-foreground">{initials}</div>
+              )}
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full gradient-primary flex items-center justify-center">
+                {avatarUploading ? <Loader2 size={14} className="text-primary-foreground animate-spin" /> : <Camera size={14} className="text-primary-foreground" />}
               </div>
+              <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
             </div>
           </div>
 
@@ -175,16 +228,10 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
 
           <div className="mb-4">
             <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Email</label>
-            <div className="w-full neu-inset rounded-2xl py-3 px-4 text-sm text-muted-foreground">
-              {user?.email || "—"}
-            </div>
+            <div className="w-full neu-inset rounded-2xl py-3 px-4 text-sm text-muted-foreground">{user?.email || "—"}</div>
           </div>
 
-          <button
-            onClick={handleSaveProfile}
-            disabled={saving}
-            className="w-full py-3.5 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
-          >
+          <button onClick={handleSaveProfile} disabled={saving} className="w-full py-3.5 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2">
             {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
             {saving ? "Сохранение..." : "Сохранить"}
           </button>
@@ -195,31 +242,16 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
 
   // Notifications section
   if (section === "notifications") {
-    const Toggle = ({ enabled, onToggle, disabled }: { enabled: boolean; onToggle: () => void; disabled?: boolean }) => (
-      <button
-        onClick={onToggle}
-        disabled={disabled}
-        className={`w-11 h-6 rounded-full flex items-center px-0.5 transition-colors ${enabled ? "bg-primary" : "bg-muted"} ${disabled ? "opacity-50" : ""}`}
-      >
-        <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${enabled ? "translate-x-5" : "translate-x-0"}`} />
-      </button>
-    );
-
     return (
       <div className="min-h-screen bg-background pb-12">
         <Header title="Уведомления" onBack={() => setSection("main")} />
         <div className="px-5 space-y-4">
-          {/* Push notifications */}
           <div className="neu-card rounded-2xl p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-foreground">Push-уведомления</p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {permissionState === "unsupported"
-                    ? "❌ Не поддерживается браузером"
-                    : permissionState === "granted"
-                      ? isSubscribed ? "✅ Включены и активны" : "⏳ Подключение..."
-                      : permissionState === "denied" ? "❌ Заблокированы в браузере" : "Не включены"}
+                  {permissionState === "unsupported" ? "❌ Не поддерживается" : permissionState === "granted" ? (isSubscribed ? "✅ Включены" : "⏳ Подключение...") : permissionState === "denied" ? "❌ Заблокированы" : "Не включены"}
                 </p>
               </div>
               {permissionState === "default" && (
@@ -237,19 +269,16 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
 
           {permissionState === "denied" && (
             <div className="neu-card rounded-2xl p-4">
-              <p className="text-xs text-muted-foreground">
-                Push-уведомления заблокированы в настройках браузера. Откройте настройки сайта и разрешите уведомления.
-              </p>
+              <p className="text-xs text-muted-foreground">Push-уведомления заблокированы в настройках браузера.</p>
             </div>
           )}
 
-          {/* In-app notification settings */}
           <div className="neu-card rounded-2xl p-4 space-y-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">В приложении</p>
             {([
-              { key: "sound" as const, label: "Звук", desc: "Звуковой сигнал при новых событиях", icon: Volume2 },
+              { key: "sound" as const, label: "Звук", desc: "Звуковой сигнал", icon: Volume2 },
               { key: "vibration" as const, label: "Вибрация", desc: "Вибрация при уведомлениях", icon: Vibrate },
-              { key: "overlay" as const, label: "Оверлей заказов", desc: "Полноэкранное уведомление о новом заказе", icon: Layers },
+              { key: "overlay" as const, label: "Оверлей заказов", desc: "Полноэкранное уведомление", icon: Layers },
             ]).map((item) => (
               <div key={item.key} className="flex items-center justify-between py-1">
                 <div className="flex items-center gap-3">
@@ -264,13 +293,12 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
             ))}
           </div>
 
-          {/* Push categories */}
           <div className="neu-card rounded-2xl p-4 space-y-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Категории push</p>
             {([
               { key: "pushJobs" as const, label: "Новые заказы", desc: "Уведомления о новых заявках" },
               { key: "pushMessages" as const, label: "Сообщения", desc: "Уведомления о новых сообщениях" },
-              { key: "pushResponses" as const, label: "Отклики", desc: "Когда кто-то откликнулся на заявку" },
+              { key: "pushResponses" as const, label: "Отклики", desc: "Когда кто-то откликнулся" },
             ]).map((item) => (
               <div key={item.key} className="flex items-center justify-between py-1">
                 <div>
@@ -282,29 +310,16 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
             ))}
           </div>
 
-          {/* Email notifications */}
           <div className="neu-card rounded-2xl p-4 space-y-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">📧 Email-уведомления</p>
-            
             <div className="mb-2">
               <label className="text-xs text-muted-foreground mb-1.5 block">Почта для уведомлений</label>
-              <input
-                type="email"
-                value={notifSettings.notificationEmail}
-                onChange={(e) => updateNotif("notificationEmail", e.target.value)}
-                placeholder={user?.email || "email@example.com"}
-                className="w-full neu-inset rounded-2xl py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none"
-              />
-              <p className="text-[10px] text-muted-foreground mt-1">
-                {notifSettings.notificationEmail
-                  ? `Уведомления будут приходить на ${notifSettings.notificationEmail}`
-                  : `По умолчанию: ${user?.email || "ваш email аккаунта"}`}
-              </p>
+              <input type="email" value={notifSettings.notificationEmail} onChange={(e) => updateNotif("notificationEmail", e.target.value)} placeholder={user?.email || "email@example.com"} className="w-full neu-inset rounded-2xl py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none" />
+              <p className="text-[10px] text-muted-foreground mt-1">{notifSettings.notificationEmail ? `Уведомления на ${notifSettings.notificationEmail}` : `По умолчанию: ${user?.email || "ваш email"}`}</p>
             </div>
-
             {([
-              { key: "emailJobs" as const, label: "Новые заказы", desc: "Email при появлении нового заказа" },
-              { key: "emailMessages" as const, label: "Сообщения", desc: "Email при новых сообщениях в чате" },
+              { key: "emailJobs" as const, label: "Новые заказы", desc: "Email при новом заказе" },
+              { key: "emailMessages" as const, label: "Сообщения", desc: "Email при новых сообщениях" },
             ]).map((item) => (
               <div key={item.key} className="flex items-center justify-between py-1">
                 <div className="flex items-center gap-3">
@@ -333,39 +348,20 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
             <h3 className="text-sm font-bold text-foreground mb-4">Изменить пароль</h3>
             <InputField label="Новый пароль" value={password} onChange={setPassword} error={passwordErrors.password} placeholder="Минимум 6 символов" type="password" />
             <InputField label="Повторите пароль" value={confirmPassword} onChange={setConfirmPassword} error={passwordErrors.confirmPassword} placeholder="Ещё раз" type="password" />
-            <button
-              onClick={handleChangePassword}
-              disabled={changingPassword || !password}
-              className="w-full py-3 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
-            >
+            <button onClick={handleChangePassword} disabled={changingPassword || !password} className="w-full py-3 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2">
               {changingPassword ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
               {changingPassword ? "Сохранение..." : "Изменить пароль"}
             </button>
           </div>
-
           <div className="neu-card rounded-2xl p-4">
             <h3 className="text-sm font-bold text-foreground mb-2">Сессия</h3>
-            <p className="text-xs text-muted-foreground mb-3">
-              Email: {user?.email}<br />
-              Последний вход: {user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString("ru-RU") : "—"}
-            </p>
-            <button
-              onClick={signOut}
-              className="w-full py-3 rounded-2xl border border-destructive/30 text-destructive text-sm font-bold active:scale-95 transition-transform"
-            >
-              Выйти из аккаунта
-            </button>
+            <p className="text-xs text-muted-foreground mb-3">Email: {user?.email}<br />Последний вход: {user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString("ru-RU") : "—"}</p>
+            <button onClick={signOut} className="w-full py-3 rounded-2xl border border-destructive/30 text-destructive text-sm font-bold active:scale-95 transition-transform">Выйти из аккаунта</button>
           </div>
-
           <div className="neu-card rounded-2xl p-4">
             <h3 className="text-sm font-bold text-destructive mb-2">Опасная зона</h3>
-            <p className="text-xs text-muted-foreground mb-3">Удаление аккаунта необратимо. Все данные будут потеряны.</p>
-            <button
-              onClick={handleDeleteAccount}
-              className="w-full py-3 rounded-2xl bg-destructive/10 text-destructive text-sm font-bold active:scale-95 transition-transform"
-            >
-              Удалить аккаунт
-            </button>
+            <p className="text-xs text-muted-foreground mb-3">Удаление аккаунта необратимо.</p>
+            <button onClick={handleDeleteAccount} className="w-full py-3 rounded-2xl bg-destructive/10 text-destructive text-sm font-bold active:scale-95 transition-transform">Удалить аккаунт</button>
           </div>
         </div>
       </div>
@@ -381,17 +377,8 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
           <div className="neu-card rounded-2xl p-4">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Тема</p>
             <div className="grid grid-cols-2 gap-3">
-              {([
-                { id: "dark" as const, label: "Тёмная", emoji: "🌙" },
-                { id: "light" as const, label: "Светлая", emoji: "☀️" },
-              ]).map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => toggleTheme(t.id)}
-                  className={`py-4 rounded-2xl text-center transition-all ${
-                    theme === t.id ? "gradient-primary text-primary-foreground" : "neu-flat text-muted-foreground"
-                  }`}
-                >
+              {([{ id: "dark" as const, label: "Тёмная", emoji: "🌙" }, { id: "light" as const, label: "Светлая", emoji: "☀️" }]).map((t) => (
+                <button key={t.id} onClick={() => toggleTheme(t.id)} className={`py-4 rounded-2xl text-center transition-all ${theme === t.id ? "gradient-primary text-primary-foreground" : "neu-flat text-muted-foreground"}`}>
                   <span className="text-2xl block mb-1">{t.emoji}</span>
                   <span className="text-xs font-semibold">{t.label}</span>
                 </button>
@@ -403,16 +390,118 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
     );
   }
 
+  // Language section
+  if (section === "language") {
+    return (
+      <div className="min-h-screen bg-background pb-12">
+        <Header title="Язык" onBack={() => setSection("main")} />
+        <div className="px-5 space-y-3">
+          {[{ id: "ru", label: "Русский", emoji: "🇷🇺" }, { id: "en", label: "English", emoji: "🇬🇧" }].map((lang) => (
+            <button key={lang.id} onClick={() => changeLanguage(lang.id)} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${language === lang.id ? "neu-card border border-primary/30" : "neu-flat"}`}>
+              <span className="text-2xl">{lang.emoji}</span>
+              <span className={`text-sm font-semibold flex-1 text-left ${language === lang.id ? "text-primary" : "text-foreground"}`}>{lang.label}</span>
+              {language === lang.id && <Check size={18} className="text-primary" />}
+            </button>
+          ))}
+          <p className="text-[11px] text-muted-foreground text-center mt-4">Полная локализация скоро будет доступна</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Blocked users section
+  if (section === "blocked") {
+    if (blockedUsers.length === 0 && !loadingBlocked) fetchBlockedUsers();
+    return (
+      <div className="min-h-screen bg-background pb-12">
+        <Header title="Заблокированные" onBack={() => setSection("main")} />
+        <div className="px-5">
+          {loadingBlocked ? (
+            <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-primary" /></div>
+          ) : blockedUsers.length === 0 ? (
+            <div className="neu-card rounded-2xl p-6 text-center">
+              <Ban size={32} className="text-muted-foreground mx-auto mb-3" />
+              <p className="text-sm font-semibold text-foreground mb-1">Список пуст</p>
+              <p className="text-xs text-muted-foreground">Вы никого не заблокировали</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {blockedUsers.map((bu) => (
+                <div key={bu.id} className="neu-card rounded-2xl p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full neu-raised-sm flex items-center justify-center text-xs font-bold text-muted-foreground">
+                    {bu.full_name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+                  </div>
+                  <span className="text-sm font-semibold text-foreground flex-1">{bu.full_name}</span>
+                  <button onClick={() => unblockUser(bu.id)} className="px-3 py-1.5 rounded-xl bg-destructive/10 text-destructive text-xs font-bold active:scale-95 transition-transform">
+                    Разблокировать
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // About section
+  if (section === "about") {
+    return (
+      <div className="min-h-screen bg-background pb-12">
+        <Header title="О приложении" onBack={() => setSection("main")} />
+        <div className="px-5 space-y-4">
+          <div className="neu-card rounded-2xl p-6 text-center">
+            <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl font-extrabold text-primary-foreground">G</span>
+            </div>
+            <h2 className="text-lg font-bold text-foreground">Gruzli</h2>
+            <p className="text-xs text-muted-foreground mt-1">Версия 1.0.0</p>
+            <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
+              Платформа для грузчиков и диспетчеров. Быстрый поиск работы и исполнителей.
+            </p>
+          </div>
+
+          <div className="neu-card rounded-2xl p-4 space-y-3">
+            <a href="https://gruzli.lovable.app" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 py-2">
+              <Globe size={16} className="text-primary" />
+              <span className="text-sm text-foreground">Веб-сайт</span>
+            </a>
+            <div className="h-px bg-border" />
+            <button onClick={() => toast.info("Политика конфиденциальности будет доступна позже")} className="flex items-center gap-3 py-2 w-full text-left">
+              <Shield size={16} className="text-primary" />
+              <span className="text-sm text-foreground">Политика конфиденциальности</span>
+            </button>
+            <div className="h-px bg-border" />
+            <button onClick={() => toast.info("Пользовательское соглашение будет доступно позже")} className="flex items-center gap-3 py-2 w-full text-left">
+              <Info size={16} className="text-primary" />
+              <span className="text-sm text-foreground">Пользовательское соглашение</span>
+            </button>
+          </div>
+
+          <p className="text-[11px] text-muted-foreground text-center">© 2025 Gruzli. Все права защищены.</p>
+        </div>
+      </div>
+    );
+  }
+
   // Main settings menu
   return (
     <div className="min-h-screen bg-background pb-12">
       <Header title="Настройки" onBack={onBack} />
       <div className="px-5 space-y-2">
         <MenuItem icon={User} label="Профиль" desc="Имя, телефон, фото" onClick={() => setSection("profile")} />
-        <MenuItem icon={Bell} label="Уведомления" desc="Push, звуки, типы уведомлений" onClick={() => setSection("notifications")} />
+        <MenuItem icon={Bell} label="Уведомления" desc="Push, звуки, email" onClick={() => setSection("notifications")} />
         <MenuItem icon={Shield} label="Безопасность" desc="Пароль, сессия, удаление" onClick={() => setSection("security")} />
         <MenuItem icon={Palette} label="Оформление" desc="Тема приложения" onClick={() => setSection("appearance")} />
-        <div className="pt-4">
+        <MenuItem icon={Globe} label="Язык" desc={language === "ru" ? "Русский" : "English"} onClick={() => setSection("language")} badge={language.toUpperCase()} />
+        <MenuItem icon={Ban} label="Заблокированные" desc="Управление чёрным списком" onClick={() => setSection("blocked")} />
+        <MenuItem icon={Info} label="О приложении" desc="Версия, ссылки, лицензии" onClick={() => setSection("about")} />
+
+        <div className="pt-2">
+          <MenuItem icon={Database} label="Очистить кеш" desc="Сбросить локальные данные" onClick={clearCache} />
+        </div>
+
+        <div className="pt-2">
           <MenuItem icon={LogOut} label="Выйти" desc="Выход из аккаунта" onClick={signOut} destructive />
         </div>
       </div>
