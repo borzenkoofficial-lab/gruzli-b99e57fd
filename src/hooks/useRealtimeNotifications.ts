@@ -2,9 +2,12 @@ import { useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { getNotificationSettings } from "@/hooks/useNotificationSettings";
 import type { Tables } from "@/integrations/supabase/types";
 
 function playNotificationSound() {
+  const { sound } = getNotificationSettings();
+  if (!sound) return;
   try {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     const freqs = [880, 1100, 1320];
@@ -22,17 +25,15 @@ function playNotificationSound() {
       osc.stop(start + 0.15);
     });
     setTimeout(() => ctx.close(), 1500);
-  } catch {
-    // Audio not available
-  }
+  } catch {}
 }
 
 function vibrate() {
+  const { vibration } = getNotificationSettings();
+  if (!vibration) return;
   try {
     navigator.vibrate?.([200, 100, 200, 100, 300]);
-  } catch {
-    // Vibration not supported
-  }
+  } catch {}
 }
 
 interface UseRealtimeNotificationsOptions {
@@ -62,14 +63,15 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
     playNotificationSound();
     vibrate();
 
-    // Show toast as backup
     toast("🆕 Новый заказ", {
       description: `${job.title} · ${job.hourly_rate}₽/ч`,
       duration: 6000,
     });
 
-    // Trigger overlay callback
-    onNewJobRef.current?.(job);
+    const { overlay } = getNotificationSettings();
+    if (overlay) {
+      onNewJobRef.current?.(job);
+    }
   }, []);
 
   const handleNewMessage = useCallback((payload: any) => {
@@ -91,16 +93,8 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
 
     const channel = supabase
       .channel("realtime-notifications")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "jobs" },
-        handleNewJob
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
-        handleNewMessage
-      )
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "jobs" }, handleNewJob)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, handleNewMessage)
       .subscribe();
 
     return () => {
