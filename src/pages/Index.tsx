@@ -30,6 +30,13 @@ const Index = () => {
   const { role, user } = useAuth();
   const { unreadMessages, newJobsCount, resetMessages, resetJobs } = useUnreadCounts();
   const [tab, setTab] = useState("feed");
+
+  // Listen for navigate-to-feed events from NewJobAlert
+  useEffect(() => {
+    const handler = () => setTab("feed");
+    window.addEventListener("navigate-to-feed", handler);
+    return () => window.removeEventListener("navigate-to-feed", handler);
+  }, []);
   const [openChatId, setOpenChatId] = useState<string | null>(null);
   const [openChatTitle, setOpenChatTitle] = useState("");
   const [showCreateJob, setShowCreateJob] = useState(false);
