@@ -1,57 +1,28 @@
 
 
-# Plan: Fake Activity System (Subscribers + Bot Jobs)
+# Fix: Bottom Nav Scrolling + Channel Screen Post Visibility
 
-## Overview
-Two features to create an impression of high platform activity, both controlled from admin panel.
+## Problems Identified
 
-## 1. Channel — 15K Subscribers Display
-- Add subscriber count display in `ChannelScreen.tsx` header/bio area: **"15 247 подписчиков"**
-- Store the fake count in a new `app_settings` table (key-value), so admin can adjust it
-- Show it below the channel name next to post count
+1. **Bottom nav moves when scrolling** — `.bottom-docked` uses `position: relative` which makes it part of the document flow. When content overflows, it gets pushed down. Need to make it truly fixed at the bottom.
 
-## 2. Bot Jobs System
-Create a system that auto-generates fake job postings that always show as "closed" to workers.
+2. **Channel screen can't scroll to see all posts** — `ChannelScreen` renders as a full-screen overlay with `min-h-screen` but no proper scroll container. The sticky header + posts list lacks a scrollable wrapper, so content gets clipped.
 
-### Database Changes (1 migration)
-- New `app_settings` table: `id (text PK)`, `value (jsonb)`, `updated_at`
-  - Row `fake_subscribers` → `{ "count": 15247 }`
-  - Row `bot_jobs_enabled` → `{ "enabled": false }`
-- Add `is_bot` column (`boolean default false`) to `jobs` table — marks fake jobs
+## Changes
 
-### How Bot Jobs Work
-- Admin panel toggle enables/disables bot job generation
-- A new component `AdminSettingsTab` in admin panel with:
-  - Toggle for bot jobs on/off (writes to `app_settings`)
-  - Input to set fake subscriber count
-- In `FeedScreen`, bot jobs (`is_bot = true`) always show status "Место занято" — workers see them but can't respond
-- Bot jobs are created via a dedicated edge function `generate-bot-jobs` that creates realistic-looking jobs with random names, addresses, rates
-- Scheduled via pg_cron every 15-30 minutes (only when enabled)
+### 1. Fix `.bottom-docked` in `src/index.css`
+Change from `position: relative` to `position: sticky; bottom: 0` (or keep flexbox approach but ensure `flex-shrink: 0` works). The real fix: the `app-scroll` div needs `padding-bottom` equal to nav height, and the nav needs to stay pinned. Since the layout uses flexbox (`app-shell` is flex column), the nav should already stay at bottom — but content inside `app-scroll` may need bottom padding so the last items aren't hidden behind the nav.
 
-### Admin Panel Changes
-- Add 4th tab "Настройки" to `AdminPage.tsx` with:
-  - **Bot Jobs**: on/off toggle + "Generate now" button
-  - **Fake Subscribers**: number input
-- New component `AdminSettingsTab.tsx`
+Actually, reviewing the layout: `app-shell` is flex column with `overflow: hidden`. `app-scroll` is `flex: 1` with `overflow-y: auto`. `bottom-docked` is `flex-shrink: 0`. This should work correctly. The issue is likely that the feed screen content doesn't have enough bottom padding, so the last card is partially hidden behind the nav. Will add `pb-20` (or similar) to scrollable content areas.
 
-### Feed Changes (`FeedScreen.tsx`)
-- For jobs where `is_bot === true`: show a "Место занято" badge, disable respond button, show "Не успели — место уже занято"
+Also, the `PullToRefresh` wrapper on the feed tab may not have proper scroll containment, causing the bottom nav to be pushed.
 
-### Files to Create
-- `src/components/admin/AdminSettingsTab.tsx`
-- `supabase/functions/generate-bot-jobs/index.ts`
-- Migration for `app_settings` table + `jobs.is_bot` column
+### 2. Fix `ChannelScreen.tsx` scroll
+Wrap the entire channel screen in a proper flex layout with a scrollable content area, similar to `app-shell` pattern. Add `overflow-y: auto` to the posts container and constrain the screen height.
 
-### Files to Modify
-- `src/pages/AdminPage.tsx` — add Settings tab
-- `src/screens/ChannelScreen.tsx` — show subscriber count from `app_settings`
-- `src/screens/FeedScreen.tsx` — handle `is_bot` jobs as closed
-
-### Technical Details
-- RLS on `app_settings`: admin can read/write, authenticated can read
-- Edge function uses service role to insert bot jobs
-- Bot job dispatcher_id set to a system UUID (admin's ID or a dedicated bot account)
-- Fake names pool: 20+ Russian names for dispatchers
-- Fake addresses pool: 20+ Moscow addresses
-- Rates: random 250-600₽/hr
+### Files Modified
+- `src/index.css` — ensure bottom-docked is properly fixed
+- `src/screens/ChannelScreen.tsx` — add proper scroll container, add bottom padding
+- `src/screens/FeedScreen.tsx` — add bottom padding to content
+- `src/pages/Index.tsx` — check PullToRefresh wrapper doesn't break layout
 
