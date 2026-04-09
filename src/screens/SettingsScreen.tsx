@@ -238,7 +238,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
                   <p className="text-[11px] text-muted-foreground">{item.desc}</p>
                 </div>
                 <div className="w-10 h-6 rounded-full bg-primary/20 flex items-center justify-end px-0.5">
-                  <div className="w-5 h-5 rounded-full gradient-primary" />
+                  <div className="w-5 h-5 rounded-full bg-primary" />
                 </div>
               </div>
             ))}
