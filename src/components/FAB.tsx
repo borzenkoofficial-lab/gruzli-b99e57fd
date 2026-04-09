@@ -12,7 +12,7 @@ const FAB = () => {
   ];
 
   return (
-    <div className="fixed bottom-24 right-4 z-40">
+    <div className="fab-docked">
       <AnimatePresence>
         {open && (
           <motion.div
