@@ -6,14 +6,25 @@ import type { Tables } from "@/integrations/supabase/types";
 
 type OpenChatFn = (conversationId: string, title: string) => void;
 
+const FREE_WEEKLY_LIMIT = 3;
+
 export function useRespondToJob(onOpenChat?: OpenChatFn) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const respondAndOpenChat = useCallback(
     async (job: Tables<"jobs">) => {
       if (!user) {
         toast.error("Войдите в аккаунт");
         return false;
+      }
+
+      // Check weekly completed jobs limit for non-premium workers
+      if (!profile?.is_premium) {
+        const { data: weeklyCount } = await supabase.rpc("get_weekly_completed_jobs", { _user_id: user.id });
+        if (weeklyCount !== null && weeklyCount >= FREE_WEEKLY_LIMIT) {
+          toast.error(`Лимит ${FREE_WEEKLY_LIMIT} выполненных заказов в неделю. Оформите Premium для безлимита!`, { duration: 5000 });
+          return false;
+        }
       }
 
       // 1. Create application (job_response)
@@ -112,7 +123,7 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
       onOpenChat?.(conversationId, job.title || "Чат");
       return true;
     },
-    [user, onOpenChat]
+    [user, profile, onOpenChat]
   );
 
   return { respondAndOpenChat };
