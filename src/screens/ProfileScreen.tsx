@@ -518,15 +518,21 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
       {/* Premium card */}
       {!profile?.is_premium ? (
         <div className="mx-5 mb-4">
-          <button onClick={onOpenPremium} className="w-full rounded-2xl overflow-hidden" style={{
+          <button onClick={async () => {
+            if (!user) return;
+            const { error } = await supabase.from("profiles").update({ is_premium: true, premium_until: null }).eq("user_id", user.id);
+            if (error) { toast.error("Ошибка активации"); return; }
+            toast.success("Premium активирован бесплатно! 🎉");
+            window.location.reload();
+          }} className="w-full rounded-2xl overflow-hidden" style={{
             background: "linear-gradient(135deg, hsl(43 96% 56%), hsl(38 92% 50%), hsl(25 95% 53%))",
             boxShadow: "0 4px 20px hsl(38 92% 50% / 0.3)",
           }}>
             <div className="px-5 py-4 flex items-center gap-3">
               <Crown size={24} className="text-white" />
               <div className="flex-1 text-left">
-                <p className="text-white text-sm font-bold">Gruzli Premium</p>
-                <p className="text-white/70 text-[11px]">Безлимитные заказы и золотой аккаунт</p>
+                <p className="text-white text-sm font-bold">Подключить Premium</p>
+                <p className="text-white/70 text-[11px]">Бесплатно — все функции сразу!</p>
               </div>
               <ChevronRight size={18} className="text-white/60" />
             </div>
@@ -537,10 +543,8 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           <div className="flex items-center gap-3">
             <Crown size={18} className="text-yellow-500" />
             <div className="flex-1">
-              <p className="text-sm font-bold text-foreground">Premium активен</p>
-              <p className="text-[11px] text-muted-foreground">
-                До {profile?.premium_until ? new Date(profile.premium_until).toLocaleDateString("ru-RU") : "∞"}
-              </p>
+              <p className="text-sm font-bold text-foreground">Premium активен ✓</p>
+              <p className="text-[11px] text-muted-foreground">Бесплатно — безлимит</p>
             </div>
           </div>
         </div>
