@@ -197,6 +197,11 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
               {profile.completed_orders || 0} выполненных заказов
             </p>
           )}
+          {isDispatcher && !reviews.length && (
+            <p className="text-[11px] text-muted-foreground">
+              {postedJobsCount} размещённых заказов
+            </p>
+          )}
           {isDispatcher && (
             <>
               <div className="flex gap-1">
