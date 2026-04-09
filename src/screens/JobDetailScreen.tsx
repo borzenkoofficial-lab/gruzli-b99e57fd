@@ -61,6 +61,13 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
               )}
             </div>
             <h1 className="text-lg font-bold text-foreground">{job.title}</h1>
+            <button
+              onClick={() => onOpenProfile?.(job.dispatcher_id)}
+              className="flex items-center gap-1.5 mt-1.5 active:opacity-70"
+            >
+              <UserPlus size={12} className="text-primary" />
+              <span className="text-xs text-primary font-medium">{dispatcherName}</span>
+            </button>
           </div>
         </div>
 
