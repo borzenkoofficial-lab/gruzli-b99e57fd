@@ -278,21 +278,6 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
-        <div className="flex items-center gap-3 px-4 safe-top pb-3">
-          <button onClick={onBack} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary/60 transition-colors active:scale-95">
-            <ArrowLeft size={20} className="text-foreground" />
-          </button>
-          <div className="flex-1">
-            <div className="flex items-center gap-1.5">
-              <h1 className="text-[17px] font-extrabold text-foreground">Gruzli Official</h1>
-              <BadgeCheck size={18} className="text-primary fill-primary/20" />
-            </div>
-            <p className="text-[12px] text-muted-foreground">
-              {subscriberCount ? `${subscriberCount.toLocaleString("ru-RU")} подписчиков · ` : ""}{posts.length} постов
-            </p>
-          </div>
-        </div>
-
         {/* Channel banner */}
         <div className="relative h-[100px] bg-gradient-to-br from-primary/30 via-primary/10 to-accent/20 overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--primary)/0.3),transparent_70%)]" />
@@ -316,7 +301,6 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
             Официальный канал платформы Gruzli 🚛 Обновления, новости и важные объявления.
           </p>
         </div>
-      </div>
 
       {/* Compose button for dispatchers and admins */}
       {canPost && (
