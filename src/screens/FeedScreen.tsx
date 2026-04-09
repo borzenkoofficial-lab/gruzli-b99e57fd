@@ -175,7 +175,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onRefreshRef }: FeedScreenProps
       </div>
 
       {/* Job Cards */}
-      <div className="px-5 space-y-4">
+      <div className="px-5 space-y-4 pb-6">
         {loading ? (
           <div className="text-center py-12 text-muted-foreground text-sm">Загрузка заявок...</div>
         ) : filtered.length === 0 ? (

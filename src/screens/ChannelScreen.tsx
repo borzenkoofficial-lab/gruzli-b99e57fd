@@ -257,9 +257,9 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-border">
+    <div className="flex flex-col h-[var(--app-height)] bg-background overflow-hidden">
+      {/* Back button bar - fixed */}
+      <div className="shrink-0 bg-background/95 backdrop-blur-xl border-b border-border z-20">
         <div className="flex items-center gap-3 px-4 safe-top pb-3">
           <button onClick={onBack} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary/60 transition-colors active:scale-95">
             <ArrowLeft size={20} className="text-foreground" />
@@ -274,7 +274,10 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
             </p>
           </div>
         </div>
+      </div>
 
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
         {/* Channel banner */}
         <div className="relative h-[100px] bg-gradient-to-br from-primary/30 via-primary/10 to-accent/20 overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--primary)/0.3),transparent_70%)]" />
@@ -298,7 +301,6 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
             Официальный канал платформы Gruzli 🚛 Обновления, новости и важные объявления.
           </p>
         </div>
-      </div>
 
       {/* Compose button for dispatchers and admins */}
       {canPost && (
@@ -526,6 +528,7 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
           ))}
         </div>
       )}
+      </div>{/* end scrollable content */}
     </div>
   );
 };
