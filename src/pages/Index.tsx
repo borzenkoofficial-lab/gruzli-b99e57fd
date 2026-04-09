@@ -26,6 +26,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const { role, user } = useAuth();
+  const { unreadMessages, newJobsCount, resetMessages, resetJobs } = useUnreadCounts();
   const [tab, setTab] = useState("feed");
   const [openChatId, setOpenChatId] = useState<string | null>(null);
   const [openChatTitle, setOpenChatTitle] = useState("");
