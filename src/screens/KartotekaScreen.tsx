@@ -108,7 +108,7 @@ const KartotekaScreen = () => {
   }
 
   return (
-    <div className="pb-28">
+    <div >
       {/* Header */}
       <div className="px-5 safe-top pb-2">
         <div className="flex items-center justify-between">

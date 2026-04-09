@@ -245,7 +245,7 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-border">
         <div className="flex items-center gap-3 px-4 safe-top pb-3">

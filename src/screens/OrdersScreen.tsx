@@ -158,7 +158,7 @@ const OrdersScreen = () => {
 
   if (loading) {
     return (
-      <div className="pb-28">
+      <div >
         <div className="px-5 safe-top pb-4">
           <h1 className="text-lg font-bold text-foreground">Мои заказы</h1>
         </div>
@@ -173,7 +173,7 @@ const OrdersScreen = () => {
   const confirmed = jobs.filter((j) => j.workerStatus);
 
   return (
-    <div className="pb-28">
+    <div >
       <div className="px-5 safe-top pb-4">
         <h1 className="text-lg font-bold text-foreground">Мои заказы</h1>
         <p className="text-xs text-muted-foreground mt-0.5">Заявки, на которые вас выбрали</p>

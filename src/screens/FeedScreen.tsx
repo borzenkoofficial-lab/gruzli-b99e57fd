@@ -109,7 +109,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile }: FeedScreenProps) => {
   };
 
   return (
-    <div className="pb-28">
+    <div >
       {/* Header with logo */}
       <div className="px-5 safe-top pb-2 flex items-center justify-between">
         <div>
