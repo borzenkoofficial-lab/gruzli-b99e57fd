@@ -106,8 +106,11 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
 
   const toggleTheme = (newTheme: "dark" | "light") => {
     setTheme(newTheme);
-    document.documentElement.classList.remove("dark", "light");
-    document.documentElement.classList.add(newTheme);
+    if (newTheme === "light") {
+      document.documentElement.classList.add("light");
+    } else {
+      document.documentElement.classList.remove("light");
+    }
     localStorage.setItem("theme", newTheme);
   };
 
