@@ -11,9 +11,10 @@ import type { Tables } from "@/integrations/supabase/types";
 interface DispatcherFeedScreenProps {
   onCreateJob: () => void;
   onViewResponses: (job: Tables<"jobs">) => void;
+  onRefreshRef?: React.MutableRefObject<(() => Promise<void>) | null>;
 }
 
-const DispatcherFeedScreen = ({ onCreateJob, onViewResponses }: DispatcherFeedScreenProps) => {
+const DispatcherFeedScreen = ({ onCreateJob, onViewResponses, onRefreshRef }: DispatcherFeedScreenProps) => {
   const { user } = useAuth();
   const [jobs, setJobs] = useState<(Tables<"jobs"> & { response_count: number })[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +46,12 @@ const DispatcherFeedScreen = ({ onCreateJob, onViewResponses }: DispatcherFeedSc
   useEffect(() => {
     fetchJobs();
   }, [user]);
+
+  useEffect(() => {
+    if (onRefreshRef) {
+      onRefreshRef.current = fetchJobs;
+    }
+  }, [onRefreshRef]);
 
   const handleDelete = async (jobId: string) => {
     const { error } = await supabase.from("jobs").delete().eq("id", jobId);
