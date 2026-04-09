@@ -257,7 +257,7 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-col h-[var(--app-height)] bg-background overflow-hidden">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-border">
         <div className="flex items-center gap-3 px-4 safe-top pb-3">
