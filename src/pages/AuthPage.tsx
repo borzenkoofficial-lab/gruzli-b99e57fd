@@ -136,7 +136,7 @@ const AuthPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
-           className="space-y-3 w-full shrink-0 pb-2"
+           className="space-y-3 w-full shrink-0 pb-0"
           >
             <button
               onClick={() => setMode("register")}
