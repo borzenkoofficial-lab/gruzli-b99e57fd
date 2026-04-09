@@ -168,7 +168,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
               <p className="text-xs text-muted-foreground mt-0.5">Официальный аккаунт</p>
               <div className="flex items-center gap-1 mt-1">
                 <span className="text-xs text-primary font-semibold">Администрация</span>
-                <span className="ml-1 px-2 py-0.5 rounded-full bg-primary/10 text-[10px] text-primary font-bold">✓ Верифицирован</span>
+                <button onClick={() => setShowVerified(true)} className="ml-1 px-2 py-0.5 rounded-full bg-primary/10 text-[10px] text-primary font-bold cursor-pointer hover:bg-primary/20 transition-colors">✓ Верифицирован</button>
               </div>
             </div>
           </div>
@@ -224,7 +224,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
                 <Shield size={12} className="text-primary" />
                 <span className="text-xs text-primary font-semibold">Диспетчер</span>
                 {profile?.verified && (
-                  <span className="ml-1 px-2 py-0.5 rounded-full bg-primary/10 text-[10px] text-primary font-bold">✓ Верифицирован</span>
+                  <button onClick={() => setShowVerified(true)} className="ml-1 px-2 py-0.5 rounded-full bg-primary/10 text-[10px] text-primary font-bold cursor-pointer hover:bg-primary/20 transition-colors">✓ Верифицирован</button>
                 )}
               </div>
             </div>
