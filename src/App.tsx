@@ -12,6 +12,7 @@ import type { Tables } from "@/integrations/supabase/types";
 
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
+import AdminPage from "./pages/AdminPage";
 import UnsubscribePage from "./pages/UnsubscribePage";
 import NotFound from "./pages/NotFound";
 
@@ -44,6 +45,7 @@ const AppRoutes = () => {
     <>
       <Routes>
         <Route path="/" element={<Index />} />
+        <Route path="/admin" element={<AdminPage />} />
         <Route path="/unsubscribe" element={<UnsubscribePage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

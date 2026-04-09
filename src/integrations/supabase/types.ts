@@ -453,6 +453,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           balance: number | null
+          blocked: boolean
           completed_orders: number | null
           created_at: string
           full_name: string
@@ -467,6 +468,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           balance?: number | null
+          blocked?: boolean
           completed_orders?: number | null
           created_at?: string
           full_name?: string
@@ -481,6 +483,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           balance?: number | null
+          blocked?: boolean
           completed_orders?: number | null
           created_at?: string
           full_name?: string
@@ -600,6 +603,34 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_list_users: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          balance: number
+          blocked: boolean
+          completed_orders: number
+          created_at: string
+          full_name: string
+          phone: string
+          rating: number
+          role: string
+          user_id: string
+          verified: boolean
+        }[]
+      }
+      admin_set_blocked: {
+        Args: { _blocked: boolean; _target_user_id: string }
+        Returns: undefined
+      }
+      admin_set_verified: {
+        Args: { _target_user_id: string; _verified: boolean }
+        Returns: undefined
+      }
+      admin_update_balance: {
+        Args: { _amount: number; _target_user_id: string }
+        Returns: undefined
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -619,6 +650,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_conversation_participant: {
         Args: { _conversation_id: string; _user_id: string }
         Returns: boolean
