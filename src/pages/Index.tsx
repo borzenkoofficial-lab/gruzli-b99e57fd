@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import FAB from "@/components/FAB";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 
 // Worker screens
 import FeedScreen from "@/screens/FeedScreen";

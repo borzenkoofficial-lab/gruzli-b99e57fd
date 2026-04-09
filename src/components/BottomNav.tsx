@@ -5,22 +5,33 @@ interface BottomNavProps {
   active: string;
   onNavigate: (tab: string) => void;
   isDispatcher?: boolean;
+  unreadMessages?: number;
+  newJobsCount?: number;
 }
 
-const BottomNav = ({ active, onNavigate, isDispatcher }: BottomNavProps) => {
+const Badge = ({ count }: { count: number }) => {
+  if (count <= 0) return null;
+  return (
+    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold leading-none">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+};
+
+const BottomNav = ({ active, onNavigate, isDispatcher, unreadMessages = 0, newJobsCount = 0 }: BottomNavProps) => {
   const workerTabs = [
-    { id: "feed", label: "Главная", icon: Home },
-    { id: "orders", label: "Заказы", icon: ClipboardList },
-    { id: "chats", label: "Чаты", icon: MessageCircle },
-    { id: "kartoteka", label: "Картотека", icon: FolderOpen },
-    { id: "profile", label: "Профиль", icon: User },
+    { id: "feed", label: "Главная", icon: Home, badge: newJobsCount },
+    { id: "orders", label: "Заказы", icon: ClipboardList, badge: 0 },
+    { id: "chats", label: "Чаты", icon: MessageCircle, badge: unreadMessages },
+    { id: "kartoteka", label: "Картотека", icon: FolderOpen, badge: 0 },
+    { id: "profile", label: "Профиль", icon: User, badge: 0 },
   ];
 
   const dispatcherTabs = [
-    { id: "feed", label: "Заявки", icon: ClipboardList },
-    { id: "chats", label: "Чаты", icon: MessageCircle },
-    { id: "kartoteka", label: "Картотека", icon: FolderOpen },
-    { id: "profile", label: "Профиль", icon: User },
+    { id: "feed", label: "Заявки", icon: ClipboardList, badge: 0 },
+    { id: "chats", label: "Чаты", icon: MessageCircle, badge: unreadMessages },
+    { id: "kartoteka", label: "Картотека", icon: FolderOpen, badge: 0 },
+    { id: "profile", label: "Профиль", icon: User, badge: 0 },
   ];
 
   const tabs = isDispatcher ? dispatcherTabs : workerTabs;
@@ -41,10 +52,13 @@ const BottomNav = ({ active, onNavigate, isDispatcher }: BottomNavProps) => {
                     isActive ? "neu-inset" : ""
                   }`}
                 >
-                  <Icon
-                    size={20}
-                    className={isActive ? "text-primary" : "text-muted-foreground"}
-                  />
+                  <div className="relative">
+                    <Icon
+                      size={20}
+                      className={isActive ? "text-primary" : "text-muted-foreground"}
+                    />
+                    <Badge count={tab.badge} />
+                  </div>
                   <span
                     className={`text-[10px] font-medium ${
                       isActive ? "text-primary" : "text-muted-foreground"
