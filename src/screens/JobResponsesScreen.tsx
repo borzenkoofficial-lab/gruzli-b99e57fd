@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Check, X, MessageCircle, Star, User, MapPin, Clock, Navigation, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Check, X, MessageCircle, Star, User, MapPin, Clock, Navigation, AlertTriangle, CheckCircle2, Crown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -127,11 +127,20 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
                   return (
                     <motion.div key={r.id} layout className="neu-card rounded-2xl p-4 border border-primary/20">
                       <div className="flex items-center gap-3 mb-3">
-                        <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold">
-                          {(r.profile?.full_name || "?")[0]}
+                        <div className="relative">
+                          {r.profile?.is_premium && (
+                            <div className="absolute -inset-[2px] rounded-full bg-gradient-to-tr from-yellow-400 via-amber-500 to-orange-500 animate-pulse opacity-80" />
+                          )}
+                          <div className="relative w-12 h-12 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold">
+                            {(r.profile?.full_name || "?")[0]}
+                          </div>
+                        </div>
                         </div>
                         <div className="flex-1">
-                          <h3 className="text-sm font-bold text-foreground">{r.profile?.full_name || "Грузчик"}</h3>
+                          <div className="flex items-center gap-1.5">
+                            <h3 className="text-sm font-bold text-foreground">{r.profile?.full_name || "Грузчик"}</h3>
+                            {r.profile?.is_premium && <Crown size={13} className="text-yellow-500 fill-yellow-500" />}
+                          </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <Star size={12} className="text-primary fill-primary" />
                             <span className="text-xs text-foreground">{r.profile?.rating || "5.00"}</span>
@@ -180,11 +189,19 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
                     className="neu-card rounded-2xl p-4"
                   >
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-12 h-12 rounded-full neu-raised flex items-center justify-center">
-                        <User size={20} className="text-muted-foreground" />
+                      <div className="relative">
+                        {r.profile?.is_premium && (
+                          <div className="absolute -inset-[2px] rounded-full bg-gradient-to-tr from-yellow-400 via-amber-500 to-orange-500 animate-pulse opacity-80" />
+                        )}
+                        <div className="relative w-12 h-12 rounded-full neu-raised flex items-center justify-center">
+                          <User size={20} className="text-muted-foreground" />
+                        </div>
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-sm font-bold text-foreground">{r.profile?.full_name || "Грузчик"}</h3>
+                        <div className="flex items-center gap-1.5">
+                          <h3 className="text-sm font-bold text-foreground">{r.profile?.full_name || "Грузчик"}</h3>
+                          {r.profile?.is_premium && <Crown size={13} className="text-yellow-500 fill-yellow-500" />}
+                        </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <Star size={12} className="text-primary fill-primary" />
                           <span className="text-xs text-foreground">{r.profile?.rating || "5.00"}</span>
