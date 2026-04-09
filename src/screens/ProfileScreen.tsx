@@ -196,6 +196,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
           </button>
         </div>
       </div>
+      </>
     );
   }
 
