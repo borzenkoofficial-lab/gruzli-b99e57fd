@@ -13,6 +13,7 @@ const queryClient = new QueryClient();
 
 const AppRoutes = () => {
   const { user, loading } = useAuth();
+  usePushNotifications();
 
   if (loading) {
     return (
