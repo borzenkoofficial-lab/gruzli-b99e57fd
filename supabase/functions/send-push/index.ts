@@ -1,137 +1,54 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { createClient } from "npm:@supabase/supabase-js@2.49.1";
+import webpush from "npm:web-push@3.6.7";
+import { z } from "npm:zod@3.25.76";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// VAPID auth header for web push
-async function generateVapidAuth(
-  endpoint: string,
-  vapidPublicKey: string,
-  vapidPrivateKey: string,
-  subject: string
-) {
-  const url = new URL(endpoint);
-  const audience = `${url.protocol}//${url.host}`;
+const RequestSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("new_job"),
+    job_id: z.string().uuid().optional(),
+    title: z.string().min(1),
+    hourly_rate: z.union([z.number(), z.string()]),
+    address: z.string().nullable().optional(),
+  }),
+  z.object({
+    type: z.literal("new_message"),
+    conversation_id: z.string().uuid(),
+    sender_id: z.string().uuid(),
+    text: z.string().nullable().optional(),
+  }),
+]);
 
-  const header = { typ: "JWT", alg: "ES256" };
-  const now = Math.floor(Date.now() / 1000);
-  const payload = {
-    aud: audience,
-    exp: now + 12 * 3600,
-    sub: subject,
-  };
+type PushSubscriptionRow = {
+  id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+};
 
-  const enc = new TextEncoder();
-  const b64url = (buf: ArrayBuffer) =>
-    btoa(String.fromCharCode(...new Uint8Array(buf)))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
-
-  const headerB64 = btoa(JSON.stringify(header))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-  const payloadB64 = btoa(JSON.stringify(payload))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-
-  const signingInput = enc.encode(`${headerB64}.${payloadB64}`);
-
-  // Import private key
-  const rawKey = Uint8Array.from(
-    atob(vapidPrivateKey.replace(/-/g, "+").replace(/_/g, "/")),
-    (c) => c.charCodeAt(0)
-  );
-
-  const key = await crypto.subtle.importKey(
-    "pkcs8",
-    await buildPkcs8(rawKey),
-    { name: "ECDSA", namedCurve: "P-256" },
-    false,
-    ["sign"]
-  );
-
-  const signature = await crypto.subtle.sign(
-    { name: "ECDSA", hash: "SHA-256" },
-    key,
-    signingInput
-  );
-
-  // Convert DER signature to raw r||s
-  const rawSig = derToRaw(new Uint8Array(signature));
-  const token = `${headerB64}.${payloadB64}.${b64url(rawSig.buffer)}`;
-
-  return {
-    authorization: `vapid t=${token}, k=${vapidPublicKey}`,
-  };
-}
-
-function derToRaw(der: Uint8Array): Uint8Array {
-  // If it's already 64 bytes, it's raw format
-  if (der.length === 64) return der;
-
-  const raw = new Uint8Array(64);
-  // DER format: 0x30 len 0x02 rlen r 0x02 slen s
-  let offset = 2; // skip 0x30 len
-  // skip first 0x02
-  offset += 1;
-  const rLen = der[offset++];
-  const rStart = rLen > 32 ? offset + (rLen - 32) : offset;
-  const rDest = rLen < 32 ? 32 - rLen : 0;
-  raw.set(der.slice(rStart, rStart + Math.min(rLen, 32)), rDest);
-
-  offset += rLen;
-  offset += 1; // skip 0x02
-  const sLen = der[offset++];
-  const sStart = sLen > 32 ? offset + (sLen - 32) : offset;
-  const sDest = sLen < 32 ? 64 - sLen : 32;
-  raw.set(der.slice(sStart, sStart + Math.min(sLen, 32)), sDest);
-
-  return raw;
-}
-
-async function buildPkcs8(rawPrivateKey: Uint8Array): Promise<ArrayBuffer> {
-  // PKCS8 wrapper for EC P-256 private key
-  const pkcs8Header = new Uint8Array([
-    0x30, 0x41, 0x02, 0x01, 0x00, 0x30, 0x13, 0x06, 0x07, 0x2a, 0x86, 0x48,
-    0xce, 0x3d, 0x02, 0x01, 0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x03,
-    0x01, 0x07, 0x04, 0x27, 0x30, 0x25, 0x02, 0x01, 0x01, 0x04, 0x20,
-  ]);
-  const result = new Uint8Array(pkcs8Header.length + rawPrivateKey.length);
-  result.set(pkcs8Header);
-  result.set(rawPrivateKey, pkcs8Header.length);
-  return result.buffer;
+function toBase64Url(value: string) {
+  return value.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 async function sendWebPush(
-  subscription: { endpoint: string; p256dh: string; auth: string },
+  subscription: PushSubscriptionRow,
   payload: string,
-  vapidPublicKey: string,
-  vapidPrivateKey: string
 ) {
-  const vapidHeaders = await generateVapidAuth(
-    subscription.endpoint,
-    vapidPublicKey,
-    vapidPrivateKey,
-    "mailto:push@gruzli.app"
-  );
-
-  const response = await fetch(subscription.endpoint, {
-    method: "POST",
-    headers: {
-      ...vapidHeaders,
-      "Content-Type": "application/octet-stream",
-      TTL: "86400",
+  return await webpush.sendNotification(
+    {
+      endpoint: subscription.endpoint,
+      keys: {
+        p256dh: toBase64Url(subscription.p256dh),
+        auth: toBase64Url(subscription.auth),
+      },
     },
-    body: payload,
-  });
-
-  return response;
+    payload,
+  );
 }
 
 Deno.serve(async (req) => {
@@ -140,7 +57,16 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const body = await req.json();
+    const parsed = RequestSchema.safeParse(await req.json());
+
+    if (!parsed.success) {
+      return new Response(JSON.stringify({ error: parsed.error.flatten() }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const body = parsed.data;
     const { type } = body;
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -149,15 +75,23 @@ Deno.serve(async (req) => {
     const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY")!;
 
     const supabase = createClient(supabaseUrl, serviceRoleKey);
+    webpush.setVapidDetails(
+      "mailto:push@gruzli.app",
+      vapidPublicKey,
+      vapidPrivateKey,
+    );
 
     let title = "";
     let messageBody = "";
     let targetUserIds: string[] = [];
+    const notificationData: Record<string, string> = { type };
 
     if (type === "new_job") {
-      // Notify all workers
       title = `🆕 Новый заказ: ${body.title}`;
       messageBody = `${body.hourly_rate}₽/ч · ${body.address || "Адрес не указан"}`;
+      if (body.job_id) {
+        notificationData.job_id = body.job_id;
+      }
 
       const { data: workers } = await supabase
         .from("user_roles")
@@ -166,7 +100,8 @@ Deno.serve(async (req) => {
 
       targetUserIds = (workers || []).map((w: any) => w.user_id);
     } else if (type === "new_message") {
-      // Notify all participants except sender
+      notificationData.conversation_id = body.conversation_id;
+
       const { data: participants } = await supabase
         .from("conversation_participants")
         .select("user_id")
@@ -175,7 +110,6 @@ Deno.serve(async (req) => {
 
       targetUserIds = (participants || []).map((p: any) => p.user_id);
 
-      // Get sender name
       const { data: senderProfile } = await supabase
         .from("profiles")
         .select("full_name")
@@ -192,30 +126,27 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get push subscriptions for target users
     const { data: subscriptions } = await supabase
       .from("push_subscriptions")
       .select("*")
       .in("user_id", targetUserIds);
 
-    const payload = JSON.stringify({ title, body: messageBody, type });
+    const payload = JSON.stringify({
+      title,
+      body: messageBody,
+      ...notificationData,
+    });
 
     let sent = 0;
     let failed = 0;
 
     for (const sub of subscriptions || []) {
       try {
-        const res = await sendWebPush(
-          { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
-          payload,
-          vapidPublicKey,
-          vapidPrivateKey
-        );
+        const res = await sendWebPush(sub as PushSubscriptionRow, payload);
 
-        if (res.status === 201 || res.status === 200) {
+        if (res.statusCode === 201 || res.statusCode === 200) {
           sent++;
-        } else if (res.status === 410 || res.status === 404) {
-          // Subscription expired, remove it
+        } else if (res.statusCode === 410 || res.statusCode === 404) {
           await supabase
             .from("push_subscriptions")
             .delete()
@@ -223,11 +154,25 @@ Deno.serve(async (req) => {
           failed++;
         } else {
           failed++;
-          console.error(`Push failed for ${sub.endpoint}: ${res.status}`);
+          console.error(`Push failed for ${sub.endpoint}: ${res.statusCode}`);
         }
       } catch (err) {
         failed++;
-        console.error(`Push error: ${err}`);
+        const statusCode = typeof err === "object" && err !== null && "statusCode" in err
+          ? String((err as { statusCode?: number }).statusCode)
+          : "unknown";
+        const bodyText = typeof err === "object" && err !== null && "body" in err
+          ? String((err as { body?: string }).body)
+          : String(err);
+
+        if (statusCode === "404" || statusCode === "410") {
+          await supabase
+            .from("push_subscriptions")
+            .delete()
+            .eq("id", sub.id);
+        }
+
+        console.error(`Push error [${statusCode}]: ${bodyText}`);
       }
     }
 
