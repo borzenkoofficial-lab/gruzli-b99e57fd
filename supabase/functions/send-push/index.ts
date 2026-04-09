@@ -51,6 +51,43 @@ async function sendWebPush(
   );
 }
 
+async function sendEmailNotifications(
+  supabase: any,
+  targetUserIds: string[],
+  templateName: string,
+  templateData: Record<string, any>,
+  idempotencyPrefix: string,
+) {
+  if (targetUserIds.length === 0) return;
+
+  // Get emails from auth.users via profiles
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .in("user_id", targetUserIds);
+
+  if (!profiles || profiles.length === 0) return;
+
+  // Get emails from auth.users
+  for (const profile of profiles) {
+    try {
+      const { data: userData } = await supabase.auth.admin.getUserById(profile.user_id);
+      if (!userData?.user?.email) continue;
+
+      await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName,
+          recipientEmail: userData.user.email,
+          idempotencyKey: `${idempotencyPrefix}-${profile.user_id}`,
+          templateData,
+        },
+      });
+    } catch (err) {
+      console.error(`Email send error for user ${profile.user_id}:`, err);
+    }
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -126,6 +163,7 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Send push notifications
     const { data: subscriptions } = await supabase
       .from("push_subscriptions")
       .select("*")
@@ -174,6 +212,41 @@ Deno.serve(async (req) => {
 
         console.error(`Push error [${statusCode}]: ${bodyText}`);
       }
+    }
+
+    // Send email notifications (fire-and-forget, don't block push response)
+    try {
+      if (type === "new_job") {
+        await sendEmailNotifications(
+          supabase,
+          targetUserIds,
+          "new-job-notification",
+          {
+            title: body.title,
+            hourlyRate: String(body.hourly_rate),
+            address: body.address || undefined,
+          },
+          `new-job-email-${body.job_id || Date.now()}`,
+        );
+      } else if (type === "new_message") {
+        const senderName = (() => {
+          // Already fetched above
+          return title.replace("💬 ", "");
+        })();
+
+        await sendEmailNotifications(
+          supabase,
+          targetUserIds,
+          "new-message-notification",
+          {
+            senderName,
+            messageText: body.text || "Медиа-сообщение",
+          },
+          `new-msg-email-${body.conversation_id}-${Date.now()}`,
+        );
+      }
+    } catch (emailErr) {
+      console.error("Email notification error (non-fatal):", emailErr);
     }
 
     return new Response(JSON.stringify({ sent, failed }), {
