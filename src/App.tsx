@@ -19,15 +19,17 @@ const queryClient = new QueryClient();
 const AppRoutes = () => {
   const { user, loading, role } = useAuth();
   const [splashDone, setSplashDone] = useState(false);
-  const [alertJob, setAlertJob] = useState<Tables<"jobs"> | null>(null);
+  const [alertQueue, setAlertQueue] = useState<Tables<"jobs">[]>([]);
 
   const handleNewJob = useCallback((job: Tables<"jobs">) => {
-    setAlertJob(job);
+    setAlertQueue((q) => [...q, job]);
   }, []);
 
   useRealtimeNotifications({ onNewJob: role === "worker" ? handleNewJob : undefined });
 
   const handleSplashFinished = useCallback(() => setSplashDone(true), []);
+
+  const dismissFirst = useCallback(() => setAlertQueue((q) => q.slice(1)), []);
 
   if (loading || !splashDone) {
     return <SplashScreen onFinished={handleSplashFinished} />;
@@ -45,13 +47,13 @@ const AppRoutes = () => {
       </Routes>
       {role === "worker" && (
         <NewJobAlert
-          job={alertJob}
-          onRespond={(job) => {
-            setAlertJob(null);
-            // Navigate to feed — the feed already handles respond
+          job={alertQueue[0] ?? null}
+          queueSize={alertQueue.length}
+          onRespond={() => {
+            dismissFirst();
             window.dispatchEvent(new CustomEvent("navigate-to-feed"));
           }}
-          onDismiss={() => setAlertJob(null)}
+          onDismiss={dismissFirst}
         />
       )}
     </>
