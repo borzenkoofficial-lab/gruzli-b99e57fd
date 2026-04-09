@@ -205,7 +205,6 @@ const Index = () => {
                 onOpenPremium={() => setShowPremium(true)}
               />
             )}
-            )}
           </motion.div>
         </AnimatePresence>
       </div>
