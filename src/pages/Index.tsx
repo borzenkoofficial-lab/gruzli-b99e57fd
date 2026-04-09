@@ -56,7 +56,7 @@ const Index = () => {
     setOpenChatTitle(title);
   };
 
-  const handleChatWithUser = async (otherUserId: string, otherName: string) => {
+  const handleChatWithUser = async (otherUserId: string, otherName: string, prefillMessage?: string) => {
     if (!user) return false;
 
     const { data: myConvs, error: myConvsError } = await supabase
@@ -68,6 +68,8 @@ const Index = () => {
       return false;
     }
 
+    let conversationId: string | null = null;
+
     if (myConvs) {
       for (const mc of myConvs) {
         const { data: otherParticipant } = await supabase
@@ -78,28 +80,35 @@ const Index = () => {
           .single();
 
         if (otherParticipant) {
-          handleOpenChat(mc.conversation_id, otherName);
-          return true;
+          conversationId = mc.conversation_id;
+          break;
         }
       }
     }
 
-    const conversationId = crypto.randomUUID();
-    const { error: convError } = await supabase
-      .from("conversations")
-      .insert({ id: conversationId, title: otherName });
+    if (!conversationId) {
+      conversationId = crypto.randomUUID();
+      const { error: convError } = await supabase
+        .from("conversations")
+        .insert({ id: conversationId, title: otherName });
 
-    if (convError) {
-      return false;
+      if (convError) return false;
+
+      const { error: participantsError } = await supabase.from("conversation_participants").insert([
+        { conversation_id: conversationId, user_id: user.id },
+        { conversation_id: conversationId, user_id: otherUserId },
+      ]);
+
+      if (participantsError) return false;
     }
 
-    const { error: participantsError } = await supabase.from("conversation_participants").insert([
-      { conversation_id: conversationId, user_id: user.id },
-      { conversation_id: conversationId, user_id: otherUserId },
-    ]);
-
-    if (participantsError) {
-      return false;
+    // Send prefill message if provided
+    if (prefillMessage && conversationId) {
+      await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        sender_id: user.id,
+        text: prefillMessage,
+      });
     }
 
     handleOpenChat(conversationId, otherName);
