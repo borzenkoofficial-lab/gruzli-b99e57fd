@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Search, MessageCircle } from "lucide-react";
+import { Search, MessageCircle, Megaphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -16,9 +16,10 @@ interface ConversationItem {
 
 interface RealChatsScreenProps {
   onOpenChat: (conversationId: string, title: string) => void;
+  onOpenChannel: () => void;
 }
 
-const RealChatsScreen = ({ onOpenChat }: RealChatsScreenProps) => {
+const RealChatsScreen = ({ onOpenChat, onOpenChannel }: RealChatsScreenProps) => {
   const { user } = useAuth();
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [search, setSearch] = useState("");
@@ -133,11 +134,27 @@ const RealChatsScreen = ({ onOpenChat }: RealChatsScreenProps) => {
         <p className="text-sm text-muted-foreground mt-1">({conversations.length} диалогов)</p>
       </div>
 
-      <div className="px-5 pb-5">
+      <div className="px-5 pb-3">
         <div className="relative">
           <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск..." className="w-full neu-inset rounded-2xl py-3 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none" />
         </div>
+      </div>
+
+      {/* Pinned channel button */}
+      <div className="px-5 pb-4">
+        <button
+          onClick={onOpenChannel}
+          className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:scale-[0.98] transition-all duration-200 border border-primary/20"
+        >
+          <div className="w-12 h-12 rounded-full gradient-primary flex items-center justify-center text-primary-foreground">
+            <Megaphone size={20} />
+          </div>
+          <div className="flex-1 text-left">
+            <span className="text-sm font-bold text-foreground">📢 Gruzli Official</span>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Официальный канал · Новости и обновления</p>
+          </div>
+        </button>
       </div>
 
       {loading ? (
