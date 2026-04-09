@@ -2,11 +2,12 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Users, MessageSquare, Briefcase, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Users, MessageSquare, Briefcase, ShieldCheck, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AdminUsersTab from "@/components/admin/AdminUsersTab";
 import AdminChatsTab from "@/components/admin/AdminChatsTab";
 import AdminJobsTab from "@/components/admin/AdminJobsTab";
+import AdminSettingsTab from "@/components/admin/AdminSettingsTab";
 
 const AdminPage = () => {
   const { role, loading } = useAuth();
@@ -36,7 +37,7 @@ const AdminPage = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="users">
-          <TabsList className="w-full grid grid-cols-3">
+          <TabsList className="w-full grid grid-cols-4">
             <TabsTrigger value="users" className="gap-2">
               <Users className="h-4 w-4" />
               Пользователи
@@ -49,6 +50,10 @@ const AdminPage = () => {
               <Briefcase className="h-4 w-4" />
               Заказы
             </TabsTrigger>
+            <TabsTrigger value="settings" className="gap-2">
+              <Settings className="h-4 w-4" />
+              Настройки
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -59,6 +64,9 @@ const AdminPage = () => {
           </TabsContent>
           <TabsContent value="jobs">
             <AdminJobsTab />
+          </TabsContent>
+          <TabsContent value="settings">
+            <AdminSettingsTab />
           </TabsContent>
         </Tabs>
       </div>
