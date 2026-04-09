@@ -6,7 +6,11 @@ import { leaderboard } from "@/data/mockData";
 
 const skills = ["Переезды", "Такелаж", "Сборка мебели", "Погрузка", "Межэтаж"];
 
-const ProfileScreen = () => {
+interface ProfileScreenProps {
+  onOpenSettings?: () => void;
+}
+
+const ProfileScreen = ({ onOpenSettings }: ProfileScreenProps) => {
   const { profile, role, signOut } = useAuth();
   const [availability, setAvailability] = useState([true, true, true, false, true, true, false]);
   const [statsPeriod, setStatsPeriod] = useState<"today" | "week" | "month">("today");
@@ -201,7 +205,7 @@ const ProfileScreen = () => {
 
       {/* Menu */}
       <div className="px-5 space-y-2">
-        <button className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
+        <button onClick={onOpenSettings} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
           <Settings size={18} className="text-muted-foreground" />
           <span className="text-sm font-medium text-foreground flex-1 text-left">Настройки</span>
           <ChevronRight size={16} className="text-muted-foreground" />
