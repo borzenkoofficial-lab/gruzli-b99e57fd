@@ -464,6 +464,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
           <span className="text-sm font-medium text-foreground flex-1 text-left">Тех. поддержка</span>
           <ChevronRight size={16} className="text-muted-foreground" />
         </button>
+        <button onClick={onOpenSettings} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
           <Settings size={18} className="text-muted-foreground" />
           <span className="text-sm font-medium text-foreground flex-1 text-left">Настройки</span>
           <ChevronRight size={16} className="text-muted-foreground" />
