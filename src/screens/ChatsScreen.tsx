@@ -15,7 +15,7 @@ const ChatsScreen = ({ onOpenChat }: ChatsScreenProps) => {
 
   return (
     <div className="pb-28">
-      <div className="px-5 pt-14 pb-2 flex items-center justify-between">
+      <div className="px-5 safe-top pb-2 flex items-center justify-between">
         <button className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
           <Menu size={18} className="text-muted-foreground" />
         </button>

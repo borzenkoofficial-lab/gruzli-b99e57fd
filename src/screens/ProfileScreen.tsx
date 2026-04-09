@@ -150,7 +150,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
       <>
         <VerifiedPopup open={showVerified} onClose={() => setShowVerified(false)} />
         <div className="pb-28">
-        <div className="px-5 pt-14 pb-2 flex items-center justify-between">
+        <div className="px-5 safe-top pb-2 flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Профиль</h1>
           <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
             <Bell size={18} className="text-muted-foreground" />
@@ -285,7 +285,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           </div>
         )}
         <div className="pb-28">
-        <div className="px-5 pt-14 pb-2 flex items-center justify-between">
+        <div className="px-5 safe-top pb-2 flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Профиль</h1>
           <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
             <Bell size={18} className="text-muted-foreground" />
@@ -465,7 +465,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
   return (
     <div className="pb-28">
-      <div className="px-5 pt-14 pb-2 flex items-center justify-between">
+      <div className="px-5 safe-top pb-2 flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground">Профиль</h1>
         <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
           <Bell size={18} className="text-muted-foreground" />

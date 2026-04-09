@@ -111,7 +111,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile }: FeedScreenProps) => {
   return (
     <div className="pb-28">
       {/* Header with logo */}
-      <div className="px-5 pt-14 pb-2 flex items-center justify-between">
+      <div className="px-5 safe-top pb-2 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground tracking-tight">Заявки</h1>
           <p className="text-sm text-muted-foreground mt-1">Свайп вправо = Беру, влево = Пропустить</p>

@@ -147,7 +147,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   );
 
   const Header = ({ title, onBack: goBack }: { title: string; onBack: () => void }) => (
-    <div className="flex items-center gap-3 px-5 pt-14 pb-5">
+    <div className="flex items-center gap-3 px-5 safe-top pb-5">
       <button onClick={goBack} className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center active:neu-inset transition-all">
         <ArrowLeft size={18} className="text-foreground" />
       </button>

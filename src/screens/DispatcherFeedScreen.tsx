@@ -61,7 +61,7 @@ const DispatcherFeedScreen = ({ onCreateJob, onViewResponses }: DispatcherFeedSc
 
   return (
     <div className="pb-28">
-      <div className="px-5 pt-14 pb-2 flex items-center justify-between">
+      <div className="px-5 safe-top pb-2 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-foreground tracking-tight">Мои заявки</h1>
           <p className="text-sm text-muted-foreground mt-1">Управление заказами</p>

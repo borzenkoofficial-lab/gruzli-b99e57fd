@@ -83,7 +83,7 @@ const NotificationsScreen = ({ onBack }: Props) => {
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto">
       {/* Header */}
-      <div className="px-4 pt-14 pb-3 flex items-center gap-3">
+      <div className="px-4 safe-top pb-3 flex items-center gap-3">
         <button onClick={onBack} className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center">
           <ArrowLeft size={18} className="text-foreground" />
         </button>

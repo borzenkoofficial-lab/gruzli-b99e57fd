@@ -248,7 +248,7 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
     <div className="min-h-screen bg-background pb-28">
       {/* Header */}
       <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-border">
-        <div className="flex items-center gap-3 px-4 pt-14 pb-3">
+        <div className="flex items-center gap-3 px-4 safe-top pb-3">
           <button onClick={onBack} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary/60 transition-colors active:scale-95">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
