@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Search, Edit3, Users, MessageCircle } from "lucide-react";
+import { Search, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -10,6 +10,7 @@ interface ConversationItem {
   is_group: boolean | null;
   lastMessage: string;
   lastTime: string;
+  lastTimestamp: string;
   otherName: string;
 }
 
@@ -22,94 +23,104 @@ const RealChatsScreen = ({ onOpenChat }: RealChatsScreenProps) => {
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const conversationsRef = useRef(conversations);
+  conversationsRef.current = conversations;
 
-  const fetchConversations = async () => {
+  const fetchConversations = useCallback(async () => {
     if (!user) return;
-    
-    // Get conversations the user participates in
+
     const { data: participations } = await supabase
       .from("conversation_participants")
       .select("conversation_id")
       .eq("user_id", user.id);
 
     if (!participations || participations.length === 0) {
+      setConversations([]);
       setLoading(false);
       return;
     }
 
     const convIds = participations.map((p) => p.conversation_id);
-    const { data: convs } = await supabase
-      .from("conversations")
-      .select("*")
-      .in("id", convIds);
+    const { data: convs } = await supabase.from("conversations").select("*").in("id", convIds);
 
     if (convs) {
       const items = await Promise.all(
         convs.map(async (conv) => {
-          // Get last message
-          const { data: msgs } = await supabase
-            .from("messages")
-            .select("text, created_at")
-            .eq("conversation_id", conv.id)
-            .order("created_at", { ascending: false })
-            .limit(1);
-
-          // Get other participants
-          const { data: participants } = await supabase
-            .from("conversation_participants")
-            .select("user_id")
-            .eq("conversation_id", conv.id)
-            .neq("user_id", user.id);
+          const [msgsRes, participantsRes] = await Promise.all([
+            supabase.from("messages").select("text, created_at").eq("conversation_id", conv.id).order("created_at", { ascending: false }).limit(1),
+            supabase.from("conversation_participants").select("user_id").eq("conversation_id", conv.id).neq("user_id", user.id),
+          ]);
 
           let otherName = conv.title || "Чат";
-          if (participants && participants.length > 0 && !conv.title) {
-            const { data: profile } = await supabase
-              .from("profiles")
-              .select("full_name")
-              .eq("user_id", participants[0].user_id)
-              .single();
+          if (participantsRes.data && participantsRes.data.length > 0 && !conv.title) {
+            const { data: profile } = await supabase.from("profiles").select("full_name").eq("user_id", participantsRes.data[0].user_id).single();
             if (profile) otherName = profile.full_name;
           }
 
+          const lastMsg = msgsRes.data?.[0];
           return {
             id: conv.id,
             title: conv.title,
             is_group: conv.is_group,
-            lastMessage: msgs?.[0]?.text || "Нет сообщений",
-            lastTime: msgs?.[0]?.created_at
-              ? new Date(msgs[0].created_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+            lastMessage: lastMsg?.text || "Нет сообщений",
+            lastTime: lastMsg?.created_at
+              ? new Date(lastMsg.created_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
               : "",
+            lastTimestamp: lastMsg?.created_at || conv.created_at,
             otherName,
           };
         })
       );
+      // Sort by last message time, newest first
+      items.sort((a, b) => new Date(b.lastTimestamp).getTime() - new Date(a.lastTimestamp).getTime());
       setConversations(items);
     }
     setLoading(false);
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchConversations();
 
-    // Realtime: refresh when new conversation_participants or messages arrive
     const channel = supabase
-      .channel('chats-realtime')
+      .channel("chats-realtime")
       .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'conversation_participants' },
-        () => fetchConversations()
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "conversation_participants" },
+        (payload) => {
+          const p = payload.new as any;
+          if (p.user_id === user?.id) fetchConversations();
+        }
       )
       .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages' },
-        () => fetchConversations()
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        (payload) => {
+          const msg = payload.new as any;
+          // Update last message inline instead of full refetch
+          setConversations((prev) => {
+            const idx = prev.findIndex((c) => c.id === msg.conversation_id);
+            if (idx === -1) {
+              // New conversation — refetch
+              fetchConversations();
+              return prev;
+            }
+            const updated = [...prev];
+            updated[idx] = {
+              ...updated[idx],
+              lastMessage: msg.text || "Медиа",
+              lastTime: new Date(msg.created_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
+              lastTimestamp: msg.created_at,
+            };
+            // Re-sort
+            updated.sort((a, b) => new Date(b.lastTimestamp).getTime() - new Date(a.lastTimestamp).getTime());
+            return updated;
+          });
+        }
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user]);
+    return () => { supabase.removeChannel(channel); };
+  }, [user, fetchConversations]);
 
   const filtered = conversations.filter((c) =>
     c.otherName.toLowerCase().includes(search.toLowerCase())
@@ -122,21 +133,17 @@ const RealChatsScreen = ({ onOpenChat }: RealChatsScreenProps) => {
         <p className="text-sm text-muted-foreground mt-1">({conversations.length} диалогов)</p>
       </div>
 
-      {/* Search */}
       <div className="px-5 pb-5">
         <div className="relative">
           <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Поиск..."
-            className="w-full neu-inset rounded-2xl py-3 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none"
-          />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Поиск..." className="w-full neu-inset rounded-2xl py-3 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none" />
         </div>
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-muted-foreground text-sm">Загрузка...</div>
+        <div className="flex items-center justify-center py-12">
+          <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+        </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground text-sm">
           {conversations.length === 0 ? "Нет чатов. Они появятся, когда вы откликнетесь на заявку или примете отклик." : "Ничего не найдено"}
