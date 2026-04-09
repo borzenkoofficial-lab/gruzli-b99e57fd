@@ -309,20 +309,26 @@ const SwipeableJobCard = ({ job, index, responded, dispatcherName, onRespond, on
         <div className="flex items-center gap-2">
           <div className="flex-1" />
           <span className="text-xl font-extrabold text-gradient-primary">{job.hourly_rate} ₽/час</span>
-          <button
-            onClick={(e) => { e.stopPropagation(); onRespond(); }}
-            disabled={responded}
-            className={`px-6 py-3 rounded-xl text-sm font-bold active:scale-95 transition-all ${
-              responded
-                ? "bg-online/20 text-online"
-                : "gradient-primary text-primary-foreground"
-            }`}
-            style={!responded ? {
-              boxShadow: '6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%), 0 4px 20px hsl(230 60% 58% / 0.35)',
-            } : {}}
-          >
-            {responded ? "✓ Отклик" : "Беру!"}
-          </button>
+          {(job as any).is_bot ? (
+            <span className="px-6 py-3 rounded-xl text-sm font-bold bg-muted text-muted-foreground">
+              Не успели
+            </span>
+          ) : (
+            <button
+              onClick={(e) => { e.stopPropagation(); onRespond(); }}
+              disabled={responded}
+              className={`px-6 py-3 rounded-xl text-sm font-bold active:scale-95 transition-all ${
+                responded
+                  ? "bg-online/20 text-online"
+                  : "gradient-primary text-primary-foreground"
+              }`}
+              style={!responded ? {
+                boxShadow: '6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%), 0 4px 20px hsl(230 60% 58% / 0.35)',
+              } : {}}
+            >
+              {responded ? "✓ Отклик" : "Беру!"}
+            </button>
+          )}
         </div>
       </motion.div>
     </motion.div>
