@@ -49,7 +49,7 @@ const Index = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChannel, setShowChannel] = useState(false);
   const [viewProfileUserId, setViewProfileUserId] = useState<string | null>(null);
-  const isDispatcher = role === "dispatcher";
+  const isDispatcher = role === "dispatcher" || role === "admin";
 
   const handleOpenChat = (conversationId: string, title: string) => {
     setOpenChatId(conversationId);
