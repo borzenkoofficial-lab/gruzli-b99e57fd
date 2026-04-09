@@ -69,6 +69,8 @@ const DispatcherFeedScreen = ({ onCreateJob, onViewResponses }: DispatcherFeedSc
         <img src={gruzliLogo} alt="Gruzli" className="h-10 rounded-xl" loading="lazy" />
       </div>
 
+      <PushNotificationBanner />
+
       {/* Create job button */}
       <div className="px-5 pb-5">
         <button
