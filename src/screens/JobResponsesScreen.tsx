@@ -135,7 +135,6 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
                             {(r.profile?.full_name || "?")[0]}
                           </div>
                         </div>
-                        </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-1.5">
                             <h3 className="text-sm font-bold text-foreground">{r.profile?.full_name || "Грузчик"}</h3>
