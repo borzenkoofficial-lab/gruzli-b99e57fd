@@ -165,40 +165,42 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background max-w-lg mx-auto relative">
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={tab}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
-        >
-          {tab === "feed" && (
-            isDispatcher ? (
-              <DispatcherFeedScreen
-                onCreateJob={() => setShowCreateJob(true)}
-                onViewResponses={setViewResponsesJob}
+    <div className="h-full bg-background max-w-lg mx-auto relative flex flex-col overflow-hidden">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-none">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            {tab === "feed" && (
+              isDispatcher ? (
+                <DispatcherFeedScreen
+                  onCreateJob={() => setShowCreateJob(true)}
+                  onViewResponses={setViewResponsesJob}
+                />
+              ) : (
+                <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} />
+              )
+            )}
+            {tab === "orders" && <OrdersScreen />}
+            {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} />}
+            {tab === "kartoteka" && <KartotekaScreen />}
+            {tab === "dispatchers" && !isDispatcher && (
+              <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />
+            )}
+            {tab === "profile" && (
+              <ProfileScreen
+                onOpenSettings={() => setShowSettings(true)}
+                onOpenNotifications={() => setShowNotifications(true)}
+                onOpenSupport={(prefillMessage) => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, prefillMessage)}
               />
-            ) : (
-              <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} />
-            )
-          )}
-          {tab === "orders" && <OrdersScreen />}
-          {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} />}
-          {tab === "kartoteka" && <KartotekaScreen />}
-          {tab === "dispatchers" && !isDispatcher && (
-            <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />
-          )}
-          {tab === "profile" && (
-            <ProfileScreen
-              onOpenSettings={() => setShowSettings(true)}
-              onOpenNotifications={() => setShowNotifications(true)}
-              onOpenSupport={(prefillMessage) => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, prefillMessage)}
-            />
-          )}
-        </motion.div>
-      </AnimatePresence>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
       {!isDispatcher && <FAB />}
       <BottomNav
         active={tab}
