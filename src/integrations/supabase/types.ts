@@ -373,6 +373,7 @@ export type Database = {
         Row: {
           author_id: string
           birth_year: number | null
+          category: string
           created_at: string
           description: string | null
           full_name: string
@@ -386,6 +387,7 @@ export type Database = {
         Insert: {
           author_id: string
           birth_year?: number | null
+          category?: string
           created_at?: string
           description?: string | null
           full_name?: string
@@ -399,6 +401,7 @@ export type Database = {
         Update: {
           author_id?: string
           birth_year?: number | null
+          category?: string
           created_at?: string
           description?: string | null
           full_name?: string
