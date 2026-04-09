@@ -74,7 +74,7 @@ const AuthPage = () => {
   // ─── WELCOME / ONBOARDING ───
   if (mode === "welcome") {
     return (
-      <div className="h-full bg-background flex flex-col overflow-y-auto">
+      <div className="min-h-[100vh] min-h-[100svh] h-[100vh] h-[100svh] bg-background flex flex-col overflow-y-auto">
         {/* Hero section */}
         <div className="flex-1 flex flex-col items-center justify-center px-6 pb-4">
           <motion.div
@@ -158,7 +158,7 @@ const AuthPage = () => {
 
   // ─── AUTH FORM ───
   return (
-    <div className="h-full bg-background flex flex-col items-center px-6 pt-14 pb-8 overflow-y-auto">
+    <div className="min-h-[100vh] min-h-[100svh] h-[100vh] h-[100svh] bg-background flex flex-col items-center px-6 safe-top pb-8 overflow-y-auto">
       {/* Back + Logo */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}

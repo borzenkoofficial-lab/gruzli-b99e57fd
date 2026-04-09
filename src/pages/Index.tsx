@@ -171,8 +171,8 @@ const Index = () => {
   }
 
   return (
-    <div className="h-full bg-background max-w-lg mx-auto relative flex flex-col overflow-hidden">
-      <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-none pb-24">
+    <div className="app-shell">
+      <div className="app-scroll">
         <AnimatePresence mode="wait">
           <motion.div
             key={tab}
