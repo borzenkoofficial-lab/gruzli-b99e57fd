@@ -14,7 +14,8 @@ const queryClient = new QueryClient();
 
 const AppRoutes = () => {
   const { user, loading } = useAuth();
-  
+  useRealtimeNotifications();
+
 
   if (loading) {
     return (
