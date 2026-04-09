@@ -35,7 +35,7 @@ const Index = () => {
   const [showCreateJob, setShowCreateJob] = useState(false);
   const [viewResponsesJob, setViewResponsesJob] = useState<Tables<"jobs"> | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-
+  const [viewProfileUserId, setViewProfileUserId] = useState<string | null>(null);
   const isDispatcher = role === "dispatcher";
 
   const handleOpenChat = (conversationId: string, title: string) => {
