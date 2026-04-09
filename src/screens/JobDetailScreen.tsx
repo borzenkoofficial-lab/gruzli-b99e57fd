@@ -43,7 +43,7 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
   return (
     <div className="min-h-screen bg-background pb-8">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-14 pb-4">
+      <div className="flex items-center gap-3 px-4 safe-top pb-4">
         <button onClick={onBack} className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center active:neu-inset transition-all">
           <ArrowLeft size={18} className="text-foreground" />
         </button>

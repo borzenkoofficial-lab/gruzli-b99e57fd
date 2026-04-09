@@ -129,7 +129,7 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel }: RealChatsScreenProps) =>
 
   return (
     <div className="pb-28">
-      <div className="px-5 pt-14 pb-5">
+      <div className="px-5 safe-top pb-5">
         <h1 className="text-3xl font-bold text-foreground tracking-tight">Чаты</h1>
         <p className="text-sm text-muted-foreground mt-1">({conversations.length} диалогов)</p>
       </div>
