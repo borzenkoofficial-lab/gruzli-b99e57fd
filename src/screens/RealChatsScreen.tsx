@@ -1,8 +1,94 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { motion } from "framer-motion";
-import { Search, MessageCircle, Megaphone } from "lucide-react";
+import { motion, useMotionValue, useTransform, animate, PanInfo } from "framer-motion";
+import { Search, MessageCircle, Megaphone, Trash2, Ban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
+
+// Swipeable chat row with delete + block actions
+const SwipeableChatItem = ({
+  conv,
+  index,
+  onOpen,
+  onDelete,
+  onBlock,
+}: {
+  conv: ConversationItem;
+  index: number;
+  onOpen: () => void;
+  onDelete: () => void;
+  onBlock: () => void;
+}) => {
+  const x = useMotionValue(0);
+  const actionsOpacity = useTransform(x, [-120, -60, 0], [1, 0.8, 0]);
+  const [swiped, setSwiped] = useState(false);
+
+  const handleDragEnd = (_: any, info: PanInfo) => {
+    if (info.offset.x < -80) {
+      animate(x, -120, { duration: 0.2 });
+      setSwiped(true);
+    } else {
+      animate(x, 0, { duration: 0.2 });
+      setSwiped(false);
+    }
+  };
+
+  const close = () => {
+    animate(x, 0, { duration: 0.2 });
+    setSwiped(false);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: index * 0.04 }}
+      className="relative overflow-hidden rounded-2xl"
+    >
+      {/* Action buttons behind */}
+      <motion.div
+        className="absolute right-0 top-0 bottom-0 flex items-stretch gap-0 z-0"
+        style={{ opacity: actionsOpacity }}
+      >
+        <button
+          onClick={() => { close(); onBlock(); }}
+          className="flex items-center justify-center w-14 bg-muted text-foreground"
+        >
+          <Ban size={18} />
+        </button>
+        <button
+          onClick={() => { close(); onDelete(); }}
+          className="flex items-center justify-center w-14 bg-destructive text-destructive-foreground rounded-r-2xl"
+        >
+          <Trash2 size={18} />
+        </button>
+      </motion.div>
+
+      {/* Foreground card */}
+      <motion.div
+        style={{ x }}
+        drag="x"
+        dragDirectionLock
+        dragConstraints={{ left: -120, right: 0 }}
+        dragElastic={0.1}
+        onDragEnd={handleDragEnd}
+        onClick={() => !swiped && onOpen()}
+        className="relative z-10 flex items-center gap-3 p-3.5 rounded-2xl cursor-pointer active:scale-[0.98] transition-colors duration-200 neu-flat bg-[hsl(var(--surface-2))]"
+      >
+        <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold neu-raised text-muted-foreground shrink-0">
+          {conv.otherName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-foreground">{conv.otherName}</span>
+            <span className="text-[11px] text-muted-foreground">{conv.lastTime}</span>
+          </div>
+          <p className="text-xs text-muted-foreground truncate mt-0.5">{conv.lastMessage}</p>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
 
 interface ConversationItem {
   id: string;
@@ -168,25 +254,45 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel }: RealChatsScreenProps) =>
       ) : (
         <div className="px-5 space-y-1.5">
           {filtered.map((conv, i) => (
-            <motion.div
+            <SwipeableChatItem
               key={conv.id}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.04 }}
-              onClick={() => onOpenChat(conv.id, conv.otherName)}
-              className="flex items-center gap-3 p-3.5 rounded-2xl cursor-pointer active:scale-[0.98] transition-all duration-200 neu-flat"
-            >
-              <div className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold neu-raised text-muted-foreground">
-                {conv.otherName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-foreground">{conv.otherName}</span>
-                  <span className="text-[11px] text-muted-foreground">{conv.lastTime}</span>
-                </div>
-                <p className="text-xs text-muted-foreground truncate mt-0.5">{conv.lastMessage}</p>
-              </div>
-            </motion.div>
+              conv={conv}
+              index={i}
+              onOpen={() => onOpenChat(conv.id, conv.otherName)}
+              onDelete={async () => {
+                // Leave conversation (delete participant)
+                if (!user) return;
+                await supabase
+                  .from("conversation_participants")
+                  .delete()
+                  .eq("conversation_id", conv.id)
+                  .eq("user_id", user.id);
+                setConversations((prev) => prev.filter((c) => c.id !== conv.id));
+                toast.success("Диалог удалён");
+              }}
+              onBlock={async () => {
+                if (!user) return;
+                // Get other user id
+                const { data: participants } = await supabase
+                  .from("conversation_participants")
+                  .select("user_id")
+                  .eq("conversation_id", conv.id)
+                  .neq("user_id", user.id)
+                  .limit(1);
+                const otherId = participants?.[0]?.user_id;
+                if (!otherId) return;
+                const { error } = await supabase
+                  .from("blocked_users")
+                  .insert({ blocker_id: user.id, blocked_id: otherId });
+                if (error?.code === "23505") {
+                  toast.info("Уже в чёрном списке");
+                } else if (error) {
+                  toast.error("Ошибка");
+                } else {
+                  toast.success(`${conv.otherName} добавлен в чёрный список`);
+                }
+              }}
+            />
           ))}
         </div>
       )}

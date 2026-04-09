@@ -123,6 +123,13 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
     if (!text.trim() || !user || sending) return;
     const msgText = text.trim();
     setText("");
+
+    // Play send sound
+    try {
+      const audio = new Audio("/send.wav");
+      audio.volume = 0.3;
+      audio.play().catch(() => {});
+    } catch {}
     
     // Add optimistic message immediately
     const optimisticMsg: Message = {
