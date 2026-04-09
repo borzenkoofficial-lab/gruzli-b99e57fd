@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const VAPID_PUBLIC_KEY = "BIj2Dy6iTkuqUOQTCunr9R2io8rNuiolW1oNaXIceRCJ2V5e2ik_GxZHO8BmZwd6RfMXUvsnYX56oLIGqS5NKcs";
 
@@ -15,56 +16,32 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
+function isPreviewEnvironment() {
+  const hostname = window.location.hostname;
+  const isPreviewHost = hostname.includes("id-preview--") || hostname.includes("lovableproject.com");
+
+  let isInIframe = false;
+  try {
+    isInIframe = window.self !== window.top;
+  } catch {
+    isInIframe = true;
+  }
+
+  return isPreviewHost || isInIframe;
+}
+
 export function usePushNotifications() {
   const { user } = useAuth();
   const [permissionState, setPermissionState] = useState<NotificationPermission | "unsupported">("default");
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
-      setPermissionState("unsupported");
-      return;
-    }
-    setPermissionState(Notification.permission);
+  const saveSubscription = useCallback(async (subscription: PushSubscription) => {
+    if (!user) return false;
 
-    if (Notification.permission === "granted" && user) {
-      checkExistingSubscription();
-    }
-  }, [user]);
-
-  const checkExistingSubscription = useCallback(async () => {
-    if (!user) return;
-    try {
-      const registration = await navigator.serviceWorker.getRegistration();
-      if (registration) {
-        const sub = await registration.pushManager.getSubscription();
-        if (sub) {
-          // Check if saved in DB
-          const { data } = await supabase
-            .from("push_subscriptions")
-            .select("id")
-            .eq("user_id", user.id)
-            .eq("endpoint", sub.endpoint)
-            .maybeSingle();
-          if (data) {
-            setIsSubscribed(true);
-          } else {
-            // Re-save
-            await saveSubscription(sub);
-          }
-        }
-      }
-    } catch (err) {
-      console.error("Check push sub:", err);
-    }
-  }, [user]);
-
-  const saveSubscription = async (subscription: PushSubscription) => {
-    if (!user) return;
     const key = subscription.getKey("p256dh");
     const auth = subscription.getKey("auth");
-    if (!key || !auth) return;
+    if (!key || !auth) return false;
 
     const p256dh = btoa(String.fromCharCode(...new Uint8Array(key)));
     const authKey = btoa(String.fromCharCode(...new Uint8Array(auth)));
@@ -79,62 +56,124 @@ export function usePushNotifications() {
       { onConflict: "user_id,endpoint" }
     );
 
-    if (!error) {
-      setIsSubscribed(true);
-    } else {
+    if (error) {
       console.error("Save push sub:", error);
+      toast.error("Не удалось сохранить подписку на уведомления");
+      return false;
     }
-  };
+
+    setIsSubscribed(true);
+    return true;
+  }, [user]);
+
+  const checkExistingSubscription = useCallback(async () => {
+    if (!user || !("serviceWorker" in navigator)) return;
+
+    try {
+      const registration = await navigator.serviceWorker.getRegistration("/");
+      if (!registration) return;
+
+      const sub = await registration.pushManager.getSubscription();
+      if (!sub) return;
+
+      const { data } = await supabase
+        .from("push_subscriptions")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("endpoint", sub.endpoint)
+        .maybeSingle();
+
+      if (data) {
+        setIsSubscribed(true);
+        return;
+      }
+
+      await saveSubscription(sub);
+    } catch (err) {
+      console.error("Check push sub:", err);
+    }
+  }, [saveSubscription, user]);
+
+  useEffect(() => {
+    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setPermissionState("unsupported");
+      return;
+    }
+
+    setPermissionState(Notification.permission);
+
+    if (Notification.permission === "granted" && user) {
+      checkExistingSubscription();
+    }
+  }, [checkExistingSubscription, user]);
 
   const requestPermission = useCallback(async () => {
-    if (!("Notification" in window) || !user) return;
+    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+      setPermissionState("unsupported");
+      toast.error("Ваш браузер не поддерживает push-уведомления");
+      return;
+    }
+
+    if (!user) return;
+
+    if (isPreviewEnvironment()) {
+      toast.info("Разрешение на уведомления нужно выдавать в опубликованной версии приложения, а не в превью");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const permission = await Notification.requestPermission();
       setPermissionState(permission);
 
-      if (permission === "granted") {
-        // Unsubscribe from old subscription first (to fix VAPID mismatch)
-        const existingReg = await navigator.serviceWorker.getRegistration();
-        if (existingReg) {
-          const oldSub = await existingReg.pushManager.getSubscription();
-          if (oldSub) {
-            await oldSub.unsubscribe();
-          }
+      if (permission !== "granted") {
+        if (permission === "denied") {
+          toast.error("Уведомления заблокированы. Разрешите их в настройках браузера для этого сайта");
         }
+        return;
+      }
 
-        // Register SW
-        let registration = await navigator.serviceWorker.getRegistration("/sw.js");
-        if (!registration) {
-          registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
-          await navigator.serviceWorker.ready;
-        }
+      let registration = await navigator.serviceWorker.getRegistration("/");
+      if (!registration) {
+        await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+      }
 
-        const appServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-        const subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: appServerKey.buffer as ArrayBuffer,
-        });
+      registration = await navigator.serviceWorker.ready;
 
-        await saveSubscription(subscription);
+      const existingSubscription = await registration.pushManager.getSubscription();
+      if (existingSubscription) {
+        await saveSubscription(existingSubscription);
+        toast.success("Уведомления включены");
+        return;
+      }
+
+      const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey,
+      });
+
+      const saved = await saveSubscription(subscription);
+      if (saved) {
+        toast.success("Уведомления включены");
       }
     } catch (err) {
       console.error("Push setup failed:", err);
+      toast.error("Не удалось включить уведомления. Попробуйте ещё раз");
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [saveSubscription, user]);
 
   const unsubscribe = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
-      const registration = await navigator.serviceWorker.getRegistration();
+      const registration = await navigator.serviceWorker.getRegistration("/");
       if (registration) {
         const sub = await registration.pushManager.getSubscription();
         if (sub) {
-          // Delete from DB first
           await supabase
             .from("push_subscriptions")
             .delete()
