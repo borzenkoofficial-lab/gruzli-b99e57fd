@@ -12,7 +12,7 @@ const skills = ["Переезды", "Такелаж", "Сборка мебели
 interface ProfileScreenProps {
   onOpenSettings?: () => void;
   onOpenNotifications?: () => void;
-  onOpenSupport?: () => void;
+  onOpenSupport?: (prefillMessage?: string) => void;
 }
 
 interface Review {
