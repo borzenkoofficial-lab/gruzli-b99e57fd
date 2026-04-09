@@ -528,6 +528,7 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
           ))}
         </div>
       )}
+      </div>{/* end scrollable content */}
     </div>
   );
 };
