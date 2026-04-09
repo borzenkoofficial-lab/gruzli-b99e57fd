@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Star, Briefcase, Wallet, Calendar, ChevronRight, Settings, LogOut, Shield, Bell, CreditCard, Trophy, Copy, CheckCircle2, MessageSquare, Hash, ShieldCheck, Headphones, BadgeCheck } from "lucide-react";
+import { Star, Briefcase, Wallet, Calendar, ChevronRight, Settings, LogOut, Shield, Bell, CreditCard, Trophy, Copy, CheckCircle2, MessageSquare, Hash, ShieldCheck, Headphones, BadgeCheck, Banknote } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
