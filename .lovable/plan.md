@@ -1,35 +1,57 @@
 
 
-# Plan: Expand Profile and Settings with Working Features
+# Plan: Fake Activity System (Subscribers + Bot Jobs)
 
-## What we're adding
+## Overview
+Two features to create an impression of high platform activity, both controlled from admin panel.
 
-### Profile Screen Enhancements
-1. **Editable avatar** — tap avatar to upload photo via `kartoteka-photos` storage bucket, save URL to `profiles.avatar_url`
-2. **Editable skills** — add/remove skill chips with inline editing, saved to `profiles.skills`
-3. **Availability saved to DB** — persist weekly availability (new `availability` column in profiles as `boolean[]`)
-4. **Weekly stats from real data** — fetch `job_responses` for week/month stats instead of showing zeros
+## 1. Channel — 15K Subscribers Display
+- Add subscriber count display in `ChannelScreen.tsx` header/bio area: **"15 247 подписчиков"**
+- Store the fake count in a new `app_settings` table (key-value), so admin can adjust it
+- Show it below the channel name next to post count
 
-### Settings Screen — New Sections
-5. **Language setting** — Russian/English toggle (localStorage-based, affects UI labels)
-6. **Blocked users list** — view and unblock users from `blocked_users` table
-7. **About app** — version, links to support, privacy policy placeholder
-8. **Cache/data clear** — button to clear localStorage and reload
-9. **Profile photo in edit section** — upload/change avatar from settings
+## 2. Bot Jobs System
+Create a system that auto-generates fake job postings that always show as "closed" to workers.
 
-## Technical Details
+### Database Changes (1 migration)
+- New `app_settings` table: `id (text PK)`, `value (jsonb)`, `updated_at`
+  - Row `fake_subscribers` → `{ "count": 15247 }`
+  - Row `bot_jobs_enabled` → `{ "enabled": false }`
+- Add `is_bot` column (`boolean default false`) to `jobs` table — marks fake jobs
 
-### Database Migration
-- Add `availability boolean[] default '{true,true,true,true,true,true,true}'` to `profiles` table
+### How Bot Jobs Work
+- Admin panel toggle enables/disables bot job generation
+- A new component `AdminSettingsTab` in admin panel with:
+  - Toggle for bot jobs on/off (writes to `app_settings`)
+  - Input to set fake subscriber count
+- In `FeedScreen`, bot jobs (`is_bot = true`) always show status "Место занято" — workers see them but can't respond
+- Bot jobs are created via a dedicated edge function `generate-bot-jobs` that creates realistic-looking jobs with random names, addresses, rates
+- Scheduled via pg_cron every 15-30 minutes (only when enabled)
 
-### Files Modified
-- `src/screens/ProfileScreen.tsx` — avatar display from DB, editable skills, availability persistence, real weekly stats query
-- `src/screens/SettingsScreen.tsx` — new sections: blocked users, language, about, cache clear, avatar upload
-- `src/hooks/useNotificationSettings.ts` — no changes needed
+### Admin Panel Changes
+- Add 4th tab "Настройки" to `AdminPage.tsx` with:
+  - **Bot Jobs**: on/off toggle + "Generate now" button
+  - **Fake Subscribers**: number input
+- New component `AdminSettingsTab.tsx`
 
-### Files Created
-- Migration for `availability` column
+### Feed Changes (`FeedScreen.tsx`)
+- For jobs where `is_bot === true`: show a "Место занято" badge, disable respond button, show "Не успели — место уже занято"
 
-### Storage
-- Use existing `kartoteka-photos` bucket for avatar uploads (already public)
+### Files to Create
+- `src/components/admin/AdminSettingsTab.tsx`
+- `supabase/functions/generate-bot-jobs/index.ts`
+- Migration for `app_settings` table + `jobs.is_bot` column
+
+### Files to Modify
+- `src/pages/AdminPage.tsx` — add Settings tab
+- `src/screens/ChannelScreen.tsx` — show subscriber count from `app_settings`
+- `src/screens/FeedScreen.tsx` — handle `is_bot` jobs as closed
+
+### Technical Details
+- RLS on `app_settings`: admin can read/write, authenticated can read
+- Edge function uses service role to insert bot jobs
+- Bot job dispatcher_id set to a system UUID (admin's ID or a dedicated bot account)
+- Fake names pool: 20+ Russian names for dispatchers
+- Fake addresses pool: 20+ Moscow addresses
+- Rates: random 250-600₽/hr
 
