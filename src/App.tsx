@@ -12,6 +12,7 @@ import type { Tables } from "@/integrations/supabase/types";
 
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
+import UnsubscribePage from "./pages/UnsubscribePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const AppRoutes = () => {
     <>
       <Routes>
         <Route path="/" element={<Index />} />
+        <Route path="/unsubscribe" element={<UnsubscribePage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       {role === "worker" && (
