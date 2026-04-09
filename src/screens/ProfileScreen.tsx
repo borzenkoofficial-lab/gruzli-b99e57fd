@@ -35,7 +35,7 @@ const AdminButton = () => {
   );
 };
 
-const ProfileScreen = ({ onOpenSettings, onOpenNotifications }: ProfileScreenProps) => {
+const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: ProfileScreenProps) => {
   const { user, profile, role, signOut } = useAuth();
   const [availability, setAvailability] = useState([true, true, true, false, true, true, false]);
   const [statsPeriod, setStatsPeriod] = useState<"today" | "week" | "month">("today");
