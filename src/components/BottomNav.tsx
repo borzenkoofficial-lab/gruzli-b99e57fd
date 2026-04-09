@@ -37,9 +37,9 @@ const BottomNav = ({ active, onNavigate, isDispatcher, unreadMessages = 0, newJo
   const tabs = isDispatcher ? dispatcherTabs : workerTabs;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50">
+    <div className="fixed bottom-0 left-0 right-0 z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       <div className="max-w-lg mx-auto">
-        <div className="mx-3 mb-3 rounded-2xl neu-card px-2 py-2">
+        <div className="mx-3 mb-1 rounded-2xl neu-card px-2 py-2">
           <div className="flex items-center justify-around">
             {tabs.map((tab) => {
               const isActive = active === tab.id;

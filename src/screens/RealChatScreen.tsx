@@ -260,7 +260,7 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
       <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
 
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 pt-14 pb-4">
+      <div className="flex items-center gap-3 px-4 pb-4" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)' }}>
         <button onClick={onBack} className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center active:neu-inset transition-all">
           <ArrowLeft size={18} className="text-foreground" />
         </button>
@@ -373,7 +373,7 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
       </AnimatePresence>
 
       {/* Input */}
-      <div className="px-4 pb-8 pt-3">
+      <div className="px-4 pt-3" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)' }}>
         {uploading && <div className="text-center text-xs text-primary mb-2 animate-pulse">Загрузка файла...</div>}
         <div className="flex items-center gap-2.5">
           <button onClick={() => setShowAttach(!showAttach)} className="w-11 h-11 rounded-xl neu-raised flex items-center justify-center active:neu-inset transition-all">
