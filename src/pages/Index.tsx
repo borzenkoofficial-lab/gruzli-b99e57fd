@@ -98,6 +98,19 @@ const Index = () => {
     return <SettingsScreen onBack={() => setShowSettings(false)} />;
   }
 
+  if (viewProfileUserId) {
+    return (
+      <UserProfileScreen
+        userId={viewProfileUserId}
+        onBack={() => setViewProfileUserId(null)}
+        onChat={async (userId, name) => {
+          const opened = await handleChatWithUser(userId, name);
+          if (opened) setViewProfileUserId(null);
+        }}
+      />
+    );
+  }
+
   if (openChatId) {
     return <RealChatScreen conversationId={openChatId} title={openChatTitle} onBack={() => setOpenChatId(null)} />;
   }
@@ -138,7 +151,7 @@ const Index = () => {
                 onViewResponses={setViewResponsesJob}
               />
             ) : (
-              <FeedScreen onOpenChat={handleOpenChat} />
+              <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} />
             )
           )}
           {tab === "orders" && <OrdersScreen />}
