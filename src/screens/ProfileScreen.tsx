@@ -23,6 +23,17 @@ interface Review {
   reviewer_name?: string;
 }
 
+const AdminButton = () => {
+  const navigate = useNavigate();
+  return (
+    <button onClick={() => navigate("/admin")} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
+      <ShieldCheck size={18} className="text-primary" />
+      <span className="text-sm font-medium text-foreground flex-1 text-left">Админ-панель</span>
+      <ChevronRight size={16} className="text-muted-foreground" />
+    </button>
+  );
+};
+
 const ProfileScreen = ({ onOpenSettings, onOpenNotifications }: ProfileScreenProps) => {
   const { user, profile, role, signOut } = useAuth();
   const [availability, setAvailability] = useState([true, true, true, false, true, true, false]);
