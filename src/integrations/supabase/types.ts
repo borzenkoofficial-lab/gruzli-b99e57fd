@@ -75,6 +75,33 @@ export type Database = {
           },
         ]
       }
+      dispatcher_reviews: {
+        Row: {
+          created_at: string
+          dispatcher_id: string
+          id: string
+          rating: number
+          reviewer_id: string
+          text: string | null
+        }
+        Insert: {
+          created_at?: string
+          dispatcher_id: string
+          id?: string
+          rating: number
+          reviewer_id: string
+          text?: string | null
+        }
+        Update: {
+          created_at?: string
+          dispatcher_id?: string
+          id?: string
+          rating?: number
+          reviewer_id?: string
+          text?: string | null
+        }
+        Relationships: []
+      }
       job_responses: {
         Row: {
           created_at: string
@@ -257,6 +284,7 @@ export type Database = {
           skills: string[] | null
           updated_at: string
           user_id: string
+          verified: boolean | null
         }
         Insert: {
           avatar_url?: string | null
@@ -270,6 +298,7 @@ export type Database = {
           skills?: string[] | null
           updated_at?: string
           user_id: string
+          verified?: boolean | null
         }
         Update: {
           avatar_url?: string | null
@@ -283,6 +312,7 @@ export type Database = {
           skills?: string[] | null
           updated_at?: string
           user_id?: string
+          verified?: boolean | null
         }
         Relationships: []
       }
