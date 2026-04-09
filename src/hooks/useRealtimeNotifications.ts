@@ -130,10 +130,11 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
       .channel("realtime-notifications")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "jobs" }, handleNewJob)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, handleNewMessage)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "job_responses" }, handleResponseUpdate)
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, handleNewJob, handleNewMessage]);
+  }, [user, handleNewJob, handleNewMessage, handleResponseUpdate]);
 }
