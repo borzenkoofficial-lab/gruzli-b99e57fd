@@ -26,6 +26,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
   const [userRole, setUserRole] = useState<string | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [avgRating, setAvgRating] = useState(0);
+  const [postedJobsCount, setPostedJobsCount] = useState(0);
   const [idCopied, setIdCopied] = useState(false);
   const [loading, setLoading] = useState(true);
 
