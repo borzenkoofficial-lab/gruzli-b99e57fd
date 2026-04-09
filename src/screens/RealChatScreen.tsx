@@ -373,7 +373,7 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
       </AnimatePresence>
 
       {/* Input */}
-      <div className="px-4 pt-3 safe-bottom">
+      <div className="px-4 pt-3 pb-4">
         {uploading && <div className="text-center text-xs text-primary mb-2 animate-pulse">Загрузка файла...</div>}
         <div className="flex items-center gap-2.5">
           <button onClick={() => setShowAttach(!showAttach)} className="w-11 h-11 rounded-xl neu-raised flex items-center justify-center active:neu-inset transition-all">

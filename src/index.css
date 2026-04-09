@@ -262,11 +262,11 @@
   }
 
   .safe-top {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+    padding-top: calc(env(safe-area-inset-top, 0px) + 20px);
   }
 
   .safe-bottom {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+    padding-bottom: 0;
   }
 
   .app-shell {
@@ -292,21 +292,19 @@
     overflow-x: hidden;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: 0;
   }
 
   .bottom-docked {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    position: relative;
+    flex-shrink: 0;
     z-index: 50;
   }
 
   .fab-docked {
     position: absolute;
     right: 1rem;
-    bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 0.5rem);
+    bottom: calc(var(--bottom-nav-height) + 0.75rem);
     z-index: 40;
   }
 }
