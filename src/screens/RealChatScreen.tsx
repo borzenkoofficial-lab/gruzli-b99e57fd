@@ -307,7 +307,7 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
             <p className="text-sm font-bold text-foreground">{linkedJob.title}</p>
             <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground flex-wrap">
               {linkedJob.address && <span className="flex items-center gap-1"><MapPin size={10} /> {linkedJob.address}</span>}
-              <span className="flex items-center gap-1"><Users size={10} /> {linkedJob.workers_needed || 1} чел.</span>}
+              <span className="flex items-center gap-1"><Users size={10} /> {linkedJob.workers_needed || 1} чел.</span>
               <span className="flex items-center gap-1"><Wallet size={10} /> {linkedJob.hourly_rate} ₽/ч</span>
             </div>
           </div>
