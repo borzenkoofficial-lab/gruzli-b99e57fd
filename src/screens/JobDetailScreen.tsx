@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Clock, Users, Zap, MessageCircle, User, Wallet } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Users, Zap, MessageCircle, User, Wallet, UserPlus } from "lucide-react";
 import { useRespondToJob } from "@/hooks/useRespondToJob";
+import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
 interface JobDetailScreenProps {
   job: Tables<"jobs">;
   onBack: () => void;
   onOpenChat?: (conversationId: string, title: string) => void;
+  onOpenProfile?: (userId: string) => void;
 }
 
 const JobDetailScreen = ({ job, onBack, onOpenChat }: JobDetailScreenProps) => {
