@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Star, Shield, MessageSquare, Hash, Copy, CheckCircle2, ThumbsUp, ThumbsDown, Minus, Send } from "lucide-react";
+import { ArrowLeft, Star, Shield, MessageSquare, Hash, Copy, CheckCircle2, ThumbsUp, ThumbsDown, Minus, Send, BadgeCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -195,6 +195,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
   }
 
   const isDispatcher = userRole === "dispatcher";
+  const isAdminAccount = userRole === "admin";
 
   // Stats for rating bar
   const positiveCount = reviews.filter(r => r.rating >= 4).length;
@@ -221,14 +222,17 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
             {initials}
           </div>
           <div className="flex-1">
-            <h2 className="text-lg font-bold text-foreground">{profile.full_name || "Пользователь"}</h2>
+            <div className="flex items-center gap-1.5">
+              <h2 className="text-lg font-bold text-foreground">{profile.full_name || "Пользователь"}</h2>
+              {isAdminAccount && <BadgeCheck size={18} className="text-primary" />}
+            </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              @{profile.full_name?.toLowerCase().replace(/\s+/g, "_") || "user"}
+              {isAdminAccount ? "Официальный аккаунт Gruzli" : `@${profile.full_name?.toLowerCase().replace(/\s+/g, "_") || "user"}`}
             </p>
             <div className="flex items-center gap-1 mt-1">
               <Shield size={12} className="text-primary" />
               <span className="text-xs text-primary font-semibold">
-                {isDispatcher ? "Диспетчер" : "Грузчик"}
+                {isAdminAccount ? "Администрация" : isDispatcher ? "Диспетчер" : "Грузчик"}
               </span>
               {profile.verified && (
                 <span className="ml-1 px-2 py-0.5 rounded-full bg-primary/10 text-[10px] text-primary font-bold">✓ Верифицирован</span>
