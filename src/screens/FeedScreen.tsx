@@ -14,9 +14,10 @@ const filters = ["Все", "Срочные", "Быстрая минималка"
 interface FeedScreenProps {
   onOpenChat?: (conversationId: string, title: string) => void;
   onOpenProfile?: (userId: string) => void;
+  onRefreshRef?: React.MutableRefObject<(() => Promise<void>) | null>;
 }
 
-const FeedScreen = ({ onOpenChat, onOpenProfile }: FeedScreenProps) => {
+const FeedScreen = ({ onOpenChat, onOpenProfile, onRefreshRef }: FeedScreenProps) => {
   const { user } = useAuth();
   const { respondAndOpenChat } = useRespondToJob(onOpenChat);
   const [activeFilter, setActiveFilter] = useState("Все");
@@ -27,6 +28,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile }: FeedScreenProps) => {
   const [loading, setLoading] = useState(true);
 
   const fetchJobs = async () => {
+    setLoading(true);
     const { data } = await supabase
       .from("jobs")
       .select("*")
@@ -61,6 +63,13 @@ const FeedScreen = ({ onOpenChat, onOpenProfile }: FeedScreenProps) => {
     }
     setLoading(false);
   };
+
+  // Expose refresh function
+  useEffect(() => {
+    if (onRefreshRef) {
+      onRefreshRef.current = fetchJobs;
+    }
+  }, [onRefreshRef]);
 
   useEffect(() => {
     fetchJobs();
