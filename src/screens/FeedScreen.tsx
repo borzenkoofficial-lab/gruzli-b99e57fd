@@ -254,6 +254,13 @@ const SwipeableJobCard = ({ job, index, responded, dispatcherName, onRespond, on
               )}
             </div>
             <h3 className="text-[15px] font-semibold text-foreground leading-tight">{job.title}</h3>
+            <button
+              onClick={(e) => { e.stopPropagation(); onOpenProfile?.(); }}
+              className="flex items-center gap-1 mt-1 active:opacity-70"
+            >
+              <UserPlus size={11} className="text-primary" />
+              <span className="text-[11px] text-primary font-medium">{dispatcherName}</span>
+            </button>
           </div>
         </div>
 
