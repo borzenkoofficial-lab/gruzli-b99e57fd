@@ -21,6 +21,7 @@ import RealChatScreen from "@/screens/RealChatScreen";
 import DispatchersScreen from "@/screens/DispatchersScreen";
 import KartotekaScreen from "@/screens/KartotekaScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
+import UserProfileScreen from "@/screens/UserProfileScreen";
 
 import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
