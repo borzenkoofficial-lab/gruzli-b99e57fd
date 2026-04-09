@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
-const VAPID_PUBLIC_KEY = "BIj2Dy6iTkuqUOQTCunr9R2io8rNuiolW1oNaXIceRCJ2V5e2ik_GxZHO8BmZwd6RfMXUvsnYX56oLIGqS5NKcs";
+const VAPID_PUBLIC_KEY = "BF3GJd-9r3YU0zf9pUTGScP_gV0PKdz3DjagtWOnEffDPUj4H2psPW1U4aERc1PxOFD-4lMd_OaR45a8YWFbwTY";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -66,6 +66,19 @@ export function usePushNotifications() {
     return true;
   }, [user]);
 
+  const isSubscriptionMatchingKey = useCallback((sub: PushSubscription): boolean => {
+    try {
+      const key = sub.options?.applicationServerKey;
+      if (!key) return false;
+      const currentKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      const subKey = new Uint8Array(key instanceof ArrayBuffer ? key : (key as any).buffer);
+      if (currentKey.length !== subKey.length) return false;
+      return currentKey.every((v, i) => v === subKey[i]);
+    } catch {
+      return false;
+    }
+  }, []);
+
   const checkExistingSubscription = useCallback(async () => {
     if (!user || !("serviceWorker" in navigator)) return;
 
@@ -75,6 +88,13 @@ export function usePushNotifications() {
 
       const sub = await registration.pushManager.getSubscription();
       if (!sub) return;
+
+      // If subscription was created with a different VAPID key, unsubscribe and let user re-enable
+      if (!isSubscriptionMatchingKey(sub)) {
+        console.log("Push sub VAPID mismatch, unsubscribing stale subscription");
+        await sub.unsubscribe();
+        return;
+      }
 
       const { data } = await supabase
         .from("push_subscriptions")
@@ -92,7 +112,7 @@ export function usePushNotifications() {
     } catch (err) {
       console.error("Check push sub:", err);
     }
-  }, [saveSubscription, user]);
+  }, [saveSubscription, isSubscriptionMatchingKey, user]);
 
   useEffect(() => {
     if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
