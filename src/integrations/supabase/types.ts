@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          id: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          id: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          id?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       blocked_users: {
         Row: {
           blocked_id: string
@@ -345,6 +363,7 @@ export type Database = {
           duration_hours: number | null
           hourly_rate: number
           id: string
+          is_bot: boolean
           metro: string | null
           quick_minimum: boolean | null
           start_time: string | null
@@ -362,6 +381,7 @@ export type Database = {
           duration_hours?: number | null
           hourly_rate?: number
           id?: string
+          is_bot?: boolean
           metro?: string | null
           quick_minimum?: boolean | null
           start_time?: string | null
@@ -379,6 +399,7 @@ export type Database = {
           duration_hours?: number | null
           hourly_rate?: number
           id?: string
+          is_bot?: boolean
           metro?: string | null
           quick_minimum?: boolean | null
           start_time?: string | null
