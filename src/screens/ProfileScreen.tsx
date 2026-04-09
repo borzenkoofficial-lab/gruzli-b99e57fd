@@ -35,6 +35,56 @@ const AdminButton = () => {
   );
 };
 
+const VerifiedPopup = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+  if (!open) return null;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center px-6" onClick={onClose}>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+      />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.85, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.85, y: 20 }}
+        transition={{ type: "spring", damping: 25, stiffness: 350 }}
+        className="relative neu-card rounded-3xl p-6 max-w-sm w-full text-center space-y-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+          <BadgeCheck size={32} className="text-primary" />
+        </div>
+        <h3 className="text-lg font-bold text-foreground">Аккаунт верифицирован</h3>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Этот аккаунт прошёл все методы верификации и подтверждён администрацией платформы Gruzli.
+        </p>
+        <div className="flex flex-col gap-2 pt-1">
+          <div className="flex items-center gap-2 text-xs text-foreground">
+            <CheckCircle2 size={14} className="text-green-500 shrink-0" />
+            <span>Личность подтверждена</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-foreground">
+            <CheckCircle2 size={14} className="text-green-500 shrink-0" />
+            <span>Документы проверены</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-foreground">
+            <CheckCircle2 size={14} className="text-green-500 shrink-0" />
+            <span>Контактные данные подтверждены</span>
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          className="mt-2 w-full py-2.5 rounded-2xl neu-raised text-sm font-semibold text-primary active:neu-inset transition-all"
+        >
+          Понятно
+        </button>
+      </motion.div>
+    </div>
+  );
+};
+
 const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: ProfileScreenProps) => {
   const { user, profile, role, signOut } = useAuth();
   const [availability, setAvailability] = useState([true, true, true, false, true, true, false]);
@@ -43,6 +93,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
   const [reviews, setReviews] = useState<Review[]>([]);
   const [avgRating, setAvgRating] = useState(0);
   const [idCopied, setIdCopied] = useState(false);
+  const [showVerified, setShowVerified] = useState(false);
 
   const isDispatcher = role === "dispatcher";
 
@@ -93,7 +144,9 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
   // ─── ADMIN PROFILE ───
   if (isAdmin) {
     return (
-      <div className="pb-28">
+      <>
+        <VerifiedPopup open={showVerified} onClose={() => setShowVerified(false)} />
+        <div className="pb-28">
         <div className="px-5 pt-14 pb-2 flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Профиль</h1>
           <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
@@ -115,7 +168,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
               <p className="text-xs text-muted-foreground mt-0.5">Официальный аккаунт</p>
               <div className="flex items-center gap-1 mt-1">
                 <span className="text-xs text-primary font-semibold">Администрация</span>
-                <span className="ml-1 px-2 py-0.5 rounded-full bg-primary/10 text-[10px] text-primary font-bold">✓ Верифицирован</span>
+                <button onClick={() => setShowVerified(true)} className="ml-1 px-2 py-0.5 rounded-full bg-primary/10 text-[10px] text-primary font-bold cursor-pointer hover:bg-primary/20 transition-colors">✓ Верифицирован</button>
               </div>
             </div>
           </div>
@@ -143,13 +196,16 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
           </button>
         </div>
       </div>
+      </>
     );
   }
 
   // ─── DISPATCHER PROFILE ───
   if (isDispatcher) {
     return (
-      <div className="pb-28">
+      <>
+        <VerifiedPopup open={showVerified} onClose={() => setShowVerified(false)} />
+        <div className="pb-28">
         <div className="px-5 pt-14 pb-2 flex items-center justify-between">
           <h1 className="text-xl font-bold text-foreground">Профиль</h1>
           <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
@@ -170,7 +226,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
                 <Shield size={12} className="text-primary" />
                 <span className="text-xs text-primary font-semibold">Диспетчер</span>
                 {profile?.verified && (
-                  <span className="ml-1 px-2 py-0.5 rounded-full bg-primary/10 text-[10px] text-primary font-bold">✓ Верифицирован</span>
+                  <button onClick={() => setShowVerified(true)} className="ml-1 px-2 py-0.5 rounded-full bg-primary/10 text-[10px] text-primary font-bold cursor-pointer hover:bg-primary/20 transition-colors">✓ Верифицирован</button>
                 )}
               </div>
             </div>
@@ -316,6 +372,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport }: P
           </button>
         </div>
       </div>
+      </>
     );
   }
 
