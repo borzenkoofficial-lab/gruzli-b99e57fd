@@ -22,6 +22,7 @@ import DispatchersScreen from "@/screens/DispatchersScreen";
 import KartotekaScreen from "@/screens/KartotekaScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
 import UserProfileScreen from "@/screens/UserProfileScreen";
+import NotificationsScreen from "@/screens/NotificationsScreen";
 
 import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,6 +43,7 @@ const Index = () => {
   const [showCreateJob, setShowCreateJob] = useState(false);
   const [viewResponsesJob, setViewResponsesJob] = useState<Tables<"jobs"> | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [viewProfileUserId, setViewProfileUserId] = useState<string | null>(null);
   const isDispatcher = role === "dispatcher";
 
@@ -101,6 +103,10 @@ const Index = () => {
   };
 
   // Full-screen overlays
+  if (showNotifications) {
+    return <NotificationsScreen onBack={() => setShowNotifications(false)} />;
+  }
+
   if (showSettings) {
     return <SettingsScreen onBack={() => setShowSettings(false)} />;
   }
@@ -167,7 +173,7 @@ const Index = () => {
           {tab === "dispatchers" && !isDispatcher && (
             <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />
           )}
-          {tab === "profile" && <ProfileScreen onOpenSettings={() => setShowSettings(true)} />}
+          {tab === "profile" && <ProfileScreen onOpenSettings={() => setShowSettings(true)} onOpenNotifications={() => setShowNotifications(true)} />}
         </motion.div>
       </AnimatePresence>
       {!isDispatcher && <FAB />}
