@@ -1,218 +1,265 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Clock, CheckCircle2, Calendar, CalendarDays, Menu, MapPin, Check, ChevronRight, Camera } from "lucide-react";
-import { mockTodayOrders, mockWeekOrders, mockDoneOrders, type OrderItem } from "@/data/mockData";
+import { Clock, CheckCircle2, MapPin, Navigation, AlertTriangle, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
-const tabs = [
-  { id: "today", label: "Сегодня", icon: Calendar },
-  { id: "week", label: "На неделю", icon: CalendarDays },
-  { id: "done", label: "Завершённые", icon: CheckCircle2 },
-];
+interface AcceptedJob {
+  responseId: string;
+  jobId: string;
+  title: string;
+  address: string | null;
+  startTime: string | null;
+  hourlyRate: number;
+  durationHours: number;
+  dispatcherName: string;
+  workerStatus: string | null;
+}
 
-const checklistItems = [
-  "Перчатки и спецодежда",
-  "Стропы / ремни",
-  "Упаковочные материалы",
-  "Заряжен телефон",
-  "Маршрут проверен",
+const STATUS_STEPS = [
+  { key: "ready", label: "Готов", icon: CheckCircle2, emoji: "✅" },
+  { key: "en_route", label: "Выехал", icon: Navigation, emoji: "🚗" },
+  { key: "late", label: "Опаздываю", icon: AlertTriangle, emoji: "⚠️" },
+  { key: "arrived", label: "На месте", icon: MapPin, emoji: "📍" },
 ];
 
 const OrdersScreen = () => {
-  const [activeTab, setActiveTab] = useState("today");
-  const [arrivedOrders, setArrivedOrders] = useState<Set<string>>(new Set());
-  const [showChecklist, setShowChecklist] = useState<string | null>(null);
-  const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
+  const { user } = useAuth();
+  const [jobs, setJobs] = useState<AcceptedJob[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const orders = activeTab === "today" ? mockTodayOrders : activeTab === "week" ? mockWeekOrders : mockDoneOrders;
+  const fetchAcceptedJobs = async () => {
+    if (!user) return;
+    setLoading(true);
 
-  const handleArrived = (orderId: string) => {
-    setArrivedOrders(prev => new Set(prev).add(orderId));
-    if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
-  };
+    const { data: responses } = await supabase
+      .from("job_responses")
+      .select("*")
+      .eq("worker_id", user.id)
+      .eq("status", "accepted");
 
-  const toggleCheckItem = (i: number) => {
-    setCheckedItems(prev => {
-      const s = new Set(prev);
-      s.has(i) ? s.delete(i) : s.add(i);
-      return s;
+    if (!responses || responses.length === 0) {
+      setJobs([]);
+      setLoading(false);
+      return;
+    }
+
+    const jobIds = responses.map((r) => r.job_id);
+    const { data: jobsData } = await supabase
+      .from("jobs")
+      .select("*")
+      .in("id", jobIds);
+
+    if (!jobsData) {
+      setJobs([]);
+      setLoading(false);
+      return;
+    }
+
+    // Fetch dispatcher names
+    const dispatcherIds = [...new Set(jobsData.map((j) => j.dispatcher_id))];
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id, full_name")
+      .in("user_id", dispatcherIds);
+    const nameMap: Record<string, string> = {};
+    profiles?.forEach((p) => { nameMap[p.user_id] = p.full_name; });
+
+    const mapped: AcceptedJob[] = jobsData.map((j) => {
+      const resp = responses.find((r) => r.job_id === j.id)!;
+      return {
+        responseId: resp.id,
+        jobId: j.id,
+        title: j.title,
+        address: j.address,
+        startTime: j.start_time,
+        hourlyRate: j.hourly_rate,
+        durationHours: Number(j.duration_hours) || 1,
+        dispatcherName: nameMap[j.dispatcher_id] || "Диспетчер",
+        workerStatus: resp.worker_status,
+      };
     });
+
+    // Sort by start_time
+    mapped.sort((a, b) => {
+      if (!a.startTime) return 1;
+      if (!b.startTime) return -1;
+      return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+    });
+
+    setJobs(mapped);
+    setLoading(false);
   };
+
+  useEffect(() => {
+    fetchAcceptedJobs();
+
+    if (!user) return;
+    // Realtime: listen for acceptance updates
+    const channel = supabase
+      .channel("my-orders")
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "job_responses", filter: `worker_id=eq.${user.id}` },
+        (payload) => {
+          const updated = payload.new as any;
+          if (updated.status === "accepted") {
+            fetchAcceptedJobs();
+          }
+          setJobs((prev) =>
+            prev.map((j) =>
+              j.responseId === updated.id ? { ...j, workerStatus: updated.worker_status } : j
+            )
+          );
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user?.id]);
+
+  const setWorkerStatus = async (responseId: string, status: string) => {
+    const { error } = await supabase
+      .from("job_responses")
+      .update({ worker_status: status })
+      .eq("id", responseId);
+
+    if (error) {
+      toast.error("Ошибка обновления статуса");
+      return;
+    }
+
+    setJobs((prev) =>
+      prev.map((j) => (j.responseId === responseId ? { ...j, workerStatus: status } : j))
+    );
+    if (navigator.vibrate) navigator.vibrate(50);
+    const step = STATUS_STEPS.find((s) => s.key === status);
+    toast.success(`${step?.emoji} ${step?.label}`);
+  };
+
+  if (loading) {
+    return (
+      <div className="pb-28">
+        <div className="px-5 pt-14 pb-4">
+          <h1 className="text-lg font-bold text-foreground">Мои заказы</h1>
+        </div>
+        <div className="flex items-center justify-center py-16">
+          <Loader2 size={24} className="animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="pb-28">
-      <div className="px-5 pt-14 pb-2 flex items-center justify-between">
-        <button className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
-          <Menu size={18} className="text-muted-foreground" />
-        </button>
+      <div className="px-5 pt-14 pb-4">
         <h1 className="text-lg font-bold text-foreground">Мои заказы</h1>
-        <div className="w-11" />
+        <p className="text-xs text-muted-foreground mt-0.5">Заявки, на которые вас выбрали</p>
       </div>
 
-      {/* Tabs */}
-      <div className="px-5 pb-5 pt-2">
-        <div className="flex gap-1.5 neu-inset rounded-2xl p-1.5">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
-                activeTab === tab.id
-                  ? "gradient-primary text-primary-foreground"
-                  : "text-muted-foreground"
-              }`}
-            >
-              <tab.icon size={13} />
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Orders */}
       <div className="px-5 space-y-3">
         <AnimatePresence mode="popLayout">
-          {orders.map((order, i) => (
+          {jobs.map((job, i) => (
             <motion.div
-              key={order.id}
+              key={job.responseId}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ delay: i * 0.05 }}
               className="neu-card rounded-2xl p-4"
             >
+              {/* Header */}
               <div className="flex items-start justify-between mb-2">
-                <h3 className="text-sm font-semibold text-foreground flex-1">{order.title}</h3>
-                <span className="text-base font-extrabold text-gradient-primary ml-2">{order.price.toLocaleString("ru-RU")} ₽</span>
-              </div>
-
-              <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
-                <span className="flex items-center gap-1"><Clock size={11} /> {order.date}, {order.time}</span>
-                <span className="flex items-center gap-1"><MapPin size={11} /> {order.address}</span>
-              </div>
-
-              {/* Countdown timer for urgent */}
-              {order.deadlineMinutes && order.progress < 100 && (
-                <CountdownTimer minutes={order.deadlineMinutes} />
-              )}
-
-              {/* Progress bar */}
-              {order.progress > 0 && order.progress < 100 && (
-                <div className="mb-3">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[11px] text-primary font-semibold">{order.status}</span>
-                    <span className="text-[11px] text-muted-foreground">{order.progress}%</span>
-                  </div>
-                  <div className="h-2 neu-inset rounded-full overflow-hidden">
-                    <div className="h-full gradient-primary rounded-full transition-all" style={{ width: `${order.progress}%` }} />
-                  </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-bold text-foreground">{job.title}</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">{job.dispatcherName}</p>
                 </div>
-              )}
-
-              {order.progress === 0 && (
-                <span className="inline-block px-3 py-1 rounded-lg neu-raised-sm text-primary text-[11px] font-semibold mb-3">
-                  {order.status}
+                <span className="text-base font-extrabold text-gradient-primary ml-2">
+                  {(job.hourlyRate * job.durationHours).toLocaleString("ru-RU")} ₽
                 </span>
-              )}
+              </div>
 
-              {order.progress === 100 && (
-                <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-online/15 text-online text-[11px] font-semibold">
-                    <CheckCircle2 size={11} /> {order.status}
+              {/* Info */}
+              <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3 flex-wrap">
+                {job.startTime && (
+                  <span className="flex items-center gap-1">
+                    <Clock size={11} />
+                    {new Date(job.startTime).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                   </span>
-                  <button className="flex items-center gap-1.5 px-3 py-2 rounded-xl neu-raised-sm text-xs text-muted-foreground">
-                    <Camera size={12} /> Фото-отчёт
-                  </button>
-                </div>
-              )}
-
-              {/* Action buttons for active orders */}
-              {activeTab === "today" && order.progress < 100 && (
-                <div className="flex gap-2 mt-3">
-                  {!arrivedOrders.has(order.id) ? (
-                    <button
-                      onClick={() => handleArrived(order.id)}
-                      className="flex-1 py-3.5 rounded-xl gradient-primary text-primary-foreground text-sm font-bold active:scale-95 transition-transform"
-                    >
-                      📍 Я на месте
-                    </button>
-                  ) : (
-                    <span className="flex-1 py-3.5 rounded-xl bg-online/15 text-online text-sm font-bold text-center">
-                      ✓ Отмечено
-                    </span>
-                  )}
-                  <button
-                    onClick={() => {
-                      setShowChecklist(showChecklist === order.id ? null : order.id);
-                      setCheckedItems(new Set());
-                    }}
-                    className="w-12 h-12 rounded-xl neu-raised flex items-center justify-center"
-                  >
-                    <Check size={16} className="text-muted-foreground" />
-                  </button>
-                </div>
-              )}
-
-              {/* Checklist */}
-              <AnimatePresence>
-                {showChecklist === order.id && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="mt-3 neu-inset rounded-xl p-3 space-y-2">
-                      <p className="text-xs font-semibold text-foreground mb-2">Чек-лист перед выездом</p>
-                      {checklistItems.map((item, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => toggleCheckItem(idx)}
-                          className="flex items-center gap-2 w-full text-left"
-                        >
-                          <div className={`w-5 h-5 rounded-md flex items-center justify-center transition-all ${
-                            checkedItems.has(idx) ? "gradient-primary" : "neu-raised-sm"
-                          }`}>
-                            {checkedItems.has(idx) && <Check size={12} className="text-primary-foreground" />}
-                          </div>
-                          <span className={`text-xs ${checkedItems.has(idx) ? "text-foreground" : "text-muted-foreground"}`}>
-                            {item}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </motion.div>
                 )}
-              </AnimatePresence>
+                {job.address && (
+                  <span className="flex items-center gap-1">
+                    <MapPin size={11} /> {job.address}
+                  </span>
+                )}
+              </div>
+
+              {/* Countdown timer */}
+              {job.startTime && new Date(job.startTime) > new Date() && (
+                <CountdownToJob startTime={job.startTime} />
+              )}
+
+              {/* Status buttons */}
+              <div className="grid grid-cols-4 gap-1.5">
+                {STATUS_STEPS.map((step) => {
+                  const isActive = job.workerStatus === step.key;
+                  const Icon = step.icon;
+                  return (
+                    <button
+                      key={step.key}
+                      onClick={() => setWorkerStatus(job.responseId, step.key)}
+                      className={`py-2.5 rounded-xl text-[11px] font-semibold transition-all flex flex-col items-center gap-1 ${
+                        isActive
+                          ? "gradient-primary text-primary-foreground"
+                          : "neu-raised-sm text-muted-foreground active:neu-inset"
+                      }`}
+                    >
+                      <Icon size={14} />
+                      {step.label}
+                    </button>
+                  );
+                })}
+              </div>
             </motion.div>
           ))}
         </AnimatePresence>
 
-        {orders.length === 0 && (
-          <div className="text-center py-12 text-muted-foreground text-sm">Нет заказов</div>
+        {jobs.length === 0 && (
+          <div className="text-center py-16">
+            <div className="text-4xl mb-3">📋</div>
+            <p className="text-sm text-muted-foreground">Пока нет принятых заказов</p>
+            <p className="text-xs text-muted-foreground/60 mt-1">Откликнитесь на заявки в ленте</p>
+          </div>
         )}
       </div>
     </div>
   );
 };
 
-const CountdownTimer = ({ minutes }: { minutes: number }) => {
-  const [secsLeft, setSecsLeft] = useState(minutes * 60);
+const CountdownToJob = ({ startTime }: { startTime: string }) => {
+  const [diff, setDiff] = useState(() => Math.max(0, Math.floor((new Date(startTime).getTime() - Date.now()) / 1000)));
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setSecsLeft(prev => (prev > 0 ? prev - 1 : 0));
+      setDiff(Math.max(0, Math.floor((new Date(startTime).getTime() - Date.now()) / 1000)));
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [startTime]);
 
-  const mins = Math.floor(secsLeft / 60);
-  const secs = secsLeft % 60;
+  if (diff <= 0) return null;
+
+  const hours = Math.floor(diff / 3600);
+  const mins = Math.floor((diff % 3600) / 60);
+  const secs = diff % 60;
+
+  const isUrgent = diff < 3600;
 
   return (
-    <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-xl bg-destructive/10">
-      <Clock size={12} className="text-destructive" />
-      <span className="text-xs font-bold text-destructive">
-        Осталось {mins}:{secs.toString().padStart(2, "0")}
+    <div className={`flex items-center gap-2 mb-3 px-3 py-2.5 rounded-xl ${isUrgent ? "bg-destructive/10" : "neu-inset"}`}>
+      <Clock size={13} className={isUrgent ? "text-destructive" : "text-primary"} />
+      <span className={`text-xs font-bold ${isUrgent ? "text-destructive" : "text-foreground"}`}>
+        До начала: {hours > 0 ? `${hours}ч ` : ""}{mins}м {secs.toString().padStart(2, "0")}с
       </span>
     </div>
   );

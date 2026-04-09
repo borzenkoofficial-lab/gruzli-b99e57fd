@@ -110,6 +110,7 @@ export type Database = {
           message: string | null
           status: string | null
           worker_id: string
+          worker_status: string | null
         }
         Insert: {
           created_at?: string
@@ -118,6 +119,7 @@ export type Database = {
           message?: string | null
           status?: string | null
           worker_id: string
+          worker_status?: string | null
         }
         Update: {
           created_at?: string
@@ -126,6 +128,7 @@ export type Database = {
           message?: string | null
           status?: string | null
           worker_id?: string
+          worker_status?: string | null
         }
         Relationships: [
           {
