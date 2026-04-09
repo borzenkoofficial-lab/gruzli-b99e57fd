@@ -462,7 +462,9 @@ export type Database = {
           display_id: string | null
           full_name: string
           id: string
+          is_premium: boolean
           phone: string | null
+          premium_until: string | null
           rating: number | null
           skills: string[] | null
           updated_at: string
@@ -478,7 +480,9 @@ export type Database = {
           display_id?: string | null
           full_name?: string
           id?: string
+          is_premium?: boolean
           phone?: string | null
+          premium_until?: string | null
           rating?: number | null
           skills?: string[] | null
           updated_at?: string
@@ -494,7 +498,9 @@ export type Database = {
           display_id?: string | null
           full_name?: string
           id?: string
+          is_premium?: boolean
           phone?: string | null
+          premium_until?: string | null
           rating?: number | null
           skills?: string[] | null
           updated_at?: string
@@ -649,6 +655,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_weekly_completed_jobs: { Args: { _user_id: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
