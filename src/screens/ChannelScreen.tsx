@@ -257,7 +257,7 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
   };
 
   return (
-    <div className="flex flex-col h-[var(--app-height)] bg-background overflow-hidden">
+    <div className="flex flex-col h-screen bg-background overflow-hidden" style={{ height: "100dvh" }}>
       {/* Back button bar - fixed */}
       <div className="shrink-0 bg-background/95 backdrop-blur-xl border-b border-border z-20">
         <div className="flex items-center gap-3 px-4 safe-top pb-3">
