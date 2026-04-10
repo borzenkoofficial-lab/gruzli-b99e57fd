@@ -9,7 +9,7 @@ interface SplashScreenProps {
 
 const SplashScreen = ({ onFinished, minDuration = 2200 }: SplashScreenProps) => {
   const isReturning = !!localStorage.getItem("gruzli_returning");
-  const duration = isReturning ? 800 : minDuration;
+  const duration = isReturning ? 500 : minDuration;
   const [visible, setVisible] = useState(true);
   const [phase, setPhase] = useState(isReturning ? 2 : 0);
 
