@@ -110,12 +110,23 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
       }
 
       // Always send a message about the job in the chat
+      const responseMessage = `Здравствуйте! Откликнулся на ваш заказ «${job.title}». Готов обсудить детали и условия.`;
       await supabase.from("messages").insert({
         conversation_id: conversationId,
         sender_id: user.id,
-        text: `Здравствуйте! Откликнулся на ваш заказ «${job.title}». Готов обсудить детали и условия.`,
+        text: responseMessage,
         message_type: "text",
       });
+
+      // Send email notification to dispatcher about the response
+      supabase.functions.invoke("notify-email", {
+        body: {
+          type: "new_job_response",
+          job_id: job.id,
+          worker_id: user.id,
+          message: responseMessage,
+        },
+      }).catch(() => {});
 
       // 3. Open chat
       if (navigator.vibrate) navigator.vibrate(50);

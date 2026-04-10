@@ -253,6 +253,16 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
       setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
       setText(msgText);
       toast.error("Не удалось отправить");
+    } else {
+      // Fire-and-forget email notification to other participants
+      supabase.functions.invoke("notify-email", {
+        body: {
+          type: "new_message",
+          conversation_id: conversationId,
+          sender_id: user.id,
+          text: msgText,
+        },
+      }).catch(() => {});
     }
     setSending(false);
   };
