@@ -37,6 +37,7 @@
 
     --radius: 1rem;
     --bottom-nav-height: 72px;
+    --app-height: 100dvh;
     --app-height: 100vh;
 
     /* Neumorphic surfaces */
@@ -283,6 +284,7 @@
     height: var(--app-height);
     min-height: var(--app-height);
     max-height: var(--app-height);
+    padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: 0;
   }
 
@@ -303,6 +305,7 @@
     margin-top: 0;
     background: hsl(var(--background));
     border-top: 1px solid hsl(var(--border) / 0.75);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .fab-docked {
