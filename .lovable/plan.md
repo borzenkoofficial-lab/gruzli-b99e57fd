@@ -1,50 +1,69 @@
 
 
-# Plan: Telegram/WhatsApp-style Chat Redesign
+# Global App Optimization Plan
 
-## Current Issues
-- Message bubbles use flat neumorphic style — no visual distinction between own/other messages
-- No tail/pointer on bubbles, no color differentiation
-- No date separators between message groups
-- No read status indicators (checkmarks)
-- Input area feels heavy, no auto-grow textarea
-- Chat list lacks online indicators, unread badges, avatar colors
-- No message grouping (consecutive messages from same sender)
-- Header is plain, no typing indicator
+## Problems Identified
 
-## Changes
+### Performance Issues
+1. **Duplicate Supabase realtime channels**: `FeedScreen` subscribes to `jobs INSERT` AND `useRealtimeNotifications` also subscribes to `jobs INSERT` AND `useUnreadCounts` subscribes to `jobs INSERT` — 3 channels for the same event. Should consolidate.
+2. **N+1 queries in `RealChatsScreen.fetchConversations`**: For each conversation, it makes separate queries for messages, participants, and profiles — should batch.
+3. **`framer-motion` overhead**: Every job card, chat item, and list entry uses `AnimatePresence` + `motion.div` with delays. On lists with 20+ items this causes jank. Should limit entrance animations to first ~5 items and use CSS transitions for the rest.
+4. **Google Fonts loaded via CSS `@import`**: Blocks rendering. Should use `<link preconnect>` in `index.html`.
+5. **`send.wav` audio created on every message send** — should be cached once.
+6. **No `React.lazy` / code splitting**: All screens load upfront even though only one is visible at a time.
 
-### 1. `RealChatScreen.tsx` — Full Chat Overhaul
-- **Colored bubbles**: Own messages get tinted background (like Telegram green/WhatsApp green → use `hsl(var(--primary))` tint), others get neutral surface color
-- **Bubble tails**: CSS triangles on bottom-right (own) and bottom-left (other) via `rounded-br-sm` / `rounded-bl-sm`
-- **Message grouping**: Consecutive messages from same sender within 2 min → no repeated name/avatar, tighter spacing
-- **Date separators**: "Сегодня", "Вчера", or "12 апреля" between message groups from different days
-- **Time inside bubble**: Move timestamp inside bubble (bottom-right), smaller, inline with text like WhatsApp
-- **Read indicators**: Single ✓ for sent, ✓✓ for delivered (optimistic = single gray check, confirmed = double)
-- **Auto-grow input**: Replace `<input>` with auto-resizing `<textarea>` (max 4 lines)
-- **Send button animation**: Scale pop when sending
-- **Typing area**: Rounded pill-style input like Telegram
-- **Header polish**: Show avatar initials circle, subtle online dot, cleaner layout
-- **Smooth scroll**: Use `scrollTo` with smooth behavior, scroll on new message only if already near bottom
-- **Performance**: Memoize message items with `React.memo`, virtualize if needed later
+### Broken / Non-functional Elements
+7. **FAB buttons do nothing**: The 3 FAB actions ("Нужна бригада", "Заказы рядом", "SOS") have no `onClick` handlers — they render but clicking does nothing.
+8. **Online dot is always shown** in `RealChatsScreen` — there's no actual online tracking, so it's misleading. Should hide or mark as "был недавно".
+9. **Chat header shows "онлайн" always** in `RealChatScreen` — same problem.
+10. **Unread count in chat list is always 0** — `unreadCount: 0` is hardcoded with `// TODO` comment.
+11. **`window.location.reload()`** in `AvatarWithUpload` after avatar upload — very jarring, should update state instead.
 
-### 2. `RealChatsScreen.tsx` — Chat List Polish
-- **Colored avatar circles**: Generate consistent color from user name hash (like Telegram)
-- **Unread count badge**: Show blue badge with count on conversations with unread messages
-- **Last message preview**: Show ✓✓ prefix for own messages, truncate properly
-- **Online dot**: Small green dot on avatar for online users
-- **Typing indicator**: "печатает..." in preview when other user types
-- **Smoother animations**: Reduce entrance delay, use spring physics
+### UX / Visual Issues
+12. **Bottom nav `position: relative`** — already addressed, but content still needs consistent `pb-20` to prevent last items hiding behind nav.
+13. **Splash screen 2.2s** is long for returning users — should skip or reduce to 1s for returning sessions.
 
-### 3. `src/index.css` — New Bubble Styles
-- Add `.bubble-own` and `.bubble-other` utility classes with proper colors
-- Own bubble: subtle primary tint background
-- Other bubble: card/surface background
+## Planned Changes
 
-### Files Modified
-- `src/screens/RealChatScreen.tsx` — complete visual overhaul of messages, input, header
-- `src/screens/RealChatsScreen.tsx` — avatar colors, unread badges, better preview
-- `src/index.css` — bubble color utilities
+### File: `index.html`
+- Move Google Font from CSS `@import` to `<link rel="preconnect">` + `<link rel="stylesheet">` in head for faster loading.
 
-### No database changes needed — purely frontend/visual
+### File: `src/index.css`
+- Remove the `@import url(...)` for Google Fonts (moved to HTML).
+- Add `pb-20` to `.app-scroll` as default bottom padding.
+
+### File: `src/screens/FeedScreen.tsx`
+- Remove duplicate realtime subscription for `jobs INSERT` (already handled by `useRealtimeNotifications`).
+- Limit `motion.div` entrance animation delays to first 5 cards (`delay: i < 5 ? i * 0.05 : 0`).
+
+### File: `src/screens/RealChatsScreen.tsx`
+- Batch profile lookups: collect all other-user IDs, fetch profiles in one query.
+- Implement real unread count using `messages` table (count messages after last read timestamp, or fallback to last 24h logic).
+- Remove fake "online" dot — replace with last seen time or remove entirely.
+- Limit entrance animation to first 5 items.
+
+### File: `src/screens/RealChatScreen.tsx`
+- Cache `send.wav` Audio object (create once, reuse).
+- Remove hardcoded "онлайн" in header — show "был(а) недавно" or hide.
+- Optimize `renderMediaMessage` with `useCallback` to prevent re-renders.
+
+### File: `src/components/FAB.tsx`
+- Add functional actions: "Заказы рядом" scrolls to feed, "SOS" opens support chat, "Нужна бригада" is a placeholder toast. Or remove non-functional buttons.
+
+### File: `src/components/SplashScreen.tsx`
+- Check localStorage for `returning_user` flag; if set, reduce splash to 800ms. Set the flag after first load.
+
+### File: `src/screens/ProfileScreen.tsx`
+- Replace `window.location.reload()` with profile state refresh after avatar upload.
+
+### File: `src/hooks/useUnreadCounts.ts`
+- Remove `jobs INSERT` subscription (duplicated in `useRealtimeNotifications`).
+
+### File: `src/App.tsx`
+- Add `React.lazy` for `AdminPage` and `UnsubscribePage` (rarely used routes).
+
+## Summary
+- **6 performance optimizations**: deduplicate channels, batch queries, limit animations, font loading, audio caching, lazy loading.
+- **5 bug fixes**: FAB actions, fake online status, hardcoded unread=0, avatar reload, always "онлайн".
+- **2 UX improvements**: splash speed for returning users, bottom padding consistency.
 
