@@ -11,7 +11,7 @@ interface BottomNavProps {
 const Badge = ({ count }: { count: number }) => {
   if (count <= 0) return null;
   return (
-    <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold leading-none">
+    <span className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold leading-none shadow-lg">
       {count > 99 ? "99+" : count}
     </span>
   );
@@ -36,8 +36,8 @@ const BottomNav = ({ active, onNavigate, isDispatcher, unreadMessages = 0, newJo
   const tabs = isDispatcher ? dispatcherTabs : workerTabs;
 
   return (
-    <div className="bottom-docked">
-      <div className="mx-auto flex w-full max-w-lg items-end justify-around px-2 pt-1 pb-0">
+    <div className="bottom-nav-wrapper">
+      <div className="bottom-nav-pill">
         {tabs.map((tab) => {
           const isActive = active === tab.id;
           const Icon = tab.icon;
@@ -45,20 +45,21 @@ const BottomNav = ({ active, onNavigate, isDispatcher, unreadMessages = 0, newJo
             <button
               key={tab.id}
               onClick={() => onNavigate(tab.id)}
-              className={`relative flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-2 pt-1.5 pb-1 transition-all duration-200 ${
-                isActive ? "neu-inset" : ""
+              className={`relative flex min-w-0 flex-1 flex-col items-center gap-0.5 py-2 px-1 rounded-2xl transition-all duration-200 ${
+                isActive ? "bottom-nav-active" : ""
               }`}
             >
               <div className="relative">
                 <Icon
-                  size={20}
-                  className={isActive ? "text-primary" : "text-muted-foreground"}
+                  size={22}
+                  strokeWidth={isActive ? 2.2 : 1.8}
+                  className={`transition-colors duration-200 ${isActive ? "text-primary" : "text-muted-foreground"}`}
                 />
                 <Badge count={tab.badge} />
               </div>
               <span
-                className={`truncate text-[10px] font-medium ${
-                  isActive ? "text-primary" : "text-muted-foreground"
+                className={`truncate text-[10px] transition-colors duration-200 ${
+                  isActive ? "text-primary font-semibold" : "text-muted-foreground font-medium"
                 }`}
               >
                 {tab.label}
