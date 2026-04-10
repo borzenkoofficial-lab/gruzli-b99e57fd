@@ -74,7 +74,7 @@ const AuthPage = () => {
   // ─── WELCOME / ONBOARDING ───
   if (mode === "welcome") {
     return (
-      <div className="bg-background overflow-hidden flex flex-col" style={{ height: "var(--app-height)" }}>
+      <div className="bg-background overflow-hidden flex flex-col h-screen" style={{ height: "100dvh" }}>
         <div className="mx-auto flex flex-1 w-full max-w-sm flex-col px-5 min-h-0" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)", paddingBottom: "env(safe-area-inset-bottom, 4px)" }}>
           {/* Content area - centered vertically */}
           <div className="flex flex-1 flex-col items-center justify-center gap-3 w-full min-h-0">
