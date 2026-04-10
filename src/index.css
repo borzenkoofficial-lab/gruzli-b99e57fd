@@ -36,7 +36,7 @@
     --ring: 230 60% 58%;
 
     --radius: 1rem;
-    --bottom-nav-height: 64px;
+    --bottom-nav-height: 80px;
     --app-height: 100vh;
 
     /* Neumorphic surfaces */
@@ -306,7 +306,8 @@
     padding-bottom: var(--bottom-nav-height);
   }
 
-  .bottom-docked {
+  /* Floating pill nav wrapper — transparent area at bottom */
+  .bottom-nav-wrapper {
     position: fixed;
     left: 50%;
     transform: translateX(-50%);
@@ -314,16 +315,49 @@
     max-width: 32rem;
     bottom: 0;
     z-index: 50;
-    padding: 0;
-    margin: 0;
-    background: hsl(var(--background));
-    border-top: 1px solid hsl(var(--border) / 0.75);
+    padding: 0 12px 8px;
+    pointer-events: none;
+  }
+
+  /* The pill itself */
+  .bottom-nav-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    width: 100%;
+    padding: 4px 6px;
+    border-radius: 9999px;
+    background: hsl(var(--surface-2) / 0.75);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    border: 1px solid hsl(var(--surface-4) / 0.25);
+    box-shadow:
+      0 4px 24px hsl(var(--neu-shadow-dark) / 0.5),
+      0 0 0 0.5px hsl(var(--surface-3) / 0.3) inset;
+    pointer-events: auto;
+  }
+
+  .light .bottom-nav-pill {
+    background: hsl(var(--surface-2) / 0.72);
+    border: 1px solid hsl(var(--border) / 0.4);
+    box-shadow:
+      0 4px 20px hsl(var(--neu-shadow-dark) / 0.15),
+      0 0 0 0.5px hsl(0 0% 100% / 0.3) inset;
+  }
+
+  /* Active tab highlight */
+  .bottom-nav-active {
+    background: hsl(var(--surface-3) / 0.7);
+  }
+
+  .light .bottom-nav-active {
+    background: hsl(var(--surface-3) / 0.6);
   }
 
   .fab-docked {
     position: fixed;
     right: calc(50% - 16rem + 1rem);
-    bottom: calc(var(--bottom-nav-height) + 0.75rem);
+    bottom: calc(var(--bottom-nav-height) + 0.25rem);
     z-index: 40;
   }
 
