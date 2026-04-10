@@ -303,7 +303,7 @@
     overflow-x: hidden;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: var(--bottom-nav-height);
+    padding-bottom: calc(var(--bottom-nav-height) - 16px);
   }
 
   /* Floating pill nav wrapper — transparent area at bottom */
