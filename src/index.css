@@ -269,16 +269,6 @@
 
   .safe-top {
     padding-top: calc(env(safe-area-inset-top, 0px) + 18px);
-    position: sticky;
-    top: 0;
-    z-index: 40;
-    background: hsl(var(--background) / 0.55);
-    backdrop-filter: blur(32px) saturate(1.6);
-    -webkit-backdrop-filter: blur(32px) saturate(1.6);
-  }
-
-  .light .safe-top {
-    background: hsl(var(--background) / 0.72);
   }
 
   .safe-bottom {
@@ -313,7 +303,7 @@
     overflow-x: hidden;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: var(--bottom-nav-height);
+    padding-bottom: calc(var(--bottom-nav-height) - 16px);
   }
 
   /* Floating pill nav wrapper — transparent area at bottom */
