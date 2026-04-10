@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, Check, CheckCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -23,6 +23,80 @@ interface RealChatScreenProps {
   onBack: () => void;
 }
 
+// Date separator helpers
+const formatDateSeparator = (dateStr: string) => {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today.getTime() - 86400000);
+  const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  if (msgDate.getTime() === today.getTime()) return "Сегодня";
+  if (msgDate.getTime() === yesterday.getTime()) return "Вчера";
+  return date.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+};
+
+const isSameDay = (a: string, b: string) => {
+  const da = new Date(a), db = new Date(b);
+  return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate();
+};
+
+const isSameGroup = (a: Message, b: Message) =>
+  a.sender_id === b.sender_id &&
+  Math.abs(new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) < 120000;
+
+// Avatar color from name hash
+const avatarColors = [
+  "hsl(210 70% 55%)", "hsl(340 65% 55%)", "hsl(160 60% 45%)",
+  "hsl(30 80% 55%)", "hsl(270 60% 55%)", "hsl(190 70% 45%)",
+  "hsl(0 65% 55%)", "hsl(120 50% 45%)",
+];
+const getAvatarColor = (name: string) => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return avatarColors[Math.abs(hash) % avatarColors.length];
+};
+
+// Memoized message bubble
+const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup, renderMedia }: {
+  msg: Message;
+  isOwn: boolean;
+  showSender: boolean;
+  senderName: string;
+  isLastInGroup: boolean;
+  renderMedia: (msg: Message) => React.ReactNode;
+}) => {
+  const time = new Date(msg.created_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+
+  return (
+    <div className={`flex ${isOwn ? "justify-end" : "justify-start"} ${isLastInGroup ? "mb-2" : "mb-0.5"} ${msg._optimistic ? "opacity-60" : ""}`}>
+      <div className={`max-w-[78%] ${isOwn ? "items-end" : "items-start"}`}>
+        {showSender && !isOwn && (
+          <p className="text-[11px] font-semibold mb-1 ml-3" style={{ color: getAvatarColor(senderName) }}>
+            {senderName}
+          </p>
+        )}
+        <div className={`relative px-3 py-2 ${
+          isOwn
+            ? `bubble-own ${isLastInGroup ? "rounded-2xl rounded-br-sm" : "rounded-2xl"}`
+            : `bubble-other ${isLastInGroup ? "rounded-2xl rounded-bl-sm" : "rounded-2xl"}`
+        }`}>
+          {renderMedia(msg)}
+          <div className={`flex items-end gap-1.5 mt-0.5 ${isOwn ? "justify-end" : "justify-start"}`}>
+            <span className="text-[10px] text-muted-foreground leading-none">{time}</span>
+            {isOwn && (
+              msg._optimistic
+                ? <Check size={12} className="text-muted-foreground" />
+                : <CheckCheck size={12} className="text-primary" />
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+MessageBubble.displayName = "MessageBubble";
+
 const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -38,18 +112,41 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
   const [voiceRoomId, setVoiceRoomId] = useState<string | null>(null);
   const [peerConnected, setPeerConnected] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const peerRef = useRef<RTCPeerConnection | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const senderNamesRef = useRef(senderNames);
   senderNamesRef.current = senderNames;
 
-  const scrollToBottom = useCallback(() => {
+  const scrollToBottom = useCallback((smooth = true) => {
     requestAnimationFrame(() => {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+      if (scrollRef.current) {
+        scrollRef.current.scrollTo({
+          top: scrollRef.current.scrollHeight,
+          behavior: smooth ? "smooth" : "instant",
+        });
+      }
     });
   }, []);
+
+  const isNearBottom = useCallback(() => {
+    if (!scrollRef.current) return true;
+    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+    return scrollHeight - scrollTop - clientHeight < 150;
+  }, []);
+
+  // Auto-grow textarea
+  const adjustTextarea = useCallback(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = Math.min(ta.scrollHeight, 120) + "px";
+  }, []);
+
+  useEffect(() => { adjustTextarea(); }, [text, adjustTextarea]);
 
   const fetchMessages = async () => {
     const [convRes, msgsRes] = await Promise.all([
@@ -78,6 +175,7 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
       }
     }
     setLoading(false);
+    setTimeout(() => scrollToBottom(false), 50);
   };
 
   useEffect(() => {
@@ -90,8 +188,8 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
         { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
         async (payload) => {
           const newMsg = payload.new as Message;
+          const wasNearBottom = isNearBottom();
           setMessages((prev) => {
-            // Replace optimistic message or skip duplicate
             const withoutOptimistic = prev.filter(
               (m) => !(m._optimistic && m.sender_id === newMsg.sender_id && m.text === newMsg.text)
             );
@@ -102,6 +200,7 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
             const { data: profile } = await supabase.from("profiles").select("user_id, full_name").eq("user_id", newMsg.sender_id).single();
             if (profile) setSenderNames((prev) => ({ ...prev, [profile.user_id]: profile.full_name }));
           }
+          if (wasNearBottom) setTimeout(() => scrollToBottom(), 50);
         }
       )
       .subscribe();
@@ -109,7 +208,9 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
     return () => { supabase.removeChannel(channel); };
   }, [conversationId]);
 
-  useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
+  useEffect(() => {
+    if (isNearBottom()) scrollToBottom();
+  }, [messages, scrollToBottom, isNearBottom]);
 
   useEffect(() => {
     return () => {
@@ -118,20 +219,18 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
     };
   }, []);
 
-  // Optimistic send
   const handleSend = async () => {
     if (!text.trim() || !user || sending) return;
     const msgText = text.trim();
     setText("");
+    if (textareaRef.current) { textareaRef.current.style.height = "auto"; }
 
-    // Play send sound
     try {
       const audio = new Audio("/send.wav");
       audio.volume = 0.3;
       audio.play().catch(() => {});
     } catch {}
-    
-    // Add optimistic message immediately
+
     const optimisticMsg: Message = {
       id: `optimistic-${Date.now()}`,
       conversation_id: conversationId,
@@ -151,7 +250,6 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
       message_type: "text",
     });
     if (error) {
-      // Remove optimistic message on error
       setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
       setText(msgText);
       toast.error("Не удалось отправить");
@@ -202,7 +300,7 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
       const { data: room } = await supabase.from("voice_rooms").insert({ conversation_id: conversationId, created_by: user.id }).select().single();
       if (room) {
         setVoiceRoomId(room.id);
-        await supabase.from("messages").insert({ conversation_id: conversationId, sender_id: user.id, text: "📞 Начал голосовой звонок. Нажмите 📞 чтобы присоединиться.", message_type: "voice_room" });
+        await supabase.from("messages").insert({ conversation_id: conversationId, sender_id: user.id, text: "📞 Начал голосовой звонок", message_type: "voice_room" });
       }
       toast.success("Голосовая комната создана");
     } catch { toast.error("Нет доступа к микрофону"); }
@@ -258,36 +356,42 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
         </div>
       );
     }
-    return <p className="text-sm text-foreground leading-relaxed">{msg.text}</p>;
+    return <p className="text-[13px] text-foreground leading-relaxed whitespace-pre-wrap">{msg.text}</p>;
   };
+
+  // Get initials
+  const initials = title.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
   return (
     <div className="app-shell">
       <audio ref={remoteAudioRef} autoPlay />
       <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
 
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 safe-top pb-4">
-        <button onClick={onBack} className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center active:neu-inset transition-all">
-          <ArrowLeft size={18} className="text-foreground" />
+      {/* Header — Telegram-style */}
+      <div className="flex items-center gap-3 px-3 safe-top pb-3 border-b border-border/50">
+        <button onClick={onBack} className="w-9 h-9 rounded-full flex items-center justify-center text-foreground active:bg-muted/50 transition-colors">
+          <ArrowLeft size={20} />
         </button>
-        <div className="flex-1">
-          <h2 className="text-sm font-bold text-foreground">{title}</h2>
-          <p className="text-[11px] text-online font-medium">● Онлайн</p>
+        <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ background: getAvatarColor(title) }}>
+          {initials}
         </div>
-        <div className="flex gap-2">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-sm font-semibold text-foreground truncate">{title}</h2>
+          <p className="text-[11px] text-primary font-medium">онлайн</p>
+        </div>
+        <div className="flex gap-1">
           {inVoiceRoom ? (
             <>
-              <button onClick={toggleMic} className={`w-10 h-10 rounded-2xl flex items-center justify-center ${voiceActive ? "gradient-primary" : "neu-raised"}`}>
-                {voiceActive ? <Mic size={16} className="text-primary-foreground" /> : <MicOff size={16} className="text-destructive" />}
+              <button onClick={toggleMic} className={`w-9 h-9 rounded-full flex items-center justify-center ${voiceActive ? "bg-primary/20 text-primary" : "text-destructive"}`}>
+                {voiceActive ? <Mic size={18} /> : <MicOff size={18} />}
               </button>
-              <button onClick={leaveVoiceRoom} className="w-10 h-10 rounded-2xl bg-destructive/20 flex items-center justify-center">
-                <Phone size={16} className="text-destructive" />
+              <button onClick={leaveVoiceRoom} className="w-9 h-9 rounded-full bg-destructive/15 flex items-center justify-center">
+                <Phone size={18} className="text-destructive" />
               </button>
             </>
           ) : (
-            <button onClick={hasActiveVoiceRoom ? joinVoiceRoom : startVoiceRoom} className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center">
-              <Phone size={16} className="text-muted-foreground" />
+            <button onClick={hasActiveVoiceRoom ? joinVoiceRoom : startVoiceRoom} className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors">
+              <Phone size={18} />
             </button>
           )}
         </div>
@@ -296,10 +400,10 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
       {/* Voice room banner */}
       <AnimatePresence>
         {inVoiceRoom && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="mx-4 mb-2 rounded-2xl overflow-hidden" style={{ background: "linear-gradient(135deg, hsl(145 65% 40%), hsl(160 60% 45%))" }}>
-            <div className="px-4 py-3 flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-white animate-pulse" />
-              <span className="text-white text-sm font-semibold flex-1">Голосовой звонок {voiceActive ? "· Микрофон вкл" : "· Микрофон выкл"}</span>
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden" style={{ background: "linear-gradient(135deg, hsl(145 65% 40%), hsl(160 60% 45%))" }}>
+            <div className="px-4 py-2.5 flex items-center gap-3">
+              <div className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
+              <span className="text-white text-xs font-semibold flex-1">Голосовой звонок {voiceActive ? "· Микрофон вкл" : "· Микрофон выкл"}</span>
               <button onClick={leaveVoiceRoom} className="text-white/80 text-xs font-medium">Завершить</button>
             </div>
           </motion.div>
@@ -307,9 +411,9 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
       </AnimatePresence>
 
       {/* Messages */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3 scrollbar-hide">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 scrollbar-hide">
         {linkedJob && (
-          <div className="neu-flat rounded-2xl p-3 mb-2">
+          <div className="bubble-other rounded-2xl p-3 mb-3">
             <p className="text-[11px] text-muted-foreground mb-1">Заказ</p>
             <p className="text-sm font-bold text-foreground">{linkedJob.title}</p>
             <div className="flex items-center gap-3 mt-2 text-[11px] text-muted-foreground flex-wrap">
@@ -327,29 +431,49 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
         ) : messages.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground text-sm">Начните диалог — напишите сообщение</div>
         ) : (
-          messages.map((msg) => {
+          messages.map((msg, idx) => {
             const isOwn = msg.sender_id === user?.id;
             const isSystem = msg.message_type === "system";
+            const prev = messages[idx - 1];
+            const next = messages[idx + 1];
+
+            // Date separator
+            const showDateSep = !prev || !isSameDay(prev.created_at, msg.created_at);
+
+            // Grouping
+            const isFirstInGroup = !prev || prev.sender_id !== msg.sender_id || !isSameGroup(prev, msg) || isSystem;
+            const isLastInGroup = !next || next.sender_id !== msg.sender_id || !isSameGroup(msg, next) || next.message_type === "system";
+
             if (isSystem) {
               return (
-                <div key={msg.id} className="text-center">
-                  <span className="text-[11px] text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">{msg.text}</span>
+                <div key={msg.id}>
+                  {showDateSep && (
+                    <div className="flex justify-center my-3">
+                      <span className="text-[11px] text-muted-foreground bg-muted/60 px-3 py-1 rounded-full">{formatDateSeparator(msg.created_at)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-center my-2">
+                    <span className="text-[11px] text-muted-foreground bg-muted/40 px-3 py-1 rounded-full">{msg.text}</span>
+                  </div>
                 </div>
               );
             }
+
             return (
-              <div key={msg.id} className={`flex ${isOwn ? "justify-end" : "justify-start"} ${msg._optimistic ? "opacity-70" : ""}`}>
-                <div className="max-w-[80%]">
-                  {!isOwn && (
-                    <p className="text-[10px] text-primary font-semibold mb-1 ml-1">{senderNames[msg.sender_id] || "..."}</p>
-                  )}
-                  <div className={`px-4 py-3 rounded-2xl ${isOwn ? "neu-flat rounded-br-md" : "neu-flat rounded-bl-md"}`}>
-                    {renderMediaMessage(msg)}
+              <div key={msg.id}>
+                {showDateSep && (
+                  <div className="flex justify-center my-3">
+                    <span className="text-[11px] text-muted-foreground bg-muted/60 px-3 py-1 rounded-full font-medium">{formatDateSeparator(msg.created_at)}</span>
                   </div>
-                  <p className={`text-[10px] text-muted-foreground mt-1.5 ${isOwn ? "text-right" : "text-left"}`}>
-                    {new Date(msg.created_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
-                  </p>
-                </div>
+                )}
+                <MessageBubble
+                  msg={msg}
+                  isOwn={isOwn}
+                  showSender={isFirstInGroup}
+                  senderName={senderNames[msg.sender_id] || "..."}
+                  isLastInGroup={isLastInGroup}
+                  renderMedia={renderMediaMessage}
+                />
               </div>
             );
           })
@@ -360,18 +484,18 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
       {/* Attach popup */}
       <AnimatePresence>
         {showAttach && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="absolute bottom-24 left-4 right-4 neu-card rounded-2xl p-4 z-50">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="absolute bottom-20 left-3 right-3 bg-card rounded-2xl p-4 z-50 border border-border shadow-lg">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-semibold text-foreground">Прикрепить</span>
               <button onClick={() => setShowAttach(false)}><X size={16} className="text-muted-foreground" /></button>
             </div>
             <div className="flex gap-4">
               <button onClick={() => { if (fileInputRef.current) { fileInputRef.current.accept = "image/*"; fileInputRef.current.click(); } }} className="flex flex-col items-center gap-2">
-                <div className="w-14 h-14 rounded-2xl neu-raised flex items-center justify-center"><Image size={22} className="text-primary" /></div>
+                <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center"><Image size={20} className="text-primary" /></div>
                 <span className="text-[11px] text-muted-foreground">Фото</span>
               </button>
               <button onClick={() => { if (fileInputRef.current) { fileInputRef.current.accept = "video/*"; fileInputRef.current.click(); } }} className="flex flex-col items-center gap-2">
-                <div className="w-14 h-14 rounded-2xl neu-raised flex items-center justify-center"><Video size={22} className="text-primary" /></div>
+                <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center"><Video size={20} className="text-primary" /></div>
                 <span className="text-[11px] text-muted-foreground">Видео</span>
               </button>
             </div>
@@ -379,19 +503,33 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
         )}
       </AnimatePresence>
 
-      {/* Input */}
-      <div className="px-4 pt-3 pb-4">
+      {/* Input — Telegram-style pill */}
+      <div className="px-3 pt-2 pb-3 border-t border-border/30">
         {uploading && <div className="text-center text-xs text-primary mb-2 animate-pulse">Загрузка файла...</div>}
-        <div className="flex items-center gap-2.5">
-          <button onClick={() => setShowAttach(!showAttach)} className="w-11 h-11 rounded-xl neu-raised flex items-center justify-center active:neu-inset transition-all">
-            <Paperclip size={18} className="text-muted-foreground" />
+        <div className="flex items-end gap-2">
+          <button onClick={() => setShowAttach(!showAttach)} className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0 mb-0.5">
+            <Paperclip size={20} />
           </button>
-          <div className="flex-1 flex items-center neu-inset rounded-2xl px-4 py-3">
-            <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={handleKeyDown} placeholder="Написать сообщение..." className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none" />
+          <div className="flex-1 flex items-end bg-muted/40 rounded-3xl px-4 py-2 border border-border/40">
+            <textarea
+              ref={textareaRef}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Сообщение..."
+              rows={1}
+              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none resize-none leading-5 max-h-[120px]"
+              style={{ height: "20px" }}
+            />
           </div>
-          <button onClick={handleSend} disabled={!text.trim() || sending} className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50" style={{ boxShadow: '6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%), 0 4px 20px hsl(230 60% 58% / 0.35)' }}>
-            <Send size={18} className="text-primary-foreground" />
-          </button>
+          <motion.button
+            onClick={handleSend}
+            disabled={!text.trim() || sending}
+            whileTap={{ scale: 0.85 }}
+            className="w-10 h-10 rounded-full bg-primary flex items-center justify-center disabled:opacity-40 transition-opacity shrink-0 mb-0.5"
+          >
+            <Send size={18} className="text-primary-foreground ml-0.5" />
+          </motion.button>
         </div>
       </div>
     </div>
