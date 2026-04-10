@@ -72,7 +72,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
     window.addEventListener("profile-avatar-updated", handleAvatarUpdate);
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener("profile-avatar-updated", handleAvatarUpdate);
+    };
   }, []);
 
   const signOut = async () => {
