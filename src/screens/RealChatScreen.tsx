@@ -253,6 +253,16 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
       setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
       setText(msgText);
       toast.error("Не удалось отправить");
+    } else {
+      // Fire-and-forget email notification to other participants
+      supabase.functions.invoke("notify-email", {
+        body: {
+          type: "new_message",
+          conversation_id: conversationId,
+          sender_id: user.id,
+          text: msgText,
+        },
+      }).catch(() => {});
     }
     setSending(false);
   };
@@ -279,13 +289,23 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
     const isVideo = file.type.startsWith("video/");
     const isImage = file.type.startsWith("image/");
     const msgType = isVideo ? "video" : isImage ? "image" : "file";
-    await supabase.from("messages").insert({
+    const { error: msgError } = await supabase.from("messages").insert({
       conversation_id: conversationId,
       sender_id: user.id,
       text: file.name,
       media_url: urlData.publicUrl,
       message_type: msgType,
     });
+    if (!msgError) {
+      supabase.functions.invoke("notify-email", {
+        body: {
+          type: "new_message",
+          conversation_id: conversationId,
+          sender_id: user.id,
+          text: `📎 ${file.name}`,
+        },
+      }).catch(() => {});
+    }
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
