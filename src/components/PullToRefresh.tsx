@@ -79,7 +79,7 @@ const PullToRefresh = ({ onRefresh, children }: PullToRefreshProps) => {
       {/* Scrollable content */}
       <motion.div
         ref={containerRef}
-        className="flex-1 overflow-y-auto overflow-x-hidden overscroll-behavior-contain min-h-0"
+        className="flex-1 overflow-y-auto overflow-x-hidden overscroll-behavior-contain min-h-0 pb-[var(--bottom-nav-height)]"
         style={{ y }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
