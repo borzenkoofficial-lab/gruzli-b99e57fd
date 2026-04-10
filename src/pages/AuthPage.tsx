@@ -75,8 +75,8 @@ const AuthPage = () => {
   if (mode === "welcome") {
     return (
       <div className="bg-background overflow-hidden flex flex-col h-screen" style={{ height: "100dvh" }}>
-        <div className="mx-auto flex flex-1 w-full max-w-sm flex-col px-5 min-h-0" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)", paddingBottom: "env(safe-area-inset-bottom, 4px)" }}>
-          {/* Content area - centered vertically */}
+        <div className="mx-auto flex flex-1 w-full max-w-sm flex-col px-5 min-h-0" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}>
+          {/* Content area - centered vertically, takes remaining space */}
           <div className="flex flex-1 flex-col items-center justify-center gap-3 w-full min-h-0">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -130,12 +130,14 @@ const AuthPage = () => {
               </motion.div>
             ))}
           </motion.div>
-          {/* CTA buttons */}
+          </div>
+          {/* CTA buttons - pinned to bottom */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
-           className="space-y-2.5 w-full shrink-0"
+            className="space-y-2.5 w-full shrink-0 pb-4"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)" }}
           >
             <button
               onClick={() => setMode("register")}
@@ -151,7 +153,6 @@ const AuthPage = () => {
               У меня есть аккаунт
             </button>
           </motion.div>
-          </div>
         </div>
       </div>
     );
