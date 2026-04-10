@@ -127,10 +127,8 @@
 }
 
 @supports (height: 100dvh) {
-  @layer base {
-    :root {
-      --app-height: 100dvh;
-    }
+  :root {
+    --app-height: 100dvh;
   }
 }
 
