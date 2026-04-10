@@ -8,18 +8,24 @@ interface SplashScreenProps {
 }
 
 const SplashScreen = ({ onFinished, minDuration = 2200 }: SplashScreenProps) => {
+  const isReturning = !!localStorage.getItem("gruzli_returning");
+  const duration = isReturning ? 800 : minDuration;
   const [visible, setVisible] = useState(true);
-  const [phase, setPhase] = useState(0); // 0=logo, 1=text, 2=bar
+  const [phase, setPhase] = useState(isReturning ? 2 : 0);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase(1), 400);
-    const t2 = setTimeout(() => setPhase(2), 900);
-    const timer = setTimeout(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    if (!isReturning) {
+      timers.push(setTimeout(() => setPhase(1), 400));
+      timers.push(setTimeout(() => setPhase(2), 900));
+    }
+    timers.push(setTimeout(() => {
       setVisible(false);
-      setTimeout(onFinished, 500);
-    }, minDuration);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(timer); };
-  }, [minDuration, onFinished]);
+      localStorage.setItem("gruzli_returning", "1");
+      setTimeout(onFinished, 300);
+    }, duration));
+    return () => timers.forEach(clearTimeout);
+  }, [duration, onFinished, isReturning]);
 
   return (
     <AnimatePresence>

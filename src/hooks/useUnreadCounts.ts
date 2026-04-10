@@ -69,15 +69,7 @@ export function useUnreadCounts() {
           }
         }
       )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "jobs" },
-        () => {
-          if (role === "worker") {
-            setNewJobsCount((prev) => prev + 1);
-          }
-        }
-      )
+      /* jobs INSERT handled by useRealtimeNotifications — removed duplicate */
       .subscribe();
 
     return () => {

@@ -57,7 +57,7 @@ const SwipeableChatItem = ({
     <motion.div
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.03, type: "spring", stiffness: 500, damping: 30 }}
+      transition={{ delay: index < 5 ? index * 0.03 : 0, type: "spring", stiffness: 500, damping: 30 }}
       className="relative overflow-hidden rounded-2xl"
     >
       {/* Action buttons behind */}
@@ -92,8 +92,7 @@ const SwipeableChatItem = ({
           >
             {initials}
           </div>
-          {/* Online dot */}
-          <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-online border-2 border-background" />
+          {/* Removed fake online dot — no real presence tracking */}
         </div>
 
         <div className="flex-1 min-w-0">
@@ -157,34 +156,60 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel }: RealChatsScreenProps) =>
     const { data: convs } = await supabase.from("conversations").select("*").in("id", convIds);
 
     if (convs) {
-      const items = await Promise.all(
-        convs.map(async (conv) => {
-          const [msgsRes, participantsRes] = await Promise.all([
-            supabase.from("messages").select("text, created_at").eq("conversation_id", conv.id).order("created_at", { ascending: false }).limit(1),
-            supabase.from("conversation_participants").select("user_id").eq("conversation_id", conv.id).neq("user_id", user.id),
-          ]);
+      // Batch: fetch all participants for all conversations
+      const allConvIds = convs.map(c => c.id);
+      const [allParticipantsRes, allLastMsgsRes] = await Promise.all([
+        supabase.from("conversation_participants").select("conversation_id, user_id").in("conversation_id", allConvIds).neq("user_id", user.id),
+        supabase.from("messages").select("conversation_id, text, created_at, sender_id").in("conversation_id", allConvIds).order("created_at", { ascending: false }),
+      ]);
 
-          let otherName = conv.title || "Чат";
-          if (participantsRes.data && participantsRes.data.length > 0 && !conv.title) {
-            const { data: profile } = await supabase.from("profiles").select("full_name").eq("user_id", participantsRes.data[0].user_id).single();
-            if (profile) otherName = profile.full_name;
-          }
+      // Group participants by conversation
+      const participantsByConv: Record<string, string[]> = {};
+      allParticipantsRes.data?.forEach(p => {
+        if (!participantsByConv[p.conversation_id]) participantsByConv[p.conversation_id] = [];
+        participantsByConv[p.conversation_id].push(p.user_id);
+      });
 
-          const lastMsg = msgsRes.data?.[0];
-          return {
-            id: conv.id,
-            title: conv.title,
-            is_group: conv.is_group,
-            lastMessage: lastMsg?.text || "Нет сообщений",
-            lastTime: lastMsg?.created_at
-              ? new Date(lastMsg.created_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
-              : "",
-            lastTimestamp: lastMsg?.created_at || conv.created_at,
-            otherName,
-            unreadCount: 0, // TODO: implement unread tracking
-          };
-        })
-      );
+      // Get last message per conversation
+      const lastMsgByConv: Record<string, { text: string | null; created_at: string; sender_id: string }> = {};
+      allLastMsgsRes.data?.forEach(m => {
+        if (!lastMsgByConv[m.conversation_id]) lastMsgByConv[m.conversation_id] = m;
+      });
+
+      // Count unread: messages not by me in last 24h
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const unreadByConv: Record<string, number> = {};
+      allLastMsgsRes.data?.forEach(m => {
+        if (m.sender_id !== user.id && m.created_at >= since) {
+          unreadByConv[m.conversation_id] = (unreadByConv[m.conversation_id] || 0) + 1;
+        }
+      });
+
+      // Batch fetch all other-user profiles
+      const allOtherIds = [...new Set(Object.values(participantsByConv).flat())];
+      let profileMap: Record<string, string> = {};
+      if (allOtherIds.length > 0) {
+        const { data: profiles } = await supabase.from("profiles").select("user_id, full_name").in("user_id", allOtherIds);
+        profiles?.forEach(p => { profileMap[p.user_id] = p.full_name; });
+      }
+
+      const items = convs.map(conv => {
+        const otherIds = participantsByConv[conv.id] || [];
+        const otherName = conv.title || (otherIds.length > 0 ? profileMap[otherIds[0]] || "Чат" : "Чат");
+        const lastMsg = lastMsgByConv[conv.id];
+        return {
+          id: conv.id,
+          title: conv.title,
+          is_group: conv.is_group,
+          lastMessage: lastMsg?.text || "Нет сообщений",
+          lastTime: lastMsg?.created_at
+            ? new Date(lastMsg.created_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+            : "",
+          lastTimestamp: lastMsg?.created_at || conv.created_at,
+          otherName,
+          unreadCount: unreadByConv[conv.id] || 0,
+        };
+      });
       items.sort((a, b) => new Date(b.lastTimestamp).getTime() - new Date(a.lastTimestamp).getTime());
       setConversations(items);
     }

@@ -1,9 +1,30 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Users, MapPin, AlertTriangle, X } from "lucide-react";
+import { toast } from "sonner";
 
-const FAB = () => {
+interface FABProps {
+  onOpenSupport?: () => void;
+}
+
+const FAB = ({ onOpenSupport }: FABProps) => {
   const [open, setOpen] = useState(false);
+
+  const handleAction = (id: string) => {
+    setOpen(false);
+    switch (id) {
+      case "team":
+        toast("🔜 Скоро", { description: "Функция поиска бригады в разработке" });
+        break;
+      case "nearby":
+        window.dispatchEvent(new CustomEvent("navigate-to-feed"));
+        break;
+      case "sos":
+        if (onOpenSupport) onOpenSupport();
+        else toast("🆘 SOS", { description: "Свяжитесь с поддержкой через профиль" });
+        break;
+    }
+  };
 
   const actions = [
     { id: "team", icon: Users, label: "Нужна бригада", color: "gradient-primary" },
@@ -28,6 +49,7 @@ const FAB = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.5 }}
                 transition={{ delay: i * 0.05 }}
+                onClick={() => handleAction(action.id)}
                 className="flex items-center gap-3 whitespace-nowrap"
               >
                 <span className="text-xs font-semibold text-foreground px-3 py-1.5 rounded-lg neu-card">

@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+/* Google Fonts loaded via <link> in index.html for faster rendering */
 
 @layer base {
   :root {
@@ -293,7 +293,7 @@
     overflow-x: hidden;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: 0;
+    padding-bottom: calc(var(--bottom-nav-height) + 8px);
   }
 
   .bottom-docked {
