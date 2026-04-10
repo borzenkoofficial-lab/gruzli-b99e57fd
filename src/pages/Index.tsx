@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
+import DesktopSidebar from "@/components/DesktopSidebar";
+import DesktopLayout from "@/components/DesktopLayout";
 import FAB from "@/components/FAB";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Worker screens
 import FeedScreen from "@/screens/FeedScreen";
@@ -33,16 +36,17 @@ import { supabase } from "@/integrations/supabase/client";
 const Index = () => {
   const { role, user } = useAuth();
   const { unreadMessages, newJobsCount, resetMessages, resetJobs } = useUnreadCounts();
+  const isMobile = useIsMobile();
   const SUPPORT_USER_ID = "de95eea5-d75b-4693-af15-020c58422126";
   const SUPPORT_NAME = "Gruzli Official";
   const [tab, setTab] = useState("feed");
 
-  // Listen for navigate-to-feed events from NewJobAlert
   useEffect(() => {
     const handler = () => setTab("feed");
     window.addEventListener("navigate-to-feed", handler);
     return () => window.removeEventListener("navigate-to-feed", handler);
   }, []);
+
   const [openChatId, setOpenChatId] = useState<string | null>(null);
   const [openChatTitle, setOpenChatTitle] = useState("");
   const [showCreateJob, setShowCreateJob] = useState(false);
@@ -74,9 +78,7 @@ const Index = () => {
       .select("conversation_id")
       .eq("user_id", user.id);
 
-    if (myConvsError) {
-      return false;
-    }
+    if (myConvsError) return false;
 
     let conversationId: string | null = null;
 
@@ -112,7 +114,6 @@ const Index = () => {
       if (participantsError) return false;
     }
 
-    // Send prefill message if provided
     if (prefillMessage && conversationId) {
       await supabase.from("messages").insert({
         conversation_id: conversationId,
@@ -125,114 +126,169 @@ const Index = () => {
     return true;
   };
 
-  // Full-screen overlays
-  if (showNotifications) {
-    return <NotificationsScreen onBack={() => setShowNotifications(false)} />;
-  }
+  const handleNavigate = (t: string) => {
+    if (t === "chats") resetMessages();
+    if (t === "feed" && !isDispatcher) resetJobs();
+    setTab(t);
+  };
 
-  if (showPremium) {
-    return <PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, msg); }} />;
-  }
+  // --- Detail panel content for desktop ---
+  const getDetailPanel = () => {
+    if (openChatId) {
+      return <RealChatScreen conversationId={openChatId} title={openChatTitle} onBack={() => setOpenChatId(null)} />;
+    }
+    if (viewProfileUserId) {
+      return (
+        <UserProfileScreen
+          userId={viewProfileUserId}
+          onBack={() => setViewProfileUserId(null)}
+          onChat={async (userId, name) => {
+            const opened = await handleChatWithUser(userId, name);
+            if (opened) setViewProfileUserId(null);
+          }}
+        />
+      );
+    }
+    if (showSettings) {
+      return <SettingsScreen onBack={() => setShowSettings(false)} />;
+    }
+    if (showNotifications) {
+      return <NotificationsScreen onBack={() => setShowNotifications(false)} />;
+    }
+    if (showPremium) {
+      return <PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, msg); }} />;
+    }
+    if (showChannel) {
+      return <ChannelScreen onBack={() => setShowChannel(false)} />;
+    }
+    if (showCreateJob) {
+      return <CreateJobScreen onBack={() => setShowCreateJob(false)} onCreated={() => { setShowCreateJob(false); setTab("feed"); }} />;
+    }
+    if (viewResponsesJob) {
+      return (
+        <JobResponsesScreen
+          job={viewResponsesJob}
+          onBack={() => setViewResponsesJob(null)}
+          onChatWithWorker={async (workerId, workerName) => {
+            const opened = await handleChatWithUser(workerId, workerName);
+            if (opened) setViewResponsesJob(null);
+          }}
+        />
+      );
+    }
+    return null;
+  };
 
-  if (showChannel) {
-    return <ChannelScreen onBack={() => setShowChannel(false)} />;
-  }
+  // --- Mobile: full-screen overlays ---
+  if (isMobile) {
+    if (showNotifications) return <NotificationsScreen onBack={() => setShowNotifications(false)} />;
+    if (showPremium) return <PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, msg); }} />;
+    if (showChannel) return <ChannelScreen onBack={() => setShowChannel(false)} />;
+    if (showSettings) return <SettingsScreen onBack={() => setShowSettings(false)} />;
+    if (viewProfileUserId) {
+      return (
+        <UserProfileScreen
+          userId={viewProfileUserId}
+          onBack={() => setViewProfileUserId(null)}
+          onChat={async (userId, name) => {
+            const opened = await handleChatWithUser(userId, name);
+            if (opened) setViewProfileUserId(null);
+          }}
+        />
+      );
+    }
+    if (openChatId) return <RealChatScreen conversationId={openChatId} title={openChatTitle} onBack={() => setOpenChatId(null)} />;
+    if (showCreateJob) return <CreateJobScreen onBack={() => setShowCreateJob(false)} onCreated={() => { setShowCreateJob(false); setTab("feed"); }} />;
+    if (viewResponsesJob) {
+      return (
+        <JobResponsesScreen
+          job={viewResponsesJob}
+          onBack={() => setViewResponsesJob(null)}
+          onChatWithWorker={async (workerId, workerName) => {
+            const opened = await handleChatWithUser(workerId, workerName);
+            if (opened) setViewResponsesJob(null);
+          }}
+        />
+      );
+    }
 
-  if (showSettings) {
-    return <SettingsScreen onBack={() => setShowSettings(false)} />;
-  }
-
-  if (viewProfileUserId) {
     return (
-      <UserProfileScreen
-        userId={viewProfileUserId}
-        onBack={() => setViewProfileUserId(null)}
-        onChat={async (userId, name) => {
-          const opened = await handleChatWithUser(userId, name);
-          if (opened) setViewProfileUserId(null);
-        }}
-      />
+      <div className="app-shell">
+        {tab === "feed" ? (
+          <PullToRefresh onRefresh={handlePullRefresh}>
+            {isDispatcher ? (
+              <DispatcherFeedScreen onCreateJob={() => setShowCreateJob(true)} onViewResponses={setViewResponsesJob} onRefreshRef={feedRefreshRef} />
+            ) : (
+              <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onRefreshRef={feedRefreshRef} />
+            )}
+          </PullToRefresh>
+        ) : (
+          <div className="app-scroll">
+            <AnimatePresence mode="wait">
+              <motion.div key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                {tab === "orders" && <OrdersScreen />}
+                {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} />}
+                {tab === "kartoteka" && <KartotekaScreen />}
+                {tab === "dispatchers" && !isDispatcher && <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />}
+                {tab === "profile" && (
+                  <ProfileScreen
+                    onOpenSettings={() => setShowSettings(true)}
+                    onOpenNotifications={() => setShowNotifications(true)}
+                    onOpenSupport={(prefillMessage) => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, prefillMessage)}
+                    onOpenPremium={() => setShowPremium(true)}
+                  />
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        )}
+        {!isDispatcher && <FAB />}
+        <BottomNav active={tab} onNavigate={handleNavigate} isDispatcher={isDispatcher} unreadMessages={unreadMessages} newJobsCount={newJobsCount} />
+      </div>
     );
   }
 
-  if (openChatId) {
-    return <RealChatScreen conversationId={openChatId} title={openChatTitle} onBack={() => setOpenChatId(null)} />;
-  }
-
-  if (showCreateJob) {
-    return <CreateJobScreen onBack={() => setShowCreateJob(false)} onCreated={() => { setShowCreateJob(false); setTab("feed"); }} />;
-  }
-
-  if (viewResponsesJob) {
-    return (
-      <JobResponsesScreen
-        job={viewResponsesJob}
-        onBack={() => setViewResponsesJob(null)}
-        onChatWithWorker={async (workerId, workerName) => {
-          const opened = await handleChatWithUser(workerId, workerName);
-          if (opened) {
-            setViewResponsesJob(null);
-          }
-        }}
-      />
-    );
-  }
-
-  return (
-    <div className="app-shell">
-      {tab === "feed" ? (
-      <PullToRefresh onRefresh={handlePullRefresh}>
-        {isDispatcher ? (
-          <DispatcherFeedScreen
-            onCreateJob={() => setShowCreateJob(true)}
-            onViewResponses={setViewResponsesJob}
-            onRefreshRef={feedRefreshRef}
-          />
+  // --- Desktop layout ---
+  const mainContent = (
+    <>
+      {tab === "feed" && (
+        isDispatcher ? (
+          <DispatcherFeedScreen onCreateJob={() => setShowCreateJob(true)} onViewResponses={setViewResponsesJob} onRefreshRef={feedRefreshRef} />
         ) : (
           <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onRefreshRef={feedRefreshRef} />
-        )}
-      </PullToRefresh>
-      ) : (
-      <div className="app-scroll">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={tab}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-          >
-            {tab === "orders" && <OrdersScreen />}
-            {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} />}
-            {tab === "kartoteka" && <KartotekaScreen />}
-            {tab === "dispatchers" && !isDispatcher && (
-              <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />
-            )}
-            {tab === "profile" && (
-              <ProfileScreen
-                onOpenSettings={() => setShowSettings(true)}
-                onOpenNotifications={() => setShowNotifications(true)}
-                onOpenSupport={(prefillMessage) => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, prefillMessage)}
-                onOpenPremium={() => setShowPremium(true)}
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
+        )
       )}
-      {!isDispatcher && <FAB />}
-      <BottomNav
-        active={tab}
-        onNavigate={(t) => {
-          if (t === "chats") resetMessages();
-          if (t === "feed" && !isDispatcher) resetJobs();
-          setTab(t);
-        }}
-        isDispatcher={isDispatcher}
-        unreadMessages={unreadMessages}
-        newJobsCount={newJobsCount}
-      />
-    </div>
+      {tab === "orders" && <OrdersScreen />}
+      {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} />}
+      {tab === "kartoteka" && <KartotekaScreen />}
+      {tab === "dispatchers" && !isDispatcher && <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />}
+      {tab === "profile" && (
+        <ProfileScreen
+          onOpenSettings={() => setShowSettings(true)}
+          onOpenNotifications={() => setShowNotifications(true)}
+          onOpenSupport={(prefillMessage) => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, prefillMessage)}
+          onOpenPremium={() => setShowPremium(true)}
+        />
+      )}
+    </>
+  );
+
+  const sidebar = (
+    <DesktopSidebar
+      active={tab}
+      onNavigate={handleNavigate}
+      isDispatcher={isDispatcher}
+      unreadMessages={unreadMessages}
+      newJobsCount={newJobsCount}
+    />
+  );
+
+  return (
+    <DesktopLayout
+      sidebar={sidebar}
+      main={mainContent}
+      detail={getDetailPanel()}
+    />
   );
 };
 
