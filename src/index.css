@@ -311,4 +311,25 @@
     bottom: calc(var(--bottom-nav-height) + 0.75rem);
     z-index: 40;
   }
+
+  /* Chat bubble styles */
+  .bubble-own {
+    background: hsl(var(--primary) / 0.18);
+    border: 1px solid hsl(var(--primary) / 0.12);
+  }
+
+  .bubble-other {
+    background: hsl(var(--surface-3));
+    border: 1px solid hsl(var(--surface-4) / 0.3);
+  }
+
+  .light .bubble-own {
+    background: hsl(var(--primary) / 0.12);
+    border: 1px solid hsl(var(--primary) / 0.08);
+  }
+
+  .light .bubble-other {
+    background: hsl(var(--surface-2));
+    border: 1px solid hsl(var(--border));
+  }
 }
