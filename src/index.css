@@ -36,8 +36,7 @@
     --ring: 230 60% 58%;
 
     --radius: 1rem;
-    --bottom-nav-height: 72px;
-    --app-height: 100dvh;
+    --bottom-nav-height: 64px;
     --app-height: 100vh;
 
     /* Neumorphic surfaces */
@@ -124,6 +123,14 @@
     --sidebar-accent-foreground: 228 20% 15%;
     --sidebar-border: 220 14% 85%;
     --sidebar-ring: 230 60% 55%;
+  }
+}
+
+@supports (height: 100dvh) {
+  @layer base {
+    :root {
+      --app-height: 100dvh;
+    }
   }
 }
 
@@ -281,9 +288,9 @@
     margin: 0 auto;
     overflow: hidden;
     background: hsl(var(--background));
-    height: var(--app-height);
-    min-height: var(--app-height);
-    max-height: var(--app-height);
+    height: calc(var(--app-height) - env(safe-area-inset-top, 0px));
+    min-height: calc(var(--app-height) - env(safe-area-inset-top, 0px));
+    max-height: calc(var(--app-height) - env(safe-area-inset-top, 0px));
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: 0;
   }
@@ -295,14 +302,14 @@
     overflow-x: hidden;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: calc(var(--bottom-nav-height) + 8px);
+    padding-bottom: var(--bottom-nav-height);
   }
 
   .bottom-docked {
     position: relative;
     flex-shrink: 0;
     z-index: 50;
-    margin: 0;
+    margin: auto 0 0;
     padding: 0;
     background: hsl(var(--background));
     border-top: 1px solid hsl(var(--border) / 0.75);

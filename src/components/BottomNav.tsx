@@ -37,7 +37,7 @@ const BottomNav = ({ active, onNavigate, isDispatcher, unreadMessages = 0, newJo
 
   return (
     <div className="bottom-docked">
-      <div className="mx-auto flex w-full max-w-lg items-center justify-around px-2 py-2">
+      <div className="mx-auto flex w-full max-w-lg items-end justify-around px-2 pt-1 pb-0">
         {tabs.map((tab) => {
           const isActive = active === tab.id;
           const Icon = tab.icon;
@@ -45,7 +45,7 @@ const BottomNav = ({ active, onNavigate, isDispatcher, unreadMessages = 0, newJo
             <button
               key={tab.id}
               onClick={() => onNavigate(tab.id)}
-              className={`relative flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-2 py-2 transition-all duration-200 ${
+              className={`relative flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl px-2 pt-1.5 pb-1 transition-all duration-200 ${
                 isActive ? "neu-inset" : ""
               }`}
             >
