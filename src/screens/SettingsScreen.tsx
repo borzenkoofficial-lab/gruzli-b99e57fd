@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, User, Phone, Bell, Shield, Palette, LogOut, Camera, Check, Loader2, Volume2, Vibrate, Layers, Mail, Ban, Trash2, Info, Globe, Database } from "lucide-react";
+import { ArrowLeft, User, Phone, Bell, Shield, Palette, LogOut, Camera, Check, Loader2, Volume2, Vibrate, Layers, Mail, Ban, Trash2, Info, Globe, Database, Share2, Star, Smartphone, HardDrive } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
@@ -25,7 +25,7 @@ interface SettingsScreenProps {
   onBack: () => void;
 }
 
-type Section = "main" | "profile" | "notifications" | "security" | "appearance" | "blocked" | "about" | "language";
+type Section = "main" | "profile" | "notifications" | "security" | "appearance" | "blocked" | "about" | "language" | "storage";
 
 const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   const { user, profile, signOut } = useAuth();
@@ -161,6 +161,41 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
     setTimeout(() => window.location.reload(), 500);
   };
 
+  const handleShareApp = async () => {
+    const shareData = {
+      title: "Gruzli",
+      text: "Gruzli — платформа для грузчиков и диспетчеров. Быстрый поиск работы!",
+      url: "https://gruzli.lovable.app",
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareData.url);
+        toast.success("Ссылка скопирована!");
+      }
+    } catch {
+      // user cancelled share
+    }
+  };
+
+  const handleRateApp = () => {
+    toast.success("Спасибо за вашу оценку! ⭐");
+  };
+
+  const getStorageEstimate = () => {
+    const keys = Object.keys(localStorage);
+    let totalBytes = 0;
+    keys.forEach((key) => {
+      const val = localStorage.getItem(key);
+      if (val) totalBytes += key.length + val.length;
+    });
+    return {
+      items: keys.length,
+      sizeKB: (totalBytes / 1024).toFixed(1),
+    };
+  };
+
   const InputField = ({ label, value, onChange, error, placeholder, type = "text" }: {
     label: string; value: string; onChange: (v: string) => void; error?: string; placeholder?: string; type?: string;
   }) => (
@@ -201,14 +236,21 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
     </button>
   );
 
+  const ScrollWrapper = ({ children, title, goBack }: { children: React.ReactNode; title: string; goBack: () => void }) => (
+    <div className="flex flex-col h-full">
+      <Header title={title} onBack={goBack} />
+      <div className="flex-1 overflow-y-auto overscroll-contain pb-28">
+        {children}
+      </div>
+    </div>
+  );
+
   // Profile section
   if (section === "profile") {
     const initials = (fullName || "?").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
     return (
-      <div className="min-h-screen bg-background pb-12">
-        <Header title="Редактировать профиль" onBack={() => setSection("main")} />
+      <ScrollWrapper title="Редактировать профиль" goBack={() => setSection("main")}>
         <div className="px-5">
-          {/* Avatar with upload */}
           <div className="flex justify-center mb-6">
             <div className="relative cursor-pointer" onClick={() => avatarRef.current?.click()}>
               {profile?.avatar_url ? (
@@ -236,15 +278,14 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
             {saving ? "Сохранение..." : "Сохранить"}
           </button>
         </div>
-      </div>
+      </ScrollWrapper>
     );
   }
 
   // Notifications section
   if (section === "notifications") {
     return (
-      <div className="min-h-screen bg-background pb-12">
-        <Header title="Уведомления" onBack={() => setSection("main")} />
+      <ScrollWrapper title="Уведомления" goBack={() => setSection("main")}>
         <div className="px-5 space-y-4">
           <div className="neu-card rounded-2xl p-4">
             <div className="flex items-center justify-between">
@@ -334,15 +375,14 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
             ))}
           </div>
         </div>
-      </div>
+      </ScrollWrapper>
     );
   }
 
   // Security section
   if (section === "security") {
     return (
-      <div className="min-h-screen bg-background pb-12">
-        <Header title="Безопасность" onBack={() => setSection("main")} />
+      <ScrollWrapper title="Безопасность" goBack={() => setSection("main")}>
         <div className="px-5 space-y-4">
           <div className="neu-card rounded-2xl p-4">
             <h3 className="text-sm font-bold text-foreground mb-4">Изменить пароль</h3>
@@ -364,15 +404,14 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
             <button onClick={handleDeleteAccount} className="w-full py-3 rounded-2xl bg-destructive/10 text-destructive text-sm font-bold active:scale-95 transition-transform">Удалить аккаунт</button>
           </div>
         </div>
-      </div>
+      </ScrollWrapper>
     );
   }
 
   // Appearance section
   if (section === "appearance") {
     return (
-      <div className="min-h-screen bg-background pb-12">
-        <Header title="Оформление" onBack={() => setSection("main")} />
+      <ScrollWrapper title="Оформление" goBack={() => setSection("main")}>
         <div className="px-5 space-y-4">
           <div className="neu-card rounded-2xl p-4">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Тема</p>
@@ -386,15 +425,14 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
             </div>
           </div>
         </div>
-      </div>
+      </ScrollWrapper>
     );
   }
 
   // Language section
   if (section === "language") {
     return (
-      <div className="min-h-screen bg-background pb-12">
-        <Header title="Язык" onBack={() => setSection("main")} />
+      <ScrollWrapper title="Язык" goBack={() => setSection("main")}>
         <div className="px-5 space-y-3">
           {[{ id: "ru", label: "Русский", emoji: "🇷🇺" }, { id: "en", label: "English", emoji: "🇬🇧" }].map((lang) => (
             <button key={lang.id} onClick={() => changeLanguage(lang.id)} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${language === lang.id ? "neu-card border border-primary/30" : "neu-flat"}`}>
@@ -405,7 +443,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
           ))}
           <p className="text-[11px] text-muted-foreground text-center mt-4">Полная локализация скоро будет доступна</p>
         </div>
-      </div>
+      </ScrollWrapper>
     );
   }
 
@@ -413,8 +451,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   if (section === "blocked") {
     if (blockedUsers.length === 0 && !loadingBlocked) fetchBlockedUsers();
     return (
-      <div className="min-h-screen bg-background pb-12">
-        <Header title="Заблокированные" onBack={() => setSection("main")} />
+      <ScrollWrapper title="Заблокированные" goBack={() => setSection("main")}>
         <div className="px-5">
           {loadingBlocked ? (
             <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-primary" /></div>
@@ -440,15 +477,71 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
             </div>
           )}
         </div>
-      </div>
+      </ScrollWrapper>
+    );
+  }
+
+  // Storage section (new feature)
+  if (section === "storage") {
+    const storageInfo = getStorageEstimate();
+    return (
+      <ScrollWrapper title="Данные и хранилище" goBack={() => setSection("main")}>
+        <div className="px-5 space-y-4">
+          <div className="neu-card rounded-2xl p-5">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-14 h-14 rounded-2xl neu-raised flex items-center justify-center">
+                <HardDrive size={24} className="text-primary" />
+              </div>
+              <div>
+                <p className="text-lg font-bold text-foreground">{storageInfo.sizeKB} КБ</p>
+                <p className="text-xs text-muted-foreground">Локальные данные ({storageInfo.items} записей)</p>
+              </div>
+            </div>
+            <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+              <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(parseFloat(storageInfo.sizeKB) / 50 * 100, 100)}%` }} />
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-2">Лимит ~5 МБ (localStorage)</p>
+          </div>
+
+          <div className="neu-card rounded-2xl p-4 space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Действия</p>
+            <button onClick={clearCache} className="w-full flex items-center gap-3 p-3 rounded-xl active:bg-muted/50 transition-colors">
+              <Trash2 size={16} className="text-destructive" />
+              <div className="text-left">
+                <p className="text-sm font-semibold text-foreground">Очистить кеш</p>
+                <p className="text-[11px] text-muted-foreground">Сбросить все локальные данные</p>
+              </div>
+            </button>
+          </div>
+
+          <div className="neu-card rounded-2xl p-4">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Что хранится</p>
+            <div className="space-y-2">
+              {[
+                { label: "Настройки темы", desc: "Выбранная тема оформления" },
+                { label: "Уведомления", desc: "Настройки push и email" },
+                { label: "Язык", desc: "Язык интерфейса" },
+                { label: "Кеш данных", desc: "Временные данные приложения" },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center gap-3 py-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  <div>
+                    <p className="text-xs font-medium text-foreground">{item.label}</p>
+                    <p className="text-[10px] text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </ScrollWrapper>
     );
   }
 
   // About section
   if (section === "about") {
     return (
-      <div className="min-h-screen bg-background pb-12">
-        <Header title="О приложении" onBack={() => setSection("main")} />
+      <ScrollWrapper title="О приложении" goBack={() => setSection("main")}>
         <div className="px-5 space-y-4">
           <div className="neu-card rounded-2xl p-6 text-center">
             <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4">
@@ -480,34 +573,39 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
 
           <p className="text-[11px] text-muted-foreground text-center">© 2025 Gruzli. Все права защищены.</p>
         </div>
-      </div>
+      </ScrollWrapper>
     );
   }
 
   // Main settings menu
   return (
-    <div className="min-h-screen bg-background pb-12">
+    <div className="flex flex-col h-full">
       <Header title="Настройки" onBack={onBack} />
-      <div className="px-5 space-y-2">
-        <MenuItem icon={User} label="Профиль" desc="Имя, телефон, фото" onClick={() => setSection("profile")} />
-        <MenuItem icon={Bell} label="Уведомления" desc="Push, звуки, email" onClick={() => setSection("notifications")} />
-        <MenuItem icon={Shield} label="Безопасность" desc="Пароль, сессия, удаление" onClick={() => setSection("security")} />
-        <MenuItem icon={Palette} label="Оформление" desc="Тема приложения" onClick={() => setSection("appearance")} />
-        <MenuItem icon={Globe} label="Язык" desc={language === "ru" ? "Русский" : "English"} onClick={() => setSection("language")} badge={language.toUpperCase()} />
-        <MenuItem icon={Ban} label="Заблокированные" desc="Управление чёрным списком" onClick={() => setSection("blocked")} />
-        <MenuItem icon={Info} label="О приложении" desc="Версия, ссылки, лицензии" onClick={() => setSection("about")} />
+      <div className="flex-1 overflow-y-auto overscroll-contain pb-28">
+        <div className="px-5 space-y-2">
+          <MenuItem icon={User} label="Профиль" desc="Имя, телефон, фото" onClick={() => setSection("profile")} />
+          <MenuItem icon={Bell} label="Уведомления" desc="Push, звуки, email" onClick={() => setSection("notifications")} />
+          <MenuItem icon={Shield} label="Безопасность" desc="Пароль, сессия, удаление" onClick={() => setSection("security")} />
+          <MenuItem icon={Palette} label="Оформление" desc="Тема приложения" onClick={() => setSection("appearance")} />
+          <MenuItem icon={Globe} label="Язык" desc={language === "ru" ? "Русский" : "English"} onClick={() => setSection("language")} badge={language.toUpperCase()} />
+          <MenuItem icon={HardDrive} label="Данные и хранилище" desc="Кеш, локальные данные" onClick={() => setSection("storage")} />
+          <MenuItem icon={Ban} label="Заблокированные" desc="Управление чёрным списком" onClick={() => setSection("blocked")} />
+          <MenuItem icon={Info} label="О приложении" desc="Версия, ссылки, лицензии" onClick={() => setSection("about")} />
 
-        <div className="pt-2">
-          <MenuItem icon={Database} label="Очистить кеш" desc="Сбросить локальные данные" onClick={clearCache} />
+          <div className="pt-3">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-4 mb-2">Ещё</p>
+            <MenuItem icon={Share2} label="Поделиться" desc="Отправить ссылку друзьям" onClick={handleShareApp} />
+            <MenuItem icon={Star} label="Оценить приложение" desc="Оставьте отзыв ⭐" onClick={handleRateApp} />
+          </div>
+
+          <div className="pt-2">
+            <MenuItem icon={LogOut} label="Выйти" desc="Выход из аккаунта" onClick={signOut} destructive />
+          </div>
         </div>
 
-        <div className="pt-2">
-          <MenuItem icon={LogOut} label="Выйти" desc="Выход из аккаунта" onClick={signOut} destructive />
+        <div className="text-center mt-8">
+          <p className="text-[11px] text-muted-foreground">Gruzli v1.0.0</p>
         </div>
-      </div>
-
-      <div className="text-center mt-8">
-        <p className="text-[11px] text-muted-foreground">Gruzli v1.0.0</p>
       </div>
     </div>
   );
