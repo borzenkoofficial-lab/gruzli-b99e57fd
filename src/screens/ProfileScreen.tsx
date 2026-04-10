@@ -91,7 +91,8 @@ const AvatarWithUpload = ({ profile, user, editable = false }: { profile: any; u
     await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("user_id", user.id);
     toast.success("Фото обновлено");
     setUploading(false);
-    window.location.reload();
+    // Refresh profile without full page reload
+    window.dispatchEvent(new CustomEvent("profile-avatar-updated"));
   };
 
   return (

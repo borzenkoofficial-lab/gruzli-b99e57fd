@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -12,9 +12,10 @@ import type { Tables } from "@/integrations/supabase/types";
 
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
-import AdminPage from "./pages/AdminPage";
-import UnsubscribePage from "./pages/UnsubscribePage";
 import NotFound from "./pages/NotFound";
+
+const AdminPage = lazy(() => import("./pages/AdminPage"));
+const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
 
 const queryClient = new QueryClient();
 
@@ -43,12 +44,14 @@ const AppRoutes = () => {
 
   return (
     <>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/unsubscribe" element={<UnsubscribePage />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+      <Suspense fallback={<div className="flex items-center justify-center h-screen"><div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" /></div>}>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/unsubscribe" element={<UnsubscribePage />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
       {role === "worker" && (
         <NewJobAlert
           job={alertQueue[0] ?? null}

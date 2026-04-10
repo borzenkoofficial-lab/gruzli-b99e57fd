@@ -74,24 +74,28 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onRefreshRef }: FeedScreenProps
   useEffect(() => {
     fetchJobs();
 
-    // Real-time subscription for new jobs
+    // Listen for new jobs via custom event (realtime handled by useRealtimeNotifications)
+    const handleNewJob = () => fetchJobs();
+    window.addEventListener("navigate-to-feed", handleNewJob);
+    
+    // Listen for realtime job inserts to update the list without duplicate channel
     const channel = supabase
-      .channel('new-jobs-feed')
+      .channel('feed-job-updates')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'jobs' },
         (payload) => {
           const newJob = payload.new as Tables<"jobs">;
-          setJobs((prev) => [newJob, ...prev]);
-          toast.success(`🆕 Новый заказ: ${newJob.title}`, {
-            description: `${newJob.hourly_rate}₽/ч · ${newJob.address || 'Адрес не указан'}`,
-            duration: 5000,
+          setJobs((prev) => {
+            if (prev.some(j => j.id === newJob.id)) return prev;
+            return [newJob, ...prev];
           });
         }
       )
       .subscribe();
 
     return () => {
+      window.removeEventListener("navigate-to-feed", handleNewJob);
       supabase.removeChannel(channel);
     };
   }, [user]);
@@ -230,7 +234,7 @@ const SwipeableJobCard = ({ job, index, responded, dispatcherName, onRespond, on
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -200, transition: { duration: 0.2 } }}
-      transition={{ delay: index * 0.05 }}
+      transition={{ delay: index < 5 ? index * 0.05 : 0 }}
       className="relative"
     >
       <motion.div className="absolute inset-0 rounded-2xl flex items-center justify-start pl-6 z-0" style={{ opacity: bgLeft, background: 'hsl(0 72% 51% / 0.15)' }}>

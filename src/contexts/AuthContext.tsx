@@ -64,7 +64,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Listen for avatar updates to refresh profile without page reload
+    const handleAvatarUpdate = () => {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) fetchRoleAndProfile(session.user.id);
+      });
+    };
+    window.addEventListener("profile-avatar-updated", handleAvatarUpdate);
+
+    return () => {
+      subscription.unsubscribe();
+      window.removeEventListener("profile-avatar-updated", handleAvatarUpdate);
+    };
   }, []);
 
   const signOut = async () => {

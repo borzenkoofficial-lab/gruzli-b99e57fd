@@ -226,9 +226,12 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
     if (textareaRef.current) { textareaRef.current.style.height = "auto"; }
 
     try {
-      const audio = new Audio("/send.wav");
-      audio.volume = 0.3;
-      audio.play().catch(() => {});
+      if (!(window as any).__sendAudio) {
+        (window as any).__sendAudio = new Audio("/send.wav");
+        (window as any).__sendAudio.volume = 0.3;
+      }
+      (window as any).__sendAudio.currentTime = 0;
+      (window as any).__sendAudio.play().catch(() => {});
     } catch {}
 
     const optimisticMsg: Message = {
@@ -397,7 +400,7 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
         </div>
         <div className="flex-1 min-w-0">
           <h2 className="text-sm font-semibold text-foreground truncate">{title}</h2>
-          <p className="text-[11px] text-primary font-medium">онлайн</p>
+          <p className="text-[11px] text-muted-foreground font-medium">был(а) недавно</p>
         </div>
         <div className="flex gap-1">
           {inVoiceRoom ? (
