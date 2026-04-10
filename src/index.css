@@ -284,9 +284,7 @@
     margin: 0 auto;
     overflow: hidden;
     background: hsl(var(--background));
-    height: calc(var(--app-height) - env(safe-area-inset-top, 0px));
-    min-height: calc(var(--app-height) - env(safe-area-inset-top, 0px));
-    max-height: calc(var(--app-height) - env(safe-area-inset-top, 0px));
+    height: 100%;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: 0;
   }
