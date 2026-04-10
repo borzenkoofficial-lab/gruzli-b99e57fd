@@ -11,8 +11,10 @@ export interface TemplateEntry {
 
 import { template as newJobNotification } from './new-job-notification.tsx'
 import { template as newMessageNotification } from './new-message-notification.tsx'
+import { template as jobResponseNotification } from './job-response-notification.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'new-job-notification': newJobNotification,
   'new-message-notification': newMessageNotification,
+  'job-response-notification': jobResponseNotification,
 }
