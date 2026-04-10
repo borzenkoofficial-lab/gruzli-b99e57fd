@@ -159,7 +159,7 @@ const AuthPage = () => {
 
   // ─── AUTH FORM ───
   return (
-    <div className="bg-background flex flex-col items-center px-6 safe-top pb-4 overflow-y-auto" style={{ minHeight: "var(--app-height)", height: "var(--app-height)" }}>
+    <div className="bg-background flex flex-col items-center px-6 safe-top pb-4 overflow-y-auto h-screen" style={{ minHeight: "100dvh", height: "100dvh" }}>
       {/* Back + Logo */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
