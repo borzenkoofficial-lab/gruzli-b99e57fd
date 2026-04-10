@@ -1,27 +1,36 @@
 
 
-# Fix: Status Bar Padding (Top) + Remove Bottom "Chin"
-
 ## Problem
-1. **Top**: Content overlaps with the phone's status bar (clock, battery) — no safe-area padding at the top of `.app-shell`.
-2. **Bottom**: A visible "chin" (extra space) appears below the bottom navigation bar — the app doesn't extend to the bottom edge properly.
 
-## Root Cause
-- `.app-shell` has no top padding for `env(safe-area-inset-top)`.
-- `--app-height` uses `100vh` which doesn't account for mobile browser chrome. Should use `100dvh` (dynamic viewport height) with `100vh` fallback.
-- `.bottom-docked` doesn't include `env(safe-area-inset-bottom)` padding, leaving the OS home indicator area as dead space that creates the "chin".
+The app has opaque backgrounds at the top (header area with `safe-top` padding) and bottom (below the floating pill nav). Content cannot scroll into these areas — it's clipped, leaving dead space. The user wants content to be visible behind the nav pill AND behind the top header area, creating a true edge-to-edge scrolling experience.
 
-## Changes
+## Plan
 
-### `src/index.css`
-- **`.app-shell`**: Add `padding-top: env(safe-area-inset-top, 0px)` so content starts below the status bar.
-- **`--app-height`**: Change from `100vh` to `100dvh` with `100vh` fallback across `:root`, `html`, `body`, `#root`.
-- **`.bottom-docked`**: Add `padding-bottom: env(safe-area-inset-bottom, 0px)` so nav hugs the bottom edge on notched phones.
+### 1. Bottom area — let content scroll fully to the edge
 
-### `src/App.css`
-- Update `#root` height to use `100dvh` with `100vh` fallback (match the CSS variable change).
+**`src/index.css`**:
+- Change `.app-scroll` `padding-bottom` from `calc(var(--bottom-nav-height) - 16px)` to just `0`. Content will scroll all the way to the bottom; the floating pill overlays it transparently (it already has `backdrop-filter: blur` and semi-transparent background).
 
-### Files: 2
-- `src/index.css` — safe-area top padding on shell, safe-area bottom on nav, dvh height
-- `src/App.css` — dvh height fallback
+### 2. Top area — make headers transparent with blur
+
+**`src/index.css`**:
+- Create a new `.safe-top` class that replaces the current opaque version. Instead of just padding, it will have a transparent/blur background so content scrolls behind it:
+  - `background: hsl(var(--background) / 0.55)`
+  - `backdrop-filter: blur(32px) saturate(1.6)`
+  - `position: sticky; top: 0; z-index: 40`
+  - Keep the existing padding: `padding-top: calc(env(safe-area-inset-top, 0px) + 18px)`
+
+### 3. App shell background
+
+**`src/index.css`**:
+- On `.app-shell`, keep `background: hsl(var(--background))` — this is the base. The transparency effect comes from the header and nav overlays, not the shell itself.
+
+### Summary of changes
+
+- **1 file modified**: `src/index.css`
+  - `.app-scroll`: remove bottom padding so content reaches the bottom edge
+  - `.safe-top`: add sticky positioning + glass blur + semi-transparent background
+  - Light theme variants for `.safe-top`
+
+This ensures content scrolls edge-to-edge behind both the top header and the bottom floating nav pill, matching the reference screenshot's aesthetic.
 
