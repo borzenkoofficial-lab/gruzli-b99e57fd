@@ -1,27 +1,71 @@
 
 
-# Fix: Status Bar Padding (Top) + Remove Bottom "Chin"
+# Адаптивный десктоп-лейаут для Gruzli
 
-## Problem
-1. **Top**: Content overlaps with the phone's status bar (clock, battery) — no safe-area padding at the top of `.app-shell`.
-2. **Bottom**: A visible "chin" (extra space) appears below the bottom navigation bar — the app doesn't extend to the bottom edge properly.
+## Проблема
 
-## Root Cause
-- `.app-shell` has no top padding for `env(safe-area-inset-top)`.
-- `--app-height` uses `100vh` which doesn't account for mobile browser chrome. Should use `100dvh` (dynamic viewport height) with `100vh` fallback.
-- `.bottom-docked` doesn't include `env(safe-area-inset-bottom)` padding, leaving the OS home indicator area as dead space that creates the "chin".
+Сейчас приложение ограничено `max-width: 32rem` и использует мобильный bottom-nav на всех экранах. На десктопе/ноутбуке это выглядит как узкая полоска в центре экрана.
 
-## Changes
+## Решение
 
-### `src/index.css`
-- **`.app-shell`**: Add `padding-top: env(safe-area-inset-top, 0px)` so content starts below the status bar.
-- **`--app-height`**: Change from `100vh` to `100dvh` with `100vh` fallback across `:root`, `html`, `body`, `#root`.
-- **`.bottom-docked`**: Add `padding-bottom: env(safe-area-inset-bottom, 0px)` so nav hugs the bottom edge on notched phones.
+Создать адаптивный лейаут: на мобильных — всё как сейчас, на десктопе (≥768px) — боковая навигация + расширенный контент + опциональная правая панель.
 
-### `src/App.css`
-- Update `#root` height to use `100dvh` with `100vh` fallback (match the CSS variable change).
+```text
+┌──────────────────────────────────────────────────┐
+│  Desktop (≥768px)                                │
+│ ┌─────────┬──────────────────┬──────────────────┐│
+│ │ Sidebar │   Main Content   │  Detail Panel    ││
+│ │  Nav    │   (Feed/Orders)  │  (Chat/Profile)  ││
+│ │  240px  │   flex-1         │  380px           ││
+│ │         │                  │                  ││
+│ │ [Home]  │                  │                  ││
+│ │ [Orders]│                  │                  ││
+│ │ [Chats] │                  │                  ││
+│ │ [Files] │                  │                  ││
+│ │ [Profile│                  │                  ││
+│ └─────────┴──────────────────┴──────────────────┘│
+│                                                  │
+│  Mobile (<768px) — без изменений                 │
+│ ┌──────────────────┐                             │
+│ │   Content        │                             │
+│ │                  │                             │
+│ │ [floating pill]  │                             │
+│ └──────────────────┘                             │
+└──────────────────────────────────────────────────┘
+```
 
-### Files: 2
-- `src/index.css` — safe-area top padding on shell, safe-area bottom on nav, dvh height
-- `src/App.css` — dvh height fallback
+## Что будет сделано
+
+### 1. Компонент `DesktopSidebar`
+- Вертикальная навигация слева (иконки + текст)
+- Логотип Gruzli сверху
+- Активная вкладка подсвечивается
+- Те же вкладки что и в bottom-nav (зависит от роли)
+
+### 2. Компонент `DesktopLayout`
+- Оборачивает контент на десктопе: sidebar + main + optional detail panel
+- На мобильных — просто рендерит children без изменений
+
+### 3. Обновление `Index.tsx`
+- Использовать `useIsMobile()` для выбора лейаута
+- На десктопе: чаты, профиль пользователя, настройки открываются в правой панели вместо полноэкранных оверлеев
+- Bottom-nav скрывается на десктопе
+
+### 4. Обновление CSS
+- `.app-shell` — убрать `max-width: 32rem` на десктопе
+- `.bottom-nav-wrapper` — `display: none` на `md:` и выше
+- Новые классы для sidebar и desktop grid
+
+### 5. Обновление `BottomNav`
+- Скрывать компонент при `md:` breakpoint (через CSS или пропс)
+
+## Файлы
+
+| Файл | Действие |
+|---|---|
+| `src/components/DesktopSidebar.tsx` | Создать |
+| `src/components/DesktopLayout.tsx` | Создать |
+| `src/pages/Index.tsx` | Обновить — desktop layout |
+| `src/index.css` | Обновить — responsive styles |
+| `src/components/BottomNav.tsx` | Обновить — hide on desktop |
 
