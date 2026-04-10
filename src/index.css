@@ -138,8 +138,8 @@
   }
 
   html {
-    height: var(--app-height);
-    min-height: var(--app-height);
+    height: 100%;
+    min-height: 100%;
     -webkit-text-size-adjust: 100%;
     -ms-text-size-adjust: 100%;
     touch-action: manipulation;
@@ -154,9 +154,8 @@
     margin: 0;
     position: relative;
     overflow: hidden;
-    height: var(--app-height);
-    min-height: var(--app-height);
-    max-height: var(--app-height);
+    height: 100%;
+    min-height: 100%;
     overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
     -webkit-tap-highlight-color: transparent;
@@ -168,9 +167,8 @@
 
   #root {
     width: 100%;
-    height: var(--app-height);
-    min-height: var(--app-height);
-    max-height: var(--app-height);
+    height: 100%;
+    min-height: 100%;
     overflow: hidden;
     margin: 0 auto;
   }
