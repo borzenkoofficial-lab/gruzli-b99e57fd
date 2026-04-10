@@ -327,13 +327,13 @@
     width: 100%;
     padding: 4px 6px;
     border-radius: 9999px;
-    background: hsl(var(--surface-2) / 0.75);
-    backdrop-filter: blur(24px) saturate(1.4);
-    -webkit-backdrop-filter: blur(24px) saturate(1.4);
-    border: 1px solid hsl(var(--surface-4) / 0.25);
+    background: hsl(var(--surface-2) / 0.55);
+    backdrop-filter: blur(32px) saturate(1.6);
+    -webkit-backdrop-filter: blur(32px) saturate(1.6);
+    border: 1px solid hsl(var(--surface-4) / 0.2);
     box-shadow:
-      0 4px 24px hsl(var(--neu-shadow-dark) / 0.5),
-      0 0 0 0.5px hsl(var(--surface-3) / 0.3) inset;
+      0 8px 32px hsl(var(--neu-shadow-dark) / 0.4),
+      0 0 0 0.5px hsl(var(--surface-3) / 0.2) inset;
     pointer-events: auto;
   }
 
