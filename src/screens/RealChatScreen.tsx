@@ -289,13 +289,23 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
     const isVideo = file.type.startsWith("video/");
     const isImage = file.type.startsWith("image/");
     const msgType = isVideo ? "video" : isImage ? "image" : "file";
-    await supabase.from("messages").insert({
+    const { error: msgError } = await supabase.from("messages").insert({
       conversation_id: conversationId,
       sender_id: user.id,
       text: file.name,
       media_url: urlData.publicUrl,
       message_type: msgType,
     });
+    if (!msgError) {
+      supabase.functions.invoke("notify-email", {
+        body: {
+          type: "new_message",
+          conversation_id: conversationId,
+          sender_id: user.id,
+          text: `📎 ${file.name}`,
+        },
+      }).catch(() => {});
+    }
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
