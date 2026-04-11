@@ -28,7 +28,8 @@ type Section = "main" | "profile" | "notifications" | "security" | "appearance" 
 
 const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   const { user, profile, signOut } = useAuth();
-  const { permissionState, isSubscribed, loading: pushLoading, requestPermission, unsubscribe } = usePushNotifications();
+  const [pushPermission, setPushPermission] = useState<NotificationPermission | "unsupported">("default");
+  const [pushLoading, setPushLoading] = useState(false);
   const { settings: notifSettings, update: updateNotif } = useNotificationSettings();
   const [section, setSection] = useState<Section>("main");
 
