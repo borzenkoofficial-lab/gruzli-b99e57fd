@@ -308,6 +308,7 @@ const Index = () => {
           onOpenNotifications={() => setShowNotifications(true)}
           onOpenSupport={(prefillMessage) => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, prefillMessage)}
           onOpenPremium={() => setShowPremium(true)}
+          onOpenCabinet={() => setShowCabinet(true)}
         />
       )}
     </>
