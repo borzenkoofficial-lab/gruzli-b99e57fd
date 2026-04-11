@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import { useViewportHeight } from "@/hooks/useViewportHeight";
 import SplashScreen from "@/components/SplashScreen";
 import NewJobAlert from "@/components/NewJobAlert";
 import type { Tables } from "@/integrations/supabase/types";
