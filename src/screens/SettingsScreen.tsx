@@ -588,6 +588,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
 
   // Verification section
   if (section === "verification") {
+    const SUPPORT_USER_ID = "de95eea5-d75b-4693-af15-020c58422126";
 
     const handleSendVerification = async () => {
       if (!vFullName.trim() || !vAge || !vPhone.trim()) {
