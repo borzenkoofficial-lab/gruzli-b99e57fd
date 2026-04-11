@@ -28,7 +28,7 @@ interface SettingsScreenProps {
 type Section = "main" | "profile" | "notifications" | "security" | "appearance" | "blocked" | "about" | "language" | "storage" | "verification";
 
 const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, role } = useAuth();
   const [pushPermission, setPushPermission] = useState<NotificationPermission | "unsupported">("default");
   const [pushLoading, setPushLoading] = useState(false);
   const { settings: notifSettings, update: updateNotif } = useNotificationSettings();
