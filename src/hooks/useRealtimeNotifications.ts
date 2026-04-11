@@ -64,11 +64,6 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
     playNotificationSound();
     vibrate();
 
-    toast("🆕 Новый заказ", {
-      description: `${job.title} · ${job.hourly_rate}₽/ч`,
-      duration: 6000,
-    });
-
     pushNotification({
       type: "job",
       title: "Новый заказ",
@@ -78,6 +73,12 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
     const { overlay } = getNotificationSettings();
     if (overlay) {
       onNewJobRef.current?.(job);
+    } else {
+      // Show toast only when overlay is disabled
+      toast("🆕 Новый заказ", {
+        description: `${job.title} · ${job.hourly_rate}₽/ч`,
+        duration: 6000,
+      });
     }
   }, []);
 
