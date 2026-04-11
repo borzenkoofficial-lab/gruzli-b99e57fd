@@ -58,6 +58,14 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   const [blockedUsers, setBlockedUsers] = useState<{ id: string; blocked_id: string; full_name: string }[]>([]);
   const [loadingBlocked, setLoadingBlocked] = useState(false);
 
+  // Verification state
+  const [vFullName, setVFullName] = useState(profile?.full_name || "");
+  const [vAge, setVAge] = useState("");
+  const [vPhone, setVPhone] = useState(profile?.phone || "");
+  const [vOrgType, setVOrgType] = useState<"ip" | "self" | "ooo">("self");
+  const [vOrgName, setVOrgName] = useState("");
+  const [vSending, setVSending] = useState(false);
+
   useEffect(() => {
     if (profile) {
       setFullName(profile.full_name || "");
