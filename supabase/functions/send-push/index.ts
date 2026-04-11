@@ -165,6 +165,52 @@ Deno.serve(async (req) => {
           failed++;
         }
       }
+    } else if (type === "worker_status_change") {
+      const STATUS_LABELS: Record<string, string> = {
+        confirmed: "✅ Подтвердил заказ",
+        ready: "✅ Готов к работе",
+        en_route: "🚗 Выехал на объект",
+        late: "⚠️ Опаздывает",
+        arrived: "📍 На месте",
+        completed: "🎉 Завершил работу",
+      };
+
+      // Get worker name
+      const { data: workerProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", body.worker_id)
+        .single();
+
+      // Get job info to find dispatcher
+      const { data: jobData } = await supabase
+        .from("jobs")
+        .select("dispatcher_id, title")
+        .eq("id", body.job_id)
+        .single();
+
+      if (jobData) {
+        const workerName = workerProfile?.full_name || "Грузчик";
+        const statusLabel = STATUS_LABELS[body.worker_status] || body.worker_status;
+        const title = `${statusLabel}`;
+        const messageBody = `${workerName} · ${jobData.title}`;
+        const url = APP_URL;
+
+        // Get dispatcher email
+        const { data: dispatcherUser } = await supabase.auth.admin.getUserById(jobData.dispatcher_id);
+        if (dispatcherUser?.user?.email) {
+          const result = await sendProgressierPush({
+            recipientEmail: dispatcherUser.user.email,
+            title,
+            body: messageBody,
+            url,
+          });
+          if (result.ok) sent++;
+          else failed++;
+        } else {
+          failed++;
+        }
+      }
     }
 
     // Also send email notifications
