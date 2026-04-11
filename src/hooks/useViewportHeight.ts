@@ -1,36 +1,33 @@
 import { useEffect } from "react";
 
 /**
- * Sets --vh custom property based on window.visualViewport.
- * This fixes iOS Safari issues where 100dvh changes unpredictably
- * after rotation, keyboard open/close, or toolbar show/hide.
+ * Sets --vh custom property based on window.innerHeight (NOT visualViewport).
+ * We intentionally use innerHeight so the layout does NOT shrink when the
+ * iOS keyboard opens — content stays in place and keyboard overlays it.
+ * Also locks orientation to portrait on supported browsers.
  */
 export function useViewportHeight() {
   useEffect(() => {
+    // Use innerHeight — it does NOT change when the keyboard opens on iOS
     function setVH() {
-      const vh = (window.visualViewport?.height ?? window.innerHeight) * 0.01;
+      const vh = window.innerHeight * 0.01;
       document.documentElement.style.setProperty("--vh", `${vh}px`);
     }
 
     setVH();
 
-    // visualViewport fires reliably on iOS when toolbar/keyboard changes
-    const vv = window.visualViewport;
-    if (vv) {
-      vv.addEventListener("resize", setVH);
-      vv.addEventListener("scroll", setVH);
-    }
-    window.addEventListener("orientationchange", () => {
-      // delay to let iOS finish rotation animation
-      setTimeout(setVH, 150);
-    });
+    // Only update on real resize/orientation, not keyboard
     window.addEventListener("resize", setVH);
+    window.addEventListener("orientationchange", () => {
+      setTimeout(setVH, 200);
+    });
+
+    // Lock orientation to portrait
+    try {
+      (screen.orientation as any)?.lock?.("portrait").catch(() => {});
+    } catch {}
 
     return () => {
-      if (vv) {
-        vv.removeEventListener("resize", setVH);
-        vv.removeEventListener("scroll", setVH);
-      }
       window.removeEventListener("resize", setVH);
     };
   }, []);
