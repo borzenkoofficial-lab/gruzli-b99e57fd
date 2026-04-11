@@ -3,10 +3,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, MessageCircle, Star, MapPin, Clock, Navigation,
   AlertTriangle, CheckCircle2, Crown, Users, Briefcase, User,
-  ChevronDown, ChevronUp, Phone,
+  ChevronDown, ChevronUp, Phone, Square, Timer, Wallet,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 
 interface DispatcherCabinetScreenProps {
@@ -20,6 +21,9 @@ interface WorkerInfo {
   workerId: string;
   workerStatus: string | null;
   profile: Tables<"profiles"> | null;
+  workStartedAt: string | null;
+  hoursWorked: number | null;
+  earned: number | null;
 }
 
 interface ActiveJob {
@@ -33,6 +37,7 @@ const WORKER_STATUS_MAP: Record<string, { label: string; icon: typeof CheckCircl
   en_route: { label: "Выехал", icon: Navigation, color: "text-blue-500", bg: "bg-blue-500/10" },
   late: { label: "Опаздывает", icon: AlertTriangle, color: "text-yellow-500", bg: "bg-yellow-500/10" },
   arrived: { label: "На месте", icon: MapPin, color: "text-primary", bg: "bg-primary/10" },
+  finishing: { label: "Завершает", icon: Timer, color: "text-orange-500", bg: "bg-orange-500/10" },
   completed: { label: "Завершил", icon: CheckCircle2, color: "text-green-400", bg: "bg-green-400/10" },
 };
 
@@ -41,16 +46,16 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile }: Di
   const [activeJobs, setActiveJobs] = useState<ActiveJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
+  const [finishingJobs, setFinishingJobs] = useState<Set<string>>(new Set());
 
   const fetchData = async () => {
     if (!user) return;
 
-    // Get all active jobs for this dispatcher
     const { data: jobs } = await supabase
       .from("jobs")
       .select("*")
       .eq("dispatcher_id", user.id)
-      .eq("status", "active")
+      .in("status", ["active", "finishing"])
       .order("created_at", { ascending: false });
 
     if (!jobs || jobs.length === 0) {
@@ -59,7 +64,6 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile }: Di
       return;
     }
 
-    // Get all accepted responses for these jobs
     const jobIds = jobs.map((j) => j.id);
     const { data: responses } = await supabase
       .from("job_responses")
@@ -67,7 +71,6 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile }: Di
       .in("job_id", jobIds)
       .eq("status", "accepted");
 
-    // Get worker profiles
     const workerIds = [...new Set((responses || []).map((r) => r.worker_id))];
     const { data: profiles } = workerIds.length > 0
       ? await supabase.from("profiles").select("*").in("user_id", workerIds)
@@ -84,13 +87,15 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile }: Di
           workerId: r.worker_id,
           workerStatus: r.worker_status,
           profile: profileMap[r.worker_id] || null,
+          workStartedAt: (r as any).work_started_at,
+          hoursWorked: (r as any).hours_worked ? Number((r as any).hours_worked) : null,
+          earned: (r as any).earned,
         }));
         return { job, workers };
       })
       .filter((aj) => aj.workers.length > 0);
 
     setActiveJobs(result);
-    // Expand all by default
     setExpandedJobs(new Set(result.map((aj) => aj.job.id)));
     setLoading(false);
   };
@@ -100,7 +105,6 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile }: Di
 
     if (!user) return;
 
-    // Realtime: listen for worker_status changes on all job_responses
     const channel = supabase
       .channel("dispatcher-cabinet")
       .on(
@@ -115,7 +119,13 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile }: Di
               ...aj,
               workers: aj.workers.map((w) =>
                 w.responseId === updated.id
-                  ? { ...w, workerStatus: updated.worker_status }
+                  ? {
+                      ...w,
+                      workerStatus: updated.worker_status,
+                      workStartedAt: updated.work_started_at,
+                      hoursWorked: updated.hours_worked ? Number(updated.hours_worked) : null,
+                      earned: updated.earned,
+                    }
                   : w
               ),
             }))
@@ -136,6 +146,36 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile }: Di
     });
   };
 
+  const finishJob = async (jobId: string, workers: WorkerInfo[]) => {
+    setFinishingJobs((prev) => new Set(prev).add(jobId));
+
+    // Set all workers who haven't completed to "finishing" status
+    for (const w of workers) {
+      if (w.workerStatus !== "completed") {
+        await supabase
+          .from("job_responses")
+          .update({ worker_status: "finishing" } as any)
+          .eq("id", w.responseId);
+      }
+    }
+
+    // Update job status
+    await supabase
+      .from("jobs")
+      .update({ status: "finishing" })
+      .eq("id", jobId);
+
+    toast.success("⏹ Заказ завершается. Грузчики получили уведомление.");
+
+    // Refresh data
+    await fetchData();
+    setFinishingJobs((prev) => {
+      const next = new Set(prev);
+      next.delete(jobId);
+      return next;
+    });
+  };
+
   const getStatusSummary = (workers: WorkerInfo[]) => {
     const counts: Record<string, number> = {};
     workers.forEach((w) => {
@@ -145,9 +185,16 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile }: Di
     return counts;
   };
 
+  const getTotalEarned = (workers: WorkerInfo[]) => {
+    return workers.reduce((sum, w) => sum + (w.earned || 0), 0);
+  };
+
+  const allWorkersCompleted = (workers: WorkerInfo[]) => {
+    return workers.every((w) => w.workerStatus === "completed");
+  };
+
   return (
     <div className="min-h-screen bg-background pb-8">
-      {/* Header */}
       <div className="flex items-center gap-3 px-4 safe-top pb-4">
         <button
           onClick={onBack}
@@ -178,41 +225,50 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile }: Di
           {activeJobs.map((aj) => {
             const isExpanded = expandedJobs.has(aj.job.id);
             const statusCounts = getStatusSummary(aj.workers);
+            const totalEarned = getTotalEarned(aj.workers);
+            const isFinishing = aj.job.status === "finishing";
+            const allDone = allWorkersCompleted(aj.workers);
 
             return (
               <motion.div
                 key={aj.job.id}
                 layout
-                className="bg-card border border-border rounded-2xl overflow-hidden"
+                className={`bg-card border rounded-2xl overflow-hidden ${isFinishing ? "border-orange-500/30" : "border-border"}`}
               >
-                {/* Job header */}
                 <button
                   onClick={() => toggleExpand(aj.job.id)}
                   className="w-full p-4 flex items-start gap-3 text-left"
                 >
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-bold text-foreground truncate">{aj.job.title}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-bold text-foreground truncate">{aj.job.title}</h3>
+                      {isFinishing && (
+                        <span className="shrink-0 px-2 py-0.5 rounded-lg bg-orange-500/10 text-[10px] font-bold text-orange-500">
+                          Завершается
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
                       {aj.job.address && (
-                        <span className="flex items-center gap-1">
-                          <MapPin size={10} /> {aj.job.address}
-                        </span>
+                        <span className="flex items-center gap-1"><MapPin size={10} /> {aj.job.address}</span>
                       )}
                       {aj.job.start_time && (
                         <span className="flex items-center gap-1">
                           <Clock size={10} />
-                          {new Date(aj.job.start_time).toLocaleString("ru-RU", {
-                            day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
-                          })}
+                          {new Date(aj.job.start_time).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                         </span>
                       )}
                     </div>
 
-                    {/* Status summary pills */}
                     <div className="flex flex-wrap gap-1.5 mt-2">
                       <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-foreground/10 text-[10px] font-semibold text-foreground">
                         <Users size={10} /> {aj.workers.length} чел.
                       </span>
+                      {totalEarned > 0 && (
+                        <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-green-500/10 text-[10px] font-semibold text-green-500">
+                          <Wallet size={10} /> {totalEarned.toLocaleString("ru-RU")} ₽
+                        </span>
+                      )}
                       {Object.entries(statusCounts).map(([status, count]) => {
                         const ws = WORKER_STATUS_MAP[status];
                         if (!ws) return (
@@ -236,7 +292,6 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile }: Di
                   )}
                 </button>
 
-                {/* Expanded workers list */}
                 <AnimatePresence>
                   {isExpanded && (
                     <motion.div
@@ -253,26 +308,15 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile }: Di
                           const initials = (w.profile?.full_name || "?").split(" ").map((s) => s[0]).join("").slice(0, 2);
 
                           return (
-                            <div
-                              key={w.responseId}
-                              className="bg-surface-1 border border-border rounded-xl p-3"
-                            >
+                            <div key={w.responseId} className="bg-surface-1 border border-border rounded-xl p-3">
                               <div className="flex items-center gap-3">
-                                {/* Avatar */}
-                                <button
-                                  onClick={() => onViewProfile?.(w.workerId)}
-                                  className="shrink-0"
-                                >
+                                <button onClick={() => onViewProfile?.(w.workerId)} className="shrink-0">
                                   <div className="relative">
                                     {w.profile?.is_premium && (
                                       <div className="absolute -inset-[2px] rounded-full bg-gradient-to-tr from-yellow-400 via-amber-500 to-orange-500 opacity-80" />
                                     )}
                                     {w.profile?.avatar_url ? (
-                                      <img
-                                        src={w.profile.avatar_url}
-                                        alt=""
-                                        className="relative w-10 h-10 rounded-full object-cover"
-                                      />
+                                      <img src={w.profile.avatar_url} alt="" className="relative w-10 h-10 rounded-full object-cover" />
                                     ) : (
                                       <div className="relative w-10 h-10 rounded-full bg-foreground flex items-center justify-center text-sm font-bold text-primary-foreground">
                                         {initials}
@@ -281,18 +325,12 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile }: Di
                                   </div>
                                 </button>
 
-                                {/* Name + rating */}
-                                <button
-                                  onClick={() => onViewProfile?.(w.workerId)}
-                                  className="flex-1 min-w-0 text-left"
-                                >
+                                <button onClick={() => onViewProfile?.(w.workerId)} className="flex-1 min-w-0 text-left">
                                   <div className="flex items-center gap-1.5">
                                     <span className="text-sm font-semibold text-foreground truncate">
                                       {w.profile?.full_name || "Грузчик"}
                                     </span>
-                                    {w.profile?.is_premium && (
-                                      <Crown size={12} className="text-yellow-500 fill-yellow-500 shrink-0" />
-                                    )}
+                                    {w.profile?.is_premium && <Crown size={12} className="text-yellow-500 fill-yellow-500 shrink-0" />}
                                   </div>
                                   <div className="flex items-center gap-2 mt-0.5">
                                     <Star size={10} className="text-primary fill-primary" />
@@ -302,7 +340,6 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile }: Di
                                   </div>
                                 </button>
 
-                                {/* Status badge */}
                                 <div className="shrink-0">
                                   {ws && WsIcon ? (
                                     <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl ${ws.bg}`}>
@@ -318,7 +355,20 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile }: Di
                                 </div>
                               </div>
 
-                              {/* Actions */}
+                              {/* Earnings info for completed workers */}
+                              {w.workerStatus === "completed" && w.earned != null && (
+                                <div className="mt-2 flex items-center gap-3 px-2 py-1.5 rounded-lg bg-green-500/10 text-[11px]">
+                                  <span className="text-green-500 font-bold flex items-center gap-1">
+                                    <Wallet size={10} /> {w.earned.toLocaleString("ru-RU")} ₽
+                                  </span>
+                                  {w.hoursWorked != null && (
+                                    <span className="text-green-500/70 flex items-center gap-1">
+                                      <Timer size={10} /> {w.hoursWorked}ч
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+
                               <div className="flex gap-2 mt-2.5">
                                 <button
                                   onClick={() => onChatWithWorker(w.workerId, w.profile?.full_name || "Грузчик")}
@@ -340,6 +390,26 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile }: Di
                             </div>
                           );
                         })}
+
+                        {/* Finish job button */}
+                        {!isFinishing && !allDone && (
+                          <button
+                            onClick={() => finishJob(aj.job.id, aj.workers)}
+                            disabled={finishingJobs.has(aj.job.id)}
+                            className="w-full mt-2 py-3 rounded-xl bg-destructive text-destructive-foreground text-sm font-bold active:scale-95 transition-all disabled:opacity-50"
+                          >
+                            ⏹ Завершить заказ
+                          </button>
+                        )}
+
+                        {allDone && (
+                          <div className="text-center py-2">
+                            <p className="text-xs font-bold text-green-500">✅ Все грузчики завершили работу</p>
+                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                              Итого: {getTotalEarned(aj.workers).toLocaleString("ru-RU")} ₽
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   )}
