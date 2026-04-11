@@ -207,10 +207,18 @@ const SwipeableJobCard = ({ job, index, responded, dispatcherName, onRespond, on
   const x = useMotionValue(0);
   const bgLeft = useTransform(x, [-150, 0], [1, 0]);
   const bgRight = useTransform(x, [0, 150], [0, 1]);
+  const didDrag = useRef(false);
 
+  const handleDragStart = () => { didDrag.current = false; };
+  const handleDrag = (_: any, info: PanInfo) => {
+    if (Math.abs(info.offset.x) > 5) didDrag.current = true;
+  };
   const handleDragEnd = (_: any, info: PanInfo) => {
     if (info.offset.x > 100) onRespond();
     else if (info.offset.x < -100) onSkip();
+  };
+  const handleTap = () => {
+    if (!didDrag.current) onTap?.();
   };
 
   const totalPay = job.hourly_rate * (Number(job.duration_hours) || 4);
