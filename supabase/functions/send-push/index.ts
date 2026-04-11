@@ -21,6 +21,12 @@ const RequestSchema = z.discriminatedUnion("type", [
     sender_id: z.string().uuid(),
     text: z.string().nullable().optional(),
   }),
+  z.object({
+    type: z.literal("worker_status_change"),
+    job_id: z.string().uuid(),
+    worker_id: z.string().uuid(),
+    worker_status: z.string().min(1),
+  }),
 ]);
 
 const APP_URL = "https://gruzli.lovable.app";
@@ -156,6 +162,52 @@ Deno.serve(async (req) => {
           else failed++;
         } catch (err) {
           console.error(`Push error for user ${userId}:`, err);
+          failed++;
+        }
+      }
+    } else if (type === "worker_status_change") {
+      const STATUS_LABELS: Record<string, string> = {
+        confirmed: "✅ Подтвердил заказ",
+        ready: "✅ Готов к работе",
+        en_route: "🚗 Выехал на объект",
+        late: "⚠️ Опаздывает",
+        arrived: "📍 На месте",
+        completed: "🎉 Завершил работу",
+      };
+
+      // Get worker name
+      const { data: workerProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", body.worker_id)
+        .single();
+
+      // Get job info to find dispatcher
+      const { data: jobData } = await supabase
+        .from("jobs")
+        .select("dispatcher_id, title")
+        .eq("id", body.job_id)
+        .single();
+
+      if (jobData) {
+        const workerName = workerProfile?.full_name || "Грузчик";
+        const statusLabel = STATUS_LABELS[body.worker_status] || body.worker_status;
+        const title = `${statusLabel}`;
+        const messageBody = `${workerName} · ${jobData.title}`;
+        const url = APP_URL;
+
+        // Get dispatcher email
+        const { data: dispatcherUser } = await supabase.auth.admin.getUserById(jobData.dispatcher_id);
+        if (dispatcherUser?.user?.email) {
+          const result = await sendProgressierPush({
+            recipientEmail: dispatcherUser.user.email,
+            title,
+            body: messageBody,
+            url,
+          });
+          if (result.ok) sent++;
+          else failed++;
+        } else {
           failed++;
         }
       }
