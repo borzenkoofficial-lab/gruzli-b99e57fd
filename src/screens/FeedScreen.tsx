@@ -182,6 +182,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
                 onRespond={() => handleRespond(job.id)}
                 onSkip={() => setSkippedJobs((prev) => new Set(prev).add(job.id))}
                 onOpenProfile={onOpenProfile ? () => onOpenProfile(job.dispatcher_id) : undefined}
+                onTap={() => onOpenJob?.(job)}
               />
             ))}
           </AnimatePresence>
@@ -199,9 +200,10 @@ interface SwipeableJobCardProps {
   onRespond: () => void;
   onSkip: () => void;
   onOpenProfile?: () => void;
+  onTap?: () => void;
 }
 
-const SwipeableJobCard = ({ job, index, responded, dispatcherName, onRespond, onSkip, onOpenProfile }: SwipeableJobCardProps) => {
+const SwipeableJobCard = ({ job, index, responded, dispatcherName, onRespond, onSkip, onOpenProfile, onTap }: SwipeableJobCardProps) => {
   const x = useMotionValue(0);
   const bgLeft = useTransform(x, [-150, 0], [1, 0]);
   const bgRight = useTransform(x, [0, 150], [0, 1]);
