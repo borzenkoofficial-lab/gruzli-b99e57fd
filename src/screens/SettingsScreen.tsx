@@ -588,14 +588,6 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
 
   // Verification section
   if (section === "verification") {
-    const [vFullName, setVFullName] = useState(profile?.full_name || "");
-    const [vAge, setVAge] = useState("");
-    const [vPhone, setVPhone] = useState(profile?.phone || "");
-    const [vOrgType, setVOrgType] = useState<"ip" | "self" | "ooo">("self");
-    const [vOrgName, setVOrgName] = useState("");
-    const [vSending, setVSending] = useState(false);
-
-    const SUPPORT_USER_ID = "de95eea5-d75b-4693-af15-020c58422126";
 
     const handleSendVerification = async () => {
       if (!vFullName.trim() || !vAge || !vPhone.trim()) {
