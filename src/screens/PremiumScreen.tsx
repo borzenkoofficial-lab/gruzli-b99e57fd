@@ -202,22 +202,33 @@ const PremiumScreen = ({ onBack, onOpenSupport }: PremiumScreenProps) => {
         </div>
       )}
 
+      {/* Balance info */}
+      {!isPremium && (
+        <div className="mx-5 mb-4 bg-card border border-border rounded-2xl p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Баланс кошелька</span>
+            <span className="text-lg font-extrabold text-foreground">{profile?.balance || 0} ₽</span>
+          </div>
+        </div>
+      )}
+
       {/* Purchase button */}
       {!isPremium && (
         <div className="px-5">
           <button
             onClick={handlePurchase}
-            className="w-full py-4 rounded-2xl text-white font-bold text-base tap-scale"
+            disabled={purchasing}
+            className="w-full py-4 rounded-2xl text-white font-bold text-base tap-scale disabled:opacity-50"
             style={{
               background: "linear-gradient(135deg, hsl(43 96% 56%), hsl(25 95% 53%))",
               boxShadow: "0 8px 24px hsl(38 92% 50% / 0.4)",
             }}
           >
             <Crown size={16} className="inline mr-2" />
-            Оформить Premium
+            {purchasing ? "Оформление..." : `Купить за ${plans.find(p => p.id === selectedPlan)?.price || 0} ₽`}
           </button>
           <p className="text-[10px] text-muted-foreground text-center mt-2">
-            Оплата через администратора. Активация в течение 1 часа.
+            Средства спишутся с баланса кошелька
           </p>
         </div>
       )}
