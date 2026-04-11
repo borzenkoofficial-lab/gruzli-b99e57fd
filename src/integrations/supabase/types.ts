@@ -319,28 +319,40 @@ export type Database = {
       job_responses: {
         Row: {
           created_at: string
+          earned: number | null
+          hours_worked: number | null
           id: string
           job_id: string
           message: string | null
           status: string | null
+          work_finished_at: string | null
+          work_started_at: string | null
           worker_id: string
           worker_status: string | null
         }
         Insert: {
           created_at?: string
+          earned?: number | null
+          hours_worked?: number | null
           id?: string
           job_id: string
           message?: string | null
           status?: string | null
+          work_finished_at?: string | null
+          work_started_at?: string | null
           worker_id: string
           worker_status?: string | null
         }
         Update: {
           created_at?: string
+          earned?: number | null
+          hours_worked?: number | null
           id?: string
           job_id?: string
           message?: string | null
           status?: string | null
+          work_finished_at?: string | null
+          work_started_at?: string | null
           worker_id?: string
           worker_status?: string | null
         }
@@ -510,6 +522,7 @@ export type Database = {
           premium_until: string | null
           rating: number | null
           skills: string[] | null
+          total_earned: number | null
           updated_at: string
           user_id: string
           verified: boolean | null
@@ -529,6 +542,7 @@ export type Database = {
           premium_until?: string | null
           rating?: number | null
           skills?: string[] | null
+          total_earned?: number | null
           updated_at?: string
           user_id: string
           verified?: boolean | null
@@ -548,6 +562,7 @@ export type Database = {
           premium_until?: string | null
           rating?: number | null
           skills?: string[] | null
+          total_earned?: number | null
           updated_at?: string
           user_id?: string
           verified?: boolean | null

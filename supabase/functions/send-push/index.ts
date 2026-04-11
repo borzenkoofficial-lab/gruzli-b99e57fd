@@ -524,6 +524,7 @@ Deno.serve(async (req) => {
         en_route: "🚗 Выехал на объект",
         late: "⚠️ Опаздывает",
         arrived: "📍 На месте",
+        finishing: "⏹ Диспетчер завершил заказ",
         completed: "🎉 Завершил работу",
       };
 
@@ -543,29 +544,50 @@ Deno.serve(async (req) => {
         const workerName = workerProfile?.full_name || "Грузчик";
         const statusLabel = STATUS_LABELS[body.worker_status] || body.worker_status;
         const title = `${statusLabel}`;
-        const messageBody = `${workerName} · ${jobData.title}`;
         const url = APP_URL;
 
-        const pushPayload = { title, body: messageBody, url, type: "worker_status_change" };
+        if (body.worker_status === "finishing") {
+          // "finishing" is set by dispatcher — notify the WORKER
+          const messageBody = `Заказ: ${jobData.title}. Завершите работу для подсчёта.`;
+          const pushPayload = { title: "⏹ Завершите работу", body: messageBody, url, type: "worker_status_change" };
 
-        // Native push to dispatcher
-        const nativeResult = await sendNativeWebPush(supabase, [jobData.dispatcher_id], pushPayload);
-        sent += nativeResult.sent;
-        failed += nativeResult.failed;
+          const nativeResult = await sendNativeWebPush(supabase, [body.worker_id], pushPayload);
+          sent += nativeResult.sent;
+          failed += nativeResult.failed;
 
-        // Progressier push to dispatcher
-        const { data: dispatcherUser } = await supabase.auth.admin.getUserById(jobData.dispatcher_id);
-        if (dispatcherUser?.user?.email) {
-          const result = await sendProgressierPush({
-            recipientEmail: dispatcherUser.user.email,
-            title,
-            body: messageBody,
-            url,
-          });
-          if (result.ok) sent++;
-          else failed++;
+          const { data: workerUser } = await supabase.auth.admin.getUserById(body.worker_id);
+          if (workerUser?.user?.email) {
+            const result = await sendProgressierPush({
+              recipientEmail: workerUser.user.email,
+              title: "⏹ Завершите работу",
+              body: messageBody,
+              url,
+            });
+            if (result.ok) sent++;
+            else failed++;
+          }
         } else {
-          failed++;
+          // Other statuses — notify the DISPATCHER
+          const messageBody = `${workerName} · ${jobData.title}`;
+          const pushPayload = { title, body: messageBody, url, type: "worker_status_change" };
+
+          const nativeResult = await sendNativeWebPush(supabase, [jobData.dispatcher_id], pushPayload);
+          sent += nativeResult.sent;
+          failed += nativeResult.failed;
+
+          const { data: dispatcherUser } = await supabase.auth.admin.getUserById(jobData.dispatcher_id);
+          if (dispatcherUser?.user?.email) {
+            const result = await sendProgressierPush({
+              recipientEmail: dispatcherUser.user.email,
+              title,
+              body: messageBody,
+              url,
+            });
+            if (result.ok) sent++;
+            else failed++;
+          } else {
+            failed++;
+          }
         }
       }
     }
