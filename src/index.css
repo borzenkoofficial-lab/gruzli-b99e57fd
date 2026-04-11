@@ -279,9 +279,9 @@
     transform: translateX(-50%);
     width: 100%;
     max-width: 32rem;
-    bottom: env(safe-area-inset-bottom, 0px);
+    bottom: 0;
     z-index: 50;
-    padding: 0 12px 8px;
+    padding: 0 12px calc(env(safe-area-inset-bottom, 0px) + 2px);
     pointer-events: none;
   }
 
