@@ -206,7 +206,7 @@ const OrdersScreen = () => {
                     </div>
                     <div className="flex items-center gap-1 ml-2">
                       <Wallet size={14} className="text-primary" />
-                      <span className="text-base font-extrabold text-gradient-primary">
+                      <span className="text-base font-extrabold text-bg-foreground">
                         {(job.hourlyRate * job.durationHours).toLocaleString("ru-RU")} ₽
                       </span>
                     </div>
@@ -232,7 +232,7 @@ const OrdersScreen = () => {
 
                   <button
                     onClick={() => confirmJob(job.responseId)}
-                    className="w-full py-3.5 rounded-xl gradient-primary text-primary-foreground text-sm font-bold active:scale-95 transition-all"
+                    className="w-full py-3.5 rounded-xl bg-foreground text-primary-foreground text-sm font-bold active:scale-95 transition-all"
                     style={{
                       boxShadow: "6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%), 0 4px 20px hsl(230 60% 58% / 0.35)",
                     }}
@@ -257,14 +257,14 @@ const OrdersScreen = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               transition={{ delay: i * 0.05 }}
-              className="neu-card rounded-2xl p-4"
+              className="bg-card border border-border rounded-2xl p-4"
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
                   <h3 className="text-sm font-bold text-foreground">{job.title}</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">{job.dispatcherName}</p>
                 </div>
-                <span className="text-base font-extrabold text-gradient-primary ml-2">
+                <span className="text-base font-extrabold text-bg-foreground ml-2">
                   {(job.hourlyRate * job.durationHours).toLocaleString("ru-RU")} ₽
                 </span>
               </div>
@@ -297,8 +297,8 @@ const OrdersScreen = () => {
                       onClick={() => setWorkerStatus(job.responseId, step.key)}
                       className={`py-2.5 rounded-xl text-[11px] font-semibold transition-all flex flex-col items-center gap-1 ${
                         isActive
-                          ? "gradient-primary text-primary-foreground"
-                          : "neu-raised-sm text-muted-foreground active:neu-inset"
+                          ? "bg-foreground text-primary-foreground"
+                          : "bg-card border border-border text-muted-foreground active:bg-surface-1 border border-border"
                       }`}
                     >
                       <Icon size={14} />
@@ -341,7 +341,7 @@ const CountdownToJob = ({ startTime }: { startTime: string }) => {
   const isUrgent = diff < 3600;
 
   return (
-    <div className={`flex items-center gap-2 mb-3 px-3 py-2.5 rounded-xl ${isUrgent ? "bg-destructive/10" : "neu-inset"}`}>
+    <div className={`flex items-center gap-2 mb-3 px-3 py-2.5 rounded-xl ${isUrgent ? "bg-destructive/10" : "bg-surface-1 border border-border"}`}>
       <Clock size={13} className={isUrgent ? "text-destructive" : "text-primary"} />
       <span className={`text-xs font-bold ${isUrgent ? "text-destructive" : "text-foreground"}`}>
         До начала: {hours > 0 ? `${hours}ч ` : ""}{mins}м {secs.toString().padStart(2, "0")}с

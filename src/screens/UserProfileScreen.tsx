@@ -184,7 +184,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
     return (
       <div className="min-h-screen bg-background">
         <div className="flex items-center gap-3 px-4 safe-top pb-4">
-          <button onClick={onBack} className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center">
+          <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center">
             <ArrowLeft size={18} className="text-foreground" />
           </button>
           <h2 className="text-base font-bold text-foreground">Профиль</h2>
@@ -206,7 +206,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
     <div className="min-h-screen bg-background pb-8">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 safe-top pb-4">
-        <button onClick={onBack} className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center active:neu-inset transition-all">
+        <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
           <ArrowLeft size={18} className="text-foreground" />
         </button>
         <h2 className="text-base font-bold text-foreground flex-1">Профиль</h2>
@@ -216,7 +216,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
       <div className="px-5 py-4">
         <div className="flex items-center gap-4">
           <div
-            className="rounded-full gradient-primary flex items-center justify-center text-2xl font-bold text-primary-foreground"
+            className="rounded-full bg-foreground flex items-center justify-center text-2xl font-bold text-primary-foreground"
             style={{ width: 72, height: 72 }}
           >
             {initials}
@@ -244,13 +244,13 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
 
       {/* ID Card */}
       <div className="mx-5 mb-4">
-        <div className="neu-card rounded-2xl p-4">
+        <div className="bg-card border border-border rounded-2xl p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Hash size={16} className="text-primary" />
               <span className="text-xs font-semibold text-muted-foreground">ID пользователя</span>
             </div>
-            <button onClick={copyId} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl neu-raised-sm active:neu-inset transition-all">
+            <button onClick={copyId} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border tap-scale transition-colors">
               {idCopied ? <CheckCircle2 size={14} className="text-primary" /> : <Copy size={14} className="text-muted-foreground" />}
               <span className="text-sm font-bold text-foreground tracking-wider">{shortId}</span>
             </button>
@@ -260,7 +260,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
 
       {/* Rating */}
       <div className="mx-5 mb-4">
-        <div className="neu-card rounded-2xl p-4">
+        <div className="bg-card border border-border rounded-2xl p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-bold text-foreground">Рейтинг</span>
             <div className="flex items-center gap-1">
@@ -315,7 +315,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
           <h3 className="text-sm font-bold text-foreground mb-2">Навыки</h3>
           <div className="flex flex-wrap gap-2">
             {profile.skills.map((skill: string) => (
-              <span key={skill} className="px-3 py-2 rounded-xl neu-raised-sm text-xs font-medium text-muted-foreground">
+              <span key={skill} className="px-3 py-2 rounded-xl bg-card border border-border text-xs font-medium text-muted-foreground">
                 {skill}
               </span>
             ))}
@@ -335,7 +335,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
                 setSelectedSentiment(getReviewSentiment(existingReview.rating));
               }
             }}
-            className="w-full py-3 rounded-2xl neu-raised text-sm font-bold text-foreground active:neu-inset transition-all flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-2xl bg-card border border-border text-sm font-bold text-foreground active:bg-surface-1 border border-border transition-all flex items-center justify-center gap-2"
           >
             <Star size={14} className="text-primary" />
             {existingReview ? "Изменить отзыв" : "Оставить отзыв"}
@@ -352,7 +352,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
             exit={{ opacity: 0, height: 0 }}
             className="mx-5 mb-4 overflow-hidden"
           >
-            <div className="neu-card rounded-2xl p-4 space-y-4">
+            <div className="bg-card border border-border rounded-2xl p-4 space-y-4">
               <h3 className="text-sm font-bold text-foreground">Ваша оценка</h3>
 
               {/* Sentiment buttons */}
@@ -365,7 +365,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
                       key={key}
                       onClick={() => handleSentimentSelect(key)}
                       className={`flex-1 py-3 rounded-xl text-xs font-semibold transition-all flex flex-col items-center gap-1.5 ${
-                        isActive ? `${config.bg} ${config.color}` : "neu-raised-sm text-muted-foreground active:neu-inset"
+                        isActive ? `${config.bg} ${config.color}` : "bg-card border border-border text-muted-foreground active:bg-surface-1 border border-border"
                       }`}
                     >
                       <Icon size={18} />
@@ -399,7 +399,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
                     value={reviewText}
                     onChange={(e) => setReviewText(e.target.value)}
                     placeholder="Напишите отзыв (необязательно)..."
-                    className="w-full p-3 rounded-xl neu-inset bg-transparent text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none"
+                    className="w-full p-3 rounded-xl bg-surface-1 border border-border bg-transparent text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none"
                     rows={3}
                   />
                 </motion.div>
@@ -411,7 +411,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
                   <button
                     onClick={submitReview}
                     disabled={submittingReview || reviewStars === 0}
-                    className="w-full py-3 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold active:scale-95 transition-transform flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="w-full py-3 rounded-2xl bg-foreground text-primary-foreground text-sm font-bold tap-scale flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     <Send size={14} />
                     {submittingReview ? "Отправка..." : existingReview ? "Обновить отзыв" : "Отправить отзыв"}
@@ -431,7 +431,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
             Отзывы
           </h2>
           {reviews.length === 0 ? (
-            <div className="neu-card rounded-2xl p-4 text-center">
+            <div className="bg-card border border-border rounded-2xl p-4 text-center">
               <p className="text-xs text-muted-foreground">Отзывов пока нет</p>
             </div>
           ) : (
@@ -445,7 +445,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
                     key={review.id}
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="neu-card rounded-2xl p-4"
+                    className="bg-card border border-border rounded-2xl p-4"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
@@ -477,7 +477,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
         <div className="mx-5 mt-4">
           <button
             onClick={() => onChat(userId, profile.full_name || "Пользователь")}
-            className="w-full py-3.5 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold active:scale-95 transition-transform"
+            className="w-full py-3.5 rounded-2xl bg-foreground text-primary-foreground text-sm font-bold tap-scale"
           >
             💬 Написать сообщение
           </button>

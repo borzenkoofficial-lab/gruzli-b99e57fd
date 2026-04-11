@@ -84,14 +84,14 @@ const NotificationsScreen = ({ onBack }: Props) => {
     <div className="min-h-screen bg-background max-w-lg mx-auto">
       {/* Header */}
       <div className="px-4 safe-top pb-3 flex items-center gap-3">
-        <button onClick={onBack} className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center">
+        <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center">
           <ArrowLeft size={18} className="text-foreground" />
         </button>
         <h1 className="text-lg font-bold text-foreground flex-1">Уведомления</h1>
         {items.length > 0 && (
           <button
             onClick={() => { clearNotifications(); setItems([]); }}
-            className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center"
+            className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center"
           >
             <Trash2 size={16} className="text-muted-foreground" />
           </button>
@@ -102,7 +102,7 @@ const NotificationsScreen = ({ onBack }: Props) => {
       <div className="px-4">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 rounded-full neu-inset flex items-center justify-center mb-4">
+            <div className="w-16 h-16 rounded-full bg-surface-1 border border-border flex items-center justify-center mb-4">
               <Bell size={28} className="text-muted-foreground" />
             </div>
             <p className="text-sm text-muted-foreground">Нет уведомлений</p>
@@ -119,7 +119,7 @@ const NotificationsScreen = ({ onBack }: Props) => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -40 }}
                     transition={{ delay: i * 0.03 }}
-                    className={`neu-card rounded-2xl p-4 flex items-start gap-3 ${!n.read ? "border-l-2 border-primary" : ""}`}
+                    className={`bg-card border border-border rounded-2xl p-4 flex items-start gap-3 ${!n.read ? "border-l-2 border-primary" : ""}`}
                   >
                     <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${n.type === "job" ? "bg-primary/10" : n.type === "message" ? "bg-blue-500/10" : n.type === "response" ? "bg-green-500/10" : "bg-muted"}`}>
                       <Icon size={16} className={colorMap[n.type]} />

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import { MapPin, Clock, Users, Zap, ChevronRight, Mic, Wallet, ArrowRight, Ban, UserPlus, Train } from "lucide-react";
+import { MapPin, Clock, Users, Zap, ChevronRight, Wallet, ArrowRight, Ban, UserPlus, Train } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRespondToJob } from "@/hooks/useRespondToJob";
@@ -36,7 +36,6 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onRefreshRef }: FeedScreenProps
       .order("created_at", { ascending: false });
     if (data) {
       setJobs(data);
-      // Fetch dispatcher names
       const dispatcherIds = [...new Set(data.map((j) => j.dispatcher_id))];
       if (dispatcherIds.length > 0) {
         const { data: profiles } = await supabase
@@ -51,7 +50,6 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onRefreshRef }: FeedScreenProps
       }
     }
 
-    // Fetch user's existing responses
     if (user) {
       const { data: responses } = await supabase
         .from("job_responses")
@@ -64,7 +62,6 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onRefreshRef }: FeedScreenProps
     setLoading(false);
   };
 
-  // Expose refresh function
   useEffect(() => {
     if (onRefreshRef) {
       onRefreshRef.current = fetchJobs;
@@ -74,11 +71,9 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onRefreshRef }: FeedScreenProps
   useEffect(() => {
     fetchJobs();
 
-    // Listen for new jobs via custom event (realtime handled by useRealtimeNotifications)
     const handleNewJob = () => fetchJobs();
     window.addEventListener("navigate-to-feed", handleNewJob);
     
-    // Listen for realtime job inserts to update the list without duplicate channel
     const channel = supabase
       .channel('feed-job-updates')
       .on(
@@ -122,64 +117,52 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onRefreshRef }: FeedScreenProps
   };
 
   return (
-    <div >
-      {/* Header with logo */}
+    <div>
+      {/* Header */}
       <div className="px-5 safe-top pb-2 flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Заявки</h1>
-          <p className="text-sm text-muted-foreground mt-1">Свайп вправо = Беру, влево = Пропустить</p>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Заявки</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Свайп вправо — Беру, влево — Пропустить</p>
         </div>
-        <img src={gruzliLogo} alt="Gruzli" className="h-10 rounded-xl" loading="lazy" />
+        <img src={gruzliLogo} alt="Gruzli" className="h-9 w-9 rounded-xl object-cover" loading="lazy" />
       </div>
 
-      {/* Push notification banner */}
       <PushNotificationBanner />
 
-      {/* Hero Banner */}
-      <div className="mx-5 mt-2 mb-4 rounded-2xl overflow-hidden" style={{
-        background: 'linear-gradient(135deg, hsl(240 55% 55%), hsl(220 65% 58%), hsl(195 100% 50%))',
-        boxShadow: '0 8px 32px hsl(230 60% 58% / 0.4), 6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%)',
-      }}>
-        <div className="px-5 py-5">
-          <div className="flex items-center gap-2 mb-2">
-            <MapPin size={14} className="text-white/80" />
-            <span className="text-white/80 text-xs font-medium">Рядом с вами</span>
-          </div>
-          <h2 className="text-white text-xl font-bold mb-1">
-            Сейчас {nearbyCount} заказов
-          </h2>
-          <p className="text-white/70 text-sm">
-            Можно заработать до <span className="text-white font-bold">{maxEarnings.toLocaleString("ru-RU")} ₽</span>
-          </p>
-          <div className="flex items-center gap-2 mt-3">
-            <Wallet size={14} className="text-white/80" />
-            <span className="text-white/90 text-sm font-semibold">На руки — без комиссий</span>
-          </div>
+      {/* Stats bar */}
+      <div className="mx-5 mt-3 mb-4 flex items-center gap-3">
+        <div className="flex-1 rounded-xl bg-card border border-border px-4 py-3">
+          <p className="text-xs text-muted-foreground">Заказов рядом</p>
+          <p className="text-lg font-bold text-foreground">{nearbyCount}</p>
+        </div>
+        <div className="flex-1 rounded-xl bg-card border border-border px-4 py-3">
+          <p className="text-xs text-muted-foreground">Можно заработать</p>
+          <p className="text-lg font-bold text-foreground">{maxEarnings.toLocaleString("ru-RU")} ₽</p>
         </div>
       </div>
 
-
       {/* Filters */}
-      <div className="px-5 pb-5 overflow-x-auto scrollbar-hide">
-        <div className="flex gap-2.5">
+      <div className="px-5 pb-4 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2">
           {filters.map((f) => (
-            <button
+            <motion.button
               key={f}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setActiveFilter(f)}
-              className={`px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 ${
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors duration-150 ${
                 activeFilter === f
-                  ? "gradient-primary text-primary-foreground"
-                  : "neu-raised-sm text-muted-foreground active:neu-inset"
+                  ? "bg-foreground text-background"
+                  : "bg-card border border-border text-muted-foreground hover:text-foreground"
               }`}
             >
               {f}
-            </button>
+            </motion.button>
           ))}
         </div>
       </div>
 
       {/* Job Cards */}
-      <div className="px-5 space-y-4 pb-6">
+      <div className="px-5 space-y-3 pb-6">
         {loading ? (
           <div className="text-center py-12 text-muted-foreground text-sm">Загрузка заявок...</div>
         ) : filtered.length === 0 ? (
@@ -231,17 +214,18 @@ const SwipeableJobCard = ({ job, index, responded, dispatcherName, onRespond, on
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -200, transition: { duration: 0.2 } }}
-      transition={{ delay: index < 5 ? index * 0.05 : 0 }}
+      transition={{ delay: index < 5 ? index * 0.04 : 0, duration: 0.3 }}
       className="relative"
     >
-      <motion.div className="absolute inset-0 rounded-2xl flex items-center justify-start pl-6 z-0" style={{ opacity: bgLeft, background: 'hsl(0 72% 51% / 0.15)' }}>
-        <Ban size={28} className="text-destructive" />
+      {/* Swipe backgrounds */}
+      <motion.div className="absolute inset-0 rounded-2xl flex items-center justify-start pl-6 z-0" style={{ opacity: bgLeft, background: 'hsl(0 72% 51% / 0.1)' }}>
+        <Ban size={24} className="text-destructive" />
       </motion.div>
-      <motion.div className="absolute inset-0 rounded-2xl flex items-center justify-end pr-6 z-0" style={{ opacity: bgRight, background: 'hsl(145 65% 50% / 0.15)' }}>
-        <ArrowRight size={28} className="text-online" />
+      <motion.div className="absolute inset-0 rounded-2xl flex items-center justify-end pr-6 z-0" style={{ opacity: bgRight, background: 'hsl(145 65% 50% / 0.1)' }}>
+        <ArrowRight size={24} className="text-online" />
       </motion.div>
 
       <motion.div
@@ -250,56 +234,59 @@ const SwipeableJobCard = ({ job, index, responded, dispatcherName, onRespond, on
         dragElastic={0.4}
         style={{ x }}
         onDragEnd={handleDragEnd}
-        className="neu-card rounded-2xl p-4 cursor-pointer active:scale-[0.98] transition-transform relative z-10"
+        whileTap={{ scale: 0.985 }}
+        className="relative z-10 rounded-2xl bg-card border border-border p-4 cursor-pointer transition-colors"
       >
-        {/* Bot job overlay */}
+        {/* Bot overlay */}
         {(job as any).is_bot && (
-          <div className="absolute top-3 right-3 z-20 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-destructive/15 border border-destructive/20">
-            <Ban size={12} className="text-destructive" />
-            <span className="text-[11px] font-semibold text-destructive">Место занято</span>
+          <div className="absolute top-3 right-3 z-20 flex items-center gap-1 px-2 py-0.5 rounded-md bg-destructive/10 border border-destructive/20">
+            <Ban size={11} className="text-destructive" />
+            <span className="text-[11px] font-medium text-destructive">Место занято</span>
           </div>
         )}
 
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              {job.urgent && (
-                <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-destructive/20 text-destructive text-[11px] font-semibold">
-                  <Zap size={10} /> Срочно
-                </span>
-              )}
-              {job.quick_minimum && (
-                <span className="px-2 py-0.5 rounded-lg bg-online/20 text-online text-[11px] font-semibold">
-                  Быстрая минималка
-                </span>
-              )}
-            </div>
-            <h3 className="text-[15px] font-semibold text-foreground leading-tight">{job.title}</h3>
-            <button
-              onClick={(e) => { e.stopPropagation(); onOpenProfile?.(); }}
-              className="flex items-center gap-1 mt-1 active:opacity-70"
-            >
-              <UserPlus size={11} className="text-primary" />
-              <span className="text-[11px] text-primary font-medium">{dispatcherName}</span>
-            </button>
-          </div>
+        {/* Tags */}
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
+          {job.urgent && (
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-destructive/10 text-destructive text-[11px] font-semibold">
+              <Zap size={10} /> Срочно
+            </span>
+          )}
+          {job.quick_minimum && (
+            <span className="px-2 py-0.5 rounded-md bg-online/10 text-online text-[11px] font-semibold">
+              Быстрая минималка
+            </span>
+          )}
         </div>
+
+        {/* Title & dispatcher */}
+        <h3 className="text-[15px] font-semibold text-foreground leading-snug">{job.title}</h3>
+        <button
+          onClick={(e) => { e.stopPropagation(); onOpenProfile?.(); }}
+          className="flex items-center gap-1 mt-1 tap-scale"
+        >
+          <UserPlus size={11} className="text-muted-foreground" />
+          <span className="text-[11px] text-muted-foreground">{dispatcherName}</span>
+        </button>
 
         {job.description && (
-          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{job.description}</p>
+          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{job.description}</p>
         )}
 
-        {/* Earnings calculator */}
-        <div className="neu-inset rounded-xl px-3 py-2.5 mb-3">
-          <div className="flex items-center gap-2">
-            <Wallet size={14} className="text-primary" />
-            <span className="text-xs text-muted-foreground">Ты получишь</span>
-            <span className="text-lg font-extrabold text-gradient-primary ml-auto">{totalPay.toLocaleString("ru-RU")} ₽</span>
+        {/* Pay block */}
+        <div className="mt-3 rounded-xl bg-surface-1 border border-border px-3 py-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Wallet size={14} className="text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">Ты получишь</span>
+            </div>
+            <span className="text-lg font-bold text-foreground">{totalPay.toLocaleString("ru-RU")} ₽</span>
           </div>
-          <p className="text-[11px] text-muted-foreground mt-1">{job.hourly_rate} ₽/час × {job.duration_hours || 4}ч</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">{job.hourly_rate} ₽/час × {job.duration_hours || 4}ч</p>
         </div>
 
-        <div className="flex items-center gap-3 text-[11px] text-muted-foreground mb-4 flex-wrap">
+        {/* Meta info */}
+        <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-3 flex-wrap">
           {job.address && <span className="flex items-center gap-1"><MapPin size={11} /> {job.address}</span>}
           {job.metro && <span className="flex items-center gap-1"><Train size={11} /> {job.metro}</span>}
           {job.start_time && (
@@ -310,28 +297,26 @@ const SwipeableJobCard = ({ job, index, responded, dispatcherName, onRespond, on
           <span className="flex items-center gap-1"><Users size={11} /> {job.workers_needed} чел.</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex-1" />
-          <span className="text-xl font-extrabold text-gradient-primary">{job.hourly_rate} ₽/час</span>
+        {/* Footer */}
+        <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
+          <span className="text-lg font-bold text-foreground">{job.hourly_rate} ₽/час</span>
           {(job as any).is_bot ? (
-            <span className="px-6 py-3 rounded-xl text-sm font-bold bg-muted text-muted-foreground">
+            <span className="px-5 py-2.5 rounded-xl text-sm font-medium bg-muted text-muted-foreground">
               Не успели
             </span>
           ) : (
-            <button
+            <motion.button
+              whileTap={{ scale: 0.93 }}
               onClick={(e) => { e.stopPropagation(); onRespond(); }}
               disabled={responded}
-              className={`px-6 py-3 rounded-xl text-sm font-bold active:scale-95 transition-all ${
+              className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                 responded
-                  ? "bg-online/20 text-online"
-                  : "gradient-primary text-primary-foreground"
+                  ? "bg-online/15 text-online"
+                  : "bg-foreground text-background hover:opacity-90"
               }`}
-              style={!responded ? {
-                boxShadow: '6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%), 0 4px 20px hsl(230 60% 58% / 0.35)',
-              } : {}}
             >
               {responded ? "✓ Отклик" : "Беру!"}
-            </button>
+            </motion.button>
           )}
         </div>
       </motion.div>

@@ -69,7 +69,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
   return (
     <div className="min-h-screen bg-background pb-8">
       <div className="flex items-center gap-3 px-4 safe-top pb-4">
-        <button onClick={onBack} className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center active:neu-inset transition-all">
+        <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
           <ArrowLeft size={18} className="text-foreground" />
         </button>
         <h1 className="text-lg font-bold text-foreground">Создать заявку</h1>
@@ -77,45 +77,45 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
 
       <form onSubmit={handleSubmit} className="px-5 space-y-4">
         <Field label="Название заявки" icon={FileText}>
-          <div className="neu-inset rounded-xl px-4 py-3">
+          <div className="bg-surface-1 border border-border rounded-xl px-4 py-3">
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Переезд 2-комнатной квартиры" className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none" required />
           </div>
         </Field>
 
         <Field label="Описание работы" icon={FileText}>
-          <div className="neu-inset rounded-xl px-4 py-3">
+          <div className="bg-surface-1 border border-border rounded-xl px-4 py-3">
             <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Опишите, что нужно сделать..." rows={3} className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none resize-none" />
           </div>
         </Field>
 
         <Field label="Оплата за час (₽)" icon={DollarSign}>
-          <div className="neu-inset rounded-xl px-4 py-3">
+          <div className="bg-surface-1 border border-border rounded-xl px-4 py-3">
             <input type="number" value={hourlyRate} onChange={(e) => setHourlyRate(e.target.value)} placeholder="300" className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none" required />
           </div>
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Дата и время начала" icon={Clock}>
-            <div className="neu-inset rounded-xl px-4 py-3">
+            <div className="bg-surface-1 border border-border rounded-xl px-4 py-3">
               <input type="datetime-local" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="w-full bg-transparent text-sm text-foreground outline-none" />
             </div>
           </Field>
 
           <Field label="Длительность (часов)" icon={Clock}>
-            <div className="neu-inset rounded-xl px-4 py-3">
+            <div className="bg-surface-1 border border-border rounded-xl px-4 py-3">
               <input type="number" value={durationHours} onChange={(e) => setDurationHours(e.target.value)} min="1" max="24" step="0.5" className="w-full bg-transparent text-sm text-foreground outline-none" />
             </div>
           </Field>
         </div>
 
         <Field label="Адрес" icon={MapPin}>
-          <div className="neu-inset rounded-xl px-4 py-3">
+          <div className="bg-surface-1 border border-border rounded-xl px-4 py-3">
             <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="ул. Ленина, 45" className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none" />
           </div>
         </Field>
 
         <Field label="Станция метро" icon={Train}>
-          <div className="neu-inset rounded-xl px-4 py-3">
+          <div className="bg-surface-1 border border-border rounded-xl px-4 py-3">
             <input value={metro} onChange={(e) => setMetro(e.target.value)} placeholder="Площадь Революции" className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none" />
           </div>
         </Field>
@@ -128,7 +128,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
                 type="button"
                 onClick={() => setWorkersNeeded(n.toString())}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                  workersNeeded === n.toString() ? "gradient-primary text-primary-foreground" : "neu-raised-sm text-muted-foreground"
+                  workersNeeded === n.toString() ? "bg-foreground text-primary-foreground" : "bg-card border border-border text-muted-foreground"
                 }`}
               >
                 {n}
@@ -143,7 +143,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
             type="button"
             onClick={() => setUrgent(!urgent)}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all ${
-              urgent ? "bg-destructive/20 text-destructive" : "neu-raised-sm text-muted-foreground"
+              urgent ? "bg-destructive/20 text-destructive" : "bg-card border border-border text-muted-foreground"
             }`}
           >
             <Zap size={14} /> Срочно
@@ -152,7 +152,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
             type="button"
             onClick={() => setQuickMinimum(!quickMinimum)}
             className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all ${
-              quickMinimum ? "bg-online/20 text-online" : "neu-raised-sm text-muted-foreground"
+              quickMinimum ? "bg-online/20 text-online" : "bg-card border border-border text-muted-foreground"
             }`}
           >
             ⚡ Быстрая минималка
@@ -162,7 +162,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-4 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50"
+          className="w-full py-4 rounded-2xl bg-foreground text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 tap-scale disabled:opacity-50"
         >
           {loading ? <Loader2 size={18} className="animate-spin" /> : "Опубликовать заявку"}
         </button>

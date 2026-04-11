@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Home, ClipboardList, MessageCircle, User, FolderOpen } from "lucide-react";
 
 interface DesktopSidebarProps {
@@ -11,7 +12,7 @@ interface DesktopSidebarProps {
 const Badge = ({ count }: { count: number }) => {
   if (count <= 0) return null;
   return (
-    <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold leading-none">
+    <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-foreground text-background text-[10px] font-bold leading-none">
       {count > 99 ? "99+" : count}
     </span>
   );
@@ -38,26 +39,27 @@ const DesktopSidebar = ({ active, onNavigate, isDispatcher, unreadMessages = 0, 
   return (
     <aside className="desktop-sidebar">
       <div className="px-5 py-6 mb-2">
-        <h1 className="text-xl font-bold text-primary tracking-tight">Gruzli</h1>
+        <h1 className="text-xl font-bold text-foreground tracking-tight">Gruzli</h1>
       </div>
-      <nav className="flex flex-col gap-1 px-3">
+      <nav className="flex flex-col gap-0.5 px-3">
         {tabs.map((tab) => {
           const isActive = active === tab.id;
           const Icon = tab.icon;
           return (
-            <button
+            <motion.button
               key={tab.id}
+              whileTap={{ scale: 0.97 }}
               onClick={() => onNavigate(tab.id)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-sm font-medium w-full text-left ${
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-150 text-sm font-medium w-full text-left ${
                 isActive
-                  ? "bg-primary/15 text-primary"
-                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  ? "bg-accent text-foreground"
+                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
               }`}
             >
-              <Icon size={20} strokeWidth={isActive ? 2.2 : 1.8} />
+              <Icon size={20} strokeWidth={isActive ? 2 : 1.6} />
               <span className="flex-1">{tab.label}</span>
               <Badge count={tab.badge} />
-            </button>
+            </motion.button>
           );
         })}
       </nav>

@@ -17,9 +17,9 @@ const PushNotificationBanner = () => {
   }
 
   return (
-    <div className="mx-5 mt-2 mb-3 rounded-2xl overflow-hidden neu-card p-4">
+    <div className="mx-5 mt-2 mb-3 rounded-2xl overflow-hidden bg-card border border-border p-4">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0">
+        <div className="w-10 h-10 rounded-xl bg-foreground flex items-center justify-center flex-shrink-0">
           <Bell size={18} className="text-primary-foreground" />
         </div>
         <div className="flex-1 min-w-0">
@@ -29,7 +29,7 @@ const PushNotificationBanner = () => {
           </p>
           <button
             onClick={requestPermission}
-            className="mt-2 px-4 py-2 rounded-xl text-xs font-bold gradient-primary text-primary-foreground active:scale-95 transition-transform"
+            className="mt-2 px-4 py-2 rounded-xl text-xs font-bold bg-foreground text-primary-foreground tap-scale"
           >
             Разрешить уведомления
           </button>
