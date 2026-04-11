@@ -176,7 +176,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
     saveSkills(userSkills.filter((s) => s !== skill));
   };
 
-  // Fetch real stats
+  // Fetch real stats with actual hours and earnings
   useEffect(() => {
     if (!user) return;
     const fetchStats = async () => {
@@ -188,23 +188,27 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
       const { data: weekData } = await supabase
         .from("job_responses")
-        .select("id, job_id, created_at")
+        .select("id, job_id, created_at, hours_worked, earned")
         .eq("worker_id", user.id)
         .eq("worker_status", "completed")
         .gte("created_at", weekStart.toISOString());
 
       const { data: monthData } = await supabase
         .from("job_responses")
-        .select("id, job_id, created_at")
+        .select("id, job_id, created_at, hours_worked, earned")
         .eq("worker_id", user.id)
         .eq("worker_status", "completed")
         .gte("created_at", monthStart.toISOString());
 
       if (weekData) {
-        setWeeklyStats({ orders: weekData.length, earned: weekData.length * 2000, hours: weekData.length * 4 });
+        const earned = weekData.reduce((s, r: any) => s + (r.earned || 0), 0);
+        const hours = weekData.reduce((s, r: any) => s + (r.hours_worked ? Number(r.hours_worked) : 0), 0);
+        setWeeklyStats({ orders: weekData.length, earned, hours: Math.round(hours * 10) / 10 });
       }
       if (monthData) {
-        setMonthlyStats({ orders: monthData.length, earned: monthData.length * 2000, hours: monthData.length * 4 });
+        const earned = monthData.reduce((s, r: any) => s + (r.earned || 0), 0);
+        const hours = monthData.reduce((s, r: any) => s + (r.hours_worked ? Number(r.hours_worked) : 0), 0);
+        setMonthlyStats({ orders: monthData.length, earned, hours: Math.round(hours * 10) / 10 });
       }
     };
     fetchStats();
@@ -480,9 +484,9 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
   // ─── WORKER PROFILE ───
   const statsData = {
-    today: { orders: profile?.completed_orders || 0, earned: `${profile?.balance || 0} ₽`, hours: "0ч" },
-    week: { orders: weeklyStats.orders, earned: `${weeklyStats.earned} ₽`, hours: `${weeklyStats.hours}ч` },
-    month: { orders: monthlyStats.orders, earned: `${monthlyStats.earned} ₽`, hours: `${monthlyStats.hours}ч` },
+    today: { orders: profile?.completed_orders || 0, earned: `${((profile as any)?.total_earned || 0).toLocaleString("ru-RU")} ₽`, hours: `${monthlyStats.hours}ч` },
+    week: { orders: weeklyStats.orders, earned: `${weeklyStats.earned.toLocaleString("ru-RU")} ₽`, hours: `${weeklyStats.hours}ч` },
+    month: { orders: monthlyStats.orders, earned: `${monthlyStats.earned.toLocaleString("ru-RU")} ₽`, hours: `${monthlyStats.hours}ч` },
   };
   const stats = statsData[statsPeriod];
 
@@ -498,9 +502,9 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
       {/* Hero earnings banner */}
       <div className="mx-5 mt-2 mb-4 rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(220 65% 58%), hsl(195 100% 50%))' }}>
         <div className="px-5 py-5">
-          <p className="text-primary-foreground/70 text-xs font-medium mb-1">Заработано</p>
-          <h2 className="text-primary-foreground text-4xl font-extrabold mb-1">{profile?.balance || 0} ₽</h2>
-          <p className="text-primary-foreground/60 text-xs">Баланс кошелька</p>
+          <p className="text-primary-foreground/70 text-xs font-medium mb-1">Заработано за всё время</p>
+          <h2 className="text-primary-foreground text-4xl font-extrabold mb-1">{((profile as any)?.total_earned || 0).toLocaleString("ru-RU")} ₽</h2>
+          <p className="text-primary-foreground/60 text-xs">За неделю: {weeklyStats.earned.toLocaleString("ru-RU")} ₽ · {weeklyStats.orders} заказов</p>
         </div>
       </div>
 
