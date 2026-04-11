@@ -1,12 +1,78 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Users, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Zap, MessageSquare, Phone } from "lucide-react";
+import { User, Users, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Zap, MessageSquare, Phone, Lock, Fingerprint, ShieldCheck, X } from "lucide-react";
 import { toast } from "sonner";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 
 type Mode = "welcome" | "login" | "register";
 type Role = "worker" | "dispatcher";
+
+const SecurityModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+  if (!open) return null;
+
+  const features = [
+    { icon: Lock, title: "Тройное шифрование", desc: "Все данные защищены тремя уровнями шифрования: AES-256, RSA и TLS 1.3. Даже при перехвате данные невозможно расшифровать." },
+    { icon: Fingerprint, title: "Многофакторная проверка", desc: "Каждый аккаунт проходит верификацию через email и телефон. Подозрительные входы блокируются автоматически." },
+    { icon: ShieldCheck, title: "Защита в реальном времени", desc: "Система мониторинга 24/7 отслеживает аномалии и предотвращает несанкционированный доступ к вашим данным." },
+  ];
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4"
+          onClick={onClose}
+        >
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <motion.div
+            initial={{ opacity: 0, y: 100 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 100 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-sm bg-card border border-border rounded-2xl p-5 z-10"
+          >
+            <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground">
+              <X size={18} />
+            </button>
+
+            <div className="flex items-center gap-2.5 mb-4">
+              <div className="w-9 h-9 rounded-xl bg-foreground/10 flex items-center justify-center">
+                <Shield size={18} className="text-foreground" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">PRO.SC</h3>
+                <p className="text-[11px] text-muted-foreground">Система защиты данных</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {features.map((f) => (
+                <div key={f.title} className="flex gap-3 p-3 rounded-xl bg-muted/30 border border-border/50">
+                  <div className="w-8 h-8 rounded-lg bg-foreground/5 flex items-center justify-center shrink-0 mt-0.5">
+                    <f.icon size={15} className="text-foreground/70" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">{f.title}</p>
+                    <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">{f.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 pt-3 border-t border-border/50 text-center">
+              <p className="text-[10px] text-muted-foreground">Ваши данные в безопасности с <span className="font-bold text-foreground">PRO.SC</span></p>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
 
 const features = [
   { icon: Briefcase, title: "Заказы", desc: "Находите работу мгновенно" },
