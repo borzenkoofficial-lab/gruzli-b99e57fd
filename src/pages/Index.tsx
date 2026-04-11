@@ -28,6 +28,7 @@ import SettingsScreen from "@/screens/SettingsScreen";
 import UserProfileScreen from "@/screens/UserProfileScreen";
 import NotificationsScreen from "@/screens/NotificationsScreen";
 import PremiumScreen from "@/screens/PremiumScreen";
+import DispatcherCabinetScreen from "@/screens/DispatcherCabinetScreen";
 import PullToRefresh from "@/components/PullToRefresh";
 
 import type { Tables } from "@/integrations/supabase/types";
@@ -69,6 +70,7 @@ const Index = () => {
   const [showChannel, setShowChannel] = useState(false);
   const [viewProfileUserId, setViewProfileUserId] = useState<string | null>(null);
   const [showPremium, setShowPremium] = useState(false);
+  const [showCabinet, setShowCabinet] = useState(false);
   const isDispatcher = role === "dispatcher" || role === "admin";
   const feedRefreshRef = useRef<(() => Promise<void>) | null>(null);
 
