@@ -67,15 +67,15 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
 
 
   return (
-    <div className="min-h-screen bg-background pb-8">
-      <div className="flex items-center gap-3 px-4 safe-top pb-4">
-        <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
+    <div className="fixed inset-0 bg-background flex flex-col" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
+      <div className="flex items-center gap-3 px-4 safe-top pb-4 flex-shrink-0">
+        <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 transition-all">
           <ArrowLeft size={18} className="text-foreground" />
         </button>
         <h1 className="text-lg font-bold text-foreground">Создать заявку</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="px-5 space-y-4 flex-1 overflow-y-auto pb-8">
+      <form onSubmit={handleSubmit} className="px-5 space-y-4 flex-1 overflow-y-auto pb-8 overscroll-contain">
         <Field label="Название заявки" icon={FileText}>
           <div className="bg-surface-1 border border-border rounded-xl px-4 py-3">
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Переезд 2-комнатной квартиры" className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none" required />
