@@ -180,12 +180,24 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
           </button>
         </div>
 
+        {/* Fee notice */}
+        <div className="bg-surface-1 border border-border rounded-xl px-4 py-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Стоимость публикации</span>
+            <span className="text-sm font-bold text-foreground">{JOB_POSTING_FEE} ₽</span>
+          </div>
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-xs text-muted-foreground">Баланс</span>
+            <span className={`text-sm font-bold ${(profile?.balance || 0) >= JOB_POSTING_FEE ? "text-foreground" : "text-destructive"}`}>{profile?.balance || 0} ₽</span>
+          </div>
+        </div>
+
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || (profile?.balance || 0) < JOB_POSTING_FEE}
           className="w-full py-4 rounded-2xl bg-foreground text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 tap-scale disabled:opacity-50"
         >
-          {loading ? <Loader2 size={18} className="animate-spin" /> : "Опубликовать заявку"}
+          {loading ? <Loader2 size={18} className="animate-spin" /> : `Опубликовать за ${JOB_POSTING_FEE} ₽`}
         </button>
       </form>
     </div>
