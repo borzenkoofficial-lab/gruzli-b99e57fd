@@ -51,7 +51,7 @@ const NewJobAlert = ({ job, queueSize = 0, onRespond, onDismiss }: NewJobAlertPr
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.85, y: 40 }}
           transition={{ type: "spring", damping: 20, stiffness: 300 }}
-          className="w-full max-w-sm neu-card rounded-3xl p-5 relative"
+          className="w-full max-w-sm bg-card border border-border rounded-3xl p-5 relative"
         >
           {/* Close */}
           <button onClick={onDismiss} className="absolute top-4 right-4 text-muted-foreground">
@@ -94,11 +94,11 @@ const NewJobAlert = ({ job, queueSize = 0, onRespond, onDismiss }: NewJobAlertPr
           <h3 className="text-base font-semibold text-foreground text-center mb-3">{job.title}</h3>
 
           {/* Pay */}
-          <div className="neu-inset rounded-xl px-3 py-2.5 mb-3">
+          <div className="bg-surface-1 border border-border rounded-xl px-3 py-2.5 mb-3">
             <div className="flex items-center gap-2">
               <Wallet size={14} className="text-primary" />
               <span className="text-xs text-muted-foreground">Заработок</span>
-              <span className="text-lg font-extrabold text-gradient-primary ml-auto">
+              <span className="text-lg font-extrabold text-bg-foreground ml-auto">
                 {totalPay.toLocaleString("ru-RU")} ₽
               </span>
             </div>
@@ -130,13 +130,13 @@ const NewJobAlert = ({ job, queueSize = 0, onRespond, onDismiss }: NewJobAlertPr
           <div className="flex gap-3">
             <button
               onClick={onDismiss}
-              className="flex-1 py-3 rounded-xl neu-raised-sm text-sm font-semibold text-muted-foreground active:neu-inset transition-all"
+              className="flex-1 py-3 rounded-xl bg-card border border-border text-sm font-semibold text-muted-foreground active:bg-surface-1 border border-border transition-all"
             >
               Пропустить
             </button>
             <button
               onClick={() => onRespond(job)}
-              className="flex-1 py-3 rounded-xl gradient-primary text-primary-foreground text-sm font-bold active:scale-95 transition-all"
+              className="flex-1 py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold active:scale-95 transition-all"
               style={{
                 boxShadow: "6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%), 0 4px 20px hsl(230 60% 58% / 0.35)",
               }}

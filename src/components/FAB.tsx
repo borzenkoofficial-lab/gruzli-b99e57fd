@@ -27,8 +27,8 @@ const FAB = ({ onOpenSupport }: FABProps) => {
   };
 
   const actions = [
-    { id: "team", icon: Users, label: "Нужна бригада", color: "gradient-primary" },
-    { id: "nearby", icon: MapPin, label: "Заказы рядом", color: "gradient-primary" },
+    { id: "team", icon: Users, label: "Нужна бригада", color: "bg-foreground" },
+    { id: "nearby", icon: MapPin, label: "Заказы рядом", color: "bg-foreground" },
     { id: "sos", icon: AlertTriangle, label: "SOS", color: "bg-destructive" },
   ];
 
@@ -52,11 +52,11 @@ const FAB = ({ onOpenSupport }: FABProps) => {
                 onClick={() => handleAction(action.id)}
                 className="flex items-center gap-3 whitespace-nowrap"
               >
-                <span className="text-xs font-semibold text-foreground px-3 py-1.5 rounded-lg neu-card">
+                <span className="text-xs font-semibold text-foreground px-3 py-1.5 rounded-lg bg-card border border-border">
                   {action.label}
                 </span>
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                  action.id === "sos" ? "bg-destructive" : "gradient-primary"
+                  action.id === "sos" ? "bg-destructive" : "bg-foreground"
                 }`} style={{
                   boxShadow: action.id === "sos"
                     ? '0 4px 20px hsl(0 72% 51% / 0.4)'
@@ -72,7 +72,7 @@ const FAB = ({ onOpenSupport }: FABProps) => {
 
       <button
         onClick={() => setOpen(!open)}
-        className="w-14 h-14 rounded-full gradient-primary flex items-center justify-center active:scale-90 transition-transform"
+        className="w-14 h-14 rounded-full bg-foreground flex items-center justify-center tap-scale"
         style={{
           boxShadow: '6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%), 0 4px 20px hsl(230 60% 58% / 0.4)',
         }}
