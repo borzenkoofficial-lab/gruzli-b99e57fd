@@ -736,6 +736,10 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
       <div className="flex-1 overflow-y-auto overscroll-contain pb-28">
         <div className="px-5 space-y-2">
           <MenuItem icon={User} label="Профиль" desc="Имя, телефон, фото" onClick={() => setSection("profile")} />
+          {role === "worker" && onOpenPremium && (
+            <MenuItem icon={Crown} label="Premium" desc="Безлимитные заказы и приоритет" onClick={onOpenPremium} badge={profile?.is_premium ? "✓" : ""} />
+          )}
+          <MenuItem icon={BadgeCheck} label="Верификация" desc={profile?.verified ? "Аккаунт верифицирован ✓" : "Подтвердить личность"} onClick={() => setSection("verification")} badge={profile?.verified ? "✓" : ""} />
           <MenuItem icon={Bell} label="Уведомления" desc="Push, звуки, email" onClick={() => setSection("notifications")} />
           <MenuItem icon={Shield} label="Безопасность" desc="Пароль, сессия, удаление" onClick={() => setSection("security")} />
           <MenuItem icon={Palette} label="Оформление" desc="Тема приложения" onClick={() => setSection("appearance")} />
