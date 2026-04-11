@@ -28,17 +28,51 @@ const plans = [
 const PremiumScreen = ({ onBack, onOpenSupport }: PremiumScreenProps) => {
   const { user, profile } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState("quarter");
+  const [purchasing, setPurchasing] = useState(false);
   const isPremium = profile?.is_premium;
 
-  const handlePurchase = () => {
+  const handlePurchase = async () => {
     const plan = plans.find((p) => p.id === selectedPlan);
-    if (!plan || !user) return;
+    if (!plan || !user || !profile) return;
 
-    onOpenSupport?.(
-      `⭐ Заявка на Premium подписку\n\nПлан: ${plan.label} — ${plan.price} ₽\nID: ${profile?.display_id || user.id.slice(0, 8).toUpperCase()}\nИмя: ${profile?.full_name || "—"}\n\nПрошу активировать Premium подписку.`
-    );
-    toast.success("Заявка отправлена администратору!");
-    onBack();
+    const balance = profile.balance || 0;
+    if (balance < plan.price) {
+      toast.error(`Недостаточно средств. Нужно ${plan.price} ₽, на балансе ${balance} ₽`);
+      return;
+    }
+
+    setPurchasing(true);
+    // Deduct from wallet
+    const { error: balanceError } = await supabase
+      .from("profiles")
+      .update({ balance: balance - plan.price })
+      .eq("user_id", user.id);
+
+    if (balanceError) {
+      toast.error("Ошибка списания");
+      setPurchasing(false);
+      return;
+    }
+
+    // Calculate premium_until
+    const now = new Date();
+    const daysMap: Record<string, number> = { month: 30, quarter: 90, year: 365 };
+    const premiumUntil = new Date(now.getTime() + (daysMap[plan.id] || 30) * 86400000).toISOString();
+
+    const { error: premiumError } = await supabase
+      .from("profiles")
+      .update({ is_premium: true, premium_until: premiumUntil })
+      .eq("user_id", user.id);
+
+    if (premiumError) {
+      toast.error("Ошибка активации Premium");
+      setPurchasing(false);
+      return;
+    }
+
+    toast.success(`Premium активирован на ${plan.label}! 🎉`);
+    setPurchasing(false);
+    setTimeout(() => window.location.reload(), 1000);
   };
 
   return (
