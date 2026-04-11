@@ -280,7 +280,7 @@ const Index = () => {
             {isDispatcher ? (
               <DispatcherFeedScreen onCreateJob={() => setShowCreateJob(true)} onViewResponses={setViewResponsesJob} onRefreshRef={feedRefreshRef} />
             ) : (
-              <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onRefreshRef={feedRefreshRef} />
+              <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
             )}
           </PullToRefresh>
         ) : (
