@@ -19,8 +19,10 @@ const Field = ({ label, icon: Icon, children }: { label: string; icon: any; chil
   </div>
 );
 
+const JOB_POSTING_FEE = 20;
+
 const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -41,7 +43,26 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
       return;
     }
 
+    const balance = profile?.balance || 0;
+    if (balance < JOB_POSTING_FEE) {
+      toast.error(`Недостаточно средств. Нужно ${JOB_POSTING_FEE} ₽, на балансе ${balance} ₽`);
+      return;
+    }
+
     setLoading(true);
+
+    // Deduct fee
+    const { error: feeError } = await supabase
+      .from("profiles")
+      .update({ balance: balance - JOB_POSTING_FEE })
+      .eq("user_id", user.id);
+
+    if (feeError) {
+      toast.error("Ошибка списания");
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.from("jobs").insert({
       dispatcher_id: user.id,
       title: title.trim(),
