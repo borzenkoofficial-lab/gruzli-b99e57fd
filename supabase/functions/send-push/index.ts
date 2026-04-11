@@ -53,7 +53,7 @@ async function sendProgressierPush(params: {
   }
 
   try {
-    const res = await fetch("https://progressier.com/send-push-notification", {
+    const res = await fetch("https://progressier.app/jWxTg8Xf6DGKt3JsinXm/send", {
       method: "POST",
       headers: {
         "authorization": `Bearer ${apiKey}`,
