@@ -22,11 +22,12 @@ const passwordSchema = z.object({
 
 interface SettingsScreenProps {
   onBack: () => void;
+  onOpenPremium?: () => void;
 }
 
-type Section = "main" | "profile" | "notifications" | "security" | "appearance" | "blocked" | "about" | "language" | "storage";
+type Section = "main" | "profile" | "notifications" | "security" | "appearance" | "blocked" | "about" | "language" | "storage" | "verification";
 
-const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
+const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   const { user, profile, signOut } = useAuth();
   const [pushPermission, setPushPermission] = useState<NotificationPermission | "unsupported">("default");
   const [pushLoading, setPushLoading] = useState(false);
