@@ -1,5 +1,4 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
-import webpush from "npm:web-push@3.6.7";
 import { z } from "npm:zod@3.25.76";
 
 const corsHeaders = {
@@ -24,67 +23,54 @@ const RequestSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
-type PushSubscriptionRow = {
-  id: string;
-  endpoint: string;
-  p256dh: string;
-  auth: string;
-};
+const APP_URL = "https://gruzli.lovable.app";
 
-function toBase64Url(value: string) {
-  return value.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-}
+async function sendProgressierPush(params: {
+  recipientEmail?: string;
+  broadcastAll?: boolean;
+  title: string;
+  body: string;
+  url: string;
+}) {
+  const apiKey = Deno.env.get("PROGRESSIER_API_KEY");
+  if (!apiKey) {
+    console.error("PROGRESSIER_API_KEY not set");
+    return { ok: false, error: "missing_api_key" };
+  }
 
-async function sendWebPush(
-  subscription: PushSubscriptionRow,
-  payload: string,
-) {
-  return await webpush.sendNotification(
-    {
-      endpoint: subscription.endpoint,
-      keys: {
-        p256dh: toBase64Url(subscription.p256dh),
-        auth: toBase64Url(subscription.auth),
+  const payload: Record<string, any> = {
+    title: params.title,
+    body: params.body,
+    url: params.url,
+  };
+
+  if (params.broadcastAll) {
+    payload.recipients = { all: true };
+  } else if (params.recipientEmail) {
+    payload.recipients = { email: params.recipientEmail };
+  } else {
+    return { ok: false, error: "no_recipient" };
+  }
+
+  try {
+    const res = await fetch("https://progressier.com/send-push-notification", {
+      method: "POST",
+      headers: {
+        "authorization": `Bearer ${apiKey}`,
+        "content-type": "application/json",
       },
-    },
-    payload,
-  );
-}
+      body: JSON.stringify(payload),
+    });
 
-async function sendEmailNotifications(
-  supabase: any,
-  targetUserIds: string[],
-  templateName: string,
-  templateData: Record<string, any>,
-  idempotencyPrefix: string,
-) {
-  if (targetUserIds.length === 0) return;
-
-  // Get emails from auth.users via profiles
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("user_id")
-    .in("user_id", targetUserIds);
-
-  if (!profiles || profiles.length === 0) return;
-
-  // Get emails from auth.users
-  for (const profile of profiles) {
-    try {
-      const { data: userData } = await supabase.auth.admin.getUserById(profile.user_id);
-      if (!userData?.user?.email) continue;
-
-      await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName,
-          recipientEmail: userData.user.email,
-          idempotencyKey: `${idempotencyPrefix}-${profile.user_id}`,
-          templateData,
-        },
-      });
-    } catch (err) {
-      console.error(`Email send error for user ${profile.user_id}:`, err);
+    const text = await res.text();
+    if (!res.ok) {
+      console.error(`Progressier push failed [${res.status}]: ${text}`);
+      return { ok: false, error: text };
     }
+    return { ok: true };
+  } catch (err) {
+    console.error("Progressier fetch error:", err);
+    return { ok: false, error: String(err) };
   }
 }
 
@@ -108,115 +94,82 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY")!;
-    const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY")!;
-
     const supabase = createClient(supabaseUrl, serviceRoleKey);
-    webpush.setVapidDetails(
-      "mailto:push@gruzli.app",
-      vapidPublicKey,
-      vapidPrivateKey,
-    );
 
-    let title = "";
-    let messageBody = "";
-    let targetUserIds: string[] = [];
-    const notificationData: Record<string, string> = { type };
+    let sent = 0;
+    let failed = 0;
 
     if (type === "new_job") {
-      title = `🆕 Новый заказ: ${body.title}`;
-      messageBody = `${body.hourly_rate}₽/ч · ${body.address || "Адрес не указан"}`;
-      if (body.job_id) {
-        notificationData.job_id = body.job_id;
-      }
+      const title = `🆕 Новый заказ: ${body.title}`;
+      const messageBody = `${body.hourly_rate}₽/ч · ${body.address || "Адрес не указан"}`;
+      const url = body.job_id ? `${APP_URL}/job/${body.job_id}` : APP_URL;
 
-      const { data: workers } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "worker");
+      // Broadcast to all subscribers
+      const result = await sendProgressierPush({
+        broadcastAll: true,
+        title,
+        body: messageBody,
+        url,
+      });
 
-      targetUserIds = (workers || []).map((w: any) => w.user_id);
+      if (result.ok) sent++;
+      else failed++;
     } else if (type === "new_message") {
-      notificationData.conversation_id = body.conversation_id;
-
-      const { data: participants } = await supabase
-        .from("conversation_participants")
-        .select("user_id")
-        .eq("conversation_id", body.conversation_id)
-        .neq("user_id", body.sender_id);
-
-      targetUserIds = (participants || []).map((p: any) => p.user_id);
-
+      // Get sender name
       const { data: senderProfile } = await supabase
         .from("profiles")
         .select("full_name")
         .eq("user_id", body.sender_id)
         .single();
 
-      title = `💬 ${senderProfile?.full_name || "Новое сообщение"}`;
-      messageBody = body.text || "Медиа-сообщение";
-    }
+      const senderName = senderProfile?.full_name || "Новое сообщение";
+      const title = `💬 ${senderName}`;
+      const messageBody = body.text || "Медиа-сообщение";
+      const url = `${APP_URL}/chat/${body.conversation_id}`;
 
-    if (targetUserIds.length === 0) {
-      return new Response(JSON.stringify({ sent: 0 }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+      // Get recipient user IDs (all participants except sender)
+      const { data: participants } = await supabase
+        .from("conversation_participants")
+        .select("user_id")
+        .eq("conversation_id", body.conversation_id)
+        .neq("user_id", body.sender_id);
 
-    // Send push notifications
-    const { data: subscriptions } = await supabase
-      .from("push_subscriptions")
-      .select("*")
-      .in("user_id", targetUserIds);
+      const targetUserIds = (participants || []).map((p: any) => p.user_id);
 
-    const payload = JSON.stringify({
-      title,
-      body: messageBody,
-      ...notificationData,
-    });
+      // Get emails for each recipient and send individual pushes
+      for (const userId of targetUserIds) {
+        try {
+          const { data: userData } = await supabase.auth.admin.getUserById(userId);
+          if (!userData?.user?.email) {
+            failed++;
+            continue;
+          }
 
-    let sent = 0;
-    let failed = 0;
+          const result = await sendProgressierPush({
+            recipientEmail: userData.user.email,
+            title,
+            body: messageBody,
+            url,
+          });
 
-    for (const sub of subscriptions || []) {
-      try {
-        const res = await sendWebPush(sub as PushSubscriptionRow, payload);
-
-        if (res.statusCode === 201 || res.statusCode === 200) {
-          sent++;
-        } else if (res.statusCode === 410 || res.statusCode === 404) {
-          await supabase
-            .from("push_subscriptions")
-            .delete()
-            .eq("id", sub.id);
+          if (result.ok) sent++;
+          else failed++;
+        } catch (err) {
+          console.error(`Push error for user ${userId}:`, err);
           failed++;
-        } else {
-          failed++;
-          console.error(`Push failed for ${sub.endpoint}: ${res.statusCode}`);
         }
-      } catch (err) {
-        failed++;
-        const statusCode = typeof err === "object" && err !== null && "statusCode" in err
-          ? String((err as { statusCode?: number }).statusCode)
-          : "unknown";
-        const bodyText = typeof err === "object" && err !== null && "body" in err
-          ? String((err as { body?: string }).body)
-          : String(err);
-
-        if (statusCode === "404" || statusCode === "410") {
-          await supabase
-            .from("push_subscriptions")
-            .delete()
-            .eq("id", sub.id);
-        }
-
-        console.error(`Push error [${statusCode}]: ${bodyText}`);
       }
     }
 
-    // Send email notifications (fire-and-forget, don't block push response)
+    // Also send email notifications
     try {
       if (type === "new_job") {
+        const { data: workers } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "worker");
+
+        const targetUserIds = (workers || []).map((w: any) => w.user_id);
         await sendEmailNotifications(
           supabase,
           targetUserIds,
@@ -229,17 +182,25 @@ Deno.serve(async (req) => {
           `new-job-email-${body.job_id || Date.now()}`,
         );
       } else if (type === "new_message") {
-        const senderName = (() => {
-          // Already fetched above
-          return title.replace("💬 ", "");
-        })();
+        const { data: participants } = await supabase
+          .from("conversation_participants")
+          .select("user_id")
+          .eq("conversation_id", body.conversation_id)
+          .neq("user_id", body.sender_id);
+
+        const targetUserIds = (participants || []).map((p: any) => p.user_id);
+        const { data: senderProfile } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("user_id", body.sender_id)
+          .single();
 
         await sendEmailNotifications(
           supabase,
           targetUserIds,
           "new-message-notification",
           {
-            senderName,
+            senderName: senderProfile?.full_name || "Пользователь",
             messageText: body.text || "Медиа-сообщение",
           },
           `new-msg-email-${body.conversation_id}-${Date.now()}`,
@@ -260,3 +221,31 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+async function sendEmailNotifications(
+  supabase: any,
+  targetUserIds: string[],
+  templateName: string,
+  templateData: Record<string, any>,
+  idempotencyPrefix: string,
+) {
+  if (targetUserIds.length === 0) return;
+
+  for (const userId of targetUserIds) {
+    try {
+      const { data: userData } = await supabase.auth.admin.getUserById(userId);
+      if (!userData?.user?.email) continue;
+
+      await supabase.functions.invoke("send-transactional-email", {
+        body: {
+          templateName,
+          recipientEmail: userData.user.email,
+          idempotencyKey: `${idempotencyPrefix}-${userId}`,
+          templateData,
+        },
+      });
+    } catch (err) {
+      console.error(`Email send error for user ${userId}:`, err);
+    }
+  }
+}
