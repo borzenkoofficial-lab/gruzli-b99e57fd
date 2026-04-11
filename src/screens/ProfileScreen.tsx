@@ -14,6 +14,7 @@ interface ProfileScreenProps {
   onOpenNotifications?: () => void;
   onOpenSupport?: (prefillMessage?: string) => void;
   onOpenPremium?: () => void;
+  onOpenCabinet?: () => void;
 }
 
 interface Review {
@@ -114,7 +115,7 @@ const AvatarWithUpload = ({ profile, user, editable = false }: { profile: any; u
   );
 };
 
-const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onOpenPremium }: ProfileScreenProps) => {
+const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onOpenPremium, onOpenCabinet }: ProfileScreenProps) => {
   const { user, profile, role, signOut } = useAuth();
   const [availability, setAvailability] = useState<boolean[]>([true, true, true, false, true, true, false]);
   const [statsPeriod, setStatsPeriod] = useState<"today" | "week" | "month">("today");
@@ -451,6 +452,11 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
           {/* Menu */}
           <div className="px-5 space-y-2">
+            <button onClick={onOpenCabinet} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-foreground text-primary-foreground tap-scale transition-colors mb-2">
+              <Briefcase size={18} />
+              <span className="text-sm font-bold flex-1 text-left">Кабинет диспетчера</span>
+              <ChevronRight size={16} className="opacity-60" />
+            </button>
             <button onClick={() => onOpenSupport?.()} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border tap-scale transition-colors">
               <Headphones size={18} className="text-primary" />
               <span className="text-sm font-medium text-foreground flex-1 text-left">Тех. поддержка</span>
