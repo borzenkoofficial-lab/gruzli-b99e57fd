@@ -37,7 +37,6 @@
 
     --radius: 0.75rem;
     --bottom-nav-height: 80px;
-    --app-height: 100vh;
 
     /* Surfaces — subtle elevation */
     --surface-1: 0 0% 7%;
@@ -123,12 +122,6 @@
     --sidebar-accent-foreground: 0 0% 9%;
     --sidebar-border: 0 0% 90%;
     --sidebar-ring: 0 0% 60%;
-  }
-}
-
-@supports (height: 100dvh) {
-  :root {
-    --app-height: 100dvh;
   }
 }
 
