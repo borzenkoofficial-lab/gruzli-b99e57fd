@@ -284,6 +284,45 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
 
   // Notifications section
   if (section === "notifications") {
+    const handleEnablePush = async () => {
+      setPushLoading(true);
+      try {
+        const permission = await Notification.requestPermission();
+        setPushPermission(permission);
+        if (permission === "granted") {
+          // Progressier handles subscription automatically
+          if (window.progressier && user?.email) {
+            window.progressier.add({ email: user.email, id: user.id });
+          }
+          toast.success("Push-уведомления включены");
+        } else if (permission === "denied") {
+          toast.error("Уведомления заблокированы в настройках браузера");
+        }
+      } catch (err) {
+        console.error("Push setup failed:", err);
+        toast.error("Не удалось включить уведомления");
+      } finally {
+        setPushLoading(false);
+      }
+    };
+
+    const handleDisablePush = async () => {
+      setPushLoading(true);
+      try {
+        if (window.progressier) {
+          await window.progressier.unsubscribe();
+        }
+        toast.success("Push-уведомления отключены");
+        setPushPermission("default");
+      } catch (err) {
+        console.error("Unsubscribe failed:", err);
+      } finally {
+        setPushLoading(false);
+      }
+    };
+
+    const currentPermission = typeof Notification !== "undefined" ? Notification.permission : "unsupported";
+
     return (
       <ScrollWrapper title="Уведомления" goBack={() => setSection("main")}>
         <div className="px-5 space-y-4">
@@ -292,25 +331,25 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
               <div>
                 <p className="text-sm font-semibold text-foreground">Push-уведомления</p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {permissionState === "unsupported" ? "❌ Не поддерживается" : permissionState === "granted" ? (isSubscribed ? "✅ Включены" : "⏳ Подключение...") : permissionState === "denied" ? "❌ Заблокированы" : "Не включены"}
+                  {currentPermission === "granted" ? "✅ Включены" : currentPermission === "denied" ? "❌ Заблокированы" : "Не включены"}
                 </p>
               </div>
-              {permissionState === "default" && (
-                <button onClick={requestPermission} disabled={pushLoading} className="px-4 py-2 rounded-xl bg-foreground text-primary-foreground text-xs font-bold disabled:opacity-50">
+              {currentPermission === "default" && (
+                <button onClick={handleEnablePush} disabled={pushLoading} className="px-4 py-2 rounded-xl bg-foreground text-primary-foreground text-xs font-bold disabled:opacity-50">
                   {pushLoading ? <Loader2 size={14} className="animate-spin" /> : "Включить"}
                 </button>
               )}
-              {permissionState === "granted" && isSubscribed && (
-                <button onClick={unsubscribe} disabled={pushLoading} className="px-4 py-2 rounded-xl bg-destructive/10 text-destructive text-xs font-bold disabled:opacity-50">
+              {currentPermission === "granted" && (
+                <button onClick={handleDisablePush} disabled={pushLoading} className="px-4 py-2 rounded-xl bg-destructive/10 text-destructive text-xs font-bold disabled:opacity-50">
                   {pushLoading ? <Loader2 size={14} className="animate-spin" /> : "Отключить"}
                 </button>
               )}
             </div>
           </div>
 
-          {permissionState === "denied" && (
+          {currentPermission === "denied" && (
             <div className="bg-card border border-border rounded-2xl p-4">
-              <p className="text-xs text-muted-foreground">Push-уведомления заблокированы в настройках браузера.</p>
+              <p className="text-xs text-muted-foreground">Push-уведомления заблокированы в настройках браузера. Разрешите их в настройках сайта.</p>
             </div>
           )}
 
