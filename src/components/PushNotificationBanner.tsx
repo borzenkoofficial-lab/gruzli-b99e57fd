@@ -1,20 +1,25 @@
 import { Bell, X } from "lucide-react";
 import { useState } from "react";
-import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PushNotificationBanner = () => {
-  const { permissionState, isSubscribed, requestPermission } = usePushNotifications();
+  const { user } = useAuth();
   const [dismissed, setDismissed] = useState(false);
 
+  const isSupported = typeof Notification !== "undefined" && "serviceWorker" in navigator;
+  const permission = isSupported ? Notification.permission : "denied";
+
   // Don't show if unsupported, already granted, denied, or dismissed
-  if (permissionState === "unsupported" || permissionState === "denied" || isSubscribed || dismissed) {
+  if (!isSupported || permission !== "default" || dismissed) {
     return null;
   }
 
-  // Show only if permission is "default" (not yet asked)
-  if (permissionState !== "default") {
-    return null;
-  }
+  const handleEnable = async () => {
+    const result = await Notification.requestPermission();
+    if (result === "granted" && window.progressier && user?.email) {
+      window.progressier.add({ email: user.email, id: user.id });
+    }
+  };
 
   return (
     <div className="mx-5 mt-2 mb-3 rounded-2xl overflow-hidden bg-card border border-border p-4">
@@ -28,7 +33,7 @@ const PushNotificationBanner = () => {
             Получайте мгновенные уведомления о новых заказах и сообщениях
           </p>
           <button
-            onClick={requestPermission}
+            onClick={handleEnable}
             className="mt-2 px-4 py-2 rounded-xl text-xs font-bold bg-foreground text-primary-foreground tap-scale"
           >
             Разрешить уведомления
