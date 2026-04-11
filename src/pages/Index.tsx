@@ -167,7 +167,7 @@ const Index = () => {
       );
     }
     if (showSettings) {
-      return <SettingsScreen onBack={() => setShowSettings(false)} />;
+      return <SettingsScreen onBack={() => setShowSettings(false)} onOpenPremium={() => { setShowSettings(false); setShowPremium(true); }} />;
     }
     if (showNotifications) {
       return <NotificationsScreen onBack={() => setShowNotifications(false)} />;
@@ -223,7 +223,7 @@ const Index = () => {
     if (showNotifications) return <NotificationsScreen onBack={() => setShowNotifications(false)} />;
     if (showPremium) return <PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, msg); }} />;
     if (showChannel) return <ChannelScreen onBack={() => setShowChannel(false)} />;
-    if (showSettings) return <SettingsScreen onBack={() => setShowSettings(false)} />;
+    if (showSettings) return <SettingsScreen onBack={() => setShowSettings(false)} onOpenPremium={() => { setShowSettings(false); setShowPremium(true); }} />;
     if (showCabinet) {
       return (
         <DispatcherCabinetScreen
