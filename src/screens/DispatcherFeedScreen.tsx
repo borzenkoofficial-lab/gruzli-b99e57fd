@@ -82,7 +82,7 @@ const DispatcherFeedScreen = ({ onCreateJob, onViewResponses, onRefreshRef }: Di
       <div className="px-5 pb-5">
         <button
           onClick={onCreateJob}
-          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl gradient-primary text-primary-foreground font-bold text-sm active:scale-95 transition-transform"
+          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-foreground text-primary-foreground font-bold text-sm tap-scale"
         >
           <Plus size={18} /> Создать заявку
         </button>
@@ -125,7 +125,7 @@ const DispatcherFeedScreen = ({ onCreateJob, onViewResponses, onRefreshRef }: Di
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="neu-card rounded-2xl p-4"
+              className="bg-card border border-border rounded-2xl p-4"
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
@@ -160,23 +160,23 @@ const DispatcherFeedScreen = ({ onCreateJob, onViewResponses, onRefreshRef }: Di
                 <span className="flex items-center gap-1"><Users size={11} /> {job.workers_needed} чел.</span>
               </div>
 
-              <div className="neu-inset rounded-xl px-3 py-2.5 mb-3">
+              <div className="bg-surface-1 border border-border rounded-xl px-3 py-2.5 mb-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">Оплата</span>
-                  <span className="text-lg font-extrabold text-gradient-primary">{job.hourly_rate} ₽/час</span>
+                  <span className="text-lg font-extrabold text-bg-foreground">{job.hourly_rate} ₽/час</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => onViewResponses(job)}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl gradient-primary text-primary-foreground text-sm font-semibold active:scale-95 transition-transform"
+                  className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-semibold tap-scale"
                 >
                   <Eye size={14} /> Отклики ({job.response_count})
                 </button>
                 <button
                   onClick={() => handleDelete(job.id)}
-                  className="w-12 h-12 rounded-xl neu-raised flex items-center justify-center active:neu-inset transition-all"
+                  className="w-12 h-12 rounded-xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all"
                 >
                   <Trash2 size={16} className="text-destructive" />
                 </button>

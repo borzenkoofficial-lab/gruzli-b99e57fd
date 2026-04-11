@@ -201,7 +201,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   }) => (
     <div className="mb-4">
       <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">{label}</label>
-      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full neu-inset rounded-2xl py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none" />
+      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full bg-surface-1 border border-border rounded-2xl py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none" />
       {error && <p className="text-xs text-destructive mt-1">{error}</p>}
     </div>
   );
@@ -209,8 +209,8 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   const MenuItem = ({ icon: Icon, label, desc, onClick, destructive, badge }: {
     icon: any; label: string; desc: string; onClick: () => void; destructive?: boolean; badge?: string;
   }) => (
-    <button onClick={onClick} className="w-full flex items-center gap-3 p-4 rounded-2xl neu-flat active:neu-inset transition-all">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${destructive ? "bg-destructive/10" : "neu-raised"}`}>
+    <button onClick={onClick} className="w-full flex items-center gap-3 p-4 rounded-2xl bg-card border border-border tap-scale transition-colors">
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${destructive ? "bg-destructive/10" : "bg-card border border-border"}`}>
         <Icon size={18} className={destructive ? "text-destructive" : "text-primary"} />
       </div>
       <div className="flex-1 text-left">
@@ -223,7 +223,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
 
   const Header = ({ title, onBack: goBack }: { title: string; onBack: () => void }) => (
     <div className="flex items-center gap-3 px-5 safe-top pb-5">
-      <button onClick={goBack} className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center active:neu-inset transition-all">
+      <button onClick={goBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
         <ArrowLeft size={18} className="text-foreground" />
       </button>
       <h1 className="text-xl font-bold text-foreground">{title}</h1>
@@ -256,9 +256,9 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
               {profile?.avatar_url ? (
                 <img src={profile.avatar_url} alt="" className="w-20 h-20 rounded-full object-cover" />
               ) : (
-                <div className="w-20 h-20 rounded-full gradient-primary flex items-center justify-center text-2xl font-bold text-primary-foreground">{initials}</div>
+                <div className="w-20 h-20 rounded-full bg-foreground flex items-center justify-center text-2xl font-bold text-primary-foreground">{initials}</div>
               )}
-              <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full gradient-primary flex items-center justify-center">
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-foreground flex items-center justify-center">
                 {avatarUploading ? <Loader2 size={14} className="text-primary-foreground animate-spin" /> : <Camera size={14} className="text-primary-foreground" />}
               </div>
               <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
@@ -270,10 +270,10 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
 
           <div className="mb-4">
             <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Email</label>
-            <div className="w-full neu-inset rounded-2xl py-3 px-4 text-sm text-muted-foreground">{user?.email || "—"}</div>
+            <div className="w-full bg-surface-1 border border-border rounded-2xl py-3 px-4 text-sm text-muted-foreground">{user?.email || "—"}</div>
           </div>
 
-          <button onClick={handleSaveProfile} disabled={saving} className="w-full py-3.5 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2">
+          <button onClick={handleSaveProfile} disabled={saving} className="w-full py-3.5 rounded-2xl bg-foreground text-primary-foreground text-sm font-bold tap-scale disabled:opacity-50 flex items-center justify-center gap-2">
             {saving ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
             {saving ? "Сохранение..." : "Сохранить"}
           </button>
@@ -287,7 +287,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
     return (
       <ScrollWrapper title="Уведомления" goBack={() => setSection("main")}>
         <div className="px-5 space-y-4">
-          <div className="neu-card rounded-2xl p-4">
+          <div className="bg-card border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-foreground">Push-уведомления</p>
@@ -296,7 +296,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
                 </p>
               </div>
               {permissionState === "default" && (
-                <button onClick={requestPermission} disabled={pushLoading} className="px-4 py-2 rounded-xl gradient-primary text-primary-foreground text-xs font-bold disabled:opacity-50">
+                <button onClick={requestPermission} disabled={pushLoading} className="px-4 py-2 rounded-xl bg-foreground text-primary-foreground text-xs font-bold disabled:opacity-50">
                   {pushLoading ? <Loader2 size={14} className="animate-spin" /> : "Включить"}
                 </button>
               )}
@@ -309,12 +309,12 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
           </div>
 
           {permissionState === "denied" && (
-            <div className="neu-card rounded-2xl p-4">
+            <div className="bg-card border border-border rounded-2xl p-4">
               <p className="text-xs text-muted-foreground">Push-уведомления заблокированы в настройках браузера.</p>
             </div>
           )}
 
-          <div className="neu-card rounded-2xl p-4 space-y-3">
+          <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">В приложении</p>
             {([
               { key: "sound" as const, label: "Звук", desc: "Звуковой сигнал", icon: Volume2 },
@@ -334,7 +334,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
             ))}
           </div>
 
-          <div className="neu-card rounded-2xl p-4 space-y-3">
+          <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Категории push</p>
             {([
               { key: "pushJobs" as const, label: "Новые заказы", desc: "Уведомления о новых заявках" },
@@ -351,11 +351,11 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
             ))}
           </div>
 
-          <div className="neu-card rounded-2xl p-4 space-y-3">
+          <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">📧 Email-уведомления</p>
             <div className="mb-2">
               <label className="text-xs text-muted-foreground mb-1.5 block">Почта для уведомлений</label>
-              <input type="email" value={notifSettings.notificationEmail} onChange={(e) => updateNotif("notificationEmail", e.target.value)} placeholder={user?.email || "email@example.com"} className="w-full neu-inset rounded-2xl py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none" />
+              <input type="email" value={notifSettings.notificationEmail} onChange={(e) => updateNotif("notificationEmail", e.target.value)} placeholder={user?.email || "email@example.com"} className="w-full bg-surface-1 border border-border rounded-2xl py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none" />
               <p className="text-[10px] text-muted-foreground mt-1">{notifSettings.notificationEmail ? `Уведомления на ${notifSettings.notificationEmail}` : `По умолчанию: ${user?.email || "ваш email"}`}</p>
             </div>
             {([
@@ -384,24 +384,24 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
     return (
       <ScrollWrapper title="Безопасность" goBack={() => setSection("main")}>
         <div className="px-5 space-y-4">
-          <div className="neu-card rounded-2xl p-4">
+          <div className="bg-card border border-border rounded-2xl p-4">
             <h3 className="text-sm font-bold text-foreground mb-4">Изменить пароль</h3>
             <InputField label="Новый пароль" value={password} onChange={setPassword} error={passwordErrors.password} placeholder="Минимум 6 символов" type="password" />
             <InputField label="Повторите пароль" value={confirmPassword} onChange={setConfirmPassword} error={passwordErrors.confirmPassword} placeholder="Ещё раз" type="password" />
-            <button onClick={handleChangePassword} disabled={changingPassword || !password} className="w-full py-3 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold active:scale-95 transition-transform disabled:opacity-50 flex items-center justify-center gap-2">
+            <button onClick={handleChangePassword} disabled={changingPassword || !password} className="w-full py-3 rounded-2xl bg-foreground text-primary-foreground text-sm font-bold tap-scale disabled:opacity-50 flex items-center justify-center gap-2">
               {changingPassword ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
               {changingPassword ? "Сохранение..." : "Изменить пароль"}
             </button>
           </div>
-          <div className="neu-card rounded-2xl p-4">
+          <div className="bg-card border border-border rounded-2xl p-4">
             <h3 className="text-sm font-bold text-foreground mb-2">Сессия</h3>
             <p className="text-xs text-muted-foreground mb-3">Email: {user?.email}<br />Последний вход: {user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString("ru-RU") : "—"}</p>
-            <button onClick={signOut} className="w-full py-3 rounded-2xl border border-destructive/30 text-destructive text-sm font-bold active:scale-95 transition-transform">Выйти из аккаунта</button>
+            <button onClick={signOut} className="w-full py-3 rounded-2xl border border-destructive/30 text-destructive text-sm font-bold tap-scale">Выйти из аккаунта</button>
           </div>
-          <div className="neu-card rounded-2xl p-4">
+          <div className="bg-card border border-border rounded-2xl p-4">
             <h3 className="text-sm font-bold text-destructive mb-2">Опасная зона</h3>
             <p className="text-xs text-muted-foreground mb-3">Удаление аккаунта необратимо.</p>
-            <button onClick={handleDeleteAccount} className="w-full py-3 rounded-2xl bg-destructive/10 text-destructive text-sm font-bold active:scale-95 transition-transform">Удалить аккаунт</button>
+            <button onClick={handleDeleteAccount} className="w-full py-3 rounded-2xl bg-destructive/10 text-destructive text-sm font-bold tap-scale">Удалить аккаунт</button>
           </div>
         </div>
       </ScrollWrapper>
@@ -413,11 +413,11 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
     return (
       <ScrollWrapper title="Оформление" goBack={() => setSection("main")}>
         <div className="px-5 space-y-4">
-          <div className="neu-card rounded-2xl p-4">
+          <div className="bg-card border border-border rounded-2xl p-4">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Тема</p>
             <div className="grid grid-cols-2 gap-3">
               {([{ id: "dark" as const, label: "Тёмная", emoji: "🌙" }, { id: "light" as const, label: "Светлая", emoji: "☀️" }]).map((t) => (
-                <button key={t.id} onClick={() => toggleTheme(t.id)} className={`py-4 rounded-2xl text-center transition-all ${theme === t.id ? "gradient-primary text-primary-foreground" : "neu-flat text-muted-foreground"}`}>
+                <button key={t.id} onClick={() => toggleTheme(t.id)} className={`py-4 rounded-2xl text-center transition-all ${theme === t.id ? "bg-foreground text-primary-foreground" : "bg-card text-muted-foreground"}`}>
                   <span className="text-2xl block mb-1">{t.emoji}</span>
                   <span className="text-xs font-semibold">{t.label}</span>
                 </button>
@@ -435,7 +435,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
       <ScrollWrapper title="Язык" goBack={() => setSection("main")}>
         <div className="px-5 space-y-3">
           {[{ id: "ru", label: "Русский", emoji: "🇷🇺" }, { id: "en", label: "English", emoji: "🇬🇧" }].map((lang) => (
-            <button key={lang.id} onClick={() => changeLanguage(lang.id)} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${language === lang.id ? "neu-card border border-primary/30" : "neu-flat"}`}>
+            <button key={lang.id} onClick={() => changeLanguage(lang.id)} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${language === lang.id ? "bg-card border border-border border border-primary/30" : "bg-card"}`}>
               <span className="text-2xl">{lang.emoji}</span>
               <span className={`text-sm font-semibold flex-1 text-left ${language === lang.id ? "text-primary" : "text-foreground"}`}>{lang.label}</span>
               {language === lang.id && <Check size={18} className="text-primary" />}
@@ -456,7 +456,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
           {loadingBlocked ? (
             <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-primary" /></div>
           ) : blockedUsers.length === 0 ? (
-            <div className="neu-card rounded-2xl p-6 text-center">
+            <div className="bg-card border border-border rounded-2xl p-6 text-center">
               <Ban size={32} className="text-muted-foreground mx-auto mb-3" />
               <p className="text-sm font-semibold text-foreground mb-1">Список пуст</p>
               <p className="text-xs text-muted-foreground">Вы никого не заблокировали</p>
@@ -464,12 +464,12 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
           ) : (
             <div className="space-y-2">
               {blockedUsers.map((bu) => (
-                <div key={bu.id} className="neu-card rounded-2xl p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full neu-raised-sm flex items-center justify-center text-xs font-bold text-muted-foreground">
+                <div key={bu.id} className="bg-card border border-border rounded-2xl p-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center text-xs font-bold text-muted-foreground">
                     {bu.full_name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
                   </div>
                   <span className="text-sm font-semibold text-foreground flex-1">{bu.full_name}</span>
-                  <button onClick={() => unblockUser(bu.id)} className="px-3 py-1.5 rounded-xl bg-destructive/10 text-destructive text-xs font-bold active:scale-95 transition-transform">
+                  <button onClick={() => unblockUser(bu.id)} className="px-3 py-1.5 rounded-xl bg-destructive/10 text-destructive text-xs font-bold tap-scale">
                     Разблокировать
                   </button>
                 </div>
@@ -487,9 +487,9 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
     return (
       <ScrollWrapper title="Данные и хранилище" goBack={() => setSection("main")}>
         <div className="px-5 space-y-4">
-          <div className="neu-card rounded-2xl p-5">
+          <div className="bg-card border border-border rounded-2xl p-5">
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-2xl neu-raised flex items-center justify-center">
+              <div className="w-14 h-14 rounded-2xl bg-card border border-border flex items-center justify-center">
                 <HardDrive size={24} className="text-primary" />
               </div>
               <div>
@@ -503,7 +503,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
             <p className="text-[10px] text-muted-foreground mt-2">Лимит ~5 МБ (localStorage)</p>
           </div>
 
-          <div className="neu-card rounded-2xl p-4 space-y-3">
+          <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Действия</p>
             <button onClick={clearCache} className="w-full flex items-center gap-3 p-3 rounded-xl active:bg-muted/50 transition-colors">
               <Trash2 size={16} className="text-destructive" />
@@ -514,7 +514,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
             </button>
           </div>
 
-          <div className="neu-card rounded-2xl p-4">
+          <div className="bg-card border border-border rounded-2xl p-4">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Что хранится</p>
             <div className="space-y-2">
               {[
@@ -543,8 +543,8 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
     return (
       <ScrollWrapper title="О приложении" goBack={() => setSection("main")}>
         <div className="px-5 space-y-4">
-          <div className="neu-card rounded-2xl p-6 text-center">
-            <div className="w-16 h-16 rounded-2xl gradient-primary flex items-center justify-center mx-auto mb-4">
+          <div className="bg-card border border-border rounded-2xl p-6 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-foreground flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl font-extrabold text-primary-foreground">G</span>
             </div>
             <h2 className="text-lg font-bold text-foreground">Gruzli</h2>
@@ -554,7 +554,7 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
             </p>
           </div>
 
-          <div className="neu-card rounded-2xl p-4 space-y-3">
+          <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
             <a href="https://gruzli.lovable.app" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 py-2">
               <Globe size={16} className="text-primary" />
               <span className="text-sm text-foreground">Веб-сайт</span>

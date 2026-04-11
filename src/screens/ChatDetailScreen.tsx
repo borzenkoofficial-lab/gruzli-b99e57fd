@@ -21,12 +21,12 @@ const ChatDetailScreen = ({ chat, onBack }: ChatDetailScreenProps) => {
     <div className="flex flex-col h-screen bg-background">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 safe-top pb-4">
-        <button onClick={onBack} className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center active:neu-inset transition-all">
+        <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
           <ArrowLeft size={18} className="text-foreground" />
         </button>
         <div className="relative flex-shrink-0">
           <div className={`w-11 h-11 rounded-full flex items-center justify-center text-xs font-semibold ${
-            chat.isGroup ? "gradient-primary text-primary-foreground" : "neu-raised text-muted-foreground"
+            chat.isGroup ? "bg-foreground text-primary-foreground" : "bg-card border border-border text-muted-foreground"
           }`}>
             {chat.avatar}
           </div>
@@ -41,13 +41,13 @@ const ChatDetailScreen = ({ chat, onBack }: ChatDetailScreenProps) => {
           </p>
         </div>
         <div className="flex gap-2">
-          <button className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center">
+          <button className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center">
             <Camera size={16} className="text-muted-foreground" />
           </button>
-          <button className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center">
+          <button className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center">
             <Video size={16} className="text-muted-foreground" />
           </button>
-          <button className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center">
+          <button className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center">
             <Phone size={16} className="text-muted-foreground" />
           </button>
         </div>
@@ -55,7 +55,7 @@ const ChatDetailScreen = ({ chat, onBack }: ChatDetailScreenProps) => {
 
       {/* "Show object" banner */}
       <div className="mx-4 mb-2">
-        <button className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl neu-raised-sm text-xs font-semibold text-primary active:neu-inset transition-all">
+        <button className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-card border border-border text-xs font-semibold text-primary active:bg-surface-1 border border-border transition-all">
           <Video size={14} /> Покажи объект — видеозвонок
         </button>
       </div>
@@ -77,13 +77,13 @@ const ChatDetailScreen = ({ chat, onBack }: ChatDetailScreenProps) => {
               )}
 
               {msg.text && (
-                <div className={`px-4 py-3 rounded-2xl ${msg.own ? "neu-flat rounded-br-md" : "neu-flat rounded-bl-md"}`}>
+                <div className={`px-4 py-3 rounded-2xl ${msg.own ? "bg-card rounded-br-md" : "bg-card rounded-bl-md"}`}>
                   <p className="text-sm text-foreground leading-relaxed">{msg.text}</p>
                 </div>
               )}
 
               {msg.image && (
-                <div className="relative w-52 h-40 rounded-2xl neu-card overflow-hidden">
+                <div className="relative w-52 h-40 rounded-2xl bg-card border border-border overflow-hidden">
                   <div className="absolute inset-0 bg-surface-4" />
                   <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -104,8 +104,8 @@ const ChatDetailScreen = ({ chat, onBack }: ChatDetailScreenProps) => {
               )}
 
               {msg.voice && (
-                <div className="flex items-center gap-2.5 px-3 py-3 rounded-2xl neu-flat min-w-[220px]">
-                  <button className="w-9 h-9 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
+                <div className="flex items-center gap-2.5 px-3 py-3 rounded-2xl bg-card min-w-[220px]">
+                  <button className="w-9 h-9 rounded-full bg-foreground flex items-center justify-center flex-shrink-0">
                     <Play size={14} className="text-primary-foreground ml-0.5" />
                   </button>
                   <div className="flex-1 flex items-center gap-[2px] h-7">
@@ -128,22 +128,22 @@ const ChatDetailScreen = ({ chat, onBack }: ChatDetailScreenProps) => {
       {/* Input */}
       <div className="px-4 pb-8 pt-3">
         {isRecording ? (
-          <div className="flex items-center gap-3 neu-inset rounded-2xl px-4 py-3">
+          <div className="flex items-center gap-3 bg-surface-1 border border-border rounded-2xl px-4 py-3">
             <div className="w-3 h-3 rounded-full bg-destructive animate-pulse" />
             <span className="text-sm text-muted-foreground flex-1">Запись голоса...</span>
-            <button onClick={() => setIsRecording(false)} className="px-4 py-2 rounded-xl gradient-primary text-xs font-semibold text-primary-foreground">
+            <button onClick={() => setIsRecording(false)} className="px-4 py-2 rounded-xl bg-foreground text-xs font-semibold text-primary-foreground">
               Отправить
             </button>
-            <button onClick={() => setIsRecording(false)} className="px-3 py-2 rounded-xl neu-raised-sm text-xs text-muted-foreground">
+            <button onClick={() => setIsRecording(false)} className="px-3 py-2 rounded-xl bg-card border border-border text-xs text-muted-foreground">
               ✕
             </button>
           </div>
         ) : (
           <div className="flex items-center gap-2.5">
-            <button className="w-11 h-11 rounded-xl neu-raised flex items-center justify-center active:neu-inset transition-all">
+            <button className="w-11 h-11 rounded-xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
               <Plus size={18} className="text-muted-foreground" />
             </button>
-            <div className="flex-1 flex items-center neu-inset rounded-2xl px-4 py-3">
+            <div className="flex-1 flex items-center bg-surface-1 border border-border rounded-2xl px-4 py-3">
               <input
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
@@ -154,14 +154,14 @@ const ChatDetailScreen = ({ chat, onBack }: ChatDetailScreenProps) => {
             {/* Big mic button */}
             <button
               onClick={() => setIsRecording(true)}
-              className="w-12 h-12 rounded-xl gradient-primary flex items-center justify-center active:scale-95 transition-transform"
+              className="w-12 h-12 rounded-xl bg-foreground flex items-center justify-center tap-scale"
               style={{
                 boxShadow: '6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%), 0 4px 20px hsl(230 60% 58% / 0.35)',
               }}
             >
               <Mic size={20} className="text-primary-foreground" />
             </button>
-            <button className="w-11 h-11 rounded-xl neu-raised flex items-center justify-center active:neu-inset transition-all">
+            <button className="w-11 h-11 rounded-xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
               <Send size={16} className="text-muted-foreground" />
             </button>
           </div>

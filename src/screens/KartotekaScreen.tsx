@@ -121,7 +121,7 @@ const KartotekaScreen = () => {
           </div>
           <button
             onClick={() => setShowForm(true)}
-            className="w-11 h-11 rounded-2xl gradient-primary flex items-center justify-center active:scale-95 transition-transform shadow-lg"
+            className="w-11 h-11 rounded-2xl bg-foreground flex items-center justify-center tap-scale shadow-lg"
           >
             <Plus size={18} className="text-primary-foreground" />
           </button>
@@ -137,7 +137,7 @@ const KartotekaScreen = () => {
             { label: "Не вышли", value: stats.noShows, color: "text-orange-500" },
             { label: "Плохая работа", value: stats.badWork, color: "text-yellow-500" },
           ].map((s) => (
-            <div key={s.label} className="flex-1 neu-card rounded-2xl p-2.5 text-center">
+            <div key={s.label} className="flex-1 bg-card border border-border rounded-2xl p-2.5 text-center">
               <p className={`text-lg font-extrabold ${s.color}`}>{s.value}</p>
               <p className="text-[9px] text-muted-foreground font-medium leading-tight">{s.label}</p>
             </div>
@@ -154,7 +154,7 @@ const KartotekaScreen = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Поиск по ФИО, телефону..."
-              className="w-full neu-inset rounded-2xl py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none"
+              className="w-full bg-surface-1 border border-border rounded-2xl py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none"
             />
             {search && (
               <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -165,8 +165,8 @@ const KartotekaScreen = () => {
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`w-11 h-11 rounded-2xl flex items-center justify-center transition-all ${
-              activeFilter ? "gradient-primary" : "neu-raised"
-            } active:neu-inset`}
+              activeFilter ? "bg-foreground" : "bg-card border border-border"
+            } active:bg-surface-1 border border-border`}
           >
             <SlidersHorizontal size={16} className={activeFilter ? "text-primary-foreground" : "text-muted-foreground"} />
           </button>
@@ -186,7 +186,7 @@ const KartotekaScreen = () => {
               <button
                 onClick={() => setActiveFilter(null)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                  !activeFilter ? "gradient-primary text-primary-foreground" : "neu-raised-sm text-muted-foreground"
+                  !activeFilter ? "bg-foreground text-primary-foreground" : "bg-card border border-border text-muted-foreground"
                 }`}
               >
                 Все
@@ -199,8 +199,8 @@ const KartotekaScreen = () => {
                     onClick={() => setActiveFilter(activeFilter === cat.id ? null : cat.id)}
                     className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                       activeFilter === cat.id
-                        ? "gradient-primary text-primary-foreground"
-                        : "neu-raised-sm text-muted-foreground"
+                        ? "bg-foreground text-primary-foreground"
+                        : "bg-card border border-border text-muted-foreground"
                     }`}
                   >
                     <Icon size={12} />
@@ -217,7 +217,7 @@ const KartotekaScreen = () => {
       {loading ? (
         <div className="px-5 space-y-3 pt-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="neu-card rounded-2xl p-4 animate-pulse">
+            <div key={i} className="bg-card border border-border rounded-2xl p-4 animate-pulse">
               <div className="flex gap-3">
                 <div className="w-14 h-14 rounded-xl bg-muted" />
                 <div className="flex-1 space-y-2">
@@ -254,18 +254,18 @@ const KartotekaScreen = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.03 }}
                 onClick={() => setViewEntry(entry)}
-                className="w-full neu-card rounded-2xl p-3.5 text-left active:neu-inset transition-all"
+                className="w-full bg-card border border-border rounded-2xl p-3.5 text-left active:bg-surface-1 border border-border transition-all"
               >
                 <div className="flex items-start gap-3">
                   {entry.photo_url ? (
                     <img
                       src={entry.photo_url}
                       alt={entry.full_name}
-                      className="w-13 h-13 rounded-xl object-cover neu-raised flex-shrink-0"
+                      className="w-13 h-13 rounded-xl object-cover bg-card border border-border flex-shrink-0"
                       style={{ width: 52, height: 52 }}
                     />
                   ) : (
-                    <div className="w-13 h-13 rounded-xl neu-raised flex items-center justify-center flex-shrink-0" style={{ width: 52, height: 52 }}>
+                    <div className="w-13 h-13 rounded-xl bg-card border border-border flex items-center justify-center flex-shrink-0" style={{ width: 52, height: 52 }}>
                       <User size={20} className="text-muted-foreground" />
                     </div>
                   )}
@@ -317,18 +317,18 @@ const EntryDetail = ({ entry, isOwner, onBack, onEdit, onDelete }: EntryDetailPr
   return (
     <div className="min-h-screen bg-background pb-8">
       <div className="flex items-center gap-3 px-4 safe-top pb-4">
-        <button onClick={onBack} className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center active:neu-inset transition-all">
+        <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
           <ArrowLeft size={18} className="text-foreground" />
         </button>
         <h1 className="text-lg font-bold text-foreground flex-1">Карточка</h1>
         {isOwner && (
           <div className="flex gap-2">
-            <button onClick={onEdit} className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center active:neu-inset transition-all">
+            <button onClick={onEdit} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
               <Edit3 size={16} className="text-primary" />
             </button>
             <button
               onClick={() => setConfirmDelete(true)}
-              className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center active:neu-inset transition-all"
+              className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all"
             >
               <Trash2 size={16} className="text-destructive" />
             </button>
@@ -338,12 +338,12 @@ const EntryDetail = ({ entry, isOwner, onBack, onEdit, onDelete }: EntryDetailPr
 
       {/* Photo + Name */}
       <div className="px-5">
-        <div className="neu-card rounded-2xl p-5 mb-4">
+        <div className="bg-card border border-border rounded-2xl p-5 mb-4">
           <div className="flex items-center gap-4">
             {entry.photo_url ? (
-              <img src={entry.photo_url} alt={entry.full_name} className="w-20 h-20 rounded-2xl object-cover neu-raised" />
+              <img src={entry.photo_url} alt={entry.full_name} className="w-20 h-20 rounded-2xl object-cover bg-card border border-border" />
             ) : (
-              <div className="w-20 h-20 rounded-2xl neu-raised flex items-center justify-center">
+              <div className="w-20 h-20 rounded-2xl bg-card border border-border flex items-center justify-center">
                 <User size={32} className="text-muted-foreground" />
               </div>
             )}
@@ -366,7 +366,7 @@ const EntryDetail = ({ entry, isOwner, onBack, onEdit, onDelete }: EntryDetailPr
 
         {/* Contact info */}
         {entry.phone && (
-          <div className="neu-card rounded-2xl p-4 mb-3">
+          <div className="bg-card border border-border rounded-2xl p-4 mb-3">
             <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-2">Контакты</p>
             <a href={`tel:${entry.phone}`} className="flex items-center gap-2.5 text-sm text-primary font-semibold">
               <Phone size={16} className="text-primary" />
@@ -377,7 +377,7 @@ const EntryDetail = ({ entry, isOwner, onBack, onEdit, onDelete }: EntryDetailPr
 
         {/* Description */}
         {entry.description && (
-          <div className="neu-card rounded-2xl p-4 mb-3">
+          <div className="bg-card border border-border rounded-2xl p-4 mb-3">
             <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-2">Описание проблемы</p>
             <p className="text-sm text-foreground leading-relaxed">{entry.description}</p>
           </div>
@@ -385,7 +385,7 @@ const EntryDetail = ({ entry, isOwner, onBack, onEdit, onDelete }: EntryDetailPr
 
         {/* Social links */}
         {entry.social_links && entry.social_links.length > 0 && (
-          <div className="neu-card rounded-2xl p-4 mb-3">
+          <div className="bg-card border border-border rounded-2xl p-4 mb-3">
             <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-2">Ссылки</p>
             <div className="space-y-2">
               {entry.social_links.map((link, li) => {
@@ -397,7 +397,7 @@ const EntryDetail = ({ entry, isOwner, onBack, onEdit, onDelete }: EntryDetailPr
                     href={link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl neu-raised-sm text-xs text-primary font-medium active:neu-inset transition-all"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border text-xs text-primary font-medium active:bg-surface-1 border border-border transition-all"
                   >
                     <Link2 size={13} />
                     {hostname}
@@ -409,7 +409,7 @@ const EntryDetail = ({ entry, isOwner, onBack, onEdit, onDelete }: EntryDetailPr
         )}
 
         {/* Meta */}
-        <div className="neu-card rounded-2xl p-4 mb-3">
+        <div className="bg-card border border-border rounded-2xl p-4 mb-3">
           <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-2">Информация</p>
           <div className="space-y-1.5 text-xs text-muted-foreground">
             <p>Добавлено: {new Date(entry.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })}</p>
@@ -427,7 +427,7 @@ const EntryDetail = ({ entry, isOwner, onBack, onEdit, onDelete }: EntryDetailPr
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9 }}
-              className="relative neu-card rounded-3xl p-6 max-w-sm w-full text-center space-y-4"
+              className="relative bg-card border border-border rounded-3xl p-6 max-w-sm w-full text-center space-y-4"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="mx-auto w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center">
@@ -436,10 +436,10 @@ const EntryDetail = ({ entry, isOwner, onBack, onEdit, onDelete }: EntryDetailPr
               <h3 className="text-lg font-bold text-foreground">Удалить запись?</h3>
               <p className="text-sm text-muted-foreground">Это действие нельзя отменить</p>
               <div className="flex gap-2">
-                <button onClick={() => setConfirmDelete(false)} className="flex-1 py-2.5 rounded-2xl neu-raised text-sm font-semibold text-muted-foreground">
+                <button onClick={() => setConfirmDelete(false)} className="flex-1 py-2.5 rounded-2xl bg-card border border-border text-sm font-semibold text-muted-foreground">
                   Отмена
                 </button>
-                <button onClick={onDelete} className="flex-1 py-2.5 rounded-2xl bg-destructive text-destructive-foreground text-sm font-bold active:scale-95 transition-transform">
+                <button onClick={onDelete} className="flex-1 py-2.5 rounded-2xl bg-destructive text-destructive-foreground text-sm font-bold tap-scale">
                   Удалить
                 </button>
               </div>
@@ -529,7 +529,7 @@ const KartotekaForm = ({ entry, onBack, onSaved }: KartotekaFormProps) => {
   return (
     <div className="min-h-screen bg-background pb-8">
       <div className="flex items-center gap-3 px-4 safe-top pb-4">
-        <button onClick={onBack} className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center active:neu-inset transition-all">
+        <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
           <ArrowLeft size={18} className="text-foreground" />
         </button>
         <h1 className="text-lg font-bold text-foreground flex-1">
@@ -538,7 +538,7 @@ const KartotekaForm = ({ entry, onBack, onSaved }: KartotekaFormProps) => {
         <button
           onClick={handleSave}
           disabled={!fullName.trim() || saving}
-          className="px-4 py-2.5 rounded-xl gradient-primary text-primary-foreground text-sm font-semibold active:scale-95 transition-transform disabled:opacity-50 flex items-center gap-1.5"
+          className="px-4 py-2.5 rounded-xl bg-foreground text-primary-foreground text-sm font-semibold tap-scale disabled:opacity-50 flex items-center gap-1.5"
         >
           {saving ? (
             <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
@@ -556,7 +556,7 @@ const KartotekaForm = ({ entry, onBack, onSaved }: KartotekaFormProps) => {
         <div className="flex justify-center">
           <button
             onClick={() => fileRef.current?.click()}
-            className="relative w-28 h-28 rounded-2xl neu-raised flex items-center justify-center overflow-hidden active:neu-inset transition-all group"
+            className="relative w-28 h-28 rounded-2xl bg-card border border-border flex items-center justify-center overflow-hidden active:bg-surface-1 border border-border transition-all group"
           >
             {photoUrl ? (
               <>
@@ -593,8 +593,8 @@ const KartotekaForm = ({ entry, onBack, onSaved }: KartotekaFormProps) => {
                   onClick={() => setCategory(cat.id)}
                   className={`flex items-center gap-2 p-3 rounded-2xl text-xs font-semibold transition-all ${
                     isActive
-                      ? "gradient-primary text-primary-foreground shadow-lg"
-                      : "neu-raised text-muted-foreground active:neu-inset"
+                      ? "bg-foreground text-primary-foreground shadow-lg"
+                      : "bg-card border border-border text-muted-foreground active:bg-surface-1 border border-border"
                   }`}
                 >
                   <Icon size={16} />
@@ -617,7 +617,7 @@ const KartotekaForm = ({ entry, onBack, onSaved }: KartotekaFormProps) => {
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Опишите что произошло: не вышел на смену, украл инструмент, выполнил работу некачественно..."
             rows={4}
-            className="w-full neu-inset rounded-2xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none resize-none leading-relaxed"
+            className="w-full bg-surface-1 border border-border rounded-2xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none resize-none leading-relaxed"
           />
         </div>
 
@@ -626,10 +626,10 @@ const KartotekaForm = ({ entry, onBack, onSaved }: KartotekaFormProps) => {
           <label className="text-xs font-semibold text-muted-foreground mb-2 block">Ссылки на соц. сети</label>
           {socialLinks.map((link, i) => (
             <div key={i} className="flex items-center gap-2 mb-2">
-              <div className="flex-1 neu-inset rounded-xl px-3 py-2.5 text-xs text-primary truncate">{link}</div>
+              <div className="flex-1 bg-surface-1 border border-border rounded-xl px-3 py-2.5 text-xs text-primary truncate">{link}</div>
               <button
                 onClick={() => setSocialLinks((prev) => prev.filter((_, idx) => idx !== i))}
-                className="w-9 h-9 rounded-xl neu-raised-sm flex items-center justify-center active:neu-inset transition-all"
+                className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all"
               >
                 <X size={13} className="text-destructive" />
               </button>
@@ -641,11 +641,11 @@ const KartotekaForm = ({ entry, onBack, onSaved }: KartotekaFormProps) => {
               onChange={(e) => setNewLink(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addLink())}
               placeholder="vk.com/username"
-              className="flex-1 neu-inset rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none"
+              className="flex-1 bg-surface-1 border border-border rounded-xl px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground outline-none"
             />
             <button
               onClick={addLink}
-              className="w-10 h-10 rounded-xl neu-raised flex items-center justify-center active:neu-inset transition-all"
+              className="w-10 h-10 rounded-xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all"
             >
               <Plus size={16} className="text-primary" />
             </button>
@@ -666,7 +666,7 @@ const FormField = ({ label, value, onChange, placeholder, type = "text" }: {
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full neu-inset rounded-2xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none"
+      className="w-full bg-surface-1 border border-border rounded-2xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground outline-none"
     />
   </div>
 );

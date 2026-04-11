@@ -58,7 +58,7 @@ const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Поиск диспетчера..."
-            className="w-full neu-inset rounded-2xl py-3 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none"
+            className="w-full bg-surface-1 border border-border rounded-2xl py-3 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none"
           />
         </div>
       </div>
@@ -77,11 +77,11 @@ const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => 
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="neu-card rounded-2xl p-4"
+              className="bg-card border border-border rounded-2xl p-4"
             >
               <div className="flex items-start gap-3">
                 <div className="relative flex-shrink-0">
-                  <div className="w-12 h-12 rounded-full neu-raised flex items-center justify-center text-sm font-semibold text-muted-foreground">
+                  <div className="w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center text-sm font-semibold text-muted-foreground">
                     {getInitials(d.full_name)}
                   </div>
                   <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-online border-2 border-card" />
@@ -101,7 +101,7 @@ const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => 
                   name: d.full_name,
                   avatar: getInitials(d.full_name),
                 })}
-                className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-xl gradient-primary text-sm font-semibold text-primary-foreground active:scale-[0.98] transition-transform"
+                className="mt-3 w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-foreground text-sm font-semibold text-primary-foreground tap-scale"
               >
                 <MessageCircle size={14} /> Написать
               </button>

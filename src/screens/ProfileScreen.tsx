@@ -28,7 +28,7 @@ interface Review {
 const AdminButton = () => {
   const navigate = useNavigate();
   return (
-    <button onClick={() => navigate("/admin")} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
+    <button onClick={() => navigate("/admin")} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border tap-scale transition-colors">
       <ShieldCheck size={18} className="text-primary" />
       <span className="text-sm font-medium text-foreground flex-1 text-left">Админ-панель</span>
       <ChevronRight size={16} className="text-muted-foreground" />
@@ -46,7 +46,7 @@ const VerifiedPopup = ({ open, onClose }: { open: boolean; onClose: () => void }
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.85, y: 20 }}
         transition={{ type: "spring", damping: 25, stiffness: 350 }}
-        className="relative neu-card rounded-3xl p-6 max-w-sm w-full text-center space-y-4"
+        className="relative bg-card border border-border rounded-3xl p-6 max-w-sm w-full text-center space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
@@ -64,7 +64,7 @@ const VerifiedPopup = ({ open, onClose }: { open: boolean; onClose: () => void }
             </div>
           ))}
         </div>
-        <button onClick={onClose} className="mt-2 w-full py-2.5 rounded-2xl neu-raised text-sm font-semibold text-primary active:neu-inset transition-all">
+        <button onClick={onClose} className="mt-2 w-full py-2.5 rounded-2xl bg-card border border-border text-sm font-semibold text-primary active:bg-surface-1 border border-border transition-all">
           Понятно
         </button>
       </motion.div>
@@ -100,12 +100,12 @@ const AvatarWithUpload = ({ profile, user, editable = false }: { profile: any; u
       {profile?.avatar_url ? (
         <img src={profile.avatar_url} alt="" className="w-16 h-16 rounded-full object-cover" style={{ width: 64, height: 64 }} />
       ) : (
-        <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center text-xl font-bold text-primary-foreground">
+        <div className="w-16 h-16 rounded-full bg-foreground flex items-center justify-center text-xl font-bold text-primary-foreground">
           {initials}
         </div>
       )}
       {editable && (
-        <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full gradient-primary flex items-center justify-center cursor-pointer">
+        <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-foreground flex items-center justify-center cursor-pointer">
           {uploading ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Camera size={12} className="text-primary-foreground" />}
         </div>
       )}
@@ -246,7 +246,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         <div>
           <div className="px-5 safe-top pb-2 flex items-center justify-between">
             <h1 className="text-xl font-bold text-foreground">Профиль</h1>
-            <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
+            <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center">
               <Bell size={18} className="text-muted-foreground" />
             </button>
           </div>
@@ -266,17 +266,17 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
               </div>
             </div>
           </div>
-          <div className="mx-5 mb-4 neu-card rounded-2xl p-4">
+          <div className="mx-5 mb-4 bg-card border border-border rounded-2xl p-4">
             <p className="text-sm text-foreground leading-relaxed">Официальный аккаунт платформы Gruzli. Публикуем обновления, новости и отвечаем на вопросы пользователей.</p>
           </div>
           <div className="px-5 space-y-2">
             <AdminButton />
-            <button onClick={onOpenSettings} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
+            <button onClick={onOpenSettings} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border tap-scale transition-colors">
               <Settings size={18} className="text-muted-foreground" />
               <span className="text-sm font-medium text-foreground flex-1 text-left">Настройки</span>
               <ChevronRight size={16} className="text-muted-foreground" />
             </button>
-            <button onClick={signOut} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
+            <button onClick={signOut} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border tap-scale transition-colors">
               <LogOut size={18} className="text-destructive" />
               <span className="text-sm font-medium text-destructive flex-1 text-left">Выйти</span>
               <ChevronRight size={16} className="text-muted-foreground" />
@@ -299,7 +299,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
               initial={{ opacity: 0, scale: 0.85, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 350 }}
-              className="relative neu-card rounded-3xl p-6 max-w-sm w-full space-y-4"
+              className="relative bg-card border border-border rounded-3xl p-6 max-w-sm w-full space-y-4"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="text-center">
@@ -310,23 +310,23 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
                 <p className="text-xs text-muted-foreground mt-1">Введите сумму пополнения, заявка будет отправлена администратору</p>
               </div>
               <div className="space-y-3">
-                <div className="neu-inset rounded-2xl p-1">
+                <div className="bg-surface-1 border border-border rounded-2xl p-1">
                   <input type="number" inputMode="numeric" placeholder="Введите сумму в ₽" value={topUpAmount} onChange={(e) => setTopUpAmount(e.target.value)} className="w-full bg-transparent px-4 py-3 text-center text-lg font-bold text-foreground placeholder:text-muted-foreground/50 outline-none" autoFocus />
                 </div>
                 <div className="flex gap-2">
                   {[500, 1000, 2000, 5000].map((amount) => (
-                    <button key={amount} onClick={() => setTopUpAmount(String(amount))} className="flex-1 py-2 rounded-xl neu-raised-sm text-xs font-semibold text-foreground active:neu-inset transition-all">{amount} ₽</button>
+                    <button key={amount} onClick={() => setTopUpAmount(String(amount))} className="flex-1 py-2 rounded-xl bg-card border border-border text-xs font-semibold text-foreground active:bg-surface-1 border border-border transition-all">{amount} ₽</button>
                   ))}
                 </div>
               </div>
               <div className="flex gap-2 pt-1">
-                <button onClick={() => setShowTopUp(false)} className="flex-1 py-2.5 rounded-2xl neu-raised text-sm font-semibold text-muted-foreground active:neu-inset transition-all">Отмена</button>
+                <button onClick={() => setShowTopUp(false)} className="flex-1 py-2.5 rounded-2xl bg-card border border-border text-sm font-semibold text-muted-foreground active:bg-surface-1 border border-border transition-all">Отмена</button>
                 <button onClick={() => {
                   const amt = parseInt(topUpAmount);
                   if (!amt || amt <= 0) { toast.error("Введите корректную сумму"); return; }
                   setShowTopUp(false);
                   onOpenSupport?.(`💰 Заявка на пополнение баланса\n\nСумма: ${amt} ₽\nID пользователя: ${user?.id?.slice(0, 8).toUpperCase()}\nИмя: ${profile?.full_name || "—"}\n\nПрошу пополнить баланс.`);
-                }} className="flex-1 py-2.5 rounded-2xl gradient-primary text-sm font-bold text-primary-foreground active:scale-95 transition-transform">Пополнить</button>
+                }} className="flex-1 py-2.5 rounded-2xl bg-foreground text-sm font-bold text-primary-foreground tap-scale">Пополнить</button>
               </div>
             </motion.div>
           </div>
@@ -334,7 +334,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         <div>
           <div className="px-5 safe-top pb-2 flex items-center justify-between">
             <h1 className="text-xl font-bold text-foreground">Профиль</h1>
-            <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
+            <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center">
               <Bell size={18} className="text-muted-foreground" />
             </button>
           </div>
@@ -344,7 +344,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
                 {profile?.avatar_url ? (
                   <img src={profile.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                 ) : (
-                  <div className="w-full h-full rounded-full gradient-primary flex items-center justify-center text-2xl font-bold text-primary-foreground">{initials}</div>
+                  <div className="w-full h-full rounded-full bg-foreground flex items-center justify-center text-2xl font-bold text-primary-foreground">{initials}</div>
                 )}
               </div>
               <div className="flex-1">
@@ -363,13 +363,13 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
           {/* ID Card */}
           <div className="mx-5 mb-4">
-            <div className="neu-card rounded-2xl p-4">
+            <div className="bg-card border border-border rounded-2xl p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Hash size={16} className="text-primary" />
                   <span className="text-xs font-semibold text-muted-foreground">Индивидуальный ID</span>
                 </div>
-                <button onClick={copyId} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl neu-raised-sm active:neu-inset transition-all">
+                <button onClick={copyId} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border tap-scale transition-colors">
                   {idCopied ? <CheckCircle2 size={14} className="text-primary" /> : <Copy size={14} className="text-muted-foreground" />}
                   <span className="text-sm font-bold text-foreground tracking-wider">{shortId}</span>
                 </button>
@@ -385,14 +385,14 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
               <p className="text-primary-foreground/50 text-xs">Для оплаты размещения заявок</p>
             </div>
             <div className="px-5 pb-4">
-              <button onClick={() => { setTopUpAmount(""); setShowTopUp(true); }} className="w-full py-3 rounded-xl bg-primary-foreground/20 text-primary-foreground text-sm font-bold active:scale-95 transition-transform">💳 Пополнить баланс</button>
+              <button onClick={() => { setTopUpAmount(""); setShowTopUp(true); }} className="w-full py-3 rounded-xl bg-primary-foreground/20 text-primary-foreground text-sm font-bold tap-scale">💳 Пополнить баланс</button>
             </div>
           </div>
 
           {/* Verification */}
           {!profile?.verified && (
             <div className="mx-5 mb-4">
-              <div className="neu-card rounded-2xl p-4">
+              <div className="bg-card border border-border rounded-2xl p-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0"><Shield size={22} className="text-primary" /></div>
                   <div className="flex-1">
@@ -400,14 +400,14 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
                     <p className="text-[11px] text-muted-foreground mt-0.5">Подтвердите личность для повышения доверия исполнителей</p>
                   </div>
                 </div>
-                <button onClick={() => toast.info("Функция верификации скоро будет доступна")} className="w-full mt-3 py-3 rounded-xl gradient-primary text-primary-foreground text-sm font-bold active:scale-95 transition-transform">Пройти верификацию</button>
+                <button onClick={() => toast.info("Функция верификации скоро будет доступна")} className="w-full mt-3 py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold tap-scale">Пройти верификацию</button>
               </div>
             </div>
           )}
 
           {/* Rating */}
           <div className="mx-5 mb-4">
-            <div className="neu-card rounded-2xl p-4">
+            <div className="bg-card border border-border rounded-2xl p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-bold text-foreground">Рейтинг</span>
                 <div className="flex items-center gap-1">
@@ -430,11 +430,11 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           <div className="mx-5 mb-4">
             <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2"><MessageSquare size={14} className="text-primary" />Отзывы исполнителей</h2>
             {reviews.length === 0 ? (
-              <div className="neu-card rounded-2xl p-4 text-center"><p className="text-xs text-muted-foreground">Отзывов пока нет.</p></div>
+              <div className="bg-card border border-border rounded-2xl p-4 text-center"><p className="text-xs text-muted-foreground">Отзывов пока нет.</p></div>
             ) : (
               <div className="space-y-2">
                 {reviews.slice(0, 5).map((review) => (
-                  <motion.div key={review.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="neu-card rounded-2xl p-4">
+                  <motion.div key={review.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-2xl p-4">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-semibold text-foreground">{review.reviewer_name}</span>
                       <div className="flex items-center gap-1">
@@ -451,17 +451,17 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
           {/* Menu */}
           <div className="px-5 space-y-2">
-            <button onClick={() => onOpenSupport?.()} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
+            <button onClick={() => onOpenSupport?.()} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border tap-scale transition-colors">
               <Headphones size={18} className="text-primary" />
               <span className="text-sm font-medium text-foreground flex-1 text-left">Тех. поддержка</span>
               <ChevronRight size={16} className="text-muted-foreground" />
             </button>
-            <button onClick={onOpenSettings} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
+            <button onClick={onOpenSettings} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border tap-scale transition-colors">
               <Settings size={18} className="text-muted-foreground" />
               <span className="text-sm font-medium text-foreground flex-1 text-left">Настройки</span>
               <ChevronRight size={16} className="text-muted-foreground" />
             </button>
-            <button onClick={signOut} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
+            <button onClick={signOut} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border tap-scale transition-colors">
               <LogOut size={18} className="text-destructive" />
               <span className="text-sm font-medium text-destructive flex-1 text-left">Выйти</span>
               <ChevronRight size={16} className="text-muted-foreground" />
@@ -484,7 +484,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
     <div>
       <div className="px-5 safe-top pb-2 flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground">Профиль</h1>
-        <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
+        <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center">
           <Bell size={18} className="text-muted-foreground" />
         </button>
       </div>
@@ -552,7 +552,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           </button>
         </div>
       ) : (
-        <div className="mx-5 mb-4 neu-card rounded-2xl p-4 border border-yellow-500/20">
+        <div className="mx-5 mb-4 bg-card border border-border rounded-2xl p-4 border border-yellow-500/20">
           <div className="flex items-center gap-3">
             <Crown size={18} className="text-yellow-500" />
             <div className="flex-1">
@@ -565,9 +565,9 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
       {/* Stats */}
       <div className="px-5 pb-3">
-        <div className="flex gap-1.5 neu-inset rounded-2xl p-1.5">
+        <div className="flex gap-1.5 bg-surface-1 border border-border rounded-2xl p-1.5">
           {(["today", "week", "month"] as const).map((p) => (
-            <button key={p} onClick={() => setStatsPeriod(p)} className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${statsPeriod === p ? "gradient-primary text-primary-foreground" : "text-muted-foreground"}`}>
+            <button key={p} onClick={() => setStatsPeriod(p)} className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${statsPeriod === p ? "bg-foreground text-primary-foreground" : "text-muted-foreground"}`}>
               {p === "today" ? "Сегодня" : p === "week" ? "Неделя" : "Месяц"}
             </button>
           ))}
@@ -581,7 +581,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             { icon: Wallet, label: "Заработано", value: stats.earned },
             { icon: Calendar, label: "Часов", value: stats.hours },
           ].map((stat, i) => (
-            <motion.div key={stat.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }} className="neu-card rounded-2xl p-3 text-center">
+            <motion.div key={stat.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }} className="bg-card border border-border rounded-2xl p-3 text-center">
               <stat.icon size={18} className="text-primary mx-auto mb-2" />
               <p className="text-sm font-bold text-foreground">{stat.value}</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">{stat.label}</p>
@@ -592,15 +592,15 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
       {/* Wallet */}
       <div className="px-5 pb-5">
-        <div className="neu-card rounded-2xl p-4">
+        <div className="bg-card border border-border rounded-2xl p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <CreditCard size={18} className="text-primary" />
               <span className="text-sm font-bold text-foreground">Кошелёк</span>
             </div>
-            <span className="text-lg font-extrabold text-gradient-primary">{profile?.balance || 0} ₽</span>
+            <span className="text-lg font-extrabold text-bg-foreground">{profile?.balance || 0} ₽</span>
           </div>
-          <button onClick={() => setShowWallet(!showWallet)} className="w-full py-3 rounded-xl gradient-primary text-primary-foreground text-sm font-bold active:scale-95 transition-transform">💳 Вывести на карту</button>
+          <button onClick={() => setShowWallet(!showWallet)} className="w-full py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold tap-scale">💳 Вывести на карту</button>
           {showWallet && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3 text-xs text-muted-foreground">
               Минимальная сумма вывода: 1 000 ₽. Зачисление в течение 1-3 рабочих дней.
@@ -619,7 +619,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         </div>
         <div className="flex flex-wrap gap-2">
           {(userSkills.length ? userSkills : defaultSkills).map((skill: string) => (
-            <span key={skill} className="px-3 py-2 rounded-xl neu-raised-sm text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+            <span key={skill} className="px-3 py-2 rounded-xl bg-card border border-border text-xs font-medium text-muted-foreground flex items-center gap-1.5">
               {skill}
               {editingSkills && userSkills.includes(skill) && (
                 <button onClick={() => removeSkill(skill)} className="text-destructive"><X size={12} /></button>
@@ -633,9 +633,9 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
                 onChange={(e) => setNewSkill(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addSkill()}
                 placeholder="Навык..."
-                className="w-24 px-3 py-2 rounded-xl neu-inset text-xs text-foreground placeholder:text-muted-foreground outline-none"
+                className="w-24 px-3 py-2 rounded-xl bg-surface-1 border border-border text-xs text-foreground placeholder:text-muted-foreground outline-none"
               />
-              <button onClick={addSkill} className="w-8 h-8 rounded-xl gradient-primary flex items-center justify-center">
+              <button onClick={addSkill} className="w-8 h-8 rounded-xl bg-foreground flex items-center justify-center">
                 <Plus size={14} className="text-primary-foreground" />
               </button>
             </div>
@@ -648,7 +648,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         <h2 className="text-sm font-bold text-foreground mb-3">Доступность</h2>
         <div className="grid grid-cols-7 gap-2">
           {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((day, i) => (
-            <button key={day} onClick={() => { const next = [...availability]; next[i] = !next[i]; saveAvailability(next); }} className={`py-2.5 rounded-xl text-center text-xs font-semibold transition-all ${availability[i] ? "gradient-primary text-primary-foreground" : "neu-raised-sm text-muted-foreground"}`}>
+            <button key={day} onClick={() => { const next = [...availability]; next[i] = !next[i]; saveAvailability(next); }} className={`py-2.5 rounded-xl text-center text-xs font-semibold transition-all ${availability[i] ? "bg-foreground text-primary-foreground" : "bg-card border border-border text-muted-foreground"}`}>
               {day}
             </button>
           ))}
@@ -658,13 +658,13 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
       {/* Leaderboard */}
       <div className="px-5 pb-5">
         <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2"><Trophy size={14} className="text-primary" /> Топ грузчиков</h2>
-        <div className="neu-card rounded-2xl p-3 space-y-2">
+        <div className="bg-card border border-border rounded-2xl p-3 space-y-2">
           {leaderboard.map((l, i) => (
             <div key={l.name} className="flex items-center gap-3">
               <span className={`w-6 text-center text-xs font-bold ${i < 3 ? "text-primary" : "text-muted-foreground"}`}>
                 {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`}
               </span>
-              <div className="w-8 h-8 rounded-full neu-raised-sm flex items-center justify-center text-[10px] font-semibold text-muted-foreground">{l.avatar}</div>
+              <div className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center text-[10px] font-semibold text-muted-foreground">{l.avatar}</div>
               <span className="text-xs font-semibold text-foreground flex-1">{l.name}</span>
               <span className="text-xs text-muted-foreground">{l.score} заказов</span>
             </div>
@@ -674,17 +674,17 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
       {/* Menu */}
       <div className="px-5 space-y-2">
-        <button onClick={() => onOpenSupport?.()} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
+        <button onClick={() => onOpenSupport?.()} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border tap-scale transition-colors">
           <Headphones size={18} className="text-primary" />
           <span className="text-sm font-medium text-foreground flex-1 text-left">Тех. поддержка</span>
           <ChevronRight size={16} className="text-muted-foreground" />
         </button>
-        <button onClick={onOpenSettings} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
+        <button onClick={onOpenSettings} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border tap-scale transition-colors">
           <Settings size={18} className="text-muted-foreground" />
           <span className="text-sm font-medium text-foreground flex-1 text-left">Настройки</span>
           <ChevronRight size={16} className="text-muted-foreground" />
         </button>
-        <button onClick={signOut} className="w-full flex items-center gap-3 p-3.5 rounded-2xl neu-flat active:neu-inset transition-all">
+        <button onClick={signOut} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border tap-scale transition-colors">
           <LogOut size={18} className="text-destructive" />
           <span className="text-sm font-medium text-destructive flex-1 text-left">Выйти</span>
           <ChevronRight size={16} className="text-muted-foreground" />

@@ -45,7 +45,7 @@ const PremiumScreen = ({ onBack, onOpenSupport }: PremiumScreenProps) => {
     <div className="min-h-screen bg-background pb-8">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 safe-top pb-4">
-        <button onClick={onBack} className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center active:neu-inset transition-all">
+        <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
           <ArrowLeft size={18} className="text-foreground" />
         </button>
         <h1 className="text-lg font-bold text-foreground">Gruzli Premium</h1>
@@ -71,7 +71,7 @@ const PremiumScreen = ({ onBack, onOpenSupport }: PremiumScreenProps) => {
       </div>
 
       {isPremium && (
-        <div className="mx-5 mb-4 neu-card rounded-2xl p-4 border border-yellow-500/30">
+        <div className="mx-5 mb-4 bg-card border border-border rounded-2xl p-4 border border-yellow-500/30">
           <div className="flex items-center gap-3">
             <Crown size={20} className="text-yellow-500" />
             <div>
@@ -94,7 +94,7 @@ const PremiumScreen = ({ onBack, onOpenSupport }: PremiumScreenProps) => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.06 }}
-              className="neu-card rounded-2xl p-3.5 flex items-center gap-3"
+              className="bg-card border border-border rounded-2xl p-3.5 flex items-center gap-3"
             >
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500/20 to-orange-500/20 flex items-center justify-center flex-shrink-0">
                 <b.icon size={18} className="text-yellow-500" />
@@ -109,7 +109,7 @@ const PremiumScreen = ({ onBack, onOpenSupport }: PremiumScreenProps) => {
       </div>
 
       {/* Free vs Premium comparison */}
-      <div className="mx-5 mb-6 neu-card rounded-2xl p-4">
+      <div className="mx-5 mb-6 bg-card border border-border rounded-2xl p-4">
         <h3 className="text-sm font-bold text-foreground mb-3">Сравнение</h3>
         <div className="space-y-2">
           {[
@@ -141,7 +141,7 @@ const PremiumScreen = ({ onBack, onOpenSupport }: PremiumScreenProps) => {
               <button
                 key={plan.id}
                 onClick={() => setSelectedPlan(plan.id)}
-                className={`w-full neu-card rounded-2xl p-4 flex items-center gap-3 transition-all ${
+                className={`w-full bg-card border border-border rounded-2xl p-4 flex items-center gap-3 transition-all ${
                   selectedPlan === plan.id ? "border-2 border-yellow-500" : "border-2 border-transparent"
                 }`}
               >
@@ -173,7 +173,7 @@ const PremiumScreen = ({ onBack, onOpenSupport }: PremiumScreenProps) => {
         <div className="px-5">
           <button
             onClick={handlePurchase}
-            className="w-full py-4 rounded-2xl text-white font-bold text-base active:scale-95 transition-transform"
+            className="w-full py-4 rounded-2xl text-white font-bold text-base tap-scale"
             style={{
               background: "linear-gradient(135deg, hsl(43 96% 56%), hsl(25 95% 53%))",
               boxShadow: "0 8px 24px hsl(38 92% 50% / 0.4)",

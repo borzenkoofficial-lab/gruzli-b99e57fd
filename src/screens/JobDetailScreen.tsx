@@ -44,7 +44,7 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
     <div className="min-h-screen bg-background pb-8">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 safe-top pb-4">
-        <button onClick={onBack} className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center active:neu-inset transition-all">
+        <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
           <ArrowLeft size={18} className="text-foreground" />
         </button>
         <h2 className="text-base font-bold text-foreground flex-1">Детали заказа</h2>
@@ -72,11 +72,11 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
         </div>
 
         {/* Earnings */}
-        <div className="neu-inset rounded-xl px-4 py-3 mb-4">
+        <div className="bg-surface-1 border border-border rounded-xl px-4 py-3 mb-4">
           <div className="flex items-center gap-2">
             <Wallet size={16} className="text-primary" />
             <span className="text-sm text-muted-foreground">Ты получишь</span>
-            <span className="text-2xl font-extrabold text-gradient-primary ml-auto">{totalPay.toLocaleString("ru-RU")} ₽</span>
+            <span className="text-2xl font-extrabold text-bg-foreground ml-auto">{totalPay.toLocaleString("ru-RU")} ₽</span>
           </div>
           <p className="text-xs text-muted-foreground mt-1">{job.hourly_rate} ₽/час × {job.duration_hours || 4}ч</p>
         </div>
@@ -92,8 +92,8 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
             job.start_time && { icon: Clock, label: "Дата и время", value: new Date(job.start_time).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) },
             { icon: Users, label: "Грузчиков", value: `${job.workers_needed || 1} человек` },
           ].filter(Boolean).map((detail: any) => (
-            <div key={detail.label} className="flex items-center gap-3 p-3.5 neu-flat rounded-2xl">
-              <div className="w-9 h-9 rounded-xl neu-raised-sm flex items-center justify-center flex-shrink-0">
+            <div key={detail.label} className="flex items-center gap-3 p-3.5 bg-card rounded-2xl">
+              <div className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center flex-shrink-0">
                 <detail.icon size={15} className="text-primary" />
               </div>
               <div>
@@ -112,7 +112,7 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
             className={`flex-1 py-3.5 rounded-2xl text-sm font-bold active:scale-[0.98] transition-all ${
               responded
                 ? "bg-online/20 text-online"
-                : "gradient-primary text-primary-foreground"
+                : "bg-foreground text-primary-foreground"
             }`}
             style={!responded ? {
               boxShadow: '6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%), 0 4px 20px hsl(230 60% 58% / 0.35)',

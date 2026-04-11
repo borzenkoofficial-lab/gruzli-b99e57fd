@@ -16,10 +16,10 @@ const ChatsScreen = ({ onOpenChat }: ChatsScreenProps) => {
   return (
     <div >
       <div className="px-5 safe-top pb-2 flex items-center justify-between">
-        <button className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
+        <button className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center">
           <Menu size={18} className="text-muted-foreground" />
         </button>
-        <button className="w-11 h-11 rounded-2xl neu-raised flex items-center justify-center">
+        <button className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center">
           <Search size={18} className="text-muted-foreground" />
         </button>
       </div>
@@ -30,11 +30,11 @@ const ChatsScreen = ({ onOpenChat }: ChatsScreenProps) => {
       </div>
 
       <div className="px-5 pb-5 flex gap-3">
-        <button className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl gradient-primary text-primary-foreground font-semibold text-sm">
+        <button className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-foreground text-primary-foreground font-semibold text-sm">
           <Edit3 size={16} />
           Новое сообщение
         </button>
-        <button className="w-12 h-12 rounded-2xl neu-raised flex items-center justify-center">
+        <button className="w-12 h-12 rounded-2xl bg-card border border-border flex items-center justify-center">
           <SlidersHorizontal size={16} className="text-muted-foreground" />
         </button>
       </div>
@@ -49,12 +49,12 @@ const ChatsScreen = ({ onOpenChat }: ChatsScreenProps) => {
             transition={{ delay: i * 0.04 }}
             onClick={() => onOpenChat(chat)}
             className={`flex items-center gap-3 p-3.5 rounded-2xl cursor-pointer active:scale-[0.98] transition-all duration-200 ${
-              chat.unread > 0 ? "neu-flat" : "hover:bg-surface-3/30"
+              chat.unread > 0 ? "bg-card" : "hover:bg-surface-3/30"
             }`}
           >
             <div className="relative flex-shrink-0">
               <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-semibold ${
-                chat.isGroup ? "gradient-primary text-primary-foreground" : "neu-raised text-muted-foreground"
+                chat.isGroup ? "bg-foreground text-primary-foreground" : "bg-card border border-border text-muted-foreground"
               }`}>
                 {chat.avatar}
               </div>
@@ -78,7 +78,7 @@ const ChatsScreen = ({ onOpenChat }: ChatsScreenProps) => {
             </div>
 
             {chat.unread > 0 && (
-              <div className="w-5 h-5 rounded-full gradient-primary flex items-center justify-center text-[10px] font-bold text-primary-foreground flex-shrink-0">
+              <div className="w-5 h-5 rounded-full bg-foreground flex items-center justify-center text-[10px] font-bold text-primary-foreground flex-shrink-0">
                 {chat.unread}
               </div>
             )}

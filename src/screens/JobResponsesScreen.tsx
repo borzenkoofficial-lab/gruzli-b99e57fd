@@ -99,7 +99,7 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
   return (
     <div className="min-h-screen bg-background pb-8">
       <div className="flex items-center gap-3 px-4 safe-top pb-4">
-        <button onClick={onBack} className="w-10 h-10 rounded-2xl neu-raised flex items-center justify-center active:neu-inset transition-all">
+        <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
           <ArrowLeft size={18} className="text-foreground" />
         </button>
         <div className="flex-1">
@@ -125,13 +125,13 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
                   const ws = r.worker_status ? WORKER_STATUS_MAP[r.worker_status] : null;
                   const WsIcon = ws?.icon;
                   return (
-                    <motion.div key={r.id} layout className="neu-card rounded-2xl p-4 border border-primary/20">
+                    <motion.div key={r.id} layout className="bg-card border border-border rounded-2xl p-4 border border-primary/20">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="relative">
                           {r.profile?.is_premium && (
                             <div className="absolute -inset-[2px] rounded-full bg-gradient-to-tr from-yellow-400 via-amber-500 to-orange-500 animate-pulse opacity-80" />
                           )}
-                          <div className="relative w-12 h-12 rounded-full gradient-primary flex items-center justify-center text-primary-foreground font-bold">
+                          <div className="relative w-12 h-12 rounded-full bg-foreground flex items-center justify-center text-primary-foreground font-bold">
                             {(r.profile?.full_name || "?")[0]}
                           </div>
                         </div>
@@ -148,7 +148,7 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
                       </div>
 
                       {/* Worker live status */}
-                      <div className="neu-inset rounded-xl p-3 mb-3">
+                      <div className="bg-surface-1 border border-border rounded-xl p-3 mb-3">
                         <p className="text-[10px] text-muted-foreground mb-1.5">Статус исполнителя</p>
                         {ws && WsIcon ? (
                           <div className="flex items-center gap-2">
@@ -162,7 +162,7 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
 
                       <button
                         onClick={() => onChatWithWorker(r.worker_id, r.profile?.full_name || "Грузчик")}
-                        className="w-full py-3 rounded-xl neu-raised flex items-center justify-center gap-2 active:neu-inset transition-all"
+                        className="w-full py-3 rounded-xl bg-card border border-border flex items-center justify-center gap-2 active:bg-surface-1 border border-border transition-all"
                       >
                         <MessageCircle size={14} className="text-primary" />
                         <span className="text-sm font-semibold text-foreground">Написать</span>
@@ -185,14 +185,14 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    className="neu-card rounded-2xl p-4"
+                    className="bg-card border border-border rounded-2xl p-4"
                   >
                     <div className="flex items-center gap-3 mb-3">
                       <div className="relative">
                         {r.profile?.is_premium && (
                           <div className="absolute -inset-[2px] rounded-full bg-gradient-to-tr from-yellow-400 via-amber-500 to-orange-500 animate-pulse opacity-80" />
                         )}
-                        <div className="relative w-12 h-12 rounded-full neu-raised flex items-center justify-center">
+                        <div className="relative w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center">
                           <User size={20} className="text-muted-foreground" />
                         </div>
                       </div>
@@ -210,25 +210,25 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
                     </div>
 
                     {r.message && (
-                      <p className="text-xs text-muted-foreground mb-3 neu-inset rounded-xl px-3 py-2">{r.message}</p>
+                      <p className="text-xs text-muted-foreground mb-3 bg-surface-1 border border-border rounded-xl px-3 py-2">{r.message}</p>
                     )}
 
                     <div className="flex gap-2">
                       <button
                         onClick={() => updateStatus(r.id, "accepted")}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl gradient-primary text-primary-foreground text-sm font-semibold active:scale-95 transition-transform"
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-semibold tap-scale"
                       >
                         <Check size={14} /> Выбрать
                       </button>
                       <button
                         onClick={() => updateStatus(r.id, "rejected")}
-                        className="w-12 h-12 rounded-xl neu-raised flex items-center justify-center active:neu-inset transition-all"
+                        className="w-12 h-12 rounded-xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all"
                       >
                         <X size={16} className="text-destructive" />
                       </button>
                       <button
                         onClick={() => onChatWithWorker(r.worker_id, r.profile?.full_name || "Грузчик")}
-                        className="w-12 h-12 rounded-xl neu-raised flex items-center justify-center active:neu-inset transition-all"
+                        className="w-12 h-12 rounded-xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all"
                       >
                         <MessageCircle size={16} className="text-primary" />
                       </button>
@@ -245,9 +245,9 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
               <h3 className="text-xs font-bold text-muted-foreground/50 mb-2">Отклонённые ({rejected.length})</h3>
               <div className="space-y-2">
                 {rejected.map((r) => (
-                  <div key={r.id} className="neu-card rounded-2xl p-3 opacity-50">
+                  <div key={r.id} className="bg-card border border-border rounded-2xl p-3 opacity-50">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full neu-raised flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center">
                         <User size={16} className="text-muted-foreground" />
                       </div>
                       <span className="text-sm text-muted-foreground">{r.profile?.full_name || "Грузчик"}</span>

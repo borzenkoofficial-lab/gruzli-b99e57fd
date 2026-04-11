@@ -374,7 +374,7 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
           <Phone size={14} className="text-primary" />
           <span className="text-sm">{msg.text}</span>
           {!inVoiceRoom && msg.sender_id !== user?.id && (
-            <button onClick={joinVoiceRoom} className="ml-2 px-3 py-1 rounded-lg gradient-primary text-primary-foreground text-xs font-semibold">Войти</button>
+            <button onClick={joinVoiceRoom} className="ml-2 px-3 py-1 rounded-lg bg-foreground text-primary-foreground text-xs font-semibold">Войти</button>
           )}
         </div>
       );
