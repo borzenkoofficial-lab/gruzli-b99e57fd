@@ -10,6 +10,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 // Worker screens
 import FeedScreen from "@/screens/FeedScreen";
+import JobDetailScreen from "@/screens/JobDetailScreen";
 import OrdersScreen from "@/screens/OrdersScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 
@@ -71,6 +72,7 @@ const Index = () => {
   const [viewProfileUserId, setViewProfileUserId] = useState<string | null>(null);
   const [showPremium, setShowPremium] = useState(false);
   const [showCabinet, setShowCabinet] = useState(false);
+  const [viewJobDetail, setViewJobDetail] = useState<Tables<"jobs"> | null>(null);
   const isDispatcher = role === "dispatcher" || role === "admin";
   const feedRefreshRef = useRef<(() => Promise<void>) | null>(null);
 
