@@ -14,10 +14,11 @@ const filters = ["Все", "Срочные", "Быстрая минималка"
 interface FeedScreenProps {
   onOpenChat?: (conversationId: string, title: string) => void;
   onOpenProfile?: (userId: string) => void;
+  onOpenJob?: (job: Tables<"jobs">) => void;
   onRefreshRef?: React.MutableRefObject<(() => Promise<void>) | null>;
 }
 
-const FeedScreen = ({ onOpenChat, onOpenProfile, onRefreshRef }: FeedScreenProps) => {
+const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: FeedScreenProps) => {
   const { user } = useAuth();
   const { respondAndOpenChat } = useRespondToJob(onOpenChat);
   const [activeFilter, setActiveFilter] = useState("Все");
