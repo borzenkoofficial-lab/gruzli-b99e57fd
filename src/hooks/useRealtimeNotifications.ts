@@ -104,24 +104,55 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
 
   const handleResponseUpdate = useCallback((payload: any) => {
     const resp = payload.new;
+    const old = payload.old;
     if (!resp) return;
-    // Only notify the worker whose response was accepted
-    if (resp.worker_id !== userIdRef.current) return;
-    if (resp.status !== "accepted") return;
 
-    playNotificationSound();
-    vibrate();
+    // Worker: notify when dispatcher accepted their response
+    if (resp.worker_id === userIdRef.current && resp.status === "accepted") {
+      playNotificationSound();
+      vibrate();
 
-    toast("🎉 Вас выбрали!", {
-      description: "Диспетчер принял вас на заказ. Подтвердите участие.",
-      duration: 8000,
-    });
+      toast("🎉 Вас выбрали!", {
+        description: "Диспетчер принял вас на заказ. Подтвердите участие.",
+        duration: 8000,
+      });
 
-    pushNotification({
-      type: "response",
-      title: "Вас выбрали на заказ!",
-      body: "Перейдите в «Мои заказы» чтобы подтвердить участие",
-    });
+      pushNotification({
+        type: "response",
+        title: "Вас выбрали на заказ!",
+        body: "Перейдите в «Мои заказы» чтобы подтвердить участие",
+      });
+      return;
+    }
+
+    // Dispatcher: notify when worker changes their status
+    if (roleRef.current === "dispatcher" || roleRef.current === "admin") {
+      if (resp.worker_status && resp.worker_status !== old?.worker_status) {
+        const STATUS_LABELS: Record<string, string> = {
+          confirmed: "✅ Подтвердил заказ",
+          ready: "✅ Готов к работе",
+          en_route: "🚗 Выехал на объект",
+          late: "⚠️ Опаздывает",
+          arrived: "📍 На месте",
+          completed: "🎉 Завершил работу",
+        };
+
+        playNotificationSound();
+        vibrate();
+
+        const label = STATUS_LABELS[resp.worker_status] || resp.worker_status;
+        toast(label, {
+          description: "Обновление статуса грузчика",
+          duration: 5000,
+        });
+
+        pushNotification({
+          type: "response",
+          title: label,
+          body: "Обновление статуса грузчика на заказе",
+        });
+      }
+    }
   }, []);
 
   useEffect(() => {
