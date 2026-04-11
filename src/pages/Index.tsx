@@ -262,6 +262,16 @@ const Index = () => {
         />
       );
     }
+    if (viewJobDetail) {
+      return (
+        <JobDetailScreen
+          job={viewJobDetail}
+          onBack={() => setViewJobDetail(null)}
+          onOpenChat={handleOpenChat}
+          onOpenProfile={(userId) => { setViewJobDetail(null); setViewProfileUserId(userId); }}
+        />
+      );
+    }
 
     return (
       <div className="app-shell">
