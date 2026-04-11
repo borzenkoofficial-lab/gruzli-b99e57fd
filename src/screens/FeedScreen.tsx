@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import { MapPin, Clock, Users, Zap, ChevronRight, Wallet, ArrowRight, Ban, UserPlus, Train } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,10 +14,11 @@ const filters = ["Все", "Срочные", "Быстрая минималка"
 interface FeedScreenProps {
   onOpenChat?: (conversationId: string, title: string) => void;
   onOpenProfile?: (userId: string) => void;
+  onOpenJob?: (job: Tables<"jobs">) => void;
   onRefreshRef?: React.MutableRefObject<(() => Promise<void>) | null>;
 }
 
-const FeedScreen = ({ onOpenChat, onOpenProfile, onRefreshRef }: FeedScreenProps) => {
+const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: FeedScreenProps) => {
   const { user } = useAuth();
   const { respondAndOpenChat } = useRespondToJob(onOpenChat);
   const [activeFilter, setActiveFilter] = useState("Все");
@@ -181,6 +182,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onRefreshRef }: FeedScreenProps
                 onRespond={() => handleRespond(job.id)}
                 onSkip={() => setSkippedJobs((prev) => new Set(prev).add(job.id))}
                 onOpenProfile={onOpenProfile ? () => onOpenProfile(job.dispatcher_id) : undefined}
+                onTap={() => onOpenJob?.(job)}
               />
             ))}
           </AnimatePresence>
@@ -198,16 +200,25 @@ interface SwipeableJobCardProps {
   onRespond: () => void;
   onSkip: () => void;
   onOpenProfile?: () => void;
+  onTap?: () => void;
 }
 
-const SwipeableJobCard = ({ job, index, responded, dispatcherName, onRespond, onSkip, onOpenProfile }: SwipeableJobCardProps) => {
+const SwipeableJobCard = ({ job, index, responded, dispatcherName, onRespond, onSkip, onOpenProfile, onTap }: SwipeableJobCardProps) => {
   const x = useMotionValue(0);
   const bgLeft = useTransform(x, [-150, 0], [1, 0]);
   const bgRight = useTransform(x, [0, 150], [0, 1]);
+  const didDrag = useRef(false);
 
+  const handleDragStart = () => { didDrag.current = false; };
+  const handleDrag = (_: any, info: PanInfo) => {
+    if (Math.abs(info.offset.x) > 5) didDrag.current = true;
+  };
   const handleDragEnd = (_: any, info: PanInfo) => {
     if (info.offset.x > 100) onRespond();
     else if (info.offset.x < -100) onSkip();
+  };
+  const handleTap = () => {
+    if (!didDrag.current) onTap?.();
   };
 
   const totalPay = job.hourly_rate * (Number(job.duration_hours) || 4);
@@ -233,7 +244,10 @@ const SwipeableJobCard = ({ job, index, responded, dispatcherName, onRespond, on
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.4}
         style={{ x }}
+        onDragStart={handleDragStart}
+        onDrag={handleDrag}
         onDragEnd={handleDragEnd}
+        onClick={handleTap}
         whileTap={{ scale: 0.985 }}
         className="relative z-10 rounded-2xl bg-card border border-border p-4 cursor-pointer transition-colors"
       >

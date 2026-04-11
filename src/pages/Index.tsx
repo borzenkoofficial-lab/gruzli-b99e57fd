@@ -10,6 +10,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 // Worker screens
 import FeedScreen from "@/screens/FeedScreen";
+import JobDetailScreen from "@/screens/JobDetailScreen";
 import OrdersScreen from "@/screens/OrdersScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 
@@ -71,6 +72,7 @@ const Index = () => {
   const [viewProfileUserId, setViewProfileUserId] = useState<string | null>(null);
   const [showPremium, setShowPremium] = useState(false);
   const [showCabinet, setShowCabinet] = useState(false);
+  const [viewJobDetail, setViewJobDetail] = useState<Tables<"jobs"> | null>(null);
   const isDispatcher = role === "dispatcher" || role === "admin";
   const feedRefreshRef = useRef<(() => Promise<void>) | null>(null);
 
@@ -203,6 +205,16 @@ const Index = () => {
         />
       );
     }
+    if (viewJobDetail) {
+      return (
+        <JobDetailScreen
+          job={viewJobDetail}
+          onBack={() => setViewJobDetail(null)}
+          onOpenChat={handleOpenChat}
+          onOpenProfile={(userId) => { setViewJobDetail(null); setViewProfileUserId(userId); }}
+        />
+      );
+    }
     return null;
   };
 
@@ -250,6 +262,16 @@ const Index = () => {
         />
       );
     }
+    if (viewJobDetail) {
+      return (
+        <JobDetailScreen
+          job={viewJobDetail}
+          onBack={() => setViewJobDetail(null)}
+          onOpenChat={handleOpenChat}
+          onOpenProfile={(userId) => { setViewJobDetail(null); setViewProfileUserId(userId); }}
+        />
+      );
+    }
 
     return (
       <div className="app-shell">
@@ -258,7 +280,7 @@ const Index = () => {
             {isDispatcher ? (
               <DispatcherFeedScreen onCreateJob={() => setShowCreateJob(true)} onViewResponses={setViewResponsesJob} onRefreshRef={feedRefreshRef} />
             ) : (
-              <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onRefreshRef={feedRefreshRef} />
+              <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
             )}
           </PullToRefresh>
         ) : (
@@ -295,7 +317,7 @@ const Index = () => {
         isDispatcher ? (
           <DispatcherFeedScreen onCreateJob={() => setShowCreateJob(true)} onViewResponses={setViewResponsesJob} onRefreshRef={feedRefreshRef} />
         ) : (
-          <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onRefreshRef={feedRefreshRef} />
+          <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
         )
       )}
       {tab === "orders" && <OrdersScreen />}
