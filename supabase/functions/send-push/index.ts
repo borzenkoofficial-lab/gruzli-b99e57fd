@@ -524,6 +524,7 @@ Deno.serve(async (req) => {
         en_route: "🚗 Выехал на объект",
         late: "⚠️ Опаздывает",
         arrived: "📍 На месте",
+        finishing: "⏹ Диспетчер завершил заказ",
         completed: "🎉 Завершил работу",
       };
 
