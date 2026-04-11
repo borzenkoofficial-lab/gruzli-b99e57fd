@@ -316,6 +316,13 @@ const AuthPage = () => {
             {mode === "login" ? "Зарегистрироваться" : "Войти"}
           </button>
         </p>
+
+        <div className="flex items-center justify-center gap-1.5 mt-4 opacity-50">
+          <Shield size={14} className="text-foreground" />
+          <span className="text-[10px] text-muted-foreground tracking-wide">
+            Защищено <span className="font-bold text-foreground">PRO.SC</span>
+          </span>
+        </div>
       </motion.form>
     </div>
   );
