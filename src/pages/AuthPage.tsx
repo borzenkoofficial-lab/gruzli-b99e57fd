@@ -218,12 +218,13 @@ const AuthPage = () => {
             >
               У меня есть аккаунт
             </button>
-            <div className="flex items-center justify-center gap-1.5 mt-2 opacity-50">
+            <button onClick={() => setSecurityOpen(true)} className="flex items-center justify-center gap-1.5 mt-2 opacity-50 hover:opacity-80 transition-opacity cursor-pointer">
               <Shield size={14} className="text-foreground" />
               <span className="text-[10px] text-muted-foreground tracking-wide">
                 Защищено <span className="font-bold text-foreground">PRO.SC</span>
               </span>
-            </div>
+            </button>
+            <SecurityModal open={securityOpen} onClose={() => setSecurityOpen(false)} />
           </motion.div>
         </div>
       </div>
@@ -390,12 +391,13 @@ const AuthPage = () => {
           </button>
         </p>
 
-        <div className="flex items-center justify-center gap-1.5 mt-4 opacity-50">
+        <button onClick={() => setSecurityOpen(true)} className="flex items-center justify-center gap-1.5 mt-4 opacity-50 hover:opacity-80 transition-opacity cursor-pointer">
           <Shield size={14} className="text-foreground" />
           <span className="text-[10px] text-muted-foreground tracking-wide">
             Защищено <span className="font-bold text-foreground">PRO.SC</span>
           </span>
-        </div>
+        </button>
+        <SecurityModal open={securityOpen} onClose={() => setSecurityOpen(false)} />
       </motion.form>
     </div>
   );
