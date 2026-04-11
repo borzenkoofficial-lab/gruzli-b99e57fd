@@ -24,6 +24,7 @@ const AppRoutes = () => {
   const { user, loading, role } = useAuth();
   const [splashDone, setSplashDone] = useState(false);
   const [alertQueue, setAlertQueue] = useState<Tables<"jobs">[]>([]);
+  useViewportHeight();
 
   const handleNewJob = useCallback((job: Tables<"jobs">) => {
     setAlertQueue((q) => [...q, job]);
