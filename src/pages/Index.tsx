@@ -191,6 +191,18 @@ const Index = () => {
         />
       );
     }
+    if (showCabinet) {
+      return (
+        <DispatcherCabinetScreen
+          onBack={() => setShowCabinet(false)}
+          onChatWithWorker={async (workerId, workerName) => {
+            const opened = await handleChatWithUser(workerId, workerName);
+            if (opened) setShowCabinet(false);
+          }}
+          onViewProfile={(userId) => { setShowCabinet(false); setViewProfileUserId(userId); }}
+        />
+      );
+    }
     return null;
   };
 
@@ -200,6 +212,18 @@ const Index = () => {
     if (showPremium) return <PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, msg); }} />;
     if (showChannel) return <ChannelScreen onBack={() => setShowChannel(false)} />;
     if (showSettings) return <SettingsScreen onBack={() => setShowSettings(false)} />;
+    if (showCabinet) {
+      return (
+        <DispatcherCabinetScreen
+          onBack={() => setShowCabinet(false)}
+          onChatWithWorker={async (workerId, workerName) => {
+            const opened = await handleChatWithUser(workerId, workerName);
+            if (opened) setShowCabinet(false);
+          }}
+          onViewProfile={(userId) => { setShowCabinet(false); setViewProfileUserId(userId); }}
+        />
+      );
+    }
     if (viewProfileUserId) {
       return (
         <UserProfileScreen
