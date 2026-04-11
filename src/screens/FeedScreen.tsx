@@ -244,7 +244,10 @@ const SwipeableJobCard = ({ job, index, responded, dispatcherName, onRespond, on
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.4}
         style={{ x }}
+        onDragStart={handleDragStart}
+        onDrag={handleDrag}
         onDragEnd={handleDragEnd}
+        onClick={handleTap}
         whileTap={{ scale: 0.985 }}
         className="relative z-10 rounded-2xl bg-card border border-border p-4 cursor-pointer transition-colors"
       >
