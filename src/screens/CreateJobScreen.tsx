@@ -75,7 +75,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
         <h1 className="text-lg font-bold text-foreground">Создать заявку</h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="px-5 space-y-4">
+      <form onSubmit={handleSubmit} className="px-5 space-y-4 flex-1 overflow-y-auto pb-8">
         <Field label="Название заявки" icon={FileText}>
           <div className="bg-surface-1 border border-border rounded-xl px-4 py-3">
             <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Переезд 2-комнатной квартиры" className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none" required />
