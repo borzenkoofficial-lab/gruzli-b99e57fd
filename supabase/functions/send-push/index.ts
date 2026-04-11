@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
       const senderName = senderProfile?.full_name || "Новое сообщение";
       const title = `💬 ${senderName}`;
       const messageBody = body.text || "Медиа-сообщение";
-      const url = `${APP_URL}/chat/${body.conversation_id}`;
+      const url = `${APP_URL}/?openChat=${body.conversation_id}`;
 
       // Get recipient user IDs (all participants except sender)
       const { data: participants } = await supabase
