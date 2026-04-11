@@ -19,8 +19,10 @@ const Field = ({ label, icon: Icon, children }: { label: string; icon: any; chil
   </div>
 );
 
+const JOB_POSTING_FEE = 20;
+
 const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -41,7 +43,26 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
       return;
     }
 
+    const balance = profile?.balance || 0;
+    if (balance < JOB_POSTING_FEE) {
+      toast.error(`Недостаточно средств. Нужно ${JOB_POSTING_FEE} ₽, на балансе ${balance} ₽`);
+      return;
+    }
+
     setLoading(true);
+
+    // Deduct fee
+    const { error: feeError } = await supabase
+      .from("profiles")
+      .update({ balance: balance - JOB_POSTING_FEE })
+      .eq("user_id", user.id);
+
+    if (feeError) {
+      toast.error("Ошибка списания");
+      setLoading(false);
+      return;
+    }
+
     const { error } = await supabase.from("jobs").insert({
       dispatcher_id: user.id,
       title: title.trim(),
@@ -159,12 +180,24 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
           </button>
         </div>
 
+        {/* Fee notice */}
+        <div className="bg-surface-1 border border-border rounded-xl px-4 py-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Стоимость публикации</span>
+            <span className="text-sm font-bold text-foreground">{JOB_POSTING_FEE} ₽</span>
+          </div>
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-xs text-muted-foreground">Баланс</span>
+            <span className={`text-sm font-bold ${(profile?.balance || 0) >= JOB_POSTING_FEE ? "text-foreground" : "text-destructive"}`}>{profile?.balance || 0} ₽</span>
+          </div>
+        </div>
+
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || (profile?.balance || 0) < JOB_POSTING_FEE}
           className="w-full py-4 rounded-2xl bg-foreground text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 tap-scale disabled:opacity-50"
         >
-          {loading ? <Loader2 size={18} className="animate-spin" /> : "Опубликовать заявку"}
+          {loading ? <Loader2 size={18} className="animate-spin" /> : `Опубликовать за ${JOB_POSTING_FEE} ₽`}
         </button>
       </form>
     </div>

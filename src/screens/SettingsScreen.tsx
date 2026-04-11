@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, User, Phone, Bell, Shield, Palette, LogOut, Camera, Check, Loader2, Volume2, Vibrate, Layers, Mail, Ban, Trash2, Info, Globe, Database, Share2, Star, Smartphone, HardDrive } from "lucide-react";
+import { ArrowLeft, User, Phone, Bell, Shield, Palette, LogOut, Camera, Check, Loader2, Volume2, Vibrate, Layers, Mail, Ban, Trash2, Info, Globe, Database, Share2, Star, Smartphone, HardDrive, Crown, BadgeCheck, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
@@ -22,12 +22,13 @@ const passwordSchema = z.object({
 
 interface SettingsScreenProps {
   onBack: () => void;
+  onOpenPremium?: () => void;
 }
 
-type Section = "main" | "profile" | "notifications" | "security" | "appearance" | "blocked" | "about" | "language" | "storage";
+type Section = "main" | "profile" | "notifications" | "security" | "appearance" | "blocked" | "about" | "language" | "storage" | "verification";
 
-const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
-  const { user, profile, signOut } = useAuth();
+const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
+  const { user, profile, signOut, role } = useAuth();
   const [pushPermission, setPushPermission] = useState<NotificationPermission | "unsupported">("default");
   const [pushLoading, setPushLoading] = useState(false);
   const { settings: notifSettings, update: updateNotif } = useNotificationSettings();
@@ -56,6 +57,14 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
   // Blocked users
   const [blockedUsers, setBlockedUsers] = useState<{ id: string; blocked_id: string; full_name: string }[]>([]);
   const [loadingBlocked, setLoadingBlocked] = useState(false);
+
+  // Verification state
+  const [vFullName, setVFullName] = useState(profile?.full_name || "");
+  const [vAge, setVAge] = useState("");
+  const [vPhone, setVPhone] = useState(profile?.phone || "");
+  const [vOrgType, setVOrgType] = useState<"ip" | "self" | "ooo">("self");
+  const [vOrgName, setVOrgName] = useState("");
+  const [vSending, setVSending] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -577,6 +586,110 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
     );
   }
 
+  // Verification section
+  if (section === "verification") {
+    const SUPPORT_USER_ID = "de95eea5-d75b-4693-af15-020c58422126";
+
+    const handleSendVerification = async () => {
+      if (!vFullName.trim() || !vAge || !vPhone.trim()) {
+        toast.error("Заполните все обязательные поля");
+        return;
+      }
+      setVSending(true);
+
+      const orgTypeLabels = { ip: "ИП", self: "Самозанятый", ooo: "ООО" };
+      const message = `📋 Заявка на верификацию\n\n👤 ФИО: ${vFullName.trim()}\n🎂 Возраст: ${vAge}\n📱 Телефон: ${vPhone.trim()}\n🏢 Тип: ${orgTypeLabels[vOrgType]}${vOrgName.trim() ? `\n🏛 Организация: ${vOrgName.trim()}` : ""}\n\nID: ${profile?.display_id || user?.id?.slice(0, 8).toUpperCase()}\nРоль: ${role === "dispatcher" ? "Диспетчер" : "Грузчик"}`;
+
+      // Find or create conversation with support
+      const { data: myConvs } = await supabase
+        .from("conversation_participants")
+        .select("conversation_id")
+        .eq("user_id", user!.id);
+
+      let conversationId: string | null = null;
+      if (myConvs) {
+        for (const mc of myConvs) {
+          const { data: other } = await supabase
+            .from("conversation_participants")
+            .select("id")
+            .eq("conversation_id", mc.conversation_id)
+            .eq("user_id", SUPPORT_USER_ID)
+            .single();
+          if (other) { conversationId = mc.conversation_id; break; }
+        }
+      }
+
+      if (!conversationId) {
+        conversationId = crypto.randomUUID();
+        await supabase.from("conversations").insert({ id: conversationId, title: "Gruzli Official" });
+        await supabase.from("conversation_participants").insert([
+          { conversation_id: conversationId, user_id: user!.id },
+          { conversation_id: conversationId, user_id: SUPPORT_USER_ID },
+        ]);
+      }
+
+      await supabase.from("messages").insert({
+        conversation_id: conversationId,
+        sender_id: user!.id,
+        text: message,
+      });
+
+      toast.success("Заявка на верификацию отправлена!");
+      setVSending(false);
+      setSection("main");
+    };
+
+    return (
+      <ScrollWrapper title="Верификация" goBack={() => setSection("main")}>
+        <div className="px-5 space-y-4">
+          <div className="bg-card border border-border rounded-2xl p-4 text-center">
+            <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+              <BadgeCheck size={28} className="text-primary" />
+            </div>
+            <h3 className="text-sm font-bold text-foreground">Пройти верификацию</h3>
+            <p className="text-[11px] text-muted-foreground mt-1">Заполните анкету — она будет отправлена в тех. поддержку для проверки</p>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">ФИО *</label>
+              <input value={vFullName} onChange={(e) => setVFullName(e.target.value)} placeholder="Иванов Иван Иванович" className="w-full bg-surface-1 border border-border rounded-2xl py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Возраст *</label>
+              <input type="number" value={vAge} onChange={(e) => setVAge(e.target.value)} placeholder="25" className="w-full bg-surface-1 border border-border rounded-2xl py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Номер телефона *</label>
+              <input type="tel" value={vPhone} onChange={(e) => setVPhone(e.target.value)} placeholder="+7 (999) 123-45-67" className="w-full bg-surface-1 border border-border rounded-2xl py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Тип деятельности *</label>
+              <div className="grid grid-cols-3 gap-2">
+                {([{ id: "ip" as const, label: "ИП" }, { id: "self" as const, label: "Самозанятый" }, { id: "ooo" as const, label: "ООО" }]).map((t) => (
+                  <button key={t.id} type="button" onClick={() => setVOrgType(t.id)} className={`py-2.5 rounded-xl text-xs font-semibold transition-all ${vOrgType === t.id ? "bg-foreground text-primary-foreground" : "bg-card border border-border text-muted-foreground"}`}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {(vOrgType === "ip" || vOrgType === "ooo") && (
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Название организации</label>
+                <input value={vOrgName} onChange={(e) => setVOrgName(e.target.value)} placeholder='ООО "Грузовик"' className="w-full bg-surface-1 border border-border rounded-2xl py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none" />
+              </div>
+            )}
+          </div>
+
+          <button onClick={handleSendVerification} disabled={vSending} className="w-full py-3.5 rounded-2xl bg-foreground text-primary-foreground text-sm font-bold tap-scale disabled:opacity-50 flex items-center justify-center gap-2">
+            {vSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+            {vSending ? "Отправка..." : "Отправить заявку"}
+          </button>
+        </div>
+      </ScrollWrapper>
+    );
+  }
+
   // About section
   if (section === "about") {
     return (
@@ -623,6 +736,10 @@ const SettingsScreen = ({ onBack }: SettingsScreenProps) => {
       <div className="flex-1 overflow-y-auto overscroll-contain pb-28">
         <div className="px-5 space-y-2">
           <MenuItem icon={User} label="Профиль" desc="Имя, телефон, фото" onClick={() => setSection("profile")} />
+          {role === "worker" && onOpenPremium && (
+            <MenuItem icon={Crown} label="Premium" desc="Безлимитные заказы и приоритет" onClick={onOpenPremium} badge={profile?.is_premium ? "✓" : ""} />
+          )}
+          <MenuItem icon={BadgeCheck} label="Верификация" desc={profile?.verified ? "Аккаунт верифицирован ✓" : "Подтвердить личность"} onClick={() => setSection("verification")} badge={profile?.verified ? "✓" : ""} />
           <MenuItem icon={Bell} label="Уведомления" desc="Push, звуки, email" onClick={() => setSection("notifications")} />
           <MenuItem icon={Shield} label="Безопасность" desc="Пароль, сессия, удаление" onClick={() => setSection("security")} />
           <MenuItem icon={Palette} label="Оформление" desc="Тема приложения" onClick={() => setSection("appearance")} />

@@ -28,17 +28,51 @@ const plans = [
 const PremiumScreen = ({ onBack, onOpenSupport }: PremiumScreenProps) => {
   const { user, profile } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState("quarter");
+  const [purchasing, setPurchasing] = useState(false);
   const isPremium = profile?.is_premium;
 
-  const handlePurchase = () => {
+  const handlePurchase = async () => {
     const plan = plans.find((p) => p.id === selectedPlan);
-    if (!plan || !user) return;
+    if (!plan || !user || !profile) return;
 
-    onOpenSupport?.(
-      `⭐ Заявка на Premium подписку\n\nПлан: ${plan.label} — ${plan.price} ₽\nID: ${profile?.display_id || user.id.slice(0, 8).toUpperCase()}\nИмя: ${profile?.full_name || "—"}\n\nПрошу активировать Premium подписку.`
-    );
-    toast.success("Заявка отправлена администратору!");
-    onBack();
+    const balance = profile.balance || 0;
+    if (balance < plan.price) {
+      toast.error(`Недостаточно средств. Нужно ${plan.price} ₽, на балансе ${balance} ₽`);
+      return;
+    }
+
+    setPurchasing(true);
+    // Deduct from wallet
+    const { error: balanceError } = await supabase
+      .from("profiles")
+      .update({ balance: balance - plan.price })
+      .eq("user_id", user.id);
+
+    if (balanceError) {
+      toast.error("Ошибка списания");
+      setPurchasing(false);
+      return;
+    }
+
+    // Calculate premium_until
+    const now = new Date();
+    const daysMap: Record<string, number> = { month: 30, quarter: 90, year: 365 };
+    const premiumUntil = new Date(now.getTime() + (daysMap[plan.id] || 30) * 86400000).toISOString();
+
+    const { error: premiumError } = await supabase
+      .from("profiles")
+      .update({ is_premium: true, premium_until: premiumUntil })
+      .eq("user_id", user.id);
+
+    if (premiumError) {
+      toast.error("Ошибка активации Premium");
+      setPurchasing(false);
+      return;
+    }
+
+    toast.success(`Premium активирован на ${plan.label}! 🎉`);
+    setPurchasing(false);
+    setTimeout(() => window.location.reload(), 1000);
   };
 
   return (
@@ -168,22 +202,33 @@ const PremiumScreen = ({ onBack, onOpenSupport }: PremiumScreenProps) => {
         </div>
       )}
 
+      {/* Balance info */}
+      {!isPremium && (
+        <div className="mx-5 mb-4 bg-card border border-border rounded-2xl p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">Баланс кошелька</span>
+            <span className="text-lg font-extrabold text-foreground">{profile?.balance || 0} ₽</span>
+          </div>
+        </div>
+      )}
+
       {/* Purchase button */}
       {!isPremium && (
         <div className="px-5">
           <button
             onClick={handlePurchase}
-            className="w-full py-4 rounded-2xl text-white font-bold text-base tap-scale"
+            disabled={purchasing}
+            className="w-full py-4 rounded-2xl text-white font-bold text-base tap-scale disabled:opacity-50"
             style={{
               background: "linear-gradient(135deg, hsl(43 96% 56%), hsl(25 95% 53%))",
               boxShadow: "0 8px 24px hsl(38 92% 50% / 0.4)",
             }}
           >
             <Crown size={16} className="inline mr-2" />
-            Оформить Premium
+            {purchasing ? "Оформление..." : `Купить за ${plans.find(p => p.id === selectedPlan)?.price || 0} ₽`}
           </button>
           <p className="text-[10px] text-muted-foreground text-center mt-2">
-            Оплата через администратора. Активация в течение 1 часа.
+            Средства спишутся с баланса кошелька
           </p>
         </div>
       )}
