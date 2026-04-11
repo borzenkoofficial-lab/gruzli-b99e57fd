@@ -47,6 +47,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
         if (session?.user) {
           setTimeout(() => fetchRoleAndProfile(session.user.id), 0);
+          // Identify user in Progressier for targeted push notifications
+          if (window.progressier && session.user.email) {
+            window.progressier.add({ email: session.user.email, id: session.user.id });
+          }
         } else {
           setRole(null);
           setProfile(null);
@@ -60,6 +64,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchRoleAndProfile(session.user.id);
+        // Identify user in Progressier for targeted push notifications
+        if (window.progressier && session.user.email) {
+          window.progressier.add({ email: session.user.email, id: session.user.id });
+        }
       }
       setLoading(false);
     });
