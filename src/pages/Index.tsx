@@ -47,6 +47,19 @@ const Index = () => {
     return () => window.removeEventListener("navigate-to-feed", handler);
   }, []);
 
+  // Handle deep link from push notification: /?openChat={conversationId}
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const chatId = params.get("openChat");
+    if (chatId) {
+      setTab("chats");
+      setOpenChatId(chatId);
+      setOpenChatTitle("");
+      // Clean up URL
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
+
   const [openChatId, setOpenChatId] = useState<string | null>(null);
   const [openChatTitle, setOpenChatTitle] = useState("");
   const [showCreateJob, setShowCreateJob] = useState(false);
