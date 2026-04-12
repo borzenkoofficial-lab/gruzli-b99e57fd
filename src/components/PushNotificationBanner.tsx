@@ -1,18 +1,25 @@
 import { Bell, X } from "lucide-react";
-import { useState } from "react";
-import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useState, useEffect, useRef } from "react";
 
 const PushNotificationBanner = () => {
-  const { permissionState, isSubscribed, loading, requestPermission } = usePushNotifications();
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => {
+    return localStorage.getItem("push-banner-dismissed") === "true";
+  });
+  const buttonRef = useRef<HTMLDivElement>(null);
 
-  // Don't show if unsupported, already subscribed, denied, or dismissed
-  if (permissionState === "unsupported" || isSubscribed || permissionState === "denied" || dismissed) {
-    return null;
-  }
+  useEffect(() => {
+    // Ensure Progressier SDK button renders
+    if (buttonRef.current && (window as any).progressier) {
+      // Progressier auto-initializes buttons with the class
+    }
+  }, []);
 
-  // If permission granted but not yet subscribed, still show (will auto-subscribe)
-  if (permissionState === "granted" && isSubscribed) {
+  const handleDismiss = () => {
+    setDismissed(true);
+    localStorage.setItem("push-banner-dismissed", "true");
+  };
+
+  if (dismissed) {
     return null;
   }
 
@@ -27,15 +34,17 @@ const PushNotificationBanner = () => {
           <p className="text-xs text-muted-foreground mt-0.5">
             Получайте мгновенные уведомления о новых заказах и сообщениях
           </p>
-          <button
-            onClick={requestPermission}
-            disabled={loading}
-            className="mt-2 px-4 py-2 rounded-xl text-xs font-bold bg-foreground text-primary-foreground tap-scale disabled:opacity-50"
-          >
-            {loading ? "Подключение..." : "Разрешить уведомления"}
-          </button>
+          <div ref={buttonRef} className="mt-2">
+            <button
+              className="progressier-subscribe-button px-4 py-2 rounded-xl text-xs font-bold bg-foreground text-primary-foreground tap-scale"
+              data-icons="false"
+              data-eligible="Разрешить уведомления"
+              data-subscribed="Уведомления включены ✓"
+              data-blocked="Уведомления заблокированы"
+            />
+          </div>
         </div>
-        <button onClick={() => setDismissed(true)} className="text-muted-foreground p-1">
+        <button onClick={handleDismiss} className="text-muted-foreground p-1">
           <X size={16} />
         </button>
       </div>
