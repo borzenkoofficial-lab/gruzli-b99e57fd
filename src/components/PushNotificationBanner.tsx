@@ -1,25 +1,20 @@
 import { Bell, X } from "lucide-react";
 import { useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 const PushNotificationBanner = () => {
-  const { user } = useAuth();
+  const { permissionState, isSubscribed, loading, requestPermission } = usePushNotifications();
   const [dismissed, setDismissed] = useState(false);
 
-  const isSupported = typeof Notification !== "undefined" && "serviceWorker" in navigator;
-  const permission = isSupported ? Notification.permission : "denied";
-
-  // Don't show if unsupported, already granted, denied, or dismissed
-  if (!isSupported || permission !== "default" || dismissed) {
+  // Don't show if unsupported, already subscribed, denied, or dismissed
+  if (permissionState === "unsupported" || isSubscribed || permissionState === "denied" || dismissed) {
     return null;
   }
 
-  const handleEnable = async () => {
-    const result = await Notification.requestPermission();
-    if (result === "granted" && window.progressier && user?.email) {
-      window.progressier.add({ email: user.email, id: user.id });
-    }
-  };
+  // If permission granted but not yet subscribed, still show (will auto-subscribe)
+  if (permissionState === "granted" && isSubscribed) {
+    return null;
+  }
 
   return (
     <div className="mx-5 mt-2 mb-3 rounded-2xl overflow-hidden bg-card border border-border p-4">
@@ -33,10 +28,11 @@ const PushNotificationBanner = () => {
             Получайте мгновенные уведомления о новых заказах и сообщениях
           </p>
           <button
-            onClick={handleEnable}
-            className="mt-2 px-4 py-2 rounded-xl text-xs font-bold bg-foreground text-primary-foreground tap-scale"
+            onClick={requestPermission}
+            disabled={loading}
+            className="mt-2 px-4 py-2 rounded-xl text-xs font-bold bg-foreground text-primary-foreground tap-scale disabled:opacity-50"
           >
-            Разрешить уведомления
+            {loading ? "Подключение..." : "Разрешить уведомления"}
           </button>
         </div>
         <button onClick={() => setDismissed(true)} className="text-muted-foreground p-1">
