@@ -93,7 +93,9 @@ const SwipeableChatItem = ({
           >
             {initials}
           </div>
-          {/* Removed fake online dot — no real presence tracking */}
+          {conv.otherLastSeen && formatLastSeen(conv.otherLastSeen).isOnline && (
+            <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-background" />
+          )}
         </div>
 
         <div className="flex-1 min-w-0">
@@ -124,6 +126,7 @@ interface ConversationItem {
   lastTimestamp: string;
   otherName: string;
   unreadCount: number;
+  otherLastSeen: string | null;
 }
 
 interface RealChatsScreenProps {
