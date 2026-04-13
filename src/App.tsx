@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
+import { usePresence } from "@/hooks/usePresence";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
 import SplashScreen from "@/components/SplashScreen";
 import NewJobAlert from "@/components/NewJobAlert";
@@ -25,6 +26,7 @@ const AppRoutes = () => {
   const [splashDone, setSplashDone] = useState(false);
   const [alertQueue, setAlertQueue] = useState<Tables<"jobs">[]>([]);
   useViewportHeight();
+  usePresence();
 
   const handleNewJob = useCallback((job: Tables<"jobs">) => {
     setAlertQueue((q) => [...q, job]);
