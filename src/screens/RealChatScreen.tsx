@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, Check, CheckCheck } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, Check, CheckCheck, MoreVertical, Trash2, Ban, BellOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { formatLastSeen } from "@/hooks/usePresence";
 import type { Tables } from "@/integrations/supabase/types";
 
 interface Message {
@@ -21,6 +22,7 @@ interface RealChatScreenProps {
   conversationId: string;
   title: string;
   onBack: () => void;
+  onOpenProfile?: (userId: string) => void;
 }
 
 // Date separator helpers
@@ -97,7 +99,7 @@ const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup,
 });
 MessageBubble.displayName = "MessageBubble";
 
-const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) => {
+const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile }: RealChatScreenProps) => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [senderNames, setSenderNames] = useState<Record<string, string>>({});
@@ -111,6 +113,9 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
   const [inVoiceRoom, setInVoiceRoom] = useState(false);
   const [voiceRoomId, setVoiceRoomId] = useState<string | null>(null);
   const [peerConnected, setPeerConnected] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [otherUserId, setOtherUserId] = useState<string | null>(null);
+  const [otherLastSeen, setOtherLastSeen] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -120,6 +125,60 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const senderNamesRef = useRef(senderNames);
   senderNamesRef.current = senderNames;
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on outside click
+  useEffect(() => {
+    if (!showMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowMenu(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showMenu]);
+
+  // Fetch other user's presence
+  useEffect(() => {
+    if (!user || !conversationId) return;
+    const fetchOther = async () => {
+      const { data: parts } = await supabase
+        .from("conversation_participants")
+        .select("user_id")
+        .eq("conversation_id", conversationId)
+        .neq("user_id", user.id)
+        .limit(1);
+      const otherId = parts?.[0]?.user_id;
+      if (otherId) {
+        setOtherUserId(otherId);
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("last_seen_at")
+          .eq("user_id", otherId)
+          .single();
+        if (profile) setOtherLastSeen((profile as any).last_seen_at);
+      }
+    };
+    fetchOther();
+
+    // Subscribe to presence changes
+    const channel = supabase
+      .channel(`presence-${conversationId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "profiles" },
+        (payload) => {
+          const updated = payload.new as any;
+          if (updated.user_id === otherUserId) {
+            setOtherLastSeen(updated.last_seen_at);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user, conversationId, otherUserId]);
+
+  const presenceInfo = formatLastSeen(otherLastSeen);
 
   const scrollToBottom = useCallback((smooth = true) => {
     requestAnimationFrame(() => {
@@ -257,24 +316,15 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
       setText(msgText);
       toast.error("Не удалось отправить");
     } else {
-      // Fire-and-forget email notification to other participants
       supabase.functions.invoke("notify-email", {
-        body: {
-          type: "new_message",
-          conversation_id: conversationId,
-          sender_id: user.id,
-          text: msgText,
-        },
+        body: { type: "new_message", conversation_id: conversationId, sender_id: user.id, text: msgText },
       }).catch(() => {});
     }
     setSending(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -301,12 +351,7 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
     });
     if (!msgError) {
       supabase.functions.invoke("notify-email", {
-        body: {
-          type: "new_message",
-          conversation_id: conversationId,
-          sender_id: user.id,
-          text: `📎 ${file.name}`,
-        },
+        body: { type: "new_message", conversation_id: conversationId, sender_id: user.id, text: `📎 ${file.name}` },
       }).catch(() => {});
     }
     setUploading(false);
@@ -359,6 +404,29 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
     }
   };
 
+  // Menu actions
+  const handleDeleteConversation = async () => {
+    if (!user) return;
+    setShowMenu(false);
+    await supabase.from("conversation_participants").delete().eq("conversation_id", conversationId).eq("user_id", user.id);
+    toast.success("Диалог удалён");
+    onBack();
+  };
+
+  const handleBlockUser = async () => {
+    if (!user || !otherUserId) return;
+    setShowMenu(false);
+    const { error } = await supabase.from("blocked_users").insert({ blocker_id: user.id, blocked_id: otherUserId });
+    if (error?.code === "23505") toast.info("Уже в чёрном списке");
+    else if (error) toast.error("Ошибка");
+    else toast.success(`${title} добавлен в чёрный список`);
+  };
+
+  const handleMuteNotifications = () => {
+    setShowMenu(false);
+    toast.success("Уведомления отключены");
+  };
+
   const hasActiveVoiceRoom = messages.some((m) => m.message_type === "voice_room" && m.sender_id !== user?.id);
 
   const renderMediaMessage = (msg: Message) => {
@@ -382,7 +450,6 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
     return <p className="text-[13px] text-foreground leading-relaxed whitespace-pre-wrap">{msg.text}</p>;
   };
 
-  // Get initials
   const initials = title.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
   return (
@@ -390,18 +457,31 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
       <audio ref={remoteAudioRef} autoPlay />
       <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
 
-      {/* Header — Telegram-style */}
+      {/* Header */}
       <div className="flex items-center gap-3 px-3 safe-top pb-3 border-b border-border/50">
         <button onClick={onBack} className="w-9 h-9 rounded-full flex items-center justify-center text-foreground active:bg-muted/50 transition-colors">
           <ArrowLeft size={20} />
         </button>
-        <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0" style={{ background: getAvatarColor(title) }}>
-          {initials}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-semibold text-foreground truncate">{title}</h2>
-          <p className="text-[11px] text-muted-foreground font-medium">был(а) недавно</p>
-        </div>
+
+        {/* Clickable avatar + name → profile */}
+        <button
+          className="flex items-center gap-3 flex-1 min-w-0 text-left"
+          onClick={() => otherUserId && onOpenProfile?.(otherUserId)}
+        >
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 relative" style={{ background: getAvatarColor(title) }}>
+            {initials}
+            {presenceInfo.isOnline && (
+              <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-background" />
+            )}
+          </div>
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-foreground truncate">{title}</h2>
+            <p className={`text-[11px] font-medium ${presenceInfo.isOnline ? "text-green-500" : "text-muted-foreground"}`}>
+              {presenceInfo.text}
+            </p>
+          </div>
+        </button>
+
         <div className="flex gap-1">
           {inVoiceRoom ? (
             <>
@@ -417,6 +497,49 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
               <Phone size={18} />
             </button>
           )}
+
+          {/* Three dots menu */}
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors"
+            >
+              <MoreVertical size={18} />
+            </button>
+            <AnimatePresence>
+              {showMenu && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: -4 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: -4 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 top-11 w-52 bg-card border border-border rounded-2xl shadow-lg z-50 overflow-hidden"
+                >
+                  <button
+                    onClick={handleMuteNotifications}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted/50 transition-colors"
+                  >
+                    <BellOff size={16} className="text-muted-foreground" />
+                    Без звука
+                  </button>
+                  <button
+                    onClick={handleBlockUser}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted/50 transition-colors"
+                  >
+                    <Ban size={16} className="text-muted-foreground" />
+                    Чёрный список
+                  </button>
+                  <button
+                    onClick={handleDeleteConversation}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                  >
+                    <Trash2 size={16} />
+                    Удалить диалог
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
@@ -459,11 +582,7 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
             const isSystem = msg.message_type === "system";
             const prev = messages[idx - 1];
             const next = messages[idx + 1];
-
-            // Date separator
             const showDateSep = !prev || !isSameDay(prev.created_at, msg.created_at);
-
-            // Grouping
             const isFirstInGroup = !prev || prev.sender_id !== msg.sender_id || !isSameGroup(prev, msg) || isSystem;
             const isLastInGroup = !next || next.sender_id !== msg.sender_id || !isSameGroup(msg, next) || next.message_type === "system";
 
@@ -526,7 +645,7 @@ const RealChatScreen = ({ conversationId, title, onBack }: RealChatScreenProps) 
         )}
       </AnimatePresence>
 
-      {/* Input — Telegram-style pill */}
+      {/* Input */}
       <div className="px-3 pt-2 pb-3 border-t border-border/30">
         {uploading && <div className="text-center text-xs text-primary mb-2 animate-pulse">Загрузка файла...</div>}
         <div className="flex items-end gap-2">

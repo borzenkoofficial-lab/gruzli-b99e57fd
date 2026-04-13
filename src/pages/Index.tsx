@@ -152,7 +152,7 @@ const Index = () => {
   // --- Detail panel content for desktop ---
   const getDetailPanel = () => {
     if (openChatId) {
-      return <RealChatScreen conversationId={openChatId} title={openChatTitle} onBack={() => setOpenChatId(null)} />;
+      return <RealChatScreen conversationId={openChatId} title={openChatTitle} onBack={() => setOpenChatId(null)} onOpenProfile={(userId) => { setOpenChatId(null); setViewProfileUserId(userId); }} />;
     }
     if (viewProfileUserId) {
       return (
@@ -248,7 +248,7 @@ const Index = () => {
         />
       );
     }
-    if (openChatId) return <RealChatScreen conversationId={openChatId} title={openChatTitle} onBack={() => setOpenChatId(null)} />;
+    if (openChatId) return <RealChatScreen conversationId={openChatId} title={openChatTitle} onBack={() => setOpenChatId(null)} onOpenProfile={(userId) => { setOpenChatId(null); setViewProfileUserId(userId); }} />;
     if (showCreateJob) return <CreateJobScreen onBack={() => setShowCreateJob(false)} onCreated={() => { setShowCreateJob(false); setTab("feed"); }} />;
     if (viewResponsesJob) {
       return (
