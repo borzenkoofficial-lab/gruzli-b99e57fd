@@ -191,15 +191,16 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel }: RealChatsScreenProps) =>
 
       // Batch fetch all other-user profiles
       const allOtherIds = [...new Set(Object.values(participantsByConv).flat())];
-      let profileMap: Record<string, string> = {};
+      let profileMap: Record<string, { name: string; lastSeen: string | null }> = {};
       if (allOtherIds.length > 0) {
-        const { data: profiles } = await supabase.from("profiles").select("user_id, full_name").in("user_id", allOtherIds);
-        profiles?.forEach(p => { profileMap[p.user_id] = p.full_name; });
+        const { data: profiles } = await supabase.from("profiles").select("user_id, full_name, last_seen_at").in("user_id", allOtherIds);
+        profiles?.forEach(p => { profileMap[p.user_id] = { name: p.full_name, lastSeen: (p as any).last_seen_at }; });
       }
 
       const items = convs.map(conv => {
         const otherIds = participantsByConv[conv.id] || [];
-        const otherName = conv.title || (otherIds.length > 0 ? profileMap[otherIds[0]] || "Чат" : "Чат");
+        const otherProfile = otherIds.length > 0 ? profileMap[otherIds[0]] : null;
+        const otherName = conv.title || (otherProfile?.name || "Чат");
         const lastMsg = lastMsgByConv[conv.id];
         return {
           id: conv.id,
@@ -212,6 +213,7 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel }: RealChatsScreenProps) =>
           lastTimestamp: lastMsg?.created_at || conv.created_at,
           otherName,
           unreadCount: unreadByConv[conv.id] || 0,
+          otherLastSeen: otherProfile?.lastSeen || null,
         };
       });
       items.sort((a, b) => new Date(b.lastTimestamp).getTime() - new Date(a.lastTimestamp).getTime());
