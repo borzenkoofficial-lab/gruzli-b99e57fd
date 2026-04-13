@@ -518,6 +518,7 @@ export type Database = {
           full_name: string
           id: string
           is_premium: boolean
+          last_seen_at: string | null
           phone: string | null
           premium_until: string | null
           rating: number | null
@@ -538,6 +539,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_premium?: boolean
+          last_seen_at?: string | null
           phone?: string | null
           premium_until?: string | null
           rating?: number | null
@@ -558,6 +560,7 @@ export type Database = {
           full_name?: string
           id?: string
           is_premium?: boolean
+          last_seen_at?: string | null
           phone?: string | null
           premium_until?: string | null
           rating?: number | null
