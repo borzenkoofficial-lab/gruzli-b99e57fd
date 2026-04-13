@@ -4,6 +4,8 @@ import { Search, Megaphone, Trash2, Ban } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { formatLastSeen } from "@/hooks/usePresence";
+import { toast } from "sonner";
 
 // Avatar color from name hash (Telegram-style)
 const avatarColors = [
