@@ -16,6 +16,7 @@ interface DispatcherCabinetScreenProps {
   onBack: () => void;
   onChatWithWorker: (workerId: string, workerName: string) => void;
   onViewProfile?: (userId: string) => void;
+  onOpenCommunity?: () => void;
 }
 
 interface WorkerInfo {
@@ -56,7 +57,7 @@ const WORKER_STATUS_MAP: Record<string, { label: string; icon: typeof CheckCircl
   completed: { label: "Завершил", icon: CheckCircle2, color: "text-green-400", bg: "bg-green-400/10" },
 };
 
-const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile }: DispatcherCabinetScreenProps) => {
+const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOpenCommunity }: DispatcherCabinetScreenProps) => {
   const { user } = useAuth();
   const [activeJobs, setActiveJobs] = useState<ActiveJob[]>([]);
   const [completedStats, setCompletedStats] = useState<CompletedJobStat[]>([]);
@@ -304,6 +305,23 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile }: Di
           <h1 className="text-lg font-bold text-foreground">Кабинет</h1>
           <p className="text-xs text-muted-foreground">Управление и финансы</p>
         </div>
+      </div>
+
+      {/* Community button */}
+      <div className="px-4 pb-3">
+        <button
+          onClick={onOpenCommunity}
+          className="w-full flex items-center gap-3 p-3 bg-primary/5 border border-primary/15 rounded-2xl active:bg-primary/10 transition-all"
+        >
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
+            <Users size={18} className="text-primary-foreground" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-bold text-foreground">Сообщество диспетчеров</p>
+            <p className="text-[11px] text-muted-foreground">Общий чат · советы · обсуждения</p>
+          </div>
+          <ChevronDown size={16} className="text-muted-foreground -rotate-90 shrink-0" />
+        </button>
       </div>
 
       {/* Tab navigation */}

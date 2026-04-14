@@ -31,6 +31,7 @@ const UserProfileScreen = lazy(() => import("@/screens/UserProfileScreen"));
 const NotificationsScreen = lazy(() => import("@/screens/NotificationsScreen"));
 const PremiumScreen = lazy(() => import("@/screens/PremiumScreen"));
 const DispatcherCabinetScreen = lazy(() => import("@/screens/DispatcherCabinetScreen"));
+const DispatcherCommunityScreen = lazy(() => import("@/screens/DispatcherCommunityScreen"));
 const PullToRefresh = lazy(() => import("@/components/PullToRefresh"));
 
 const Index = () => {
@@ -69,6 +70,7 @@ const Index = () => {
   const [showChannel, setShowChannel] = useState(false);
   const [viewProfileUserId, setViewProfileUserId] = useState<string | null>(null);
   const [showPremium, setShowPremium] = useState(false);
+  const [showCommunity, setShowCommunity] = useState(false);
   const [showCabinet, setShowCabinet] = useState(false);
   const [viewJobDetail, setViewJobDetail] = useState<Tables<"jobs"> | null>(null);
   const isDispatcher = role === "dispatcher" || role === "admin";
@@ -192,6 +194,14 @@ const Index = () => {
           />
         );
       }
+      if (showCommunity) {
+        return (
+          <DispatcherCommunityScreen
+            onBack={() => setShowCommunity(false)}
+            onOpenProfile={(userId) => { setShowCommunity(false); setViewProfileUserId(userId); }}
+          />
+        );
+      }
       if (showCabinet) {
         return (
           <DispatcherCabinetScreen
@@ -201,6 +211,7 @@ const Index = () => {
               if (opened) setShowCabinet(false);
             }}
             onViewProfile={(userId) => { setShowCabinet(false); setViewProfileUserId(userId); }}
+            onOpenCommunity={() => { setShowCabinet(false); setShowCommunity(true); }}
           />
         );
       }
@@ -236,6 +247,14 @@ const Index = () => {
     if (showPremium) return wrapSuspense(<PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, msg); }} />);
     if (showChannel) return wrapSuspense(<ChannelScreen onBack={() => setShowChannel(false)} />);
     if (showSettings) return wrapSuspense(<SettingsScreen onBack={() => setShowSettings(false)} onOpenPremium={() => { setShowSettings(false); setShowPremium(true); }} />);
+    if (showCommunity) {
+      return wrapSuspense(
+        <DispatcherCommunityScreen
+          onBack={() => setShowCommunity(false)}
+          onOpenProfile={(userId) => { setShowCommunity(false); setViewProfileUserId(userId); }}
+        />
+      );
+    }
     if (showCabinet) {
       return wrapSuspense(
         <DispatcherCabinetScreen
@@ -245,6 +264,7 @@ const Index = () => {
             if (opened) setShowCabinet(false);
           }}
           onViewProfile={(userId) => { setShowCabinet(false); setViewProfileUserId(userId); }}
+          onOpenCommunity={() => { setShowCabinet(false); setShowCommunity(true); }}
         />
       );
     }
