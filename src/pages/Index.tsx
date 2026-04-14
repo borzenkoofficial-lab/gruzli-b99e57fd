@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
+import { useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import DesktopSidebar from "@/components/DesktopSidebar";
@@ -38,6 +39,7 @@ const Index = () => {
   const { role, user } = useAuth();
   const { unreadMessages, newJobsCount, resetMessages, resetJobs } = useUnreadCounts();
   const isMobile = useIsMobile();
+  const { jobId: routeJobId } = useParams<{ jobId?: string }>();
   const SUPPORT_USER_ID = "de95eea5-d75b-4693-af15-020c58422126";
   const SUPPORT_NAME = "Gruzli Official";
   const [tab, setTab] = useState("feed");
@@ -73,6 +75,24 @@ const Index = () => {
   const [showCommunity, setShowCommunity] = useState(false);
   const [showCabinet, setShowCabinet] = useState(false);
   const [viewJobDetail, setViewJobDetail] = useState<Tables<"jobs"> | null>(null);
+
+  // Deep-link: open job from /job/:jobId (push notification click)
+  useEffect(() => {
+    if (!routeJobId) return;
+    (async () => {
+      const { data } = await supabase
+        .from("jobs")
+        .select("*")
+        .eq("id", routeJobId)
+        .single();
+      if (data) {
+        setViewJobDetail(data);
+      }
+      // Clean URL to root
+      window.history.replaceState({}, "", "/");
+    })();
+  }, [routeJobId]);
+
   const isDispatcher = role === "dispatcher" || role === "admin";
   const feedRefreshRef = useRef<(() => Promise<void>) | null>(null);
 

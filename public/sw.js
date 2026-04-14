@@ -101,10 +101,10 @@ self.addEventListener("notificationclick", function (event) {
   event.notification.close();
 
   var data = event.notification.data || {};
-  var url = "/";
+  var url = data.url || "/";
 
   if (data.type === "new_message" && data.conversation_id) {
-    url = "/chat/" + data.conversation_id;
+    url = "/?openChat=" + data.conversation_id;
   } else if (data.type === "new_job" && data.job_id) {
     url = "/job/" + data.job_id;
   }
