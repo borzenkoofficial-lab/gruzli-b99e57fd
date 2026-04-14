@@ -4,8 +4,9 @@
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0a0a0f",
-  "theme_color": "#0a0a0f",
+  "display_override": ["standalone"],
+  "background_color": "#121212",
+  "theme_color": "#121212",
   "icons": [
     {
       "src": "/pwa-192x192.png",
