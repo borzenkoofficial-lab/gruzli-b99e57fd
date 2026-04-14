@@ -320,28 +320,30 @@ const Index = () => {
 
   // --- Desktop layout ---
   const mainContent = (
-    <>
-      {tab === "feed" && (
-        isDispatcher ? (
-          <DispatcherFeedScreen onCreateJob={() => setShowCreateJob(true)} onViewResponses={setViewResponsesJob} onRefreshRef={feedRefreshRef} />
-        ) : (
-          <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
-        )
-      )}
-      {tab === "orders" && <OrdersScreen />}
-      {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} />}
-      {tab === "kartoteka" && <KartotekaScreen />}
-      {tab === "dispatchers" && !isDispatcher && <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />}
-      {tab === "profile" && (
-        <ProfileScreen
-          onOpenSettings={() => setShowSettings(true)}
-          onOpenNotifications={() => setShowNotifications(true)}
-          onOpenSupport={(prefillMessage) => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, prefillMessage)}
-          onOpenPremium={() => setShowPremium(true)}
-          onOpenCabinet={() => setShowCabinet(true)}
-        />
-      )}
-    </>
+    <ErrorBoundary>
+      <Suspense fallback={<ScreenSkeleton />}>
+        {tab === "feed" && (
+          isDispatcher ? (
+            <DispatcherFeedScreen onCreateJob={() => setShowCreateJob(true)} onViewResponses={setViewResponsesJob} onRefreshRef={feedRefreshRef} />
+          ) : (
+            <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
+          )
+        )}
+        {tab === "orders" && <OrdersScreen />}
+        {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} />}
+        {tab === "kartoteka" && <KartotekaScreen />}
+        {tab === "dispatchers" && !isDispatcher && <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />}
+        {tab === "profile" && (
+          <ProfileScreen
+            onOpenSettings={() => setShowSettings(true)}
+            onOpenNotifications={() => setShowNotifications(true)}
+            onOpenSupport={(prefillMessage) => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, prefillMessage)}
+            onOpenPremium={() => setShowPremium(true)}
+            onOpenCabinet={() => setShowCabinet(true)}
+          />
+        )}
+      </Suspense>
+    </ErrorBoundary>
   );
 
   const sidebar = (
