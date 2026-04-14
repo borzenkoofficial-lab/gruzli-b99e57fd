@@ -58,6 +58,8 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   // Blocked users
   const [blockedUsers, setBlockedUsers] = useState<{ id: string; blocked_id: string; full_name: string }[]>([]);
   const [loadingBlocked, setLoadingBlocked] = useState(false);
+  const [legalOpen, setLegalOpen] = useState(false);
+  const [legalDoc, setLegalDoc] = useState<"privacy" | "terms" | "personal_data">("privacy");
 
   // Verification state
   const [vFullName, setVFullName] = useState(profile?.full_name || "");
@@ -693,9 +695,6 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
 
   // About section
   if (section === "about") {
-    const [legalOpen, setLegalOpen] = useState(false);
-    const [legalDoc, setLegalDoc] = useState<"privacy" | "terms" | "personal_data">("privacy");
-
     const openDoc = (doc: "privacy" | "terms" | "personal_data") => {
       setLegalDoc(doc);
       setLegalOpen(true);
