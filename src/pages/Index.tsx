@@ -218,12 +218,18 @@ const Index = () => {
 
   // --- Mobile: full-screen overlays ---
   if (isMobile) {
-    if (showNotifications) return <NotificationsScreen onBack={() => setShowNotifications(false)} />;
-    if (showPremium) return <PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, msg); }} />;
-    if (showChannel) return <ChannelScreen onBack={() => setShowChannel(false)} />;
-    if (showSettings) return <SettingsScreen onBack={() => setShowSettings(false)} onOpenPremium={() => { setShowSettings(false); setShowPremium(true); }} />;
+    const wrapSuspense = (node: React.ReactNode) => (
+      <ErrorBoundary>
+        <Suspense fallback={<ScreenSkeleton />}>{node}</Suspense>
+      </ErrorBoundary>
+    );
+
+    if (showNotifications) return wrapSuspense(<NotificationsScreen onBack={() => setShowNotifications(false)} />);
+    if (showPremium) return wrapSuspense(<PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, msg); }} />);
+    if (showChannel) return wrapSuspense(<ChannelScreen onBack={() => setShowChannel(false)} />);
+    if (showSettings) return wrapSuspense(<SettingsScreen onBack={() => setShowSettings(false)} onOpenPremium={() => { setShowSettings(false); setShowPremium(true); }} />);
     if (showCabinet) {
-      return (
+      return wrapSuspense(
         <DispatcherCabinetScreen
           onBack={() => setShowCabinet(false)}
           onChatWithWorker={async (workerId, workerName) => {
@@ -235,7 +241,7 @@ const Index = () => {
       );
     }
     if (viewProfileUserId) {
-      return (
+      return wrapSuspense(
         <UserProfileScreen
           userId={viewProfileUserId}
           onBack={() => setViewProfileUserId(null)}
@@ -246,10 +252,10 @@ const Index = () => {
         />
       );
     }
-    if (openChatId) return <RealChatScreen conversationId={openChatId} title={openChatTitle} onBack={() => setOpenChatId(null)} onOpenProfile={(userId) => { setOpenChatId(null); setViewProfileUserId(userId); }} />;
-    if (showCreateJob) return <CreateJobScreen onBack={() => setShowCreateJob(false)} onCreated={() => { setShowCreateJob(false); setTab("feed"); }} />;
+    if (openChatId) return wrapSuspense(<RealChatScreen conversationId={openChatId} title={openChatTitle} onBack={() => setOpenChatId(null)} onOpenProfile={(userId) => { setOpenChatId(null); setViewProfileUserId(userId); }} />);
+    if (showCreateJob) return wrapSuspense(<CreateJobScreen onBack={() => setShowCreateJob(false)} onCreated={() => { setShowCreateJob(false); setTab("feed"); }} />);
     if (viewResponsesJob) {
-      return (
+      return wrapSuspense(
         <JobResponsesScreen
           job={viewResponsesJob}
           onBack={() => setViewResponsesJob(null)}
@@ -261,7 +267,7 @@ const Index = () => {
       );
     }
     if (viewJobDetail) {
-      return (
+      return wrapSuspense(
         <JobDetailScreen
           job={viewJobDetail}
           onBack={() => setViewJobDetail(null)}
@@ -273,35 +279,39 @@ const Index = () => {
 
     return (
       <div className="app-shell">
-        {tab === "feed" ? (
-          <PullToRefresh onRefresh={handlePullRefresh}>
-            {isDispatcher ? (
-              <DispatcherFeedScreen onCreateJob={() => setShowCreateJob(true)} onViewResponses={setViewResponsesJob} onRefreshRef={feedRefreshRef} />
-            ) : (
-              <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
-            )}
-          </PullToRefresh>
-        ) : (
-          <div className="app-scroll">
-            <AnimatePresence mode="wait">
-              <motion.div key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-                {tab === "orders" && <OrdersScreen />}
-                {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} />}
-                {tab === "kartoteka" && <KartotekaScreen />}
-                {tab === "dispatchers" && !isDispatcher && <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />}
-                {tab === "profile" && (
-                  <ProfileScreen
-                    onOpenSettings={() => setShowSettings(true)}
-                    onOpenNotifications={() => setShowNotifications(true)}
-                    onOpenSupport={(prefillMessage) => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, prefillMessage)}
-                    onOpenPremium={() => setShowPremium(true)}
-                    onOpenCabinet={() => setShowCabinet(true)}
-                  />
+        <ErrorBoundary>
+          <Suspense fallback={<ScreenSkeleton />}>
+            {tab === "feed" ? (
+              <PullToRefresh onRefresh={handlePullRefresh}>
+                {isDispatcher ? (
+                  <DispatcherFeedScreen onCreateJob={() => setShowCreateJob(true)} onViewResponses={setViewResponsesJob} onRefreshRef={feedRefreshRef} />
+                ) : (
+                  <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
                 )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        )}
+              </PullToRefresh>
+            ) : (
+              <div className="app-scroll">
+                <AnimatePresence mode="wait">
+                  <motion.div key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                    {tab === "orders" && <OrdersScreen />}
+                    {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} />}
+                    {tab === "kartoteka" && <KartotekaScreen />}
+                    {tab === "dispatchers" && !isDispatcher && <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />}
+                    {tab === "profile" && (
+                      <ProfileScreen
+                        onOpenSettings={() => setShowSettings(true)}
+                        onOpenNotifications={() => setShowNotifications(true)}
+                        onOpenSupport={(prefillMessage) => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, prefillMessage)}
+                        onOpenPremium={() => setShowPremium(true)}
+                        onOpenCabinet={() => setShowCabinet(true)}
+                      />
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            )}
+          </Suspense>
+        </ErrorBoundary>
         {!isDispatcher && <FAB />}
         <BottomNav active={tab} onNavigate={handleNavigate} isDispatcher={isDispatcher} unreadMessages={unreadMessages} newJobsCount={newJobsCount} />
       </div>
