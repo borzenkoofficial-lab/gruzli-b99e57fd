@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, MessageCircle, Star, MapPin, Clock, Navigation,
   AlertTriangle, CheckCircle2, Crown, Users, Briefcase, User,
   ChevronDown, ChevronUp, Phone, Square, Timer, Wallet,
+  TrendingUp, TrendingDown, BarChart3, DollarSign, FileText,
+  Calendar, Award,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,12 +26,25 @@ interface WorkerInfo {
   workStartedAt: string | null;
   hoursWorked: number | null;
   earned: number | null;
+  dispatcherReviewRating: number | null;
+  dispatcherReviewText: string | null;
 }
 
 interface ActiveJob {
-  job: Tables<"jobs">;
+  job: Tables<"jobs"> & { expense_per_worker?: number; dispatcher_income?: number };
   workers: WorkerInfo[];
 }
+
+interface CompletedJobStat {
+  jobId: string;
+  title: string;
+  createdAt: string;
+  workersCount: number;
+  totalExpense: number;
+  dispatcherIncome: number;
+}
+
+type CabinetTab = "active" | "stats" | "history";
 
 const WORKER_STATUS_MAP: Record<string, { label: string; icon: typeof CheckCircle2; color: string; bg: string }> = {
   confirmed: { label: "Подтвердил", icon: CheckCircle2, color: "text-green-500", bg: "bg-green-500/10" },
@@ -44,13 +59,22 @@ const WORKER_STATUS_MAP: Record<string, { label: string; icon: typeof CheckCircl
 const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile }: DispatcherCabinetScreenProps) => {
   const { user } = useAuth();
   const [activeJobs, setActiveJobs] = useState<ActiveJob[]>([]);
+  const [completedStats, setCompletedStats] = useState<CompletedJobStat[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedJobs, setExpandedJobs] = useState<Set<string>>(new Set());
   const [finishingJobs, setFinishingJobs] = useState<Set<string>>(new Set());
+  const [currentTab, setCurrentTab] = useState<CabinetTab>("active");
+  const [reviewModal, setReviewModal] = useState<{ responseId: string; workerName: string } | null>(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState("");
+  const [expenseModal, setExpenseModal] = useState<{ jobId: string; title: string; workersCount: number } | null>(null);
+  const [expensePerWorker, setExpensePerWorker] = useState("");
+  const [dispatcherIncome, setDispatcherIncome] = useState("");
 
   const fetchData = async () => {
     if (!user) return;
 
+    // Fetch active/finishing jobs
     const { data: jobs } = await supabase
       .from("jobs")
       .select("*")
@@ -60,365 +84,599 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile }: Di
 
     if (!jobs || jobs.length === 0) {
       setActiveJobs([]);
-      setLoading(false);
-      return;
+    } else {
+      const jobIds = jobs.map((j) => j.id);
+      const { data: responses } = await supabase
+        .from("job_responses")
+        .select("*")
+        .in("job_id", jobIds)
+        .eq("status", "accepted");
+
+      const workerIds = [...new Set((responses || []).map((r) => r.worker_id))];
+      const { data: profiles } = workerIds.length > 0
+        ? await supabase.from("profiles").select("*").in("user_id", workerIds)
+        : { data: [] };
+
+      const profileMap: Record<string, Tables<"profiles">> = {};
+      (profiles || []).forEach((p) => { profileMap[p.user_id] = p; });
+
+      const result: ActiveJob[] = jobs
+        .map((job) => {
+          const jobResponses = (responses || []).filter((r) => r.job_id === job.id);
+          const workers: WorkerInfo[] = jobResponses.map((r) => ({
+            responseId: r.id,
+            workerId: r.worker_id,
+            workerStatus: r.worker_status,
+            profile: profileMap[r.worker_id] || null,
+            workStartedAt: (r as any).work_started_at,
+            hoursWorked: (r as any).hours_worked ? Number((r as any).hours_worked) : null,
+            earned: (r as any).earned,
+            dispatcherReviewRating: (r as any).dispatcher_review_rating,
+            dispatcherReviewText: (r as any).dispatcher_review_text,
+          }));
+          return { job: job as any, workers };
+        })
+        .filter((aj) => aj.workers.length > 0);
+
+      setActiveJobs(result);
+      setExpandedJobs(new Set(result.map((aj) => aj.job.id)));
     }
 
-    const jobIds = jobs.map((j) => j.id);
-    const { data: responses } = await supabase
-      .from("job_responses")
+    // Fetch completed jobs stats
+    const { data: completedJobs } = await supabase
+      .from("jobs")
       .select("*")
-      .in("job_id", jobIds)
-      .eq("status", "accepted");
+      .eq("dispatcher_id", user.id)
+      .eq("status", "completed")
+      .order("created_at", { ascending: false })
+      .limit(50);
 
-    const workerIds = [...new Set((responses || []).map((r) => r.worker_id))];
-    const { data: profiles } = workerIds.length > 0
-      ? await supabase.from("profiles").select("*").in("user_id", workerIds)
-      : { data: [] };
+    if (completedJobs && completedJobs.length > 0) {
+      const cJobIds = completedJobs.map((j) => j.id);
+      const { data: cResponses } = await supabase
+        .from("job_responses")
+        .select("*")
+        .in("job_id", cJobIds)
+        .eq("status", "accepted");
 
-    const profileMap: Record<string, Tables<"profiles">> = {};
-    (profiles || []).forEach((p) => { profileMap[p.user_id] = p; });
+      const stats: CompletedJobStat[] = completedJobs.map((job) => {
+        const jobResps = (cResponses || []).filter((r) => r.job_id === job.id);
+        const totalExpense = jobResps.reduce((s, r) => s + ((r as any).earned || 0), 0);
+        return {
+          jobId: job.id,
+          title: job.title,
+          createdAt: job.created_at,
+          workersCount: jobResps.length,
+          totalExpense,
+          dispatcherIncome: (job as any).dispatcher_income || 0,
+        };
+      });
+      setCompletedStats(stats);
+    }
 
-    const result: ActiveJob[] = jobs
-      .map((job) => {
-        const jobResponses = (responses || []).filter((r) => r.job_id === job.id);
-        const workers: WorkerInfo[] = jobResponses.map((r) => ({
-          responseId: r.id,
-          workerId: r.worker_id,
-          workerStatus: r.worker_status,
-          profile: profileMap[r.worker_id] || null,
-          workStartedAt: (r as any).work_started_at,
-          hoursWorked: (r as any).hours_worked ? Number((r as any).hours_worked) : null,
-          earned: (r as any).earned,
-        }));
-        return { job, workers };
-      })
-      .filter((aj) => aj.workers.length > 0);
-
-    setActiveJobs(result);
-    setExpandedJobs(new Set(result.map((aj) => aj.job.id)));
     setLoading(false);
   };
 
   useEffect(() => {
     fetchData();
-
     if (!user) return;
-
     const channel = supabase
       .channel("dispatcher-cabinet")
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "job_responses" },
-        (payload) => {
-          const updated = payload.new as any;
-          if (updated.status !== "accepted") return;
-
-          setActiveJobs((prev) =>
-            prev.map((aj) => ({
-              ...aj,
-              workers: aj.workers.map((w) =>
-                w.responseId === updated.id
-                  ? {
-                      ...w,
-                      workerStatus: updated.worker_status,
-                      workStartedAt: updated.work_started_at,
-                      hoursWorked: updated.hours_worked ? Number(updated.hours_worked) : null,
-                      earned: updated.earned,
-                    }
-                  : w
-              ),
-            }))
-          );
-        }
-      )
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "job_responses" }, () => fetchData())
       .subscribe();
-
     return () => { supabase.removeChannel(channel); };
   }, [user?.id]);
+
+  // Stats calculations
+  const weeklyStats = useMemo(() => {
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const weekJobs = completedStats.filter((s) => new Date(s.createdAt) >= weekAgo);
+    const totalIncome = weekJobs.reduce((s, j) => s + j.dispatcherIncome, 0);
+    const totalExpense = weekJobs.reduce((s, j) => s + j.totalExpense, 0);
+    const profit = totalIncome - totalExpense;
+    return { jobs: weekJobs.length, income: totalIncome, expense: totalExpense, profit };
+  }, [completedStats]);
+
+  const monthlyStats = useMemo(() => {
+    const monthAgo = new Date();
+    monthAgo.setDate(monthAgo.getDate() - 30);
+    const monthJobs = completedStats.filter((s) => new Date(s.createdAt) >= monthAgo);
+    const totalIncome = monthJobs.reduce((s, j) => s + j.dispatcherIncome, 0);
+    const totalExpense = monthJobs.reduce((s, j) => s + j.totalExpense, 0);
+    const profit = totalIncome - totalExpense;
+    return { jobs: monthJobs.length, income: totalIncome, expense: totalExpense, profit };
+  }, [completedStats]);
+
+  // Weekly chart data (last 7 days)
+  const chartData = useMemo(() => {
+    const days: { label: string; income: number; expense: number }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dayStr = d.toLocaleDateString("ru-RU", { weekday: "short" });
+      const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const dayEnd = new Date(dayStart.getTime() + 86400000);
+      const dayJobs = completedStats.filter((s) => {
+        const t = new Date(s.createdAt).getTime();
+        return t >= dayStart.getTime() && t < dayEnd.getTime();
+      });
+      days.push({
+        label: dayStr,
+        income: dayJobs.reduce((s, j) => s + j.dispatcherIncome, 0),
+        expense: dayJobs.reduce((s, j) => s + j.totalExpense, 0),
+      });
+    }
+    return days;
+  }, [completedStats]);
+
+  const maxChartVal = Math.max(1, ...chartData.map((d) => Math.max(d.income, d.expense)));
 
   const toggleExpand = (jobId: string) => {
     setExpandedJobs((prev) => {
       const next = new Set(prev);
-      if (next.has(jobId)) next.delete(jobId);
-      else next.add(jobId);
+      if (next.has(jobId)) next.delete(jobId); else next.add(jobId);
       return next;
     });
   };
 
   const finishJob = async (jobId: string, workers: WorkerInfo[]) => {
     setFinishingJobs((prev) => new Set(prev).add(jobId));
-
-    // Set all workers who haven't completed to "finishing" status
     for (const w of workers) {
       if (w.workerStatus !== "completed") {
-        await supabase
-          .from("job_responses")
-          .update({ worker_status: "finishing" } as any)
-          .eq("id", w.responseId);
+        await supabase.from("job_responses").update({ worker_status: "finishing" } as any).eq("id", w.responseId);
       }
     }
-
-    // Update job status
-    await supabase
-      .from("jobs")
-      .update({ status: "finishing" })
-      .eq("id", jobId);
-
+    await supabase.from("jobs").update({ status: "finishing" }).eq("id", jobId);
     toast.success("⏹ Заказ завершается. Грузчики получили уведомление.");
-
-    // Refresh data
     await fetchData();
-    setFinishingJobs((prev) => {
-      const next = new Set(prev);
-      next.delete(jobId);
-      return next;
+    setFinishingJobs((prev) => { const n = new Set(prev); n.delete(jobId); return n; });
+  };
+
+  const completeJobFully = async (jobId: string) => {
+    // Find the active job
+    const aj = activeJobs.find((a) => a.job.id === jobId);
+    if (!aj) return;
+
+    // Check if all workers are reviewed
+    const unreviewed = aj.workers.filter((w) => w.workerStatus === "completed" && !w.dispatcherReviewRating);
+    if (unreviewed.length > 0) {
+      toast.error("Сначала оставьте отзывы всем грузчикам");
+      return;
+    }
+
+    // Open expense modal
+    setExpenseModal({
+      jobId,
+      title: aj.job.title,
+      workersCount: aj.workers.length,
     });
   };
 
-  const getStatusSummary = (workers: WorkerInfo[]) => {
-    const counts: Record<string, number> = {};
-    workers.forEach((w) => {
-      const key = w.workerStatus || "waiting";
-      counts[key] = (counts[key] || 0) + 1;
-    });
-    return counts;
+  const submitExpenseAndComplete = async () => {
+    if (!expenseModal) return;
+    const expense = parseInt(expensePerWorker) || 0;
+    const income = parseInt(dispatcherIncome) || 0;
+
+    await supabase.from("jobs").update({
+      status: "completed",
+      expense_per_worker: expense,
+      dispatcher_income: income,
+    } as any).eq("id", expenseModal.jobId);
+
+    toast.success("✅ Заказ завершён!");
+    setExpenseModal(null);
+    setExpensePerWorker("");
+    setDispatcherIncome("");
+    await fetchData();
   };
 
-  const getTotalEarned = (workers: WorkerInfo[]) => {
-    return workers.reduce((sum, w) => sum + (w.earned || 0), 0);
+  const submitReview = async () => {
+    if (!reviewModal) return;
+    await supabase.from("job_responses").update({
+      dispatcher_review_rating: reviewRating,
+      dispatcher_review_text: reviewText || null,
+    } as any).eq("id", reviewModal.responseId);
+    toast.success("Отзыв оставлен ✓");
+    setReviewModal(null);
+    setReviewRating(5);
+    setReviewText("");
+    await fetchData();
   };
 
-  const allWorkersCompleted = (workers: WorkerInfo[]) => {
-    return workers.every((w) => w.workerStatus === "completed");
-  };
+  const getTotalEarned = (workers: WorkerInfo[]) => workers.reduce((sum, w) => sum + (w.earned || 0), 0);
+  const allWorkersCompleted = (workers: WorkerInfo[]) => workers.every((w) => w.workerStatus === "completed");
+
+  const tabs: { id: CabinetTab; label: string; icon: typeof Briefcase }[] = [
+    { id: "active", label: "Активные", icon: Briefcase },
+    { id: "stats", label: "Финансы", icon: BarChart3 },
+    { id: "history", label: "История", icon: FileText },
+  ];
 
   return (
     <div className="min-h-screen bg-background pb-8">
-      <div className="flex items-center gap-3 px-4 safe-top pb-4">
-        <button
-          onClick={onBack}
-          className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 transition-all"
-        >
+      {/* Header */}
+      <div className="flex items-center gap-3 px-4 safe-top pb-3">
+        <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 transition-all">
           <ArrowLeft size={18} className="text-foreground" />
         </button>
         <div className="flex-1">
           <h1 className="text-lg font-bold text-foreground">Кабинет</h1>
-          <p className="text-xs text-muted-foreground">Управление исполнителями</p>
+          <p className="text-xs text-muted-foreground">Управление и финансы</p>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10">
-          <Briefcase size={14} className="text-primary" />
-          <span className="text-xs font-bold text-primary">{activeJobs.length}</span>
+      </div>
+
+      {/* Tab navigation */}
+      <div className="px-4 pb-3">
+        <div className="flex gap-1 bg-muted/40 rounded-2xl p-1">
+          {tabs.map((t) => {
+            const Icon = t.icon;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setCurrentTab(t.id)}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  currentTab === t.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
+              >
+                <Icon size={14} />
+                {t.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {loading ? (
         <div className="text-center py-16 text-muted-foreground text-sm">Загрузка...</div>
-      ) : activeJobs.length === 0 ? (
-        <div className="text-center py-16 px-6">
-          <div className="text-4xl mb-3">📋</div>
-          <p className="text-sm font-semibold text-foreground">Нет активных заявок с исполнителями</p>
-          <p className="text-xs text-muted-foreground mt-1">Когда грузчики будут приняты на заявки, они появятся здесь</p>
-        </div>
       ) : (
-        <div className="px-4 space-y-3">
-          {activeJobs.map((aj) => {
-            const isExpanded = expandedJobs.has(aj.job.id);
-            const statusCounts = getStatusSummary(aj.workers);
-            const totalEarned = getTotalEarned(aj.workers);
-            const isFinishing = aj.job.status === "finishing";
-            const allDone = allWorkersCompleted(aj.workers);
+        <>
+          {/* ACTIVE JOBS TAB */}
+          {currentTab === "active" && (
+            activeJobs.length === 0 ? (
+              <div className="text-center py-16 px-6">
+                <div className="text-4xl mb-3">📋</div>
+                <p className="text-sm font-semibold text-foreground">Нет активных заявок с исполнителями</p>
+                <p className="text-xs text-muted-foreground mt-1">Когда грузчики будут приняты на заявки, они появятся здесь</p>
+              </div>
+            ) : (
+              <div className="px-4 space-y-3">
+                {activeJobs.map((aj) => {
+                  const isExpanded = expandedJobs.has(aj.job.id);
+                  const totalEarned = getTotalEarned(aj.workers);
+                  const isFinishing = aj.job.status === "finishing";
+                  const allDone = allWorkersCompleted(aj.workers);
 
-            return (
-              <motion.div
-                key={aj.job.id}
-                layout
-                className={`bg-card border rounded-2xl overflow-hidden ${isFinishing ? "border-orange-500/30" : "border-border"}`}
-              >
-                <button
-                  onClick={() => toggleExpand(aj.job.id)}
-                  className="w-full p-4 flex items-start gap-3 text-left"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-bold text-foreground truncate">{aj.job.title}</h3>
-                      {isFinishing && (
-                        <span className="shrink-0 px-2 py-0.5 rounded-lg bg-orange-500/10 text-[10px] font-bold text-orange-500">
-                          Завершается
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
-                      {aj.job.address && (
-                        <span className="flex items-center gap-1"><MapPin size={10} /> {aj.job.address}</span>
-                      )}
-                      {aj.job.start_time && (
-                        <span className="flex items-center gap-1">
-                          <Clock size={10} />
-                          {new Date(aj.job.start_time).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                        </span>
-                      )}
-                    </div>
+                  return (
+                    <motion.div key={aj.job.id} layout className={`bg-card border rounded-2xl overflow-hidden ${isFinishing ? "border-orange-500/30" : "border-border"}`}>
+                      <button onClick={() => toggleExpand(aj.job.id)} className="w-full p-4 flex items-start gap-3 text-left">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-bold text-foreground truncate">{aj.job.title}</h3>
+                            {isFinishing && <span className="shrink-0 px-2 py-0.5 rounded-lg bg-orange-500/10 text-[10px] font-bold text-orange-500">Завершается</span>}
+                          </div>
+                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+                            {aj.job.address && <span className="flex items-center gap-1"><MapPin size={10} /> {aj.job.address}</span>}
+                            <span className="flex items-center gap-1"><Users size={10} /> {aj.workers.length} чел.</span>
+                            {totalEarned > 0 && <span className="flex items-center gap-1 text-green-500"><Wallet size={10} /> {totalEarned.toLocaleString("ru-RU")} ₽</span>}
+                          </div>
+                        </div>
+                        {isExpanded ? <ChevronUp size={18} className="text-muted-foreground mt-1 shrink-0" /> : <ChevronDown size={18} className="text-muted-foreground mt-1 shrink-0" />}
+                      </button>
 
-                    <div className="flex flex-wrap gap-1.5 mt-2">
-                      <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-foreground/10 text-[10px] font-semibold text-foreground">
-                        <Users size={10} /> {aj.workers.length} чел.
-                      </span>
-                      {totalEarned > 0 && (
-                        <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-green-500/10 text-[10px] font-semibold text-green-500">
-                          <Wallet size={10} /> {totalEarned.toLocaleString("ru-RU")} ₽
-                        </span>
-                      )}
-                      {Object.entries(statusCounts).map(([status, count]) => {
-                        const ws = WORKER_STATUS_MAP[status];
-                        if (!ws) return (
-                          <span key={status} className="px-2 py-0.5 rounded-lg bg-muted text-[10px] font-semibold text-muted-foreground">
-                            Ожидают: {count}
-                          </span>
-                        );
-                        return (
-                          <span key={status} className={`flex items-center gap-1 px-2 py-0.5 rounded-lg ${ws.bg} text-[10px] font-semibold ${ws.color}`}>
-                            {count} {ws.label.toLowerCase()}
-                          </span>
-                        );
-                      })}
-                    </div>
-                  </div>
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
+                            <div className="px-4 pb-4 space-y-2">
+                              {aj.workers.map((w) => {
+                                const ws = w.workerStatus ? WORKER_STATUS_MAP[w.workerStatus] : null;
+                                const WsIcon = ws?.icon;
+                                const initials = (w.profile?.full_name || "?").split(" ").map((s) => s[0]).join("").slice(0, 2);
+                                const needsReview = w.workerStatus === "completed" && !w.dispatcherReviewRating;
 
-                  {isExpanded ? (
-                    <ChevronUp size={18} className="text-muted-foreground mt-1 shrink-0" />
-                  ) : (
-                    <ChevronDown size={18} className="text-muted-foreground mt-1 shrink-0" />
-                  )}
-                </button>
+                                return (
+                                  <div key={w.responseId} className="bg-surface-1 border border-border rounded-xl p-3">
+                                    <div className="flex items-center gap-3">
+                                      <button onClick={() => onViewProfile?.(w.workerId)} className="shrink-0">
+                                        <div className="relative">
+                                          {w.profile?.is_premium && <div className="absolute -inset-[2px] rounded-full bg-gradient-to-tr from-yellow-400 via-amber-500 to-orange-500 opacity-80" />}
+                                          {w.profile?.avatar_url ? (
+                                            <img src={w.profile.avatar_url} alt="" className="relative w-10 h-10 rounded-full object-cover" />
+                                          ) : (
+                                            <div className="relative w-10 h-10 rounded-full bg-foreground flex items-center justify-center text-sm font-bold text-primary-foreground">{initials}</div>
+                                          )}
+                                        </div>
+                                      </button>
 
-                <AnimatePresence>
-                  {isExpanded && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="px-4 pb-4 space-y-2">
-                        {aj.workers.map((w) => {
-                          const ws = w.workerStatus ? WORKER_STATUS_MAP[w.workerStatus] : null;
-                          const WsIcon = ws?.icon;
-                          const initials = (w.profile?.full_name || "?").split(" ").map((s) => s[0]).join("").slice(0, 2);
+                                      <button onClick={() => onViewProfile?.(w.workerId)} className="flex-1 min-w-0 text-left">
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="text-sm font-semibold text-foreground truncate">{w.profile?.full_name || "Грузчик"}</span>
+                                          {w.profile?.is_premium && <Crown size={12} className="text-yellow-500 fill-yellow-500 shrink-0" />}
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                          <Star size={10} className="text-primary fill-primary" />
+                                          <span className="text-[11px] text-muted-foreground">{w.profile?.rating || "5.0"} · {w.profile?.completed_orders || 0} заказов</span>
+                                        </div>
+                                      </button>
 
-                          return (
-                            <div key={w.responseId} className="bg-surface-1 border border-border rounded-xl p-3">
-                              <div className="flex items-center gap-3">
-                                <button onClick={() => onViewProfile?.(w.workerId)} className="shrink-0">
-                                  <div className="relative">
-                                    {w.profile?.is_premium && (
-                                      <div className="absolute -inset-[2px] rounded-full bg-gradient-to-tr from-yellow-400 via-amber-500 to-orange-500 opacity-80" />
-                                    )}
-                                    {w.profile?.avatar_url ? (
-                                      <img src={w.profile.avatar_url} alt="" className="relative w-10 h-10 rounded-full object-cover" />
-                                    ) : (
-                                      <div className="relative w-10 h-10 rounded-full bg-foreground flex items-center justify-center text-sm font-bold text-primary-foreground">
-                                        {initials}
+                                      <div className="shrink-0">
+                                        {ws && WsIcon ? (
+                                          <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl ${ws.bg}`}>
+                                            <WsIcon size={13} className={ws.color} />
+                                            <span className={`text-[11px] font-bold ${ws.color}`}>{ws.label}</span>
+                                          </div>
+                                        ) : (
+                                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-muted">
+                                            <Clock size={13} className="text-muted-foreground" />
+                                            <span className="text-[11px] font-bold text-muted-foreground">Ожидает</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {w.workerStatus === "completed" && w.earned != null && (
+                                      <div className="mt-2 flex items-center gap-3 px-2 py-1.5 rounded-lg bg-green-500/10 text-[11px]">
+                                        <span className="text-green-500 font-bold flex items-center gap-1"><Wallet size={10} /> {w.earned.toLocaleString("ru-RU")} ₽</span>
+                                        {w.hoursWorked != null && <span className="text-green-500/70 flex items-center gap-1"><Timer size={10} /> {w.hoursWorked}ч</span>}
                                       </div>
                                     )}
-                                  </div>
-                                </button>
 
-                                <button onClick={() => onViewProfile?.(w.workerId)} className="flex-1 min-w-0 text-left">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-sm font-semibold text-foreground truncate">
-                                      {w.profile?.full_name || "Грузчик"}
-                                    </span>
-                                    {w.profile?.is_premium && <Crown size={12} className="text-yellow-500 fill-yellow-500 shrink-0" />}
-                                  </div>
-                                  <div className="flex items-center gap-2 mt-0.5">
-                                    <Star size={10} className="text-primary fill-primary" />
-                                    <span className="text-[11px] text-muted-foreground">
-                                      {w.profile?.rating || "5.0"} · {w.profile?.completed_orders || 0} заказов
-                                    </span>
-                                  </div>
-                                </button>
+                                    {/* Review badge or button */}
+                                    {w.workerStatus === "completed" && (
+                                      w.dispatcherReviewRating ? (
+                                        <div className="mt-2 flex items-center gap-2 px-2 py-1.5 rounded-lg bg-primary/10 text-[11px]">
+                                          <Award size={10} className="text-primary" />
+                                          <span className="text-primary font-semibold">Отзыв: {"⭐".repeat(w.dispatcherReviewRating)}</span>
+                                        </div>
+                                      ) : (
+                                        <button
+                                          onClick={() => setReviewModal({ responseId: w.responseId, workerName: w.profile?.full_name || "Грузчик" })}
+                                          className="mt-2 w-full py-2 rounded-xl bg-primary/10 text-primary text-xs font-bold active:bg-primary/20 transition-all flex items-center justify-center gap-1.5"
+                                        >
+                                          <Star size={12} /> Оставить отзыв
+                                        </button>
+                                      )
+                                    )}
 
-                                <div className="shrink-0">
-                                  {ws && WsIcon ? (
-                                    <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl ${ws.bg}`}>
-                                      <WsIcon size={13} className={ws.color} />
-                                      <span className={`text-[11px] font-bold ${ws.color}`}>{ws.label}</span>
+                                    <div className="flex gap-2 mt-2.5">
+                                      <button onClick={() => onChatWithWorker(w.workerId, w.profile?.full_name || "Грузчик")} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-card border border-border text-xs font-semibold text-foreground active:bg-surface-1 transition-all">
+                                        <MessageCircle size={13} className="text-primary" /> Написать
+                                      </button>
+                                      {w.profile?.phone && (
+                                        <a href={`tel:${w.profile.phone}`} className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-card border border-border text-xs font-semibold text-foreground active:bg-surface-1 transition-all">
+                                          <Phone size={13} className="text-green-500" /> Звонок
+                                        </a>
+                                      )}
                                     </div>
-                                  ) : (
-                                    <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-muted">
-                                      <Clock size={13} className="text-muted-foreground" />
-                                      <span className="text-[11px] font-bold text-muted-foreground">Ожидает</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
+                                  </div>
+                                );
+                              })}
 
-                              {/* Earnings info for completed workers */}
-                              {w.workerStatus === "completed" && w.earned != null && (
-                                <div className="mt-2 flex items-center gap-3 px-2 py-1.5 rounded-lg bg-green-500/10 text-[11px]">
-                                  <span className="text-green-500 font-bold flex items-center gap-1">
-                                    <Wallet size={10} /> {w.earned.toLocaleString("ru-RU")} ₽
-                                  </span>
-                                  {w.hoursWorked != null && (
-                                    <span className="text-green-500/70 flex items-center gap-1">
-                                      <Timer size={10} /> {w.hoursWorked}ч
-                                    </span>
-                                  )}
-                                </div>
+                              {/* Finish / Complete buttons */}
+                              {!isFinishing && !allDone && (
+                                <button onClick={() => finishJob(aj.job.id, aj.workers)} disabled={finishingJobs.has(aj.job.id)} className="w-full mt-2 py-3 rounded-xl bg-destructive text-destructive-foreground text-sm font-bold active:scale-95 transition-all disabled:opacity-50">
+                                  ⏹ Завершить заказ
+                                </button>
                               )}
 
-                              <div className="flex gap-2 mt-2.5">
-                                <button
-                                  onClick={() => onChatWithWorker(w.workerId, w.profile?.full_name || "Грузчик")}
-                                  className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-card border border-border text-xs font-semibold text-foreground active:bg-surface-1 transition-all"
-                                >
-                                  <MessageCircle size={13} className="text-primary" />
-                                  Написать
-                                </button>
-                                {w.profile?.phone && (
-                                  <a
-                                    href={`tel:${w.profile.phone}`}
-                                    className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-card border border-border text-xs font-semibold text-foreground active:bg-surface-1 transition-all"
+                              {allDone && (
+                                <div className="space-y-2">
+                                  <div className="text-center py-2">
+                                    <p className="text-xs font-bold text-green-500">✅ Все грузчики завершили работу</p>
+                                    <p className="text-[10px] text-muted-foreground mt-0.5">Итого расход: {getTotalEarned(aj.workers).toLocaleString("ru-RU")} ₽</p>
+                                  </div>
+                                  <button
+                                    onClick={() => completeJobFully(aj.job.id)}
+                                    className="w-full py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold active:scale-95 transition-all"
                                   >
-                                    <Phone size={13} className="text-green-500" />
-                                    Звонок
-                                  </a>
-                                )}
-                              </div>
+                                    📊 Закрыть заказ и заполнить расход
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                          );
-                        })}
-
-                        {/* Finish job button */}
-                        {!isFinishing && !allDone && (
-                          <button
-                            onClick={() => finishJob(aj.job.id, aj.workers)}
-                            disabled={finishingJobs.has(aj.job.id)}
-                            className="w-full mt-2 py-3 rounded-xl bg-destructive text-destructive-foreground text-sm font-bold active:scale-95 transition-all disabled:opacity-50"
-                          >
-                            ⏹ Завершить заказ
-                          </button>
+                          </motion.div>
                         )}
-
-                        {allDone && (
-                          <div className="text-center py-2">
-                            <p className="text-xs font-bold text-green-500">✅ Все грузчики завершили работу</p>
-                            <p className="text-[10px] text-muted-foreground mt-0.5">
-                              Итого: {getTotalEarned(aj.workers).toLocaleString("ru-RU")} ₽
-                            </p>
-                          </div>
-                        )}
-                      </div>
+                      </AnimatePresence>
                     </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            );
-          })}
-        </div>
+                  );
+                })}
+              </div>
+            )
+          )}
+
+          {/* STATS TAB */}
+          {currentTab === "stats" && (
+            <div className="px-4 space-y-4">
+              {/* Period cards */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-card border border-border rounded-2xl p-4">
+                  <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1"><Calendar size={10} /> За неделю</p>
+                  <p className="text-xl font-extrabold text-foreground">{weeklyStats.jobs}</p>
+                  <p className="text-[10px] text-muted-foreground">заказов</p>
+                </div>
+                <div className="bg-card border border-border rounded-2xl p-4">
+                  <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1"><Calendar size={10} /> За месяц</p>
+                  <p className="text-xl font-extrabold text-foreground">{monthlyStats.jobs}</p>
+                  <p className="text-[10px] text-muted-foreground">заказов</p>
+                </div>
+              </div>
+
+              {/* Weekly income */}
+              <div className="bg-card border border-border rounded-2xl p-4">
+                <h3 className="text-xs font-bold text-foreground mb-3 flex items-center gap-1.5"><TrendingUp size={14} className="text-green-500" /> Доход за неделю</h3>
+                <p className="text-2xl font-extrabold text-green-500">{weeklyStats.income.toLocaleString("ru-RU")} ₽</p>
+                <div className="flex items-center gap-4 mt-2 text-xs">
+                  <span className="flex items-center gap-1 text-destructive"><TrendingDown size={12} /> Расход: {weeklyStats.expense.toLocaleString("ru-RU")} ₽</span>
+                </div>
+                <div className="mt-2 pt-2 border-t border-border">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Чистая прибыль</span>
+                    <span className={`text-sm font-extrabold ${weeklyStats.profit >= 0 ? "text-green-500" : "text-destructive"}`}>
+                      {weeklyStats.profit >= 0 ? "+" : ""}{weeklyStats.profit.toLocaleString("ru-RU")} ₽
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Monthly income */}
+              <div className="bg-card border border-border rounded-2xl p-4">
+                <h3 className="text-xs font-bold text-foreground mb-3 flex items-center gap-1.5"><DollarSign size={14} className="text-primary" /> Доход за месяц</h3>
+                <p className="text-2xl font-extrabold text-primary">{monthlyStats.income.toLocaleString("ru-RU")} ₽</p>
+                <div className="flex items-center gap-4 mt-2 text-xs">
+                  <span className="flex items-center gap-1 text-destructive"><TrendingDown size={12} /> Расход: {monthlyStats.expense.toLocaleString("ru-RU")} ₽</span>
+                </div>
+                <div className="mt-2 pt-2 border-t border-border">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Чистая прибыль</span>
+                    <span className={`text-sm font-extrabold ${monthlyStats.profit >= 0 ? "text-green-500" : "text-destructive"}`}>
+                      {monthlyStats.profit >= 0 ? "+" : ""}{monthlyStats.profit.toLocaleString("ru-RU")} ₽
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Chart */}
+              <div className="bg-card border border-border rounded-2xl p-4">
+                <h3 className="text-xs font-bold text-foreground mb-4 flex items-center gap-1.5"><BarChart3 size={14} /> График за неделю</h3>
+                <div className="flex items-end justify-between gap-1 h-32">
+                  {chartData.map((d, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                      <div className="w-full flex flex-col items-center gap-0.5" style={{ height: 100 }}>
+                        <div className="w-3 rounded-full bg-green-500/80 transition-all" style={{ height: `${(d.income / maxChartVal) * 100}%`, minHeight: d.income > 0 ? 4 : 0 }} />
+                        <div className="w-3 rounded-full bg-destructive/60 transition-all" style={{ height: `${(d.expense / maxChartVal) * 100}%`, minHeight: d.expense > 0 ? 4 : 0 }} />
+                      </div>
+                      <span className="text-[9px] text-muted-foreground">{d.label}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center gap-4 mt-3 justify-center text-[10px] text-muted-foreground">
+                  <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500" /> Доход</span>
+                  <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-destructive" /> Расход</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* HISTORY TAB */}
+          {currentTab === "history" && (
+            completedStats.length === 0 ? (
+              <div className="text-center py-16 text-muted-foreground text-sm">Нет завершённых заказов</div>
+            ) : (
+              <div className="px-4 space-y-2">
+                {completedStats.map((s) => (
+                  <div key={s.jobId} className="bg-card border border-border rounded-2xl p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-bold text-foreground truncate">{s.title}</h3>
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
+                          {new Date(s.createdAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })} · {s.workersCount} чел.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 mt-2 text-xs">
+                      <span className="flex items-center gap-1 text-green-500 font-bold"><TrendingUp size={12} /> +{s.dispatcherIncome.toLocaleString("ru-RU")} ₽</span>
+                      <span className="flex items-center gap-1 text-destructive font-bold"><TrendingDown size={12} /> -{s.totalExpense.toLocaleString("ru-RU")} ₽</span>
+                      <span className={`font-extrabold ${s.dispatcherIncome - s.totalExpense >= 0 ? "text-foreground" : "text-destructive"}`}>
+                        = {(s.dispatcherIncome - s.totalExpense).toLocaleString("ru-RU")} ₽
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          )}
+        </>
       )}
+
+      {/* Review modal */}
+      <AnimatePresence>
+        {reviewModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center" onClick={() => setReviewModal(null)}>
+            <motion.div
+              initial={{ y: 200 }} animate={{ y: 0 }} exit={{ y: 200 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-lg bg-card rounded-t-3xl p-6"
+            >
+              <h3 className="text-lg font-bold text-foreground mb-1">Отзыв о {reviewModal.workerName}</h3>
+              <p className="text-xs text-muted-foreground mb-4">Оцените работу исполнителя</p>
+
+              <div className="flex items-center gap-2 mb-4">
+                {[1, 2, 3, 4, 5].map((v) => (
+                  <button key={v} onClick={() => setReviewRating(v)} className="p-1">
+                    <Star size={28} className={v <= reviewRating ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"} />
+                  </button>
+                ))}
+              </div>
+
+              <textarea
+                value={reviewText}
+                onChange={(e) => setReviewText(e.target.value)}
+                placeholder="Комментарий (необязательно)..."
+                className="w-full bg-muted/40 rounded-xl p-3 text-sm text-foreground placeholder:text-muted-foreground outline-none border border-border/30 resize-none h-20 mb-4"
+              />
+
+              <button onClick={submitReview} className="w-full py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold active:scale-95 transition-all">
+                Отправить отзыв
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Expense modal */}
+      <AnimatePresence>
+        {expenseModal && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center" onClick={() => setExpenseModal(null)}>
+            <motion.div
+              initial={{ y: 200 }} animate={{ y: 0 }} exit={{ y: 200 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-lg bg-card rounded-t-3xl p-6"
+            >
+              <h3 className="text-lg font-bold text-foreground mb-1">Закрытие заказа</h3>
+              <p className="text-xs text-muted-foreground mb-4">{expenseModal.title} · {expenseModal.workersCount} грузчиков</p>
+
+              <div className="space-y-3 mb-4">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">💰 Ваш доход (что получили от клиента)</label>
+                  <input
+                    type="number"
+                    value={dispatcherIncome}
+                    onChange={(e) => setDispatcherIncome(e.target.value)}
+                    placeholder="0"
+                    className="w-full bg-muted/40 rounded-xl p-3 text-lg font-bold text-foreground placeholder:text-muted-foreground outline-none border border-border/30"
+                  />
+                </div>
+
+                <div className="bg-surface-1 border border-border rounded-xl p-3">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Расход на грузчиков (автоматически)</span>
+                    <span className="font-bold text-destructive">
+                      {activeJobs.find((a) => a.job.id === expenseModal.jobId)
+                        ? getTotalEarned(activeJobs.find((a) => a.job.id === expenseModal.jobId)!.workers).toLocaleString("ru-RU")
+                        : 0} ₽
+                    </span>
+                  </div>
+                </div>
+
+                {dispatcherIncome && (
+                  <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-green-500 font-semibold">Чистая прибыль</span>
+                      <span className="text-lg font-extrabold text-green-500">
+                        {((parseInt(dispatcherIncome) || 0) - getTotalEarned(activeJobs.find((a) => a.job.id === expenseModal.jobId)?.workers || [])).toLocaleString("ru-RU")} ₽
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button onClick={submitExpenseAndComplete} className="w-full py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold active:scale-95 transition-all">
+                ✅ Завершить и сохранить
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
