@@ -247,6 +247,14 @@ const Index = () => {
     if (showPremium) return wrapSuspense(<PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, msg); }} />);
     if (showChannel) return wrapSuspense(<ChannelScreen onBack={() => setShowChannel(false)} />);
     if (showSettings) return wrapSuspense(<SettingsScreen onBack={() => setShowSettings(false)} onOpenPremium={() => { setShowSettings(false); setShowPremium(true); }} />);
+    if (showCommunity) {
+      return wrapSuspense(
+        <DispatcherCommunityScreen
+          onBack={() => setShowCommunity(false)}
+          onOpenProfile={(userId) => { setShowCommunity(false); setViewProfileUserId(userId); }}
+        />
+      );
+    }
     if (showCabinet) {
       return wrapSuspense(
         <DispatcherCabinetScreen
@@ -256,8 +264,10 @@ const Index = () => {
             if (opened) setShowCabinet(false);
           }}
           onViewProfile={(userId) => { setShowCabinet(false); setViewProfileUserId(userId); }}
+          onOpenCommunity={() => { setShowCabinet(false); setShowCommunity(true); }}
         />
       );
+    }
     }
     if (viewProfileUserId) {
       return wrapSuspense(
