@@ -11,6 +11,7 @@ import { useViewportHeight } from "@/hooks/useViewportHeight";
 import SplashScreen from "@/components/SplashScreen";
 import NewJobAlert from "@/components/NewJobAlert";
 import AppRatingModal from "@/components/AppRatingModal";
+import OnboardingTour from "@/components/OnboardingTour";
 import type { Tables } from "@/integrations/supabase/types";
 
 import Index from "./pages/Index";
@@ -26,6 +27,9 @@ const AppRoutes = () => {
   const { user, loading, role } = useAuth();
   const [splashDone, setSplashDone] = useState(false);
   const [alertQueue, setAlertQueue] = useState<Tables<"jobs">[]>([]);
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return !localStorage.getItem("onboarding_completed");
+  });
   useViewportHeight();
   usePresence();
 
@@ -49,6 +53,9 @@ const AppRoutes = () => {
 
   return (
     <>
+      {showOnboarding && (
+        <OnboardingTour onComplete={() => setShowOnboarding(false)} />
+      )}
       <Suspense fallback={<div className="flex items-center justify-center h-screen"><div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" /></div>}>
         <Routes>
           <Route path="/" element={<Index />} />
