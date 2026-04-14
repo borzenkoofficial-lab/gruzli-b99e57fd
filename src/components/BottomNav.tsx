@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { motion } from "framer-motion";
 import { Home, ClipboardList, MessageCircle, User, FolderOpen } from "lucide-react";
 
@@ -9,16 +10,17 @@ interface BottomNavProps {
   newJobsCount?: number;
 }
 
-const Badge = ({ count }: { count: number }) => {
+const Badge = memo(({ count }: { count: number }) => {
   if (count <= 0) return null;
   return (
-    <span className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-foreground text-background text-[10px] font-bold leading-none">
+    <span className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-foreground text-background text-[10px] font-bold leading-none" aria-label={`${count} непрочитанных`}>
       {count > 99 ? "99+" : count}
     </span>
   );
-};
+});
+Badge.displayName = "Badge";
 
-const BottomNav = ({ active, onNavigate, isDispatcher, unreadMessages = 0, newJobsCount = 0 }: BottomNavProps) => {
+const BottomNav = memo(({ active, onNavigate, isDispatcher, unreadMessages = 0, newJobsCount = 0 }: BottomNavProps) => {
   const workerTabs = [
     { id: "feed", label: "Главная", icon: Home, badge: newJobsCount },
     { id: "orders", label: "Заказы", icon: ClipboardList, badge: 0 },
@@ -37,8 +39,8 @@ const BottomNav = ({ active, onNavigate, isDispatcher, unreadMessages = 0, newJo
   const tabs = isDispatcher ? dispatcherTabs : workerTabs;
 
   return (
-    <div className="bottom-nav-wrapper">
-      <div className="bottom-nav-pill">
+    <nav className="bottom-nav-wrapper" role="navigation" aria-label="Основная навигация">
+      <div className="bottom-nav-pill" role="tablist">
         {tabs.map((tab) => {
           const isActive = active === tab.id;
           const Icon = tab.icon;
@@ -47,6 +49,9 @@ const BottomNav = ({ active, onNavigate, isDispatcher, unreadMessages = 0, newJo
               key={tab.id}
               whileTap={{ scale: 0.9 }}
               onClick={() => onNavigate(tab.id)}
+              role="tab"
+              aria-selected={isActive}
+              aria-label={`${tab.label}${tab.badge > 0 ? `, ${tab.badge} новых` : ""}`}
               className={`relative flex min-w-0 flex-1 flex-col items-center gap-0.5 py-2 px-1 rounded-2xl transition-colors duration-150 ${
                 isActive ? "bottom-nav-active" : ""
               }`}
@@ -70,8 +75,9 @@ const BottomNav = ({ active, onNavigate, isDispatcher, unreadMessages = 0, newJo
           );
         })}
       </div>
-    </div>
+    </nav>
   );
-};
+});
+BottomNav.displayName = "BottomNav";
 
 export default BottomNav;

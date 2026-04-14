@@ -1,39 +1,37 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import DesktopSidebar from "@/components/DesktopSidebar";
 import DesktopLayout from "@/components/DesktopLayout";
 import FAB from "@/components/FAB";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import ScreenSkeleton from "@/components/ScreenSkeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-// Worker screens
-import FeedScreen from "@/screens/FeedScreen";
-import JobDetailScreen from "@/screens/JobDetailScreen";
-import OrdersScreen from "@/screens/OrdersScreen";
-import ProfileScreen from "@/screens/ProfileScreen";
-
-// Dispatcher screens
-import DispatcherFeedScreen from "@/screens/DispatcherFeedScreen";
-import CreateJobScreen from "@/screens/CreateJobScreen";
-import JobResponsesScreen from "@/screens/JobResponsesScreen";
-
-// Shared screens
-import RealChatsScreen from "@/screens/RealChatsScreen";
-import RealChatScreen from "@/screens/RealChatScreen";
-import ChannelScreen from "@/screens/ChannelScreen";
-import DispatchersScreen from "@/screens/DispatchersScreen";
-import KartotekaScreen from "@/screens/KartotekaScreen";
-import SettingsScreen from "@/screens/SettingsScreen";
-import UserProfileScreen from "@/screens/UserProfileScreen";
-import NotificationsScreen from "@/screens/NotificationsScreen";
-import PremiumScreen from "@/screens/PremiumScreen";
-import DispatcherCabinetScreen from "@/screens/DispatcherCabinetScreen";
-import PullToRefresh from "@/components/PullToRefresh";
-
 import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
+
+// Lazy load all screens
+const FeedScreen = lazy(() => import("@/screens/FeedScreen"));
+const JobDetailScreen = lazy(() => import("@/screens/JobDetailScreen"));
+const OrdersScreen = lazy(() => import("@/screens/OrdersScreen"));
+const ProfileScreen = lazy(() => import("@/screens/ProfileScreen"));
+const DispatcherFeedScreen = lazy(() => import("@/screens/DispatcherFeedScreen"));
+const CreateJobScreen = lazy(() => import("@/screens/CreateJobScreen"));
+const JobResponsesScreen = lazy(() => import("@/screens/JobResponsesScreen"));
+const RealChatsScreen = lazy(() => import("@/screens/RealChatsScreen"));
+const RealChatScreen = lazy(() => import("@/screens/RealChatScreen"));
+const ChannelScreen = lazy(() => import("@/screens/ChannelScreen"));
+const DispatchersScreen = lazy(() => import("@/screens/DispatchersScreen"));
+const KartotekaScreen = lazy(() => import("@/screens/KartotekaScreen"));
+const SettingsScreen = lazy(() => import("@/screens/SettingsScreen"));
+const UserProfileScreen = lazy(() => import("@/screens/UserProfileScreen"));
+const NotificationsScreen = lazy(() => import("@/screens/NotificationsScreen"));
+const PremiumScreen = lazy(() => import("@/screens/PremiumScreen"));
+const DispatcherCabinetScreen = lazy(() => import("@/screens/DispatcherCabinetScreen"));
+const PullToRefresh = lazy(() => import("@/components/PullToRefresh"));
 
 const Index = () => {
   const { role, user } = useAuth();
@@ -151,81 +149,95 @@ const Index = () => {
 
   // --- Detail panel content for desktop ---
   const getDetailPanel = () => {
-    if (openChatId) {
-      return <RealChatScreen conversationId={openChatId} title={openChatTitle} onBack={() => setOpenChatId(null)} onOpenProfile={(userId) => { setOpenChatId(null); setViewProfileUserId(userId); }} />;
-    }
-    if (viewProfileUserId) {
-      return (
-        <UserProfileScreen
-          userId={viewProfileUserId}
-          onBack={() => setViewProfileUserId(null)}
-          onChat={async (userId, name) => {
-            const opened = await handleChatWithUser(userId, name);
-            if (opened) setViewProfileUserId(null);
-          }}
-        />
-      );
-    }
-    if (showSettings) {
-      return <SettingsScreen onBack={() => setShowSettings(false)} onOpenPremium={() => { setShowSettings(false); setShowPremium(true); }} />;
-    }
-    if (showNotifications) {
-      return <NotificationsScreen onBack={() => setShowNotifications(false)} />;
-    }
-    if (showPremium) {
-      return <PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, msg); }} />;
-    }
-    if (showChannel) {
-      return <ChannelScreen onBack={() => setShowChannel(false)} />;
-    }
-    if (showCreateJob) {
-      return <CreateJobScreen onBack={() => setShowCreateJob(false)} onCreated={() => { setShowCreateJob(false); setTab("feed"); }} />;
-    }
-    if (viewResponsesJob) {
-      return (
-        <JobResponsesScreen
-          job={viewResponsesJob}
-          onBack={() => setViewResponsesJob(null)}
-          onChatWithWorker={async (workerId, workerName) => {
-            const opened = await handleChatWithUser(workerId, workerName);
-            if (opened) setViewResponsesJob(null);
-          }}
-        />
-      );
-    }
-    if (showCabinet) {
-      return (
-        <DispatcherCabinetScreen
-          onBack={() => setShowCabinet(false)}
-          onChatWithWorker={async (workerId, workerName) => {
-            const opened = await handleChatWithUser(workerId, workerName);
-            if (opened) setShowCabinet(false);
-          }}
-          onViewProfile={(userId) => { setShowCabinet(false); setViewProfileUserId(userId); }}
-        />
-      );
-    }
-    if (viewJobDetail) {
-      return (
-        <JobDetailScreen
-          job={viewJobDetail}
-          onBack={() => setViewJobDetail(null)}
-          onOpenChat={handleOpenChat}
-          onOpenProfile={(userId) => { setViewJobDetail(null); setViewProfileUserId(userId); }}
-        />
-      );
-    }
-    return null;
+    const panel = (() => {
+      if (openChatId) {
+        return <RealChatScreen conversationId={openChatId} title={openChatTitle} onBack={() => setOpenChatId(null)} onOpenProfile={(userId) => { setOpenChatId(null); setViewProfileUserId(userId); }} />;
+      }
+      if (viewProfileUserId) {
+        return (
+          <UserProfileScreen
+            userId={viewProfileUserId}
+            onBack={() => setViewProfileUserId(null)}
+            onChat={async (userId, name) => {
+              const opened = await handleChatWithUser(userId, name);
+              if (opened) setViewProfileUserId(null);
+            }}
+          />
+        );
+      }
+      if (showSettings) {
+        return <SettingsScreen onBack={() => setShowSettings(false)} onOpenPremium={() => { setShowSettings(false); setShowPremium(true); }} />;
+      }
+      if (showNotifications) {
+        return <NotificationsScreen onBack={() => setShowNotifications(false)} />;
+      }
+      if (showPremium) {
+        return <PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, msg); }} />;
+      }
+      if (showChannel) {
+        return <ChannelScreen onBack={() => setShowChannel(false)} />;
+      }
+      if (showCreateJob) {
+        return <CreateJobScreen onBack={() => setShowCreateJob(false)} onCreated={() => { setShowCreateJob(false); setTab("feed"); }} />;
+      }
+      if (viewResponsesJob) {
+        return (
+          <JobResponsesScreen
+            job={viewResponsesJob}
+            onBack={() => setViewResponsesJob(null)}
+            onChatWithWorker={async (workerId, workerName) => {
+              const opened = await handleChatWithUser(workerId, workerName);
+              if (opened) setViewResponsesJob(null);
+            }}
+          />
+        );
+      }
+      if (showCabinet) {
+        return (
+          <DispatcherCabinetScreen
+            onBack={() => setShowCabinet(false)}
+            onChatWithWorker={async (workerId, workerName) => {
+              const opened = await handleChatWithUser(workerId, workerName);
+              if (opened) setShowCabinet(false);
+            }}
+            onViewProfile={(userId) => { setShowCabinet(false); setViewProfileUserId(userId); }}
+          />
+        );
+      }
+      if (viewJobDetail) {
+        return (
+          <JobDetailScreen
+            job={viewJobDetail}
+            onBack={() => setViewJobDetail(null)}
+            onOpenChat={handleOpenChat}
+            onOpenProfile={(userId) => { setViewJobDetail(null); setViewProfileUserId(userId); }}
+          />
+        );
+      }
+      return null;
+    })();
+    if (!panel) return null;
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<ScreenSkeleton />}>{panel}</Suspense>
+      </ErrorBoundary>
+    );
   };
 
   // --- Mobile: full-screen overlays ---
   if (isMobile) {
-    if (showNotifications) return <NotificationsScreen onBack={() => setShowNotifications(false)} />;
-    if (showPremium) return <PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, msg); }} />;
-    if (showChannel) return <ChannelScreen onBack={() => setShowChannel(false)} />;
-    if (showSettings) return <SettingsScreen onBack={() => setShowSettings(false)} onOpenPremium={() => { setShowSettings(false); setShowPremium(true); }} />;
+    const wrapSuspense = (node: React.ReactNode) => (
+      <ErrorBoundary>
+        <Suspense fallback={<ScreenSkeleton />}>{node}</Suspense>
+      </ErrorBoundary>
+    );
+
+    if (showNotifications) return wrapSuspense(<NotificationsScreen onBack={() => setShowNotifications(false)} />);
+    if (showPremium) return wrapSuspense(<PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, msg); }} />);
+    if (showChannel) return wrapSuspense(<ChannelScreen onBack={() => setShowChannel(false)} />);
+    if (showSettings) return wrapSuspense(<SettingsScreen onBack={() => setShowSettings(false)} onOpenPremium={() => { setShowSettings(false); setShowPremium(true); }} />);
     if (showCabinet) {
-      return (
+      return wrapSuspense(
         <DispatcherCabinetScreen
           onBack={() => setShowCabinet(false)}
           onChatWithWorker={async (workerId, workerName) => {
@@ -237,7 +249,7 @@ const Index = () => {
       );
     }
     if (viewProfileUserId) {
-      return (
+      return wrapSuspense(
         <UserProfileScreen
           userId={viewProfileUserId}
           onBack={() => setViewProfileUserId(null)}
@@ -248,10 +260,10 @@ const Index = () => {
         />
       );
     }
-    if (openChatId) return <RealChatScreen conversationId={openChatId} title={openChatTitle} onBack={() => setOpenChatId(null)} onOpenProfile={(userId) => { setOpenChatId(null); setViewProfileUserId(userId); }} />;
-    if (showCreateJob) return <CreateJobScreen onBack={() => setShowCreateJob(false)} onCreated={() => { setShowCreateJob(false); setTab("feed"); }} />;
+    if (openChatId) return wrapSuspense(<RealChatScreen conversationId={openChatId} title={openChatTitle} onBack={() => setOpenChatId(null)} onOpenProfile={(userId) => { setOpenChatId(null); setViewProfileUserId(userId); }} />);
+    if (showCreateJob) return wrapSuspense(<CreateJobScreen onBack={() => setShowCreateJob(false)} onCreated={() => { setShowCreateJob(false); setTab("feed"); }} />);
     if (viewResponsesJob) {
-      return (
+      return wrapSuspense(
         <JobResponsesScreen
           job={viewResponsesJob}
           onBack={() => setViewResponsesJob(null)}
@@ -263,7 +275,7 @@ const Index = () => {
       );
     }
     if (viewJobDetail) {
-      return (
+      return wrapSuspense(
         <JobDetailScreen
           job={viewJobDetail}
           onBack={() => setViewJobDetail(null)}
@@ -275,35 +287,39 @@ const Index = () => {
 
     return (
       <div className="app-shell">
-        {tab === "feed" ? (
-          <PullToRefresh onRefresh={handlePullRefresh}>
-            {isDispatcher ? (
-              <DispatcherFeedScreen onCreateJob={() => setShowCreateJob(true)} onViewResponses={setViewResponsesJob} onRefreshRef={feedRefreshRef} />
-            ) : (
-              <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
-            )}
-          </PullToRefresh>
-        ) : (
-          <div className="app-scroll">
-            <AnimatePresence mode="wait">
-              <motion.div key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-                {tab === "orders" && <OrdersScreen />}
-                {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} />}
-                {tab === "kartoteka" && <KartotekaScreen />}
-                {tab === "dispatchers" && !isDispatcher && <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />}
-                {tab === "profile" && (
-                  <ProfileScreen
-                    onOpenSettings={() => setShowSettings(true)}
-                    onOpenNotifications={() => setShowNotifications(true)}
-                    onOpenSupport={(prefillMessage) => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, prefillMessage)}
-                    onOpenPremium={() => setShowPremium(true)}
-                    onOpenCabinet={() => setShowCabinet(true)}
-                  />
+        <ErrorBoundary>
+          <Suspense fallback={<ScreenSkeleton />}>
+            {tab === "feed" ? (
+              <PullToRefresh onRefresh={handlePullRefresh}>
+                {isDispatcher ? (
+                  <DispatcherFeedScreen onCreateJob={() => setShowCreateJob(true)} onViewResponses={setViewResponsesJob} onRefreshRef={feedRefreshRef} />
+                ) : (
+                  <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
                 )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        )}
+              </PullToRefresh>
+            ) : (
+              <div className="app-scroll">
+                <AnimatePresence mode="wait">
+                  <motion.div key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                    {tab === "orders" && <OrdersScreen />}
+                    {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} />}
+                    {tab === "kartoteka" && <KartotekaScreen />}
+                    {tab === "dispatchers" && !isDispatcher && <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />}
+                    {tab === "profile" && (
+                      <ProfileScreen
+                        onOpenSettings={() => setShowSettings(true)}
+                        onOpenNotifications={() => setShowNotifications(true)}
+                        onOpenSupport={(prefillMessage) => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, prefillMessage)}
+                        onOpenPremium={() => setShowPremium(true)}
+                        onOpenCabinet={() => setShowCabinet(true)}
+                      />
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+            )}
+          </Suspense>
+        </ErrorBoundary>
         {!isDispatcher && <FAB />}
         <BottomNav active={tab} onNavigate={handleNavigate} isDispatcher={isDispatcher} unreadMessages={unreadMessages} newJobsCount={newJobsCount} />
       </div>
@@ -312,28 +328,30 @@ const Index = () => {
 
   // --- Desktop layout ---
   const mainContent = (
-    <>
-      {tab === "feed" && (
-        isDispatcher ? (
-          <DispatcherFeedScreen onCreateJob={() => setShowCreateJob(true)} onViewResponses={setViewResponsesJob} onRefreshRef={feedRefreshRef} />
-        ) : (
-          <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
-        )
-      )}
-      {tab === "orders" && <OrdersScreen />}
-      {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} />}
-      {tab === "kartoteka" && <KartotekaScreen />}
-      {tab === "dispatchers" && !isDispatcher && <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />}
-      {tab === "profile" && (
-        <ProfileScreen
-          onOpenSettings={() => setShowSettings(true)}
-          onOpenNotifications={() => setShowNotifications(true)}
-          onOpenSupport={(prefillMessage) => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, prefillMessage)}
-          onOpenPremium={() => setShowPremium(true)}
-          onOpenCabinet={() => setShowCabinet(true)}
-        />
-      )}
-    </>
+    <ErrorBoundary>
+      <Suspense fallback={<ScreenSkeleton />}>
+        {tab === "feed" && (
+          isDispatcher ? (
+            <DispatcherFeedScreen onCreateJob={() => setShowCreateJob(true)} onViewResponses={setViewResponsesJob} onRefreshRef={feedRefreshRef} />
+          ) : (
+            <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
+          )
+        )}
+        {tab === "orders" && <OrdersScreen />}
+        {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} />}
+        {tab === "kartoteka" && <KartotekaScreen />}
+        {tab === "dispatchers" && !isDispatcher && <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />}
+        {tab === "profile" && (
+          <ProfileScreen
+            onOpenSettings={() => setShowSettings(true)}
+            onOpenNotifications={() => setShowNotifications(true)}
+            onOpenSupport={(prefillMessage) => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, prefillMessage)}
+            onOpenPremium={() => setShowPremium(true)}
+            onOpenCabinet={() => setShowCabinet(true)}
+          />
+        )}
+      </Suspense>
+    </ErrorBoundary>
   );
 
   const sidebar = (
