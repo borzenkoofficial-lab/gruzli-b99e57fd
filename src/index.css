@@ -291,34 +291,51 @@
     }
   }
 
-  /* The pill itself — clean glass */
+  /* The pill itself — liquid glass */
   .bottom-nav-pill {
     display: flex;
     align-items: center;
     justify-content: space-around;
     width: 100%;
-    padding: 4px 6px;
-    border-radius: 9999px;
-    background: hsl(var(--surface-2) / 0.7);
-    backdrop-filter: blur(24px) saturate(1.4);
-    -webkit-backdrop-filter: blur(24px) saturate(1.4);
-    border: 1px solid hsl(var(--border) / 0.5);
-    box-shadow: 0 4px 16px hsl(0 0% 0% / 0.3);
+    padding: 6px 8px;
+    border-radius: 28px;
+    background: linear-gradient(
+      135deg,
+      hsl(var(--surface-2) / 0.55) 0%,
+      hsl(var(--surface-3) / 0.45) 50%,
+      hsl(var(--surface-2) / 0.55) 100%
+    );
+    backdrop-filter: blur(40px) saturate(1.8) brightness(1.1);
+    -webkit-backdrop-filter: blur(40px) saturate(1.8) brightness(1.1);
+    border: 1px solid hsl(0 0% 100% / 0.12);
+    box-shadow:
+      0 8px 32px hsl(0 0% 0% / 0.4),
+      inset 0 1px 0 hsl(0 0% 100% / 0.1),
+      inset 0 -1px 0 hsl(0 0% 0% / 0.15);
     pointer-events: auto;
   }
 
   .light .bottom-nav-pill {
-    background: hsl(var(--surface-2) / 0.8);
-    border: 1px solid hsl(var(--border) / 0.4);
-    box-shadow: 0 2px 12px hsl(0 0% 0% / 0.08);
+    background: linear-gradient(
+      135deg,
+      hsl(var(--surface-2) / 0.65) 0%,
+      hsl(var(--surface-3) / 0.5) 50%,
+      hsl(var(--surface-2) / 0.65) 100%
+    );
+    border: 1px solid hsl(0 0% 100% / 0.4);
+    box-shadow:
+      0 4px 20px hsl(0 0% 0% / 0.1),
+      inset 0 1px 0 hsl(0 0% 100% / 0.5),
+      inset 0 -1px 0 hsl(0 0% 0% / 0.05);
   }
 
   .bottom-nav-active {
-    background: hsl(var(--surface-3) / 0.6);
+    background: hsl(0 0% 100% / 0.1);
+    border-radius: 20px;
   }
 
   .light .bottom-nav-active {
-    background: hsl(var(--surface-3) / 0.5);
+    background: hsl(0 0% 0% / 0.06);
   }
 
   .fab-docked {
