@@ -435,9 +435,49 @@
   }
 }
 
-/* Safe area for notched phones */
+/* Safe area for notched phones — browser mode */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .bottom-nav-wrapper {
     padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2px);
+  }
+}
+
+/* PWA standalone mode — nav flush to bottom, no extra chin */
+@media all and (display-mode: standalone) {
+  .bottom-nav-wrapper {
+    padding: 0 12px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .bottom-nav-pill {
+    border-radius: 20px 20px 0 0;
+    border-bottom: none;
+    box-shadow: 0 -2px 12px hsl(0 0% 0% / 0.3);
+  }
+
+  .app-scroll {
+    padding-bottom: calc(var(--bottom-nav-height) - 20px);
+  }
+}
+
+/* Lock to portrait — hide landscape completely on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  body::before {
+    content: "Пожалуйста, поверните устройство в портретный режим";
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-size: 1.125rem;
+    font-weight: 600;
+    text-align: center;
+    padding: 2rem;
+  }
+  body > * {
+    visibility: hidden;
   }
 }
