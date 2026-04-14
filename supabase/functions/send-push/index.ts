@@ -1,6 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { z } from "npm:zod@3.25.76";
-import webpush from "npm:web-push@3.6.7";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,73 +31,10 @@ const RequestSchema = z.discriminatedUnion("type", [
 
 const APP_URL = "https://gruzli.lovable.app";
 
-// ---- Configure web-push with VAPID ----
-
-function initWebPush() {
-  const publicKey = Deno.env.get("VAPID_PUBLIC_KEY");
-  const privateKey = Deno.env.get("VAPID_PRIVATE_KEY");
-  if (!publicKey || !privateKey) {
-    console.error("VAPID keys not configured");
-    return false;
-  }
-  webpush.setVapidDetails("mailto:support@gruzli.lovable.app", publicKey, privateKey);
-  return true;
-}
-
-// ---- Send native Web Push to specific user IDs ----
-
-async function sendNativeWebPush(
-  supabase: any,
-  userIds: string[],
-  payload: object
-): Promise<{ sent: number; failed: number }> {
-  if (!initWebPush()) return { sent: 0, failed: 0 };
-
-  let sent = 0;
-  let failed = 0;
-  const payloadStr = JSON.stringify(payload);
-
-  for (const userId of userIds) {
-    const { data: subs } = await supabase
-      .from("push_subscriptions")
-      .select("endpoint, p256dh, auth")
-      .eq("user_id", userId);
-
-    if (!subs || subs.length === 0) continue;
-
-    for (const sub of subs) {
-      try {
-        await webpush.sendNotification(
-          {
-            endpoint: sub.endpoint,
-            keys: { p256dh: sub.p256dh, auth: sub.auth },
-          },
-          payloadStr,
-          { TTL: 86400, urgency: "high" }
-        );
-        sent++;
-      } catch (err: any) {
-        console.error(`Web push failed for ${sub.endpoint}:`, err?.statusCode, err?.body);
-        failed++;
-        // If endpoint is gone (404/410), clean up
-        if (err?.statusCode === 410 || err?.statusCode === 404) {
-          await supabase
-            .from("push_subscriptions")
-            .delete()
-            .eq("user_id", userId)
-            .eq("endpoint", sub.endpoint);
-        }
-      }
-    }
-  }
-
-  return { sent, failed };
-}
-
-// ---- Progressier Push (fallback) ----
+// ---- Progressier Push ----
 
 async function sendProgressierPush(params: {
-  recipientEmail?: string;
+  recipientEmail: string;
   title: string;
   body: string;
   url: string;
@@ -109,18 +45,6 @@ async function sendProgressierPush(params: {
     return { ok: false, error: "missing_api_key" };
   }
 
-  const payload: Record<string, any> = {
-    title: params.title,
-    body: params.body,
-    url: params.url,
-  };
-
-  if (params.recipientEmail) {
-    payload.recipients = { email: params.recipientEmail };
-  } else {
-    return { ok: false, error: "no_recipient" };
-  }
-
   try {
     const res = await fetch("https://progressier.app/jWxTg8Xf6DGKt3JsinXm/send", {
       method: "POST",
@@ -128,7 +52,12 @@ async function sendProgressierPush(params: {
         "authorization": `Bearer ${apiKey}`,
         "content-type": "application/json",
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        title: params.title,
+        body: params.body,
+        url: params.url,
+        recipients: { email: params.recipientEmail },
+      }),
     });
 
     const text = await res.text();
@@ -143,7 +72,7 @@ async function sendProgressierPush(params: {
   }
 }
 
-async function sendProgressierPushToUsers(
+async function sendPushToUsers(
   supabase: any,
   userIds: string[],
   payload: { title: string; body: string; url: string }
@@ -157,11 +86,7 @@ async function sendProgressierPushToUsers(
     try {
       const { data: userData } = await supabase.auth.admin.getUserById(userId);
       const email = userData?.user?.email;
-
-      if (!email) {
-        failed++;
-        continue;
-      }
+      if (!email) { failed++; continue; }
 
       const result = await sendProgressierPush({
         recipientEmail: email,
@@ -173,7 +98,7 @@ async function sendProgressierPushToUsers(
       if (result.ok) sent++;
       else failed++;
     } catch (err) {
-      console.error(`Progressier push error for user ${userId}:`, err);
+      console.error(`Push error for user ${userId}:`, err);
       failed++;
     }
   }
@@ -213,34 +138,15 @@ Deno.serve(async (req) => {
       const messageBody = `${body.hourly_rate}₽/ч · ${body.address || "Адрес не указан"}`;
       const url = body.job_id ? `${APP_URL}/job/${body.job_id}` : APP_URL;
 
-      const pushPayload = {
-        title,
-        body: messageBody,
-        url,
-        type: "new_job",
-        job_id: body.job_id,
-      };
-
-      // Get all workers
       const { data: workers } = await supabase
         .from("user_roles")
         .select("user_id")
         .eq("role", "worker");
 
       const workerIds = (workers || []).map((w: any) => w.user_id);
-
-      // Send native Web Push to all workers
-      const nativeResult = await sendNativeWebPush(supabase, workerIds, pushPayload);
-      sent += nativeResult.sent;
-      failed += nativeResult.failed;
-
-      const progResult = await sendProgressierPushToUsers(supabase, workerIds, {
-        title,
-        body: messageBody,
-        url,
-      });
-      sent += progResult.sent;
-      failed += progResult.failed;
+      const result = await sendPushToUsers(supabase, workerIds, { title, body: messageBody, url });
+      sent += result.sent;
+      failed += result.failed;
 
     } else if (type === "new_message") {
       const { data: senderProfile } = await supabase
@@ -261,27 +167,9 @@ Deno.serve(async (req) => {
         .neq("user_id", body.sender_id);
 
       const targetUserIds = (participants || []).map((p: any) => p.user_id);
-
-      const pushPayload = {
-        title,
-        body: messageBody,
-        url,
-        type: "new_message",
-        conversation_id: body.conversation_id,
-      };
-
-      // Send native Web Push
-      const nativeResult = await sendNativeWebPush(supabase, targetUserIds, pushPayload);
-      sent += nativeResult.sent;
-      failed += nativeResult.failed;
-
-      const progResult = await sendProgressierPushToUsers(supabase, targetUserIds, {
-        title,
-        body: messageBody,
-        url,
-      });
-      sent += progResult.sent;
-      failed += progResult.failed;
+      const result = await sendPushToUsers(supabase, targetUserIds, { title, body: messageBody, url });
+      sent += result.sent;
+      failed += result.failed;
 
     } else if (type === "worker_status_change") {
       const STATUS_LABELS: Record<string, string> = {
@@ -309,73 +197,24 @@ Deno.serve(async (req) => {
       if (jobData) {
         const workerName = workerProfile?.full_name || "Грузчик";
         const statusLabel = STATUS_LABELS[body.worker_status] || body.worker_status;
-        const notifTitle = `${statusLabel}`;
         const url = APP_URL;
 
         if (body.worker_status === "finishing") {
           const messageBody = `Заказ: ${jobData.title}. Завершите работу для подсчёта.`;
-          const pushPayload = { title: "⏹ Завершите работу", body: messageBody, url, type: "worker_status_change" };
-
-          const nativeResult = await sendNativeWebPush(supabase, [body.worker_id], pushPayload);
-          sent += nativeResult.sent;
-          failed += nativeResult.failed;
-
-          const progResult = await sendProgressierPushToUsers(supabase, [body.worker_id], {
-            title: "⏹ Завершите работу",
-            body: messageBody,
-            url,
+          const result = await sendPushToUsers(supabase, [body.worker_id], {
+            title: "⏹ Завершите работу", body: messageBody, url,
           });
-          sent += progResult.sent;
-          failed += progResult.failed;
+          sent += result.sent;
+          failed += result.failed;
         } else {
           const messageBody = `${workerName} · ${jobData.title}`;
-          const pushPayload = { title: notifTitle, body: messageBody, url, type: "worker_status_change" };
-
-          const nativeResult = await sendNativeWebPush(supabase, [jobData.dispatcher_id], pushPayload);
-          sent += nativeResult.sent;
-          failed += nativeResult.failed;
-
-          const progResult = await sendProgressierPushToUsers(supabase, [jobData.dispatcher_id], {
-            title: notifTitle,
-            body: messageBody,
-            url,
+          const result = await sendPushToUsers(supabase, [jobData.dispatcher_id], {
+            title: statusLabel, body: messageBody, url,
           });
-          sent += progResult.sent;
-          failed += progResult.failed;
+          sent += result.sent;
+          failed += result.failed;
         }
       }
-    }
-
-    // Also send email notifications where still needed.
-    // New job alerts are intentionally push-only.
-    try {
-      if (type === "new_message") {
-        const { data: participants } = await supabase
-          .from("conversation_participants")
-          .select("user_id")
-          .eq("conversation_id", body.conversation_id)
-          .neq("user_id", body.sender_id);
-
-        const targetUserIds = (participants || []).map((p: any) => p.user_id);
-        const { data: senderProfile } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("user_id", body.sender_id)
-          .single();
-
-        await sendEmailNotifications(
-          supabase,
-          targetUserIds,
-          "new-message-notification",
-          {
-            senderName: senderProfile?.full_name || "Пользователь",
-            messageText: body.text || "Медиа-сообщение",
-          },
-          `new-msg-email-${body.conversation_id}-${Date.now()}`,
-        );
-      }
-    } catch (emailErr) {
-      console.error("Email notification error (non-fatal):", emailErr);
     }
 
     return new Response(JSON.stringify({ sent, failed }), {
@@ -389,31 +228,3 @@ Deno.serve(async (req) => {
     });
   }
 });
-
-async function sendEmailNotifications(
-  supabase: any,
-  targetUserIds: string[],
-  templateName: string,
-  templateData: Record<string, any>,
-  idempotencyPrefix: string,
-) {
-  if (targetUserIds.length === 0) return;
-
-  for (const userId of targetUserIds) {
-    try {
-      const { data: userData } = await supabase.auth.admin.getUserById(userId);
-      if (!userData?.user?.email) continue;
-
-      await supabase.functions.invoke("send-transactional-email", {
-        body: {
-          templateName,
-          recipientEmail: userData.user.email,
-          idempotencyKey: `${idempotencyPrefix}-${userId}`,
-          templateData,
-        },
-      });
-    } catch (err) {
-      console.error(`Email send error for user ${userId}:`, err);
-    }
-  }
-}
