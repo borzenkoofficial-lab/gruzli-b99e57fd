@@ -2,9 +2,10 @@ import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import {
   Briefcase, MessageSquare, Bell, Smartphone, ChevronRight, ChevronLeft,
-  PartyPopper, Zap, ClipboardList, User, Shield, ArrowDown, Check, X,
-  Home, Share, MoreVertical, Plus, Search
+  PartyPopper, Zap, ClipboardList, User, Shield, Check,
+  Home, Plus, Search, Users, Star, DollarSign, BarChart3, FolderOpen
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface OnboardingTourProps {
   onComplete: () => void;
@@ -12,7 +13,6 @@ interface OnboardingTourProps {
 
 const SWIPE_THRESHOLD = 50;
 
-/* ───── Detect platform ───── */
 const getPlatform = (): "android" | "ios" | "desktop" => {
   const ua = navigator.userAgent.toLowerCase();
   if (/iphone|ipad|ipod/.test(ua)) return "ios";
@@ -20,7 +20,6 @@ const getPlatform = (): "android" | "ios" | "desktop" => {
   return "desktop";
 };
 
-/* ───── Progress bar ───── */
 const ProgressBar = ({ current, total }: { current: number; total: number }) => (
   <div className="flex gap-1.5 w-full max-w-xs mx-auto">
     {Array.from({ length: total }).map((_, i) => (
@@ -36,8 +35,8 @@ const ProgressBar = ({ current, total }: { current: number; total: number }) => 
   </div>
 );
 
-/* ───── Step 1: Welcome ───── */
-const WelcomeStep = () => (
+/* ───── Step 1: Welcome (role-aware) ───── */
+const WelcomeStep = ({ isDispatcher }: { isDispatcher: boolean }) => (
   <div className="flex flex-col items-center text-center px-6">
     <motion.div
       initial={{ scale: 0 }}
@@ -53,7 +52,7 @@ const WelcomeStep = () => (
       transition={{ delay: 0.4 }}
       className="text-2xl font-extrabold text-foreground mb-3"
     >
-      Добро пожаловать в Gruzli!
+      {isDispatcher ? "Добро пожаловать, диспетчер!" : "Добро пожаловать в Gruzli!"}
     </motion.h1>
     <motion.p
       initial={{ opacity: 0, y: 20 }}
@@ -61,8 +60,9 @@ const WelcomeStep = () => (
       transition={{ delay: 0.55 }}
       className="text-sm text-muted-foreground leading-relaxed max-w-sm"
     >
-      Gruzli — платформа, которая соединяет грузчиков и диспетчеров.
-      Находите заказы, общайтесь напрямую и зарабатывайте быстрее.
+      {isDispatcher
+        ? "Gruzli — ваш инструмент для управления заказами. Размещайте заявки, находите надёжных грузчиков, отслеживайте выполнение и контролируйте расходы."
+        : "Gruzli — платформа для поиска работы. Находите заказы рядом, откликайтесь мгновенно, общайтесь с диспетчерами напрямую и зарабатывайте больше."}
     </motion.p>
 
     <motion.div
@@ -71,12 +71,20 @@ const WelcomeStep = () => (
       transition={{ delay: 0.7 }}
       className="grid grid-cols-2 gap-3 mt-6 w-full max-w-xs"
     >
-      {[
-        { icon: Briefcase, label: "Заказы", color: "text-blue-400" },
-        { icon: Zap, label: "Быстро", color: "text-yellow-400" },
-        { icon: Shield, label: "Надёжно", color: "text-green-400" },
-        { icon: MessageSquare, label: "Чат", color: "text-purple-400" },
-      ].map((f, i) => (
+      {(isDispatcher
+        ? [
+            { icon: ClipboardList, label: "Заявки", color: "text-blue-400" },
+            { icon: Users, label: "Грузчики", color: "text-yellow-400" },
+            { icon: BarChart3, label: "Аналитика", color: "text-green-400" },
+            { icon: MessageSquare, label: "Чат", color: "text-purple-400" },
+          ]
+        : [
+            { icon: Briefcase, label: "Заказы", color: "text-blue-400" },
+            { icon: Zap, label: "Быстро", color: "text-yellow-400" },
+            { icon: Shield, label: "Надёжно", color: "text-green-400" },
+            { icon: MessageSquare, label: "Чат", color: "text-purple-400" },
+          ]
+      ).map((f, i) => (
         <motion.div
           key={f.label}
           initial={{ opacity: 0, scale: 0.8 }}
@@ -92,181 +100,181 @@ const WelcomeStep = () => (
   </div>
 );
 
-/* ───── Step 2: UI Guide ───── */
-const UIGuideStep = () => (
-  <div className="flex flex-col items-center text-center px-6">
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="mb-4"
-    >
-      <h2 className="text-xl font-bold text-foreground mb-2">Как устроено приложение</h2>
-      <p className="text-xs text-muted-foreground">Внизу экрана — главное меню</p>
-    </motion.div>
+/* ───── Step 2: UI Guide (role-aware) ───── */
+const UIGuideStep = ({ isDispatcher }: { isDispatcher: boolean }) => {
+  const workerNav = [
+    { icon: Home, label: "Главная" },
+    { icon: ClipboardList, label: "Заказы" },
+    { icon: MessageSquare, label: "Чаты" },
+    { icon: FolderOpen, label: "Картотека" },
+    { icon: User, label: "Профиль" },
+  ];
+  const dispatcherNav = [
+    { icon: ClipboardList, label: "Заявки" },
+    { icon: MessageSquare, label: "Чаты" },
+    { icon: FolderOpen, label: "Картотека" },
+    { icon: User, label: "Профиль" },
+  ];
+  const nav = isDispatcher ? dispatcherNav : workerNav;
 
-    {/* Mock bottom nav */}
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.3 }}
-      className="w-full max-w-sm bg-card border border-border rounded-2xl p-3 mb-5"
-    >
-      <div className="flex justify-around">
-        {[
-          { icon: Home, label: "Главная", desc: "Лента заказов" },
-          { icon: ClipboardList, label: "Заказы", desc: "Ваши отклики" },
-          { icon: MessageSquare, label: "Чаты", desc: "Переписки" },
-          { icon: User, label: "Профиль", desc: "Ваш аккаунт" },
-        ].map((item, i) => (
-          <motion.div
-            key={item.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 + i * 0.15 }}
-            className="flex flex-col items-center gap-1 relative"
-          >
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <item.icon size={18} className="text-primary" />
-            </div>
-            <span className="text-[10px] font-semibold text-foreground">{item.label}</span>
-          </motion.div>
-        ))}
-      </div>
-    </motion.div>
-
-    {/* Feature explanations */}
-    <div className="space-y-2.5 w-full max-w-sm">
-      {[
-        { icon: Search, text: "На главной — свежие заказы. Откликайтесь одним нажатием" },
-        { icon: Plus, text: "Диспетчеры создают заказы через кнопку «+»" },
-        { icon: MessageSquare, text: "В чатах — прямая связь с заказчиком" },
-      ].map((item, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.8 + i * 0.15 }}
-          className="flex items-center gap-3 p-3 rounded-xl bg-muted/20 border border-border/50"
-        >
-          <item.icon size={16} className="text-primary shrink-0" />
-          <span className="text-xs text-muted-foreground text-left">{item.text}</span>
-        </motion.div>
-      ))}
-    </div>
-  </div>
-);
-
-/* ───── Step 3: Push Notifications ───── */
-const NotificationsStep = () => {
-  const [status, setStatus] = useState<"idle" | "granted" | "denied">("idle");
-
-  const handleEnable = async () => {
-    try {
-      const perm = await Notification.requestPermission();
-      setStatus(perm === "granted" ? "granted" : "denied");
-      if (perm === "granted" && window.progressier) {
-        window.progressier.add({});
-      }
-    } catch {
-      setStatus("denied");
-    }
-  };
-
-  useEffect(() => {
-    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-      setStatus("granted");
-    }
-  }, []);
+  const workerTips = [
+    { icon: Search, text: "На главной — свежие заказы. Смотрите ставку, адрес и время, откликайтесь одним нажатием" },
+    { icon: ClipboardList, text: "В «Заказы» — все ваши отклики и активные заказы. Начинайте и завершайте работу прямо здесь" },
+    { icon: Star, text: "После выполнения заказа оставляйте отзыв диспетчеру и следите за своим рейтингом" },
+    { icon: DollarSign, text: "В профиле — ваш баланс, заработок за неделю и статистика выполненных заказов" },
+  ];
+  const dispatcherTips = [
+    { icon: Plus, text: "Создавайте заказы через кнопку «+»: укажите адрес, ставку, количество грузчиков и время" },
+    { icon: Users, text: "Просматривайте отклики грузчиков — их рейтинг, опыт и навыки. Принимайте лучших" },
+    { icon: BarChart3, text: "В кабинете диспетчера — аналитика доходов, расходов и статистика по заказам" },
+    { icon: Star, text: "После завершения заказа оставляйте отзывы грузчикам и заполняйте финансы" },
+  ];
+  const tips = isDispatcher ? dispatcherTips : workerTips;
 
   return (
     <div className="flex flex-col items-center text-center px-6">
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ type: "spring", stiffness: 200, damping: 15 }}
-        className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-5"
-      >
-        <Bell size={36} className="text-primary" />
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
+        <h2 className="text-xl font-bold text-foreground mb-2">
+          {isDispatcher ? "Ваши инструменты" : "Как устроено приложение"}
+        </h2>
+        <p className="text-xs text-muted-foreground">Внизу экрана — главное меню</p>
       </motion.div>
 
-      <motion.h2
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="text-xl font-bold text-foreground mb-2"
-      >
-        Не пропустите ничего важного
-      </motion.h2>
-
-      <motion.p
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.35 }}
-        className="text-sm text-muted-foreground mb-6 max-w-sm leading-relaxed"
-      >
-        Включите уведомления, чтобы мгновенно узнавать о новых заказах,
-        сообщениях и откликах. Это ключ к быстрому заработку!
-      </motion.p>
-
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.5 }}
-        className="w-full max-w-xs"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="w-full max-w-sm bg-card border border-border rounded-2xl p-3 mb-4"
       >
-        {status === "idle" && (
-          <button
-            onClick={handleEnable}
-            className="w-full py-4 rounded-2xl bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"
-          >
-            <Bell size={18} />
-            Включить уведомления
-          </button>
-        )}
-        {status === "granted" && (
+        <div className="flex justify-around">
+          {nav.map((item, i) => (
+            <motion.div
+              key={item.label}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 + i * 0.12 }}
+              className="flex flex-col items-center gap-1"
+            >
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                <item.icon size={16} className="text-primary" />
+              </div>
+              <span className="text-[9px] font-semibold text-foreground">{item.label}</span>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+
+      <div className="space-y-2 w-full max-w-sm">
+        {tips.map((item, i) => (
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="flex flex-col items-center gap-2"
+            key={i}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.7 + i * 0.12 }}
+            className="flex items-start gap-3 p-3 rounded-xl bg-muted/20 border border-border/50"
           >
-            <div className="w-14 h-14 rounded-full bg-green-500/20 flex items-center justify-center">
-              <Check size={28} className="text-green-500" />
-            </div>
-            <p className="text-sm font-semibold text-green-500">Уведомления включены!</p>
+            <item.icon size={16} className="text-primary shrink-0 mt-0.5" />
+            <span className="text-xs text-muted-foreground text-left leading-relaxed">{item.text}</span>
           </motion.div>
-        )}
-        {status === "denied" && (
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <p className="text-xs text-muted-foreground">
-              Уведомления заблокированы. Вы можете включить их позже в настройках браузера или приложения.
-            </p>
-          </div>
-        )}
-      </motion.div>
+        ))}
+      </div>
     </div>
   );
 };
 
-/* ───── Step 4: Add to Home Screen ───── */
+/* ───── Step 3: Notifications (informational, no button) ───── */
+const NotificationsStep = ({ isDispatcher }: { isDispatcher: boolean }) => (
+  <div className="flex flex-col items-center text-center px-6">
+    <motion.div
+      initial={{ scale: 0 }}
+      animate={{ scale: 1 }}
+      transition={{ type: "spring", stiffness: 200, damping: 15 }}
+      className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-5"
+    >
+      <Bell size={36} className="text-primary" />
+    </motion.div>
+
+    <motion.h2
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.2 }}
+      className="text-xl font-bold text-foreground mb-2"
+    >
+      Не пропустите ничего важного
+    </motion.h2>
+
+    <motion.p
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.35 }}
+      className="text-sm text-muted-foreground mb-6 max-w-sm leading-relaxed"
+    >
+      {isDispatcher
+        ? "Уведомления помогут вам мгновенно узнавать об откликах грузчиков, новых сообщениях и завершении заказов."
+        : "Уведомления помогут вам мгновенно узнавать о новых заказах рядом, сообщениях от диспетчеров и статусе ваших откликов."}
+    </motion.p>
+
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.5 }}
+      className="w-full max-w-xs space-y-3"
+    >
+      <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+        {[
+          { emoji: "🔔", text: isDispatcher ? "Отклики на ваши заказы" : "Новые заказы рядом с вами" },
+          { emoji: "💬", text: "Новые сообщения в чатах" },
+          { emoji: isDispatcher ? "✅" : "💰", text: isDispatcher ? "Статус выполнения заказов" : "Принятие ваших откликов" },
+        ].map((item, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: -15 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.6 + i * 0.1 }}
+            className="flex items-center gap-3"
+          >
+            <span className="text-lg">{item.emoji}</span>
+            <span className="text-xs text-foreground text-left">{item.text}</span>
+          </motion.div>
+        ))}
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.9 }}
+        className="bg-primary/5 border border-primary/20 rounded-2xl p-4"
+      >
+        <div className="flex items-start gap-2">
+          <span className="text-lg">💡</span>
+          <p className="text-xs text-muted-foreground text-left leading-relaxed">
+            После завершения обучения включите уведомления на <span className="text-foreground font-semibold">главном экране</span> — баннер появится вверху автоматически.
+          </p>
+        </div>
+      </motion.div>
+    </motion.div>
+  </div>
+);
+
+/* ───── Step 4: Add to Home Screen (always shows Android Chrome + iOS Safari) ───── */
 const AddToHomeStep = () => {
   const platform = getPlatform();
 
   const androidSteps = [
-    { emoji: "⋮", text: "Нажмите на три точки в правом верхнем углу Chrome" },
-    { emoji: "📲", text: "Выберите «Установить приложение» или «На главный экран»" },
-    { emoji: "✏️", text: "Настройте название и нажмите «Добавить»" },
-    { emoji: "🎉", text: "Приложение появится на рабочем столе!" },
+    { emoji: "🌐", text: "Откройте Gruzli в браузере Google Chrome" },
+    { emoji: "⋮", text: "Нажмите на три точки (⋮) в правом верхнем углу Chrome" },
+    { emoji: "📲", text: "В меню выберите «Установить приложение» или «Добавить на главный экран»" },
+    { emoji: "✏️", text: "Если нужно — измените название, затем нажмите «Добавить» или «Установить»" },
+    { emoji: "🏠", text: "Иконка Gruzli появится на рабочем столе — запускайте как обычное приложение!" },
   ];
 
   const iosSteps = [
-    { emoji: "📤", text: "Нажмите кнопку «Поделиться» внизу Safari" },
+    { emoji: "🧭", text: "Откройте Gruzli в браузере Safari" },
+    { emoji: "📤", text: "Нажмите кнопку «Поделиться» (квадрат со стрелкой) внизу экрана" },
     { emoji: "➕", text: "Прокрутите вниз и нажмите «На экран Домой»" },
-    { emoji: "🔄", text: "Включите «Открыть как веб-приложение» (если есть)" },
-    { emoji: "✏️", text: "Измените название и нажмите «Добавить»" },
+    { emoji: "🔄", text: "Если есть переключатель «Открыть как веб-приложение» — включите его" },
+    { emoji: "✏️", text: "Измените название если нужно и нажмите «Добавить»" },
   ];
-
-  const steps = platform === "ios" ? iosSteps : androidSteps;
-  const browserName = platform === "ios" ? "Safari" : "Chrome";
 
   return (
     <div className="flex flex-col items-center text-center px-6">
@@ -292,71 +300,81 @@ const AddToHomeStep = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.35 }}
-        className="text-xs text-muted-foreground mb-5 max-w-sm leading-relaxed"
+        className="text-xs text-muted-foreground mb-4 max-w-sm leading-relaxed"
       >
         Приложение будет работать как нативное — своя иконка, быстрый запуск, без адресной строки
       </motion.p>
 
-      {platform !== "desktop" && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.45 }}
-          className="px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold mb-4"
-        >
-          Инструкция для {browserName}
-        </motion.div>
-      )}
-
-      <div className="space-y-2.5 w-full max-w-sm">
-        {steps.map((step, i) => (
+      {/* Show both platforms, highlight current */}
+      <div className="w-full max-w-sm space-y-4">
+        {/* Android Chrome */}
+        <div>
           <motion.div
-            key={i}
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.5 + i * 0.12 }}
-            className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className={`flex items-center gap-2 mb-2 ${platform === "android" ? "" : "opacity-60"}`}
           >
-            <div className="w-10 h-10 rounded-xl bg-muted/30 flex items-center justify-center text-lg shrink-0">
-              {step.emoji}
-            </div>
-            <div className="text-left">
-              <span className="text-[10px] text-muted-foreground font-semibold">Шаг {i + 1}</span>
-              <p className="text-xs text-foreground">{step.text}</p>
-            </div>
+            <span className="text-sm">🤖</span>
+            <span className="text-xs font-bold text-foreground">Android — Chrome</span>
+            {platform === "android" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-semibold">Ваше устройство</span>}
           </motion.div>
-        ))}
-      </div>
+          <div className="space-y-1.5">
+            {androidSteps.map((s, i) => (
+              <motion.div
+                key={`a${i}`}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.45 + i * 0.08 }}
+                className="flex items-center gap-2.5 p-2.5 rounded-xl bg-card border border-border"
+              >
+                <div className="w-8 h-8 rounded-lg bg-muted/30 flex items-center justify-center text-sm shrink-0">{s.emoji}</div>
+                <p className="text-[11px] text-foreground text-left leading-relaxed">{s.text}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
 
-      {platform === "desktop" && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.9 }}
-          className="text-xs text-muted-foreground mt-4 max-w-sm"
-        >
-          Откройте приложение на телефоне для установки на главный экран. На компьютере нажмите иконку установки в адресной строке.
-        </motion.p>
-      )}
+        {/* iOS Safari */}
+        <div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.9 }}
+            className={`flex items-center gap-2 mb-2 ${platform === "ios" ? "" : "opacity-60"}`}
+          >
+            <span className="text-sm">🍎</span>
+            <span className="text-xs font-bold text-foreground">iPhone — Safari</span>
+            {platform === "ios" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-semibold">Ваше устройство</span>}
+          </motion.div>
+          <div className="space-y-1.5">
+            {iosSteps.map((s, i) => (
+              <motion.div
+                key={`i${i}`}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.95 + i * 0.08 }}
+                className="flex items-center gap-2.5 p-2.5 rounded-xl bg-card border border-border"
+              >
+                <div className="w-8 h-8 rounded-lg bg-muted/30 flex items-center justify-center text-sm shrink-0">{s.emoji}</div>
+                <p className="text-[11px] text-foreground text-left leading-relaxed">{s.text}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
 /* ───── Step 5: Celebration ───── */
-const CelebrationStep = ({ onStart }: { onStart: () => void }) => (
+const CelebrationStep = ({ onStart, isDispatcher }: { onStart: () => void; isDispatcher: boolean }) => (
   <div className="flex flex-col items-center text-center px-6">
-    {/* Confetti-like particles */}
     <div className="relative w-full h-32 mb-4 overflow-hidden">
       {Array.from({ length: 20 }).map((_, i) => (
         <motion.div
           key={i}
-          initial={{
-            opacity: 0,
-            y: 0,
-            x: Math.random() * 300 - 150,
-            scale: 0,
-            rotate: Math.random() * 360,
-          }}
+          initial={{ opacity: 0, y: 0, x: Math.random() * 300 - 150, scale: 0, rotate: Math.random() * 360 }}
           animate={{
             opacity: [0, 1, 1, 0],
             y: [0, -80 - Math.random() * 60],
@@ -364,12 +382,7 @@ const CelebrationStep = ({ onStart }: { onStart: () => void }) => (
             scale: [0, 1, 0.8],
             rotate: Math.random() * 720,
           }}
-          transition={{
-            duration: 2 + Math.random(),
-            delay: 0.3 + Math.random() * 0.5,
-            repeat: Infinity,
-            repeatDelay: Math.random() * 2,
-          }}
+          transition={{ duration: 2 + Math.random(), delay: 0.3 + Math.random() * 0.5, repeat: Infinity, repeatDelay: Math.random() * 2 }}
           className="absolute left-1/2 bottom-0"
           style={{
             width: 8 + Math.random() * 8,
@@ -403,7 +416,9 @@ const CelebrationStep = ({ onStart }: { onStart: () => void }) => (
       transition={{ delay: 0.65 }}
       className="text-sm text-muted-foreground mb-8 max-w-sm leading-relaxed"
     >
-      Всё настроено. Начните использовать Gruzli прямо сейчас — находите заказы, общайтесь и зарабатывайте!
+      {isDispatcher
+        ? "Всё настроено! Создайте первый заказ, найдите грузчиков и управляйте работой прямо из Gruzli."
+        : "Всё настроено! Откройте ленту заказов, откликнитесь на первый заказ и начните зарабатывать."}
     </motion.p>
 
     <motion.button
@@ -414,7 +429,7 @@ const CelebrationStep = ({ onStart }: { onStart: () => void }) => (
       onClick={onStart}
       className="w-full max-w-xs py-4 rounded-2xl bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-2"
     >
-      Начать работу
+      {isDispatcher ? "Создать первый заказ" : "Смотреть заказы"}
       <ChevronRight size={18} />
     </motion.button>
   </div>
@@ -424,21 +439,17 @@ const CelebrationStep = ({ onStart }: { onStart: () => void }) => (
 const TOTAL_STEPS = 5;
 
 const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
+  const { role } = useAuth();
+  const isDispatcher = role === "dispatcher";
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
 
   const goNext = useCallback(() => {
-    if (step < TOTAL_STEPS - 1) {
-      setDirection(1);
-      setStep((s) => s + 1);
-    }
+    if (step < TOTAL_STEPS - 1) { setDirection(1); setStep((s) => s + 1); }
   }, [step]);
 
   const goPrev = useCallback(() => {
-    if (step > 0) {
-      setDirection(-1);
-      setStep((s) => s - 1);
-    }
+    if (step > 0) { setDirection(-1); setStep((s) => s - 1); }
   }, [step]);
 
   const handleDragEnd = (_: any, info: PanInfo) => {
@@ -466,11 +477,11 @@ const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
 
   const renderStep = () => {
     switch (step) {
-      case 0: return <WelcomeStep />;
-      case 1: return <UIGuideStep />;
-      case 2: return <NotificationsStep />;
+      case 0: return <WelcomeStep isDispatcher={isDispatcher} />;
+      case 1: return <UIGuideStep isDispatcher={isDispatcher} />;
+      case 2: return <NotificationsStep isDispatcher={isDispatcher} />;
       case 3: return <AddToHomeStep />;
-      case 4: return <CelebrationStep onStart={handleComplete} />;
+      case 4: return <CelebrationStep onStart={handleComplete} isDispatcher={isDispatcher} />;
       default: return null;
     }
   };
@@ -483,7 +494,6 @@ const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
       className="fixed inset-0 z-[60] bg-background flex flex-col"
       style={{ height: "100dvh" }}
     >
-      {/* Top bar */}
       <div className="flex items-center justify-between px-5 pt-4 pb-2 shrink-0" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 16px)" }}>
         <ProgressBar current={step} total={TOTAL_STEPS} />
         {!isLastStep && (
@@ -493,8 +503,7 @@ const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
         )}
       </div>
 
-      {/* Content */}
-      <div className="flex-1 flex items-center justify-center overflow-hidden min-h-0">
+      <div className="flex-1 flex items-center justify-center overflow-y-auto overflow-x-hidden min-h-0">
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={step}
@@ -508,14 +517,13 @@ const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.2}
             onDragEnd={handleDragEnd}
-            className="w-full"
+            className="w-full py-4"
           >
             {renderStep()}
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Bottom buttons */}
       {!isLastStep && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
