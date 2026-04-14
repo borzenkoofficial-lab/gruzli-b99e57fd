@@ -200,7 +200,7 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel }: RealChatsScreenProps) =>
       const items = convs.map(conv => {
         const otherIds = participantsByConv[conv.id] || [];
         const otherProfile = otherIds.length > 0 ? profileMap[otherIds[0]] : null;
-        const otherName = conv.title || (otherProfile?.name || "Чат");
+        const otherName = conv.is_group ? (conv.title || "Группа") : (otherProfile?.name || conv.title || "Чат");
         const lastMsg = lastMsgByConv[conv.id];
         return {
           id: conv.id,

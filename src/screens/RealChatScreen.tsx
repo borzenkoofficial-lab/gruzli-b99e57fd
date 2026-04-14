@@ -137,7 +137,9 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile }: RealCh
     return () => document.removeEventListener("mousedown", handler);
   }, [showMenu]);
 
-  // Fetch other user's presence
+  const [resolvedTitle, setResolvedTitle] = useState(title);
+
+  // Fetch other user's presence and real name
   useEffect(() => {
     if (!user || !conversationId) return;
     const fetchOther = async () => {
@@ -152,10 +154,13 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile }: RealCh
         setOtherUserId(otherId);
         const { data: profile } = await supabase
           .from("profiles")
-          .select("last_seen_at")
+          .select("full_name, last_seen_at")
           .eq("user_id", otherId)
           .single();
-        if (profile) setOtherLastSeen((profile as any).last_seen_at);
+        if (profile) {
+          setOtherLastSeen((profile as any).last_seen_at);
+          if (profile.full_name) setResolvedTitle(profile.full_name);
+        }
       }
     };
     fetchOther();
