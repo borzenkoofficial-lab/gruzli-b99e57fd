@@ -194,6 +194,14 @@ const Index = () => {
           />
         );
       }
+      if (showCommunity) {
+        return (
+          <DispatcherCommunityScreen
+            onBack={() => setShowCommunity(false)}
+            onOpenProfile={(userId) => { setShowCommunity(false); setViewProfileUserId(userId); }}
+          />
+        );
+      }
       if (showCabinet) {
         return (
           <DispatcherCabinetScreen
@@ -203,6 +211,7 @@ const Index = () => {
               if (opened) setShowCabinet(false);
             }}
             onViewProfile={(userId) => { setShowCabinet(false); setViewProfileUserId(userId); }}
+            onOpenCommunity={() => { setShowCabinet(false); setShowCommunity(true); }}
           />
         );
       }
