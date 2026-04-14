@@ -1,39 +1,37 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import DesktopSidebar from "@/components/DesktopSidebar";
 import DesktopLayout from "@/components/DesktopLayout";
 import FAB from "@/components/FAB";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import ScreenSkeleton from "@/components/ScreenSkeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-// Worker screens
-import FeedScreen from "@/screens/FeedScreen";
-import JobDetailScreen from "@/screens/JobDetailScreen";
-import OrdersScreen from "@/screens/OrdersScreen";
-import ProfileScreen from "@/screens/ProfileScreen";
-
-// Dispatcher screens
-import DispatcherFeedScreen from "@/screens/DispatcherFeedScreen";
-import CreateJobScreen from "@/screens/CreateJobScreen";
-import JobResponsesScreen from "@/screens/JobResponsesScreen";
-
-// Shared screens
-import RealChatsScreen from "@/screens/RealChatsScreen";
-import RealChatScreen from "@/screens/RealChatScreen";
-import ChannelScreen from "@/screens/ChannelScreen";
-import DispatchersScreen from "@/screens/DispatchersScreen";
-import KartotekaScreen from "@/screens/KartotekaScreen";
-import SettingsScreen from "@/screens/SettingsScreen";
-import UserProfileScreen from "@/screens/UserProfileScreen";
-import NotificationsScreen from "@/screens/NotificationsScreen";
-import PremiumScreen from "@/screens/PremiumScreen";
-import DispatcherCabinetScreen from "@/screens/DispatcherCabinetScreen";
-import PullToRefresh from "@/components/PullToRefresh";
-
 import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
+
+// Lazy load all screens
+const FeedScreen = lazy(() => import("@/screens/FeedScreen"));
+const JobDetailScreen = lazy(() => import("@/screens/JobDetailScreen"));
+const OrdersScreen = lazy(() => import("@/screens/OrdersScreen"));
+const ProfileScreen = lazy(() => import("@/screens/ProfileScreen"));
+const DispatcherFeedScreen = lazy(() => import("@/screens/DispatcherFeedScreen"));
+const CreateJobScreen = lazy(() => import("@/screens/CreateJobScreen"));
+const JobResponsesScreen = lazy(() => import("@/screens/JobResponsesScreen"));
+const RealChatsScreen = lazy(() => import("@/screens/RealChatsScreen"));
+const RealChatScreen = lazy(() => import("@/screens/RealChatScreen"));
+const ChannelScreen = lazy(() => import("@/screens/ChannelScreen"));
+const DispatchersScreen = lazy(() => import("@/screens/DispatchersScreen"));
+const KartotekaScreen = lazy(() => import("@/screens/KartotekaScreen"));
+const SettingsScreen = lazy(() => import("@/screens/SettingsScreen"));
+const UserProfileScreen = lazy(() => import("@/screens/UserProfileScreen"));
+const NotificationsScreen = lazy(() => import("@/screens/NotificationsScreen"));
+const PremiumScreen = lazy(() => import("@/screens/PremiumScreen"));
+const DispatcherCabinetScreen = lazy(() => import("@/screens/DispatcherCabinetScreen"));
+const PullToRefresh = lazy(() => import("@/components/PullToRefresh"));
 
 const Index = () => {
   const { role, user } = useAuth();
