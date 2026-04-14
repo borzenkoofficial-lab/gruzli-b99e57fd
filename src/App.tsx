@@ -10,6 +10,7 @@ import { usePresence } from "@/hooks/usePresence";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
 import SplashScreen from "@/components/SplashScreen";
 import NewJobAlert from "@/components/NewJobAlert";
+import AppRatingModal from "@/components/AppRatingModal";
 import type { Tables } from "@/integrations/supabase/types";
 
 import Index from "./pages/Index";
@@ -56,6 +57,7 @@ const AppRoutes = () => {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
+      <AppRatingModal />
       {role === "worker" && (
         <NewJobAlert
           job={alertQueue[0] ?? null}
