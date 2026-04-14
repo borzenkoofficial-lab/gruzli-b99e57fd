@@ -346,27 +346,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Also send email notifications
+    // Also send email notifications where still needed.
+    // New job alerts are intentionally push-only.
     try {
-      if (type === "new_job") {
-        const { data: workers } = await supabase
-          .from("user_roles")
-          .select("user_id")
-          .eq("role", "worker");
-
-        const targetUserIds = (workers || []).map((w: any) => w.user_id);
-        await sendEmailNotifications(
-          supabase,
-          targetUserIds,
-          "new-job-notification",
-          {
-            title: body.title,
-            hourlyRate: String(body.hourly_rate),
-            address: body.address || undefined,
-          },
-          `new-job-email-${body.job_id || Date.now()}`,
-        );
-      } else if (type === "new_message") {
+      if (type === "new_message") {
         const { data: participants } = await supabase
           .from("conversation_participants")
           .select("user_id")
