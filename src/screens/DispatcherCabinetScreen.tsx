@@ -307,6 +307,23 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
         </div>
       </div>
 
+      {/* Community button */}
+      <div className="px-4 pb-3">
+        <button
+          onClick={onOpenCommunity}
+          className="w-full flex items-center gap-3 p-3 bg-primary/5 border border-primary/15 rounded-2xl active:bg-primary/10 transition-all"
+        >
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
+            <Users size={18} className="text-primary-foreground" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="text-sm font-bold text-foreground">Сообщество диспетчеров</p>
+            <p className="text-[11px] text-muted-foreground">Общий чат · советы · обсуждения</p>
+          </div>
+          <ChevronDown size={16} className="text-muted-foreground -rotate-90 shrink-0" />
+        </button>
+      </div>
+
       {/* Tab navigation */}
       <div className="px-4 pb-3">
         <div className="flex gap-1 bg-muted/40 rounded-2xl p-1">
