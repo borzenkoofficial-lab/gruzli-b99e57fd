@@ -319,6 +319,8 @@ export type Database = {
       job_responses: {
         Row: {
           created_at: string
+          dispatcher_review_rating: number | null
+          dispatcher_review_text: string | null
           earned: number | null
           hours_worked: number | null
           id: string
@@ -328,10 +330,14 @@ export type Database = {
           work_finished_at: string | null
           work_started_at: string | null
           worker_id: string
+          worker_review_rating: number | null
+          worker_review_text: string | null
           worker_status: string | null
         }
         Insert: {
           created_at?: string
+          dispatcher_review_rating?: number | null
+          dispatcher_review_text?: string | null
           earned?: number | null
           hours_worked?: number | null
           id?: string
@@ -341,10 +347,14 @@ export type Database = {
           work_finished_at?: string | null
           work_started_at?: string | null
           worker_id: string
+          worker_review_rating?: number | null
+          worker_review_text?: string | null
           worker_status?: string | null
         }
         Update: {
           created_at?: string
+          dispatcher_review_rating?: number | null
+          dispatcher_review_text?: string | null
           earned?: number | null
           hours_worked?: number | null
           id?: string
@@ -354,6 +364,8 @@ export type Database = {
           work_finished_at?: string | null
           work_started_at?: string | null
           worker_id?: string
+          worker_review_rating?: number | null
+          worker_review_text?: string | null
           worker_status?: string | null
         }
         Relationships: [
@@ -372,7 +384,9 @@ export type Database = {
           created_at: string
           description: string | null
           dispatcher_id: string
+          dispatcher_income: number | null
           duration_hours: number | null
+          expense_per_worker: number | null
           hourly_rate: number
           id: string
           is_bot: boolean
@@ -390,7 +404,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           dispatcher_id: string
+          dispatcher_income?: number | null
           duration_hours?: number | null
+          expense_per_worker?: number | null
           hourly_rate?: number
           id?: string
           is_bot?: boolean
@@ -408,7 +424,9 @@ export type Database = {
           created_at?: string
           description?: string | null
           dispatcher_id?: string
+          dispatcher_income?: number | null
           duration_hours?: number | null
+          expense_per_worker?: number | null
           hourly_rate?: number
           id?: string
           is_bot?: boolean
