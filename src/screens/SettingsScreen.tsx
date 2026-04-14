@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, User, Phone, Bell, Shield, Palette, LogOut, Camera, Check, Loader2, Volume2, Vibrate, Layers, Mail, Ban, Trash2, Info, Globe, Database, Share2, Star, Smartphone, HardDrive, Crown, BadgeCheck, Send } from "lucide-react";
+import { ArrowLeft, User, Phone, Bell, Shield, Palette, LogOut, Camera, Check, Loader2, Volume2, Vibrate, Layers, Mail, Ban, Trash2, Info, Globe, Database, Share2, Star, Smartphone, HardDrive, Crown, BadgeCheck, Send, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
 import { toast } from "sonner";
 import { z } from "zod";
+import { LegalModal } from "@/components/LegalDocuments";
 
 const profileSchema = z.object({
   full_name: z.string().trim().min(2, "Минимум 2 символа").max(100, "Максимум 100 символов"),
@@ -692,6 +693,14 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
 
   // About section
   if (section === "about") {
+    const [legalOpen, setLegalOpen] = useState(false);
+    const [legalDoc, setLegalDoc] = useState<"privacy" | "terms" | "personal_data">("privacy");
+
+    const openDoc = (doc: "privacy" | "terms" | "personal_data") => {
+      setLegalDoc(doc);
+      setLegalOpen(true);
+    };
+
     return (
       <ScrollWrapper title="О приложении" goBack={() => setSection("main")}>
         <div className="px-5 space-y-4">
@@ -707,24 +716,34 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
           </div>
 
           <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ссылки</p>
             <a href="https://gruzli.lovable.app" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 py-2">
               <Globe size={16} className="text-primary" />
               <span className="text-sm text-foreground">Веб-сайт</span>
             </a>
-            <div className="h-px bg-border" />
-            <button onClick={() => toast.info("Политика конфиденциальности будет доступна позже")} className="flex items-center gap-3 py-2 w-full text-left">
+          </div>
+
+          <div className="bg-card border border-border rounded-2xl p-4 space-y-1">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Юридические документы</p>
+            <button onClick={() => openDoc("privacy")} className="flex items-center gap-3 py-2.5 w-full text-left">
               <Shield size={16} className="text-primary" />
               <span className="text-sm text-foreground">Политика конфиденциальности</span>
             </button>
             <div className="h-px bg-border" />
-            <button onClick={() => toast.info("Пользовательское соглашение будет доступно позже")} className="flex items-center gap-3 py-2 w-full text-left">
-              <Info size={16} className="text-primary" />
+            <button onClick={() => openDoc("terms")} className="flex items-center gap-3 py-2.5 w-full text-left">
+              <FileText size={16} className="text-primary" />
               <span className="text-sm text-foreground">Пользовательское соглашение</span>
+            </button>
+            <div className="h-px bg-border" />
+            <button onClick={() => openDoc("personal_data")} className="flex items-center gap-3 py-2.5 w-full text-left">
+              <Info size={16} className="text-primary" />
+              <span className="text-sm text-foreground">Обработка персональных данных</span>
             </button>
           </div>
 
           <p className="text-[11px] text-muted-foreground text-center">© 2025 Gruzli. Все права защищены.</p>
         </div>
+        <LegalModal open={legalOpen} onClose={() => setLegalOpen(false)} initialDoc={legalDoc} />
       </ScrollWrapper>
     );
   }
