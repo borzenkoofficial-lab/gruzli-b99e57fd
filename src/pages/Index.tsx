@@ -149,71 +149,79 @@ const Index = () => {
 
   // --- Detail panel content for desktop ---
   const getDetailPanel = () => {
-    if (openChatId) {
-      return <RealChatScreen conversationId={openChatId} title={openChatTitle} onBack={() => setOpenChatId(null)} onOpenProfile={(userId) => { setOpenChatId(null); setViewProfileUserId(userId); }} />;
-    }
-    if (viewProfileUserId) {
-      return (
-        <UserProfileScreen
-          userId={viewProfileUserId}
-          onBack={() => setViewProfileUserId(null)}
-          onChat={async (userId, name) => {
-            const opened = await handleChatWithUser(userId, name);
-            if (opened) setViewProfileUserId(null);
-          }}
-        />
-      );
-    }
-    if (showSettings) {
-      return <SettingsScreen onBack={() => setShowSettings(false)} onOpenPremium={() => { setShowSettings(false); setShowPremium(true); }} />;
-    }
-    if (showNotifications) {
-      return <NotificationsScreen onBack={() => setShowNotifications(false)} />;
-    }
-    if (showPremium) {
-      return <PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, msg); }} />;
-    }
-    if (showChannel) {
-      return <ChannelScreen onBack={() => setShowChannel(false)} />;
-    }
-    if (showCreateJob) {
-      return <CreateJobScreen onBack={() => setShowCreateJob(false)} onCreated={() => { setShowCreateJob(false); setTab("feed"); }} />;
-    }
-    if (viewResponsesJob) {
-      return (
-        <JobResponsesScreen
-          job={viewResponsesJob}
-          onBack={() => setViewResponsesJob(null)}
-          onChatWithWorker={async (workerId, workerName) => {
-            const opened = await handleChatWithUser(workerId, workerName);
-            if (opened) setViewResponsesJob(null);
-          }}
-        />
-      );
-    }
-    if (showCabinet) {
-      return (
-        <DispatcherCabinetScreen
-          onBack={() => setShowCabinet(false)}
-          onChatWithWorker={async (workerId, workerName) => {
-            const opened = await handleChatWithUser(workerId, workerName);
-            if (opened) setShowCabinet(false);
-          }}
-          onViewProfile={(userId) => { setShowCabinet(false); setViewProfileUserId(userId); }}
-        />
-      );
-    }
-    if (viewJobDetail) {
-      return (
-        <JobDetailScreen
-          job={viewJobDetail}
-          onBack={() => setViewJobDetail(null)}
-          onOpenChat={handleOpenChat}
-          onOpenProfile={(userId) => { setViewJobDetail(null); setViewProfileUserId(userId); }}
-        />
-      );
-    }
-    return null;
+    const panel = (() => {
+      if (openChatId) {
+        return <RealChatScreen conversationId={openChatId} title={openChatTitle} onBack={() => setOpenChatId(null)} onOpenProfile={(userId) => { setOpenChatId(null); setViewProfileUserId(userId); }} />;
+      }
+      if (viewProfileUserId) {
+        return (
+          <UserProfileScreen
+            userId={viewProfileUserId}
+            onBack={() => setViewProfileUserId(null)}
+            onChat={async (userId, name) => {
+              const opened = await handleChatWithUser(userId, name);
+              if (opened) setViewProfileUserId(null);
+            }}
+          />
+        );
+      }
+      if (showSettings) {
+        return <SettingsScreen onBack={() => setShowSettings(false)} onOpenPremium={() => { setShowSettings(false); setShowPremium(true); }} />;
+      }
+      if (showNotifications) {
+        return <NotificationsScreen onBack={() => setShowNotifications(false)} />;
+      }
+      if (showPremium) {
+        return <PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, msg); }} />;
+      }
+      if (showChannel) {
+        return <ChannelScreen onBack={() => setShowChannel(false)} />;
+      }
+      if (showCreateJob) {
+        return <CreateJobScreen onBack={() => setShowCreateJob(false)} onCreated={() => { setShowCreateJob(false); setTab("feed"); }} />;
+      }
+      if (viewResponsesJob) {
+        return (
+          <JobResponsesScreen
+            job={viewResponsesJob}
+            onBack={() => setViewResponsesJob(null)}
+            onChatWithWorker={async (workerId, workerName) => {
+              const opened = await handleChatWithUser(workerId, workerName);
+              if (opened) setViewResponsesJob(null);
+            }}
+          />
+        );
+      }
+      if (showCabinet) {
+        return (
+          <DispatcherCabinetScreen
+            onBack={() => setShowCabinet(false)}
+            onChatWithWorker={async (workerId, workerName) => {
+              const opened = await handleChatWithUser(workerId, workerName);
+              if (opened) setShowCabinet(false);
+            }}
+            onViewProfile={(userId) => { setShowCabinet(false); setViewProfileUserId(userId); }}
+          />
+        );
+      }
+      if (viewJobDetail) {
+        return (
+          <JobDetailScreen
+            job={viewJobDetail}
+            onBack={() => setViewJobDetail(null)}
+            onOpenChat={handleOpenChat}
+            onOpenProfile={(userId) => { setViewJobDetail(null); setViewProfileUserId(userId); }}
+          />
+        );
+      }
+      return null;
+    })();
+    if (!panel) return null;
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<ScreenSkeleton />}>{panel}</Suspense>
+      </ErrorBoundary>
+    );
   };
 
   // --- Mobile: full-screen overlays ---
