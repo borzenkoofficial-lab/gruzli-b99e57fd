@@ -114,6 +114,24 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Verify internal secret
+    const internalSecret = Deno.env.get("SEND_PUSH_INTERNAL_SECRET");
+    if (internalSecret) {
+      const authHeader = req.headers.get("authorization") || "";
+      const apiKeyHeader = req.headers.get("apikey") || "";
+      const token = authHeader.replace("Bearer ", "");
+      // Allow if token matches internal secret OR if called via service role
+      if (token !== internalSecret && apiKeyHeader !== internalSecret) {
+        const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+        if (token !== serviceRoleKey) {
+          return new Response(JSON.stringify({ error: "Unauthorized" }), {
+            status: 401,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    }
+
     const parsed = RequestSchema.safeParse(await req.json());
 
     if (!parsed.success) {
