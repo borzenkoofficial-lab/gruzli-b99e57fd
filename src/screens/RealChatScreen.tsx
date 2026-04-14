@@ -424,7 +424,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile }: RealCh
     const { error } = await supabase.from("blocked_users").insert({ blocker_id: user.id, blocked_id: otherUserId });
     if (error?.code === "23505") toast.info("Уже в чёрном списке");
     else if (error) toast.error("Ошибка");
-    else toast.success(`${title} добавлен в чёрный список`);
+    else toast.success(`${resolvedTitle} добавлен в чёрный список`);
   };
 
   const handleMuteNotifications = () => {
@@ -455,7 +455,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile }: RealCh
     return <p className="text-[13px] text-foreground leading-relaxed whitespace-pre-wrap">{msg.text}</p>;
   };
 
-  const initials = title.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+  const initials = resolvedTitle.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
   return (
     <div className="app-shell">
@@ -473,14 +473,14 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile }: RealCh
           className="flex items-center gap-3 flex-1 min-w-0 text-left"
           onClick={() => otherUserId && onOpenProfile?.(otherUserId)}
         >
-          <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 relative" style={{ background: getAvatarColor(title) }}>
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 relative" style={{ background: getAvatarColor(resolvedTitle) }}>
             {initials}
             {presenceInfo.isOnline && (
               <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-background" />
             )}
           </div>
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-foreground truncate">{title}</h2>
+            <h2 className="text-sm font-semibold text-foreground truncate">{resolvedTitle}</h2>
             <p className={`text-[11px] font-medium ${presenceInfo.isOnline ? "text-green-500" : "text-muted-foreground"}`}>
               {presenceInfo.text}
             </p>
