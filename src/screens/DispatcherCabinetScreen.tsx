@@ -16,6 +16,7 @@ interface DispatcherCabinetScreenProps {
   onBack: () => void;
   onChatWithWorker: (workerId: string, workerName: string) => void;
   onViewProfile?: (userId: string) => void;
+  onOpenCommunity?: () => void;
 }
 
 interface WorkerInfo {
