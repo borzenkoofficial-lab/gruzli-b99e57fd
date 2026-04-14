@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { usePresence } from "@/hooks/usePresence";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import SplashScreen from "@/components/SplashScreen";
 import NewJobAlert from "@/components/NewJobAlert";
 import AppRatingModal from "@/components/AppRatingModal";
