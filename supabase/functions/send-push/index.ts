@@ -99,7 +99,6 @@ async function sendNativeWebPush(
 
 async function sendProgressierPush(params: {
   recipientEmail?: string;
-  broadcastAll?: boolean;
   title: string;
   body: string;
   url: string;
@@ -116,9 +115,7 @@ async function sendProgressierPush(params: {
     url: params.url,
   };
 
-  if (params.broadcastAll) {
-    payload.recipients = { all: true };
-  } else if (params.recipientEmail) {
+  if (params.recipientEmail) {
     payload.recipients = { email: params.recipientEmail };
   } else {
     return { ok: false, error: "no_recipient" };
@@ -144,6 +141,44 @@ async function sendProgressierPush(params: {
     console.error("Progressier fetch error:", err);
     return { ok: false, error: String(err) };
   }
+}
+
+async function sendProgressierPushToUsers(
+  supabase: any,
+  userIds: string[],
+  payload: { title: string; body: string; url: string }
+): Promise<{ sent: number; failed: number }> {
+  let sent = 0;
+  let failed = 0;
+
+  const uniqueUserIds = [...new Set(userIds.filter(Boolean))];
+
+  for (const userId of uniqueUserIds) {
+    try {
+      const { data: userData } = await supabase.auth.admin.getUserById(userId);
+      const email = userData?.user?.email;
+
+      if (!email) {
+        failed++;
+        continue;
+      }
+
+      const result = await sendProgressierPush({
+        recipientEmail: email,
+        title: payload.title,
+        body: payload.body,
+        url: payload.url,
+      });
+
+      if (result.ok) sent++;
+      else failed++;
+    } catch (err) {
+      console.error(`Progressier push error for user ${userId}:`, err);
+      failed++;
+    }
+  }
+
+  return { sent, failed };
 }
 
 // ---- Main handler ----
@@ -199,15 +234,13 @@ Deno.serve(async (req) => {
       sent += nativeResult.sent;
       failed += nativeResult.failed;
 
-      // Also try Progressier broadcast as fallback
-      const progResult = await sendProgressierPush({
-        broadcastAll: true,
+      const progResult = await sendProgressierPushToUsers(supabase, workerIds, {
         title,
         body: messageBody,
         url,
       });
-      if (progResult.ok) sent++;
-      else failed++;
+      sent += progResult.sent;
+      failed += progResult.failed;
 
     } else if (type === "new_message") {
       const { data: senderProfile } = await supabase
@@ -242,25 +275,13 @@ Deno.serve(async (req) => {
       sent += nativeResult.sent;
       failed += nativeResult.failed;
 
-      // Also send via Progressier per user
-      for (const userId of targetUserIds) {
-        try {
-          const { data: userData } = await supabase.auth.admin.getUserById(userId);
-          if (!userData?.user?.email) { failed++; continue; }
-
-          const result = await sendProgressierPush({
-            recipientEmail: userData.user.email,
-            title,
-            body: messageBody,
-            url,
-          });
-          if (result.ok) sent++;
-          else failed++;
-        } catch (err) {
-          console.error(`Push error for user ${userId}:`, err);
-          failed++;
-        }
-      }
+      const progResult = await sendProgressierPushToUsers(supabase, targetUserIds, {
+        title,
+        body: messageBody,
+        url,
+      });
+      sent += progResult.sent;
+      failed += progResult.failed;
 
     } else if (type === "worker_status_change") {
       const STATUS_LABELS: Record<string, string> = {
@@ -299,17 +320,13 @@ Deno.serve(async (req) => {
           sent += nativeResult.sent;
           failed += nativeResult.failed;
 
-          const { data: workerUser } = await supabase.auth.admin.getUserById(body.worker_id);
-          if (workerUser?.user?.email) {
-            const result = await sendProgressierPush({
-              recipientEmail: workerUser.user.email,
-              title: "⏹ Завершите работу",
-              body: messageBody,
-              url,
-            });
-            if (result.ok) sent++;
-            else failed++;
-          }
+          const progResult = await sendProgressierPushToUsers(supabase, [body.worker_id], {
+            title: "⏹ Завершите работу",
+            body: messageBody,
+            url,
+          });
+          sent += progResult.sent;
+          failed += progResult.failed;
         } else {
           const messageBody = `${workerName} · ${jobData.title}`;
           const pushPayload = { title: notifTitle, body: messageBody, url, type: "worker_status_change" };
@@ -318,44 +335,21 @@ Deno.serve(async (req) => {
           sent += nativeResult.sent;
           failed += nativeResult.failed;
 
-          const { data: dispatcherUser } = await supabase.auth.admin.getUserById(jobData.dispatcher_id);
-          if (dispatcherUser?.user?.email) {
-            const result = await sendProgressierPush({
-              recipientEmail: dispatcherUser.user.email,
-              title: notifTitle,
-              body: messageBody,
-              url,
-            });
-            if (result.ok) sent++;
-            else failed++;
-          } else {
-            failed++;
-          }
+          const progResult = await sendProgressierPushToUsers(supabase, [jobData.dispatcher_id], {
+            title: notifTitle,
+            body: messageBody,
+            url,
+          });
+          sent += progResult.sent;
+          failed += progResult.failed;
         }
       }
     }
 
-    // Also send email notifications
+    // Also send email notifications where still needed.
+    // New job alerts are intentionally push-only.
     try {
-      if (type === "new_job") {
-        const { data: workers } = await supabase
-          .from("user_roles")
-          .select("user_id")
-          .eq("role", "worker");
-
-        const targetUserIds = (workers || []).map((w: any) => w.user_id);
-        await sendEmailNotifications(
-          supabase,
-          targetUserIds,
-          "new-job-notification",
-          {
-            title: body.title,
-            hourlyRate: String(body.hourly_rate),
-            address: body.address || undefined,
-          },
-          `new-job-email-${body.job_id || Date.now()}`,
-        );
-      } else if (type === "new_message") {
+      if (type === "new_message") {
         const { data: participants } = await supabase
           .from("conversation_participants")
           .select("user_id")
