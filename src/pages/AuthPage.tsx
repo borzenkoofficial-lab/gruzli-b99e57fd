@@ -2,6 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Users, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Zap, MessageSquare, Phone, Lock, Fingerprint, ShieldCheck, X } from "lucide-react";
+import { LegalCheckboxes } from "@/components/LegalDocuments";
 import { toast } from "sonner";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 
@@ -91,6 +92,9 @@ const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
+  const [legalAccepted, setLegalAccepted] = useState({ terms: false, privacy: false, personalData: false });
+
+  const allLegalAccepted = legalAccepted.terms && legalAccepted.privacy && legalAccepted.personalData;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,6 +102,11 @@ const AuthPage = () => {
 
     try {
       if (mode === "register") {
+        if (!allLegalAccepted) {
+          toast.error("Примите все юридические документы");
+          setLoading(false);
+          return;
+        }
         if (!fullName.trim()) {
           toast.error("Укажите имя");
           setLoading(false);
@@ -364,10 +373,18 @@ const AuthPage = () => {
           </div>
         </div>
 
+        {/* Legal checkboxes (register only) */}
+        {mode === "register" && (
+          <LegalCheckboxes
+            accepted={legalAccepted}
+            onChange={(key, val) => setLegalAccepted((prev) => ({ ...prev, [key]: val }))}
+          />
+        )}
+
         {/* Submit */}
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || (mode === "register" && !allLegalAccepted)}
           className="w-full py-4 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50"
         >
           {loading ? (
