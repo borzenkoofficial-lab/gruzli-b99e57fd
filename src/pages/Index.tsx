@@ -268,7 +268,6 @@ const Index = () => {
         />
       );
     }
-    }
     if (viewProfileUserId) {
       return wrapSuspense(
         <UserProfileScreen
