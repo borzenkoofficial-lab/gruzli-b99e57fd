@@ -31,6 +31,7 @@ const UserProfileScreen = lazy(() => import("@/screens/UserProfileScreen"));
 const NotificationsScreen = lazy(() => import("@/screens/NotificationsScreen"));
 const PremiumScreen = lazy(() => import("@/screens/PremiumScreen"));
 const DispatcherCabinetScreen = lazy(() => import("@/screens/DispatcherCabinetScreen"));
+const DispatcherCommunityScreen = lazy(() => import("@/screens/DispatcherCommunityScreen"));
 const PullToRefresh = lazy(() => import("@/components/PullToRefresh"));
 
 const Index = () => {
