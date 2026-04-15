@@ -319,6 +319,17 @@ const Index = () => {
         />
       );
     }
+    if (showSupportChat) {
+      return wrapSuspense(
+        <SupportChatScreen
+          onBack={() => setShowSupportChat(false)}
+          onOpenAdminChat={() => {
+            setShowSupportChat(false);
+            handleChatWithUser(supportUserId || '', SUPPORT_NAME);
+          }}
+        />
+      );
+    }
     if (viewProfileUserId) {
       return wrapSuspense(
         <UserProfileScreen
