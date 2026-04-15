@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ArrowLeft } from "lucide-react";
 
-type DocType = "privacy" | "terms" | "personal_data";
+type DocType = "privacy" | "terms" | "personal_data" | "rules";
 
 interface LegalModalProps {
   open: boolean;
