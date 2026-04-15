@@ -48,7 +48,7 @@ const Index = () => {
     supabase
       .from("profiles")
       .select("user_id")
-      .eq("phone", "89066466696")
+      .eq("phone", "admin@gruzli.app")
       .maybeSingle()
       .then(({ data }) => {
         if (data) setSupportUserId(data.user_id);
