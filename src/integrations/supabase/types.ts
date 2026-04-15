@@ -754,6 +754,10 @@ export type Database = {
         Args: { _amount: number; _target_user_id: string }
         Returns: undefined
       }
+      delete_conversation_fully: {
+        Args: { _conversation_id: string }
+        Returns: string[]
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
