@@ -110,15 +110,27 @@ const AuthPage = () => {
     setLoading(true);
 
     try {
-      const cleanPhone = phone.replace(/\D/g, "");
+      const input = phone.trim();
 
-      if (!cleanPhone || cleanPhone.length < 10) {
-        toast.error("Укажите корректный номер телефона");
+      if (!input) {
+        toast.error("Укажите email или номер телефона");
         setLoading(false);
         return;
       }
 
-      const email = phoneToEmail(phone);
+      // Determine auth email: if input looks like email use directly, otherwise convert phone
+      let email: string;
+      if (isEmail(input)) {
+        email = input;
+      } else {
+        const cleanPhone = input.replace(/\D/g, "");
+        if (!cleanPhone || cleanPhone.length < 10) {
+          toast.error("Укажите корректный номер телефона или email");
+          setLoading(false);
+          return;
+        }
+        email = phoneToEmail(input);
+      }
 
       if (mode === "register") {
         if (!allLegalAccepted) {
@@ -135,7 +147,7 @@ const AuthPage = () => {
           email,
           password,
           options: {
-            data: { full_name: fullName, role, phone: phone.trim() },
+            data: { full_name: fullName, role, phone: isEmail(input) ? "" : input },
           },
         });
         if (error) throw error;
@@ -144,7 +156,7 @@ const AuthPage = () => {
           await supabase
             .from("profiles")
             .update({
-              phone: phone.trim(),
+              phone: isEmail(input) ? "" : input,
               ...(birthDate ? { birth_date: birthDate } : {}),
             })
             .eq("user_id", data.user.id);
@@ -159,7 +171,7 @@ const AuthPage = () => {
     } catch (err: any) {
       const msg = err.message || "Ошибка авторизации";
       if (msg.includes("Invalid login")) {
-        toast.error("Неверный номер телефона или пароль");
+        toast.error("Неверный email/телефон или пароль");
       } else {
         toast.error(msg);
       }
@@ -355,17 +367,21 @@ const AuthPage = () => {
           )}
         </AnimatePresence>
 
-        {/* Phone */}
+        {/* Email or Phone */}
         <div>
-          <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Номер телефона</label>
+          <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Email или номер телефона</label>
           <div className="neu-inset rounded-xl px-4 py-3 flex items-center gap-2">
-            <Phone size={16} className="text-muted-foreground shrink-0" />
+            {isEmail(phone) ? (
+              <Mail size={16} className="text-muted-foreground shrink-0" />
+            ) : (
+              <Phone size={16} className="text-muted-foreground shrink-0" />
+            )}
             <input
-              type="tel"
-              inputMode="tel"
+              type="text"
+              inputMode="text"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="+7 (999) 123-45-67"
+              placeholder="admin@gruzli.app или +7 999 123-45-67"
               required
               className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
             />
