@@ -83,12 +83,16 @@ const SwipeableChatItem = ({
         className="relative z-10 flex items-center gap-3 px-4 py-3 cursor-pointer active:bg-muted/20 transition-colors bg-background"
       >
         <div className="relative shrink-0">
-          <div
-            className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-sm font-bold text-white shadow-lg"
-            style={{ background: avatarBg }}
-          >
-            {initials}
-          </div>
+          {conv.otherAvatarUrl ? (
+            <img src={conv.otherAvatarUrl} alt="" className="w-[52px] h-[52px] rounded-full object-cover shadow-lg" />
+          ) : (
+            <div
+              className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-sm font-bold text-white shadow-lg"
+              style={{ background: avatarBg }}
+            >
+              {initials}
+            </div>
+          )}
           {conv.otherLastSeen && formatLastSeen(conv.otherLastSeen).isOnline && (
             <div className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-[2.5px] border-background" />
           )}
@@ -121,6 +125,7 @@ interface ConversationItem {
   lastTime: string;
   lastTimestamp: string;
   otherName: string;
+  otherAvatarUrl: string | null;
   unreadCount: number;
   otherLastSeen: string | null;
 }
@@ -187,10 +192,10 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel }: RealChatsScreenProps) =>
       });
 
       const allOtherIds = [...new Set(Object.values(participantsByConv).flat())];
-      let profileMap: Record<string, { name: string; lastSeen: string | null }> = {};
+      let profileMap: Record<string, { name: string; lastSeen: string | null; avatarUrl: string | null }> = {};
       if (allOtherIds.length > 0) {
-        const { data: profiles } = await supabase.from("profiles").select("user_id, full_name, last_seen_at").in("user_id", allOtherIds);
-        profiles?.forEach(p => { profileMap[p.user_id] = { name: p.full_name, lastSeen: (p as any).last_seen_at }; });
+        const { data: profiles } = await supabase.from("profiles").select("user_id, full_name, last_seen_at, avatar_url").in("user_id", allOtherIds);
+        profiles?.forEach(p => { profileMap[p.user_id] = { name: p.full_name, lastSeen: (p as any).last_seen_at, avatarUrl: p.avatar_url }; });
       }
 
       const items = convs.map(conv => {
@@ -218,6 +223,7 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel }: RealChatsScreenProps) =>
             : "",
           lastTimestamp: lastMsg?.created_at || conv.created_at,
           otherName,
+          otherAvatarUrl: otherProfile?.avatarUrl || null,
           unreadCount: unreadByConv[conv.id] || 0,
           otherLastSeen: otherProfile?.lastSeen || null,
         };
