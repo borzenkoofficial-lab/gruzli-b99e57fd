@@ -18,7 +18,7 @@ const phoneToEmail = (phone: string) => {
 /** Check if input looks like an email */
 const isEmail = (input: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.trim());
 
-const SecurityModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+const SecurityModal = forwardRef<HTMLDivElement, { open: boolean; onClose: () => void }>(({ open, onClose }, _ref) => {
   if (!open) return null;
 
   const features = [
