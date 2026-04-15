@@ -77,6 +77,24 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
     if (!user) return;
 
     setLoading(true);
+
+    // AI moderation check
+    const textToCheck = `${title.trim()} ${description.trim()}`.trim();
+    if (textToCheck.length > 5) {
+      try {
+        const { data: modResult } = await supabase.functions.invoke("moderate-content", {
+          body: { text: textToCheck, type: "job" },
+        });
+        if (modResult && !modResult.safe) {
+          toast.error(modResult.reason || "Содержимое не прошло модерацию");
+          setLoading(false);
+          return;
+        }
+      } catch {
+        // Fail-open: allow on error
+      }
+    }
+
     const { error: feeError } = await supabase
       .from("profiles")
       .update({ balance: balance - JOB_POSTING_FEE })
