@@ -255,6 +255,17 @@ const Index = () => {
           />
         );
       }
+      if (showSupportChat) {
+        return (
+          <SupportChatScreen
+            onBack={() => setShowSupportChat(false)}
+            onOpenAdminChat={() => {
+              setShowSupportChat(false);
+              handleChatWithUser(supportUserId || '', SUPPORT_NAME);
+            }}
+          />
+        );
+      }
       if (viewJobDetail) {
         return (
           <JobDetailScreen
