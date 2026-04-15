@@ -205,7 +205,7 @@ const Index = () => {
         return <NotificationsScreen onBack={() => setShowNotifications(false)} />;
       }
       if (showPremium) {
-        return <PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, msg); }} />;
+        return <PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(supportUserId, SUPPORT_NAME, msg); }} />;
       }
       if (showChannel) {
         return <ChannelScreen onBack={() => setShowChannel(false)} />;
@@ -275,7 +275,7 @@ const Index = () => {
     );
 
     if (showNotifications) return wrapSuspense(<NotificationsScreen onBack={() => setShowNotifications(false)} />);
-    if (showPremium) return wrapSuspense(<PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, msg); }} />);
+    if (showPremium) return wrapSuspense(<PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(supportUserId, SUPPORT_NAME, msg); }} />);
     if (showChannel) return wrapSuspense(<ChannelScreen onBack={() => setShowChannel(false)} />);
     if (showSettings) return wrapSuspense(<SettingsScreen onBack={() => setShowSettings(false)} onOpenPremium={() => { setShowSettings(false); setShowPremium(true); }} />);
     if (showCommunity) {
@@ -360,7 +360,7 @@ const Index = () => {
                       <ProfileScreen
                         onOpenSettings={() => setShowSettings(true)}
                         onOpenNotifications={() => setShowNotifications(true)}
-                        onOpenSupport={(prefillMessage) => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, prefillMessage)}
+                        onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId, SUPPORT_NAME, prefillMessage)}
                         onOpenPremium={() => setShowPremium(true)}
                         onOpenCabinet={() => setShowCabinet(true)}
                       />
@@ -396,7 +396,7 @@ const Index = () => {
           <ProfileScreen
             onOpenSettings={() => setShowSettings(true)}
             onOpenNotifications={() => setShowNotifications(true)}
-            onOpenSupport={(prefillMessage) => handleChatWithUser(SUPPORT_USER_ID, SUPPORT_NAME, prefillMessage)}
+            onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId, SUPPORT_NAME, prefillMessage)}
             onOpenPremium={() => setShowPremium(true)}
             onOpenCabinet={() => setShowCabinet(true)}
           />
