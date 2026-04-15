@@ -314,21 +314,19 @@ export const LegalCheckboxes = ({ accepted, onChange }: { accepted: { terms: boo
 };
 
 const CheckboxItem = ({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: React.ReactNode }) => (
-  <label className="flex items-start gap-3 cursor-pointer group">
+  <label className="flex items-center gap-3 cursor-pointer group">
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${
-        checked
-          ? "bg-foreground border-foreground"
-          : "border-muted-foreground/40 bg-transparent"
+      className={`relative w-9 h-[20px] rounded-full shrink-0 transition-colors duration-200 ${
+        checked ? "bg-foreground" : "bg-muted-foreground/30"
       }`}
     >
-      {checked && (
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-foreground" />
-        </svg>
-      )}
+      <span
+        className={`absolute top-[2px] left-[2px] w-4 h-4 rounded-full bg-background shadow-sm transition-transform duration-200 ${
+          checked ? "translate-x-[16px]" : "translate-x-0"
+        }`}
+      />
     </button>
     <span className="text-xs text-muted-foreground leading-relaxed">{label}</span>
   </label>
