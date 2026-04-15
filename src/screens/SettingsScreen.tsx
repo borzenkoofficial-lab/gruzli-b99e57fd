@@ -226,15 +226,15 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   const MenuItem = ({ icon: Icon, label, desc, onClick, destructive, badge }: {
     icon: any; label: string; desc: string; onClick: () => void; destructive?: boolean; badge?: string;
   }) => (
-    <button onClick={onClick} className="w-full flex items-center gap-3 p-4 rounded-2xl bg-card border border-border tap-scale transition-colors">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${destructive ? "bg-destructive/10" : "bg-card border border-border"}`}>
-        <Icon size={18} className={destructive ? "text-destructive" : "text-primary"} />
+    <button onClick={onClick} className="w-full flex items-center gap-3.5 py-3 px-1 active:opacity-70 transition-opacity">
+      <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${destructive ? "bg-destructive/10" : "bg-surface-1"}`}>
+        <Icon size={17} className={destructive ? "text-destructive" : "text-muted-foreground"} />
       </div>
-      <div className="flex-1 text-left">
-        <p className={`text-sm font-semibold ${destructive ? "text-destructive" : "text-foreground"}`}>{label}</p>
-        <p className="text-[11px] text-muted-foreground">{desc}</p>
+      <div className="flex-1 text-left min-w-0">
+        <p className={`text-[14px] font-medium ${destructive ? "text-destructive" : "text-foreground"}`}>{label}</p>
       </div>
-      {badge && <span className="px-2 py-0.5 rounded-full bg-primary/10 text-[10px] text-primary font-bold">{badge}</span>}
+      {badge && <span className="text-[11px] text-primary font-semibold">{badge}</span>}
+      <ArrowLeft size={14} className="text-muted-foreground/40 rotate-180 shrink-0" />
     </button>
   );
 
@@ -756,32 +756,52 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
     <div className="flex flex-col h-full">
       <Header title="Настройки" onBack={onBack} />
       <div className="flex-1 overflow-y-auto overscroll-contain pb-28">
-        <div className="px-5 space-y-2">
-          <MenuItem icon={User} label="Профиль" desc="Имя, телефон, фото" onClick={() => setSection("profile")} />
+        {/* Account section */}
+        <div className="mx-5 bg-card border border-border rounded-2xl px-4 py-1 mb-3">
+          <MenuItem icon={User} label="Профиль" desc="" onClick={() => setSection("profile")} />
+          <div className="h-px bg-border ml-[52px]" />
           {role === "worker" && onOpenPremium && (
-            <MenuItem icon={Crown} label="Premium" desc="Безлимитные заказы и приоритет" onClick={onOpenPremium} badge={profile?.is_premium ? "✓" : ""} />
+            <>
+              <MenuItem icon={Crown} label="Premium" desc="" onClick={onOpenPremium} badge={profile?.is_premium ? "Активен" : ""} />
+              <div className="h-px bg-border ml-[52px]" />
+            </>
           )}
-          <MenuItem icon={BadgeCheck} label="Верификация" desc={profile?.verified ? "Аккаунт верифицирован ✓" : "Подтвердить личность"} onClick={() => setSection("verification")} badge={profile?.verified ? "✓" : ""} />
-          <MenuItem icon={Bell} label="Уведомления" desc="Push, звуки, email" onClick={() => setSection("notifications")} />
-          <MenuItem icon={Shield} label="Безопасность" desc="Пароль, сессия, удаление" onClick={() => setSection("security")} />
-          <MenuItem icon={Palette} label="Оформление" desc="Тема приложения" onClick={() => setSection("appearance")} />
-          <MenuItem icon={Globe} label="Язык" desc={language === "ru" ? "Русский" : "English"} onClick={() => setSection("language")} badge={language.toUpperCase()} />
-          <MenuItem icon={HardDrive} label="Данные и хранилище" desc="Кеш, локальные данные" onClick={() => setSection("storage")} />
-          <MenuItem icon={Ban} label="Заблокированные" desc="Управление чёрным списком" onClick={() => setSection("blocked")} />
-          <MenuItem icon={Info} label="О приложении" desc="Версия, ссылки, лицензии" onClick={() => setSection("about")} />
-
-          <div className="pt-3">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-4 mb-2">Ещё</p>
-            <MenuItem icon={Share2} label="Поделиться" desc="Отправить ссылку друзьям" onClick={handleShareApp} />
-            <MenuItem icon={Star} label="Оценить приложение" desc="Оставьте отзыв ⭐" onClick={handleRateApp} />
-          </div>
-
-          <div className="pt-2">
-            <MenuItem icon={LogOut} label="Выйти" desc="Выход из аккаунта" onClick={signOut} destructive />
-          </div>
+          <MenuItem icon={BadgeCheck} label="Верификация" desc="" onClick={() => setSection("verification")} badge={profile?.verified ? "✓" : ""} />
         </div>
 
-        <div className="text-center mt-8">
+        {/* General section */}
+        <div className="mx-5 bg-card border border-border rounded-2xl px-4 py-1 mb-3">
+          <MenuItem icon={Bell} label="Уведомления" desc="" onClick={() => setSection("notifications")} />
+          <div className="h-px bg-border ml-[52px]" />
+          <MenuItem icon={Shield} label="Безопасность" desc="" onClick={() => setSection("security")} />
+          <div className="h-px bg-border ml-[52px]" />
+          <MenuItem icon={Palette} label="Оформление" desc="" onClick={() => setSection("appearance")} />
+          <div className="h-px bg-border ml-[52px]" />
+          <MenuItem icon={Globe} label="Язык" desc="" onClick={() => setSection("language")} badge={language === "ru" ? "RU" : "EN"} />
+        </div>
+
+        {/* Data section */}
+        <div className="mx-5 bg-card border border-border rounded-2xl px-4 py-1 mb-3">
+          <MenuItem icon={HardDrive} label="Данные и хранилище" desc="" onClick={() => setSection("storage")} />
+          <div className="h-px bg-border ml-[52px]" />
+          <MenuItem icon={Ban} label="Заблокированные" desc="" onClick={() => setSection("blocked")} />
+        </div>
+
+        {/* About & share section */}
+        <div className="mx-5 bg-card border border-border rounded-2xl px-4 py-1 mb-3">
+          <MenuItem icon={Share2} label="Поделиться" desc="" onClick={handleShareApp} />
+          <div className="h-px bg-border ml-[52px]" />
+          <MenuItem icon={Star} label="Оценить приложение" desc="" onClick={handleRateApp} />
+          <div className="h-px bg-border ml-[52px]" />
+          <MenuItem icon={Info} label="О приложении" desc="" onClick={() => setSection("about")} />
+        </div>
+
+        {/* Logout */}
+        <div className="mx-5 bg-card border border-border rounded-2xl px-4 py-1 mb-3">
+          <MenuItem icon={LogOut} label="Выйти" desc="" onClick={signOut} destructive />
+        </div>
+
+        <div className="text-center mt-4 mb-4">
           <p className="text-[11px] text-muted-foreground">Gruzli v1.0.0</p>
         </div>
       </div>

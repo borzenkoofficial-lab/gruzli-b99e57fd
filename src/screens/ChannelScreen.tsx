@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Heart, MessageCircle, Send, Loader2, Trash2, Repeat2, Share, MoreHorizontal, BadgeCheck } from "lucide-react";
+import { ArrowLeft, Heart, MessageCircle, Send, Loader2, Trash2, Share, MoreHorizontal, BadgeCheck, Users, Image as ImageIcon, Pin, Settings, Bell, ChevronRight, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -34,7 +34,6 @@ interface Comment {
   userName: string;
 }
 
-// Placeholder posts shown when DB is empty
 const placeholderPosts: Omit<Post, "liked">[] = [
   {
     id: "placeholder-1",
@@ -70,7 +69,6 @@ const placeholderPosts: Omit<Post, "liked">[] = [
 
 const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
   const { user, role } = useAuth();
-  const isDispatcher = role === "dispatcher";
   const canPost = role === "dispatcher" || role === "admin";
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,28 +81,19 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
   const [sendingComment, setSendingComment] = useState(false);
   const [showCompose, setShowCompose] = useState(false);
   const [subscriberCount, setSubscriberCount] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<"wall" | "info">("wall");
 
   useEffect(() => {
-    supabase
-      .from("app_settings")
-      .select("value")
-      .eq("id", "fake_subscribers")
-      .single()
-      .then(({ data }) => {
-        if (data) setSubscriberCount((data.value as any)?.count ?? null);
-      });
+    supabase.from("app_settings").select("value").eq("id", "fake_subscribers").single()
+      .then(({ data }) => { if (data) setSubscriberCount((data.value as any)?.count ?? null); });
   }, []);
 
   const fetchPosts = useCallback(async () => {
     if (!user) return;
-
     const { data: postsData } = await supabase
-      .from("channel_posts")
-      .select("*")
-      .order("created_at", { ascending: false });
+      .from("channel_posts").select("*").order("created_at", { ascending: false });
 
     if (!postsData || postsData.length === 0) {
-      // Show placeholder posts
       setPosts(placeholderPosts.map(p => ({ ...p, liked: false })));
       setLoading(false);
       return;
@@ -122,24 +111,16 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
 
     const profileMap: Record<string, string> = {};
     (profilesRes.data || []).forEach((p) => { profileMap[p.user_id] = p.full_name; });
-
     const likeCounts: Record<string, number> = {};
     (likesRes.data || []).forEach((l) => { likeCounts[l.post_id] = (likeCounts[l.post_id] || 0) + 1; });
-
     const commentCounts: Record<string, number> = {};
     (commentsCountRes.data || []).forEach((c) => { commentCounts[c.post_id] = (commentCounts[c.post_id] || 0) + 1; });
-
     const userLikedSet = new Set((userLikesRes.data || []).map((l) => l.post_id));
 
     setPosts(postsData.map((p) => ({
-      id: p.id,
-      author_id: p.author_id,
-      text: p.text,
-      image_url: p.image_url,
-      created_at: p.created_at,
-      authorName: profileMap[p.author_id] || "Gruzli Official",
-      likesCount: likeCounts[p.id] || 0,
-      commentsCount: commentCounts[p.id] || 0,
+      id: p.id, author_id: p.author_id, text: p.text, image_url: p.image_url,
+      created_at: p.created_at, authorName: profileMap[p.author_id] || "Gruzli Official",
+      likesCount: likeCounts[p.id] || 0, commentsCount: commentCounts[p.id] || 0,
       liked: userLikedSet.has(p.id),
     })));
     setLoading(false);
@@ -148,8 +129,7 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
 
   useEffect(() => {
-    const channel = supabase
-      .channel("channel-posts-live")
+    const channel = supabase.channel("channel-posts-live")
       .on("postgres_changes", { event: "*", schema: "public", table: "channel_posts" }, () => fetchPosts())
       .on("postgres_changes", { event: "*", schema: "public", table: "channel_post_likes" }, () => fetchPosts())
       .on("postgres_changes", { event: "*", schema: "public", table: "channel_post_comments" }, () => fetchPosts())
@@ -160,27 +140,16 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
   const handleCreatePost = async () => {
     if (!newPostText.trim() || !user) return;
     setPosting(true);
-    const { error } = await supabase.from("channel_posts").insert({
-      author_id: user.id,
-      text: newPostText.trim(),
-    });
+    const { error } = await supabase.from("channel_posts").insert({ author_id: user.id, text: newPostText.trim() });
     setPosting(false);
-    if (error) {
-      toast.error("Не удалось опубликовать");
-    } else {
-      setNewPostText("");
-      setShowCompose(false);
-      toast.success("Пост опубликован");
-    }
+    if (error) toast.error("Не удалось опубликовать");
+    else { setNewPostText(""); setShowCompose(false); toast.success("Пост опубликован"); }
   };
 
   const handleToggleLike = async (postId: string, liked: boolean) => {
     if (!user || postId.startsWith("placeholder")) return;
-    if (liked) {
-      await supabase.from("channel_post_likes").delete().eq("post_id", postId).eq("user_id", user.id);
-    } else {
-      await supabase.from("channel_post_likes").insert({ post_id: postId, user_id: user.id });
-    }
+    if (liked) await supabase.from("channel_post_likes").delete().eq("post_id", postId).eq("user_id", user.id);
+    else await supabase.from("channel_post_likes").insert({ post_id: postId, user_id: user.id });
   };
 
   const handleDeletePost = async (postId: string) => {
@@ -191,54 +160,29 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
   const fetchComments = async (postId: string) => {
     if (postId.startsWith("placeholder")) { setComments([]); setLoadingComments(false); return; }
     setLoadingComments(true);
-    const { data } = await supabase
-      .from("channel_post_comments")
-      .select("*")
-      .eq("post_id", postId)
-      .order("created_at", { ascending: true });
-
+    const { data } = await supabase.from("channel_post_comments").select("*").eq("post_id", postId).order("created_at", { ascending: true });
     if (data) {
       const userIds = [...new Set(data.map((c) => c.user_id))];
       const { data: profiles } = await supabase.from("profiles").select("user_id, full_name").in("user_id", userIds);
       const nameMap: Record<string, string> = {};
       (profiles || []).forEach((p) => { nameMap[p.user_id] = p.full_name; });
-
-      setComments(data.map((c) => ({
-        id: c.id,
-        user_id: c.user_id,
-        text: c.text,
-        created_at: c.created_at,
-        userName: nameMap[c.user_id] || "Пользователь",
-      })));
+      setComments(data.map((c) => ({ id: c.id, user_id: c.user_id, text: c.text, created_at: c.created_at, userName: nameMap[c.user_id] || "Пользователь" })));
     }
     setLoadingComments(false);
   };
 
   const toggleComments = (postId: string) => {
-    if (expandedComments === postId) {
-      setExpandedComments(null);
-      setComments([]);
-    } else {
-      setExpandedComments(postId);
-      fetchComments(postId);
-    }
+    if (expandedComments === postId) { setExpandedComments(null); setComments([]); }
+    else { setExpandedComments(postId); fetchComments(postId); }
   };
 
   const handleSendComment = async (postId: string) => {
     if (!newComment.trim() || !user || postId.startsWith("placeholder")) return;
     setSendingComment(true);
-    const { error } = await supabase.from("channel_post_comments").insert({
-      post_id: postId,
-      user_id: user.id,
-      text: newComment.trim(),
-    });
+    const { error } = await supabase.from("channel_post_comments").insert({ post_id: postId, user_id: user.id, text: newComment.trim() });
     setSendingComment(false);
-    if (error) {
-      toast.error("Не удалось отправить");
-    } else {
-      setNewComment("");
-      fetchComments(postId);
-    }
+    if (error) toast.error("Не удалось отправить");
+    else { setNewComment(""); fetchComments(postId); }
   };
 
   const handleDeleteComment = async (commentId: string, postId: string) => {
@@ -248,287 +192,360 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
 
   const formatTime = (dateStr: string) => {
     const date = new Date(dateStr);
-    const now = new Date();
-    const diffHours = (now.getTime() - date.getTime()) / 3600000;
-    if (diffHours < 24) {
-      return formatDistanceToNow(date, { locale: ru, addSuffix: false });
-    }
-    return format(date, "d MMM", { locale: ru });
+    const diffHours = (Date.now() - date.getTime()) / 3600000;
+    if (diffHours < 24) return formatDistanceToNow(date, { locale: ru, addSuffix: false });
+    return format(date, "d MMM в HH:mm", { locale: ru });
   };
 
+  const memberCount = subscriberCount || 1247;
+
   return (
-    <div className="flex flex-col h-screen bg-background overflow-hidden" style={{ height: "100dvh" }}>
-      {/* Back button bar - fixed */}
-      <div className="shrink-0 bg-background/95 backdrop-blur-xl border-b border-border z-20">
-        <div className="flex items-center gap-3 px-4 safe-top pb-3">
-          <button onClick={onBack} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-secondary/60 transition-colors active:scale-95">
+    <div className="flex flex-col h-screen bg-background overflow-hidden" style={{ height: "calc(var(--vh, 1vh) * 100)" }}>
+      {/* Top bar */}
+      <div className="shrink-0 bg-card/95 backdrop-blur-xl border-b border-border z-20">
+        <div className="flex items-center gap-3 px-4 safe-top pb-2.5">
+          <button onClick={onBack} className="w-9 h-9 rounded-xl flex items-center justify-center active:bg-surface-1 transition-colors">
             <ArrowLeft size={20} className="text-foreground" />
           </button>
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5">
-              <h1 className="text-[17px] font-extrabold text-foreground">Gruzli Official</h1>
-              <BadgeCheck size={18} className="text-primary fill-primary/20" />
+              <span className="text-[15px] font-bold text-foreground truncate">Gruzli Official</span>
+              <BadgeCheck size={16} className="text-primary fill-primary/20 shrink-0" />
             </div>
-            <p className="text-[12px] text-muted-foreground">
-              {subscriberCount ? `${subscriberCount.toLocaleString("ru-RU")} подписчиков · ` : ""}{posts.length} постов
-            </p>
+            <p className="text-[11px] text-muted-foreground">сообщество</p>
           </div>
+          <button className="w-9 h-9 rounded-xl flex items-center justify-center active:bg-surface-1 transition-colors">
+            <MoreHorizontal size={20} className="text-muted-foreground" />
+          </button>
         </div>
       </div>
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
-        {/* Channel banner */}
-        <div className="relative h-[100px] bg-gradient-to-br from-primary/30 via-primary/10 to-accent/20 overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,hsl(var(--primary)/0.3),transparent_70%)]" />
-          <div className="absolute bottom-3 left-4 flex items-end gap-3">
-            <div className="w-14 h-14 rounded-full border-[3px] border-background bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-              <span className="text-xl font-black text-primary-foreground">G</span>
-            </div>
-            <div className="pb-1">
-              <div className="flex items-center gap-1">
-                <span className="text-sm font-bold text-foreground drop-shadow">Gruzli Official</span>
-                <BadgeCheck size={14} className="text-primary" />
+        {/* VK-style cover / header */}
+        <div className="relative">
+          <div className="h-[120px] bg-gradient-to-br from-primary/40 via-primary/20 to-accent/30 overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,hsl(var(--primary)/0.4),transparent_60%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,hsl(var(--accent)/0.3),transparent_60%)]" />
+          </div>
+        </div>
+
+        {/* Group info card */}
+        <div className="relative px-4 -mt-8">
+          <div className="bg-card border border-border rounded-2xl p-4">
+            <div className="flex gap-3.5">
+              {/* Avatar */}
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg -mt-8 border-[3px] border-card">
+                <span className="text-2xl font-black text-primary-foreground">G</span>
               </div>
-              <span className="text-[11px] text-foreground/60">@gruzli_official</span>
+              <div className="flex-1 min-w-0 pt-0.5">
+                <div className="flex items-center gap-1.5">
+                  <h1 className="text-[16px] font-bold text-foreground truncate">Gruzli Official</h1>
+                  <BadgeCheck size={16} className="text-primary fill-primary/20 shrink-0" />
+                </div>
+                <p className="text-[12px] text-muted-foreground">@gruzli_official · сообщество</p>
+              </div>
+            </div>
+
+            {/* Description */}
+            <p className="text-[13px] text-foreground/80 leading-snug mt-3">
+              Официальное сообщество платформы Gruzli 🚛
+              Обновления, новости и важные объявления для грузчиков и диспетчеров.
+            </p>
+
+            {/* Stats row */}
+            <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
+              <div className="flex items-center gap-1.5">
+                <Users size={14} className="text-muted-foreground" />
+                <span className="text-[13px] text-foreground font-semibold">{memberCount.toLocaleString("ru-RU")}</span>
+                <span className="text-[12px] text-muted-foreground">участников</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Pin size={14} className="text-muted-foreground" />
+                <span className="text-[13px] text-foreground font-semibold">{posts.length}</span>
+                <span className="text-[12px] text-muted-foreground">постов</span>
+              </div>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-2 mt-3">
+              <button className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-[13px] font-bold flex items-center justify-center gap-1.5 active:opacity-80 transition-opacity">
+                <Bell size={14} /> Подписаться
+              </button>
+              <button className="py-2.5 px-4 rounded-xl bg-surface-1 text-muted-foreground text-[13px] font-medium active:opacity-80 transition-opacity">
+                <Share size={14} />
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Bio */}
-        <div className="px-4 py-3 border-b border-border">
-          <p className="text-[13px] text-foreground/80 leading-snug">
-            Официальный канал платформы Gruzli 🚛 Обновления, новости и важные объявления.
-          </p>
-        </div>
-
-      {/* Compose button for dispatchers and admins */}
-      {canPost && (
-        <>
-          <AnimatePresence>
-            {showCompose && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden border-b border-border"
-              >
-                <div className="px-4 py-3">
-                  <div className="flex gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
-                      <span className="text-sm font-bold text-primary-foreground">G</span>
-                    </div>
-                    <div className="flex-1">
-                      <textarea
-                        value={newPostText}
-                        onChange={(e) => setNewPostText(e.target.value)}
-                        placeholder="Что нового?"
-                        className="w-full bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground outline-none resize-none min-h-[80px] leading-relaxed"
-                        rows={3}
-                        autoFocus
-                      />
-                      <div className="flex items-center justify-between pt-2 border-t border-border/50">
-                        <div className="flex gap-2">
-                          {/* Future: image upload buttons */}
-                        </div>
-                        <button
-                          onClick={handleCreatePost}
-                          disabled={posting || !newPostText.trim()}
-                          className="px-5 py-2 rounded-full bg-primary text-primary-foreground text-sm font-bold disabled:opacity-40 flex items-center gap-2 hover:bg-primary/90 transition-colors"
-                        >
-                          {posting ? <Loader2 size={14} className="animate-spin" /> : null}
-                          Опубликовать
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {!showCompose && (
+        {/* Navigation tabs */}
+        <div className="flex border-b border-border mt-3 px-4">
+          {([
+            { id: "wall" as const, label: "Стена" },
+            { id: "info" as const, label: "Информация" },
+          ]).map((tab) => (
             <button
-              onClick={() => setShowCompose(true)}
-              className="fixed bottom-24 right-5 z-30 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center hover:bg-primary/90 transition-all active:scale-90"
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 py-3 text-[13px] font-semibold text-center transition-colors relative ${
+                activeTab === tab.id ? "text-primary" : "text-muted-foreground"
+              }`}
             >
-              <Send size={20} />
+              {tab.label}
+              {activeTab === tab.id && (
+                <motion.div layoutId="channel-tab" className="absolute bottom-0 left-2 right-2 h-[2px] bg-primary rounded-full" />
+              )}
             </button>
-          )}
-        </>
-      )}
-
-      {/* Posts feed */}
-      {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 size={24} className="animate-spin text-primary" />
-        </div>
-      ) : posts.length === 0 ? (
-        <div className="text-center py-16">
-          <p className="text-4xl mb-3">📢</p>
-          <p className="text-sm text-muted-foreground">Пока нет постов</p>
-        </div>
-      ) : (
-        <div>
-          {posts.map((post, i) => (
-            <motion.article
-              key={post.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: i * 0.04 }}
-              className="border-b border-border hover:bg-secondary/20 transition-colors"
-            >
-              <div className="px-4 py-3">
-                <div className="flex gap-3">
-                  {/* Avatar */}
-                  <div className="shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                      <span className="text-sm font-bold text-primary-foreground">G</span>
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    {/* Header row */}
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <span className="text-[14px] font-bold text-foreground truncate">Gruzli Official</span>
-                      <BadgeCheck size={15} className="text-primary fill-primary/20 shrink-0" />
-                      <span className="text-[13px] text-muted-foreground truncate">@gruzli</span>
-                      <span className="text-muted-foreground text-[13px]">·</span>
-                      <span className="text-[13px] text-muted-foreground shrink-0">{formatTime(post.created_at)}</span>
-                      <div className="ml-auto flex items-center">
-                        {post.author_id === user?.id && (
-                          <button onClick={() => handleDeletePost(post.id)} className="p-1.5 rounded-full hover:bg-destructive/10 transition-colors">
-                            <Trash2 size={14} className="text-muted-foreground hover:text-destructive" />
-                          </button>
-                        )}
-                        <button className="p-1.5 rounded-full hover:bg-primary/10 transition-colors">
-                          <MoreHorizontal size={15} className="text-muted-foreground" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Text */}
-                    <p className="text-[14.5px] text-foreground/90 whitespace-pre-wrap leading-[1.45] mb-2.5">{post.text}</p>
-
-                    {/* Image */}
-                    {post.image_url && (
-                      <div className="rounded-2xl overflow-hidden border border-border mb-2.5">
-                        <img
-                          src={post.image_url}
-                          alt=""
-                          className="w-full max-h-[300px] object-cover"
-                          loading="lazy"
-                        />
-                      </div>
-                    )}
-
-                    {/* Action bar */}
-                    <div className="flex items-center justify-between max-w-[360px] -ml-2">
-                      <button
-                        onClick={() => toggleComments(post.id)}
-                        className="group flex items-center gap-1.5 px-2 py-1.5 rounded-full hover:bg-primary/10 transition-colors"
-                      >
-                        <MessageCircle
-                          size={17}
-                          className={`transition-colors ${expandedComments === post.id ? "text-primary" : "text-muted-foreground group-hover:text-primary"}`}
-                        />
-                        <span className={`text-[13px] ${expandedComments === post.id ? "text-primary" : "text-muted-foreground group-hover:text-primary"}`}>
-                          {post.commentsCount > 0 ? post.commentsCount : ""}
-                        </span>
-                      </button>
-
-                      <button className="group flex items-center gap-1.5 px-2 py-1.5 rounded-full hover:bg-green-500/10 transition-colors">
-                        <Repeat2 size={17} className="text-muted-foreground group-hover:text-green-500 transition-colors" />
-                      </button>
-
-                      <button
-                        onClick={() => handleToggleLike(post.id, post.liked)}
-                        className="group flex items-center gap-1.5 px-2 py-1.5 rounded-full hover:bg-red-500/10 transition-colors"
-                      >
-                        <Heart
-                          size={17}
-                          className={`transition-colors ${post.liked ? "text-red-500 fill-red-500" : "text-muted-foreground group-hover:text-red-500"}`}
-                        />
-                        <span className={`text-[13px] transition-colors ${post.liked ? "text-red-500" : "text-muted-foreground group-hover:text-red-500"}`}>
-                          {post.likesCount > 0 ? post.likesCount : ""}
-                        </span>
-                      </button>
-
-                      <button className="group flex items-center gap-1.5 px-2 py-1.5 rounded-full hover:bg-primary/10 transition-colors">
-                        <Share size={16} className="text-muted-foreground group-hover:text-primary transition-colors" />
-                      </button>
-                    </div>
-
-                    {/* Comments */}
-                    <AnimatePresence>
-                      {expandedComments === post.id && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="mt-2 pt-2 border-t border-border/50 space-y-3">
-                            {loadingComments ? (
-                              <div className="flex justify-center py-3">
-                                <Loader2 size={16} className="animate-spin text-muted-foreground" />
-                              </div>
-                            ) : comments.length === 0 ? (
-                              <p className="text-[13px] text-muted-foreground text-center py-2">Нет комментариев</p>
-                            ) : (
-                              comments.map((c) => (
-                                <div key={c.id} className="flex gap-2.5">
-                                  <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
-                                    {c.userName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="text-[13px] font-bold text-foreground">{c.userName}</span>
-                                      <span className="text-[11px] text-muted-foreground">
-                                        {format(new Date(c.created_at), "HH:mm", { locale: ru })}
-                                      </span>
-                                      {c.user_id === user?.id && (
-                                        <button onClick={() => handleDeleteComment(c.id, post.id)} className="ml-auto p-1 rounded-full hover:bg-destructive/10">
-                                          <Trash2 size={11} className="text-muted-foreground hover:text-destructive" />
-                                        </button>
-                                      )}
-                                    </div>
-                                    <p className="text-[13px] text-foreground/80 mt-0.5 leading-snug">{c.text}</p>
-                                  </div>
-                                </div>
-                              ))
-                            )}
-
-                            {/* Comment input */}
-                            <div className="flex gap-2 pt-1">
-                              <input
-                                value={newComment}
-                                onChange={(e) => setNewComment(e.target.value)}
-                                placeholder="Написать комментарий..."
-                                className="flex-1 bg-secondary/60 rounded-full py-2 px-4 text-[13px] text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary/30 transition"
-                                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendComment(post.id); } }}
-                              />
-                              <button
-                                onClick={() => handleSendComment(post.id)}
-                                disabled={sendingComment || !newComment.trim()}
-                                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center disabled:opacity-40 transition"
-                              >
-                                {sendingComment ? <Loader2 size={12} className="animate-spin text-primary-foreground" /> : <Send size={13} className="text-primary-foreground" />}
-                              </button>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-              </div>
-            </motion.article>
           ))}
         </div>
-      )}
-      </div>{/* end scrollable content */}
+
+        {activeTab === "info" ? (
+          /* Info tab */
+          <div className="px-4 py-4 space-y-3">
+            <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+              <h3 className="text-[13px] font-bold text-foreground">О сообществе</h3>
+              <p className="text-[13px] text-foreground/70 leading-relaxed">
+                Gruzli — платформа для поиска работы в сфере грузоперевозок. Здесь грузчики находят заказы, а диспетчеры — надёжных исполнителей.
+              </p>
+              <div className="space-y-2.5 pt-1">
+                {[
+                  { label: "Тип", value: "Сообщество" },
+                  { label: "Категория", value: "Работа и бизнес" },
+                  { label: "Участников", value: memberCount.toLocaleString("ru-RU") },
+                  { label: "Создано", value: "2025" },
+                  { label: "Сайт", value: "gruzli.lovable.app" },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center justify-between">
+                    <span className="text-[12px] text-muted-foreground">{item.label}</span>
+                    <span className="text-[12px] text-foreground font-medium">{item.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-card border border-border rounded-2xl p-4">
+              <h3 className="text-[13px] font-bold text-foreground mb-2">Контакты</h3>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <Settings size={14} className="text-muted-foreground" />
+                  <span className="text-[13px] text-foreground">Техническая поддержка — через чат</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Wall tab */
+          <>
+            {/* Compose (for admins/dispatchers) */}
+            {canPost && (
+              <>
+                <AnimatePresence>
+                  {showCompose && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-4 py-3 bg-card border-b border-border">
+                        <textarea
+                          value={newPostText}
+                          onChange={(e) => setNewPostText(e.target.value)}
+                          placeholder="Что нового в сообществе?"
+                          className="w-full bg-surface-1 border border-border rounded-xl text-[14px] text-foreground placeholder:text-muted-foreground outline-none resize-none min-h-[80px] p-3 leading-relaxed"
+                          rows={3}
+                          autoFocus
+                        />
+                        <div className="flex items-center justify-between mt-2">
+                          <button className="p-2 rounded-lg active:bg-surface-1 transition-colors">
+                            <ImageIcon size={18} className="text-muted-foreground" />
+                          </button>
+                          <button
+                            onClick={handleCreatePost}
+                            disabled={posting || !newPostText.trim()}
+                            className="px-5 py-2 rounded-xl bg-primary text-primary-foreground text-[13px] font-bold disabled:opacity-40 flex items-center gap-2 active:opacity-80 transition-opacity"
+                          >
+                            {posting && <Loader2 size={14} className="animate-spin" />}
+                            Опубликовать
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {!showCompose && (
+                  <button
+                    onClick={() => setShowCompose(true)}
+                    className="w-full px-4 py-3 flex items-center gap-3 bg-card border-b border-border active:bg-surface-1 transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                      <span className="text-xs font-bold text-primary-foreground">G</span>
+                    </div>
+                    <span className="text-[13px] text-muted-foreground">Написать пост...</span>
+                  </button>
+                )}
+              </>
+            )}
+
+            {/* Posts */}
+            {loading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 size={24} className="animate-spin text-primary" />
+              </div>
+            ) : posts.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="text-4xl mb-3">📢</p>
+                <p className="text-[13px] text-muted-foreground">Пока нет постов</p>
+              </div>
+            ) : (
+              <div>
+                {posts.map((post, i) => (
+                  <motion.article
+                    key={post.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: i * 0.03 }}
+                    className="bg-card border-b border-border"
+                  >
+                    <div className="px-4 py-3.5">
+                      {/* Post header */}
+                      <div className="flex items-center gap-3 mb-2.5">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                          <span className="text-sm font-bold text-primary-foreground">G</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1">
+                            <span className="text-[13px] font-bold text-foreground">Gruzli Official</span>
+                            <BadgeCheck size={14} className="text-primary fill-primary/20 shrink-0" />
+                          </div>
+                          <span className="text-[11px] text-muted-foreground">{formatTime(post.created_at)}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {post.author_id === user?.id && (
+                            <button onClick={() => handleDeletePost(post.id)} className="p-2 rounded-lg active:bg-destructive/10 transition-colors">
+                              <Trash2 size={14} className="text-muted-foreground" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Text */}
+                      <p className="text-[14px] text-foreground/90 whitespace-pre-wrap leading-[1.5] mb-3">{post.text}</p>
+
+                      {/* Image */}
+                      {post.image_url && (
+                        <div className="rounded-xl overflow-hidden mb-3">
+                          <img src={post.image_url} alt="" className="w-full max-h-[280px] object-cover" loading="lazy" />
+                        </div>
+                      )}
+
+                      {/* Engagement bar */}
+                      <div className="flex items-center gap-1 -mx-2">
+                        <button
+                          onClick={() => handleToggleLike(post.id, post.liked)}
+                          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-colors ${
+                            post.liked ? "text-red-500" : "text-muted-foreground active:bg-surface-1"
+                          }`}
+                        >
+                          <Heart size={18} className={post.liked ? "fill-red-500" : ""} />
+                          {post.likesCount > 0 && <span className="text-[13px] font-medium">{post.likesCount}</span>}
+                        </button>
+
+                        <button
+                          onClick={() => toggleComments(post.id)}
+                          className={`flex items-center gap-1.5 px-3 py-2 rounded-lg transition-colors ${
+                            expandedComments === post.id ? "text-primary" : "text-muted-foreground active:bg-surface-1"
+                          }`}
+                        >
+                          <MessageCircle size={18} />
+                          {post.commentsCount > 0 && <span className="text-[13px] font-medium">{post.commentsCount}</span>}
+                        </button>
+
+                        <button className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-muted-foreground active:bg-surface-1 transition-colors">
+                          <Share size={16} />
+                        </button>
+
+                        <div className="ml-auto flex items-center gap-1 text-muted-foreground/50">
+                          <Eye size={14} />
+                          <span className="text-[11px]">{Math.floor(Math.random() * 500 + 100)}</span>
+                        </div>
+                      </div>
+
+                      {/* Comments */}
+                      <AnimatePresence>
+                        {expandedComments === post.id && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="mt-2 pt-3 border-t border-border space-y-3">
+                              {loadingComments ? (
+                                <div className="flex justify-center py-3">
+                                  <Loader2 size={16} className="animate-spin text-muted-foreground" />
+                                </div>
+                              ) : comments.length === 0 ? (
+                                <p className="text-[13px] text-muted-foreground text-center py-2">Нет комментариев</p>
+                              ) : (
+                                comments.map((c) => (
+                                  <div key={c.id} className="flex gap-2.5">
+                                    <div className="w-8 h-8 rounded-full bg-surface-1 flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0">
+                                      {c.userName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
+                                    </div>
+                                    <div className="flex-1 min-w-0 bg-surface-1 rounded-xl px-3 py-2">
+                                      <div className="flex items-center gap-1.5 mb-0.5">
+                                        <span className="text-[12px] font-bold text-foreground">{c.userName}</span>
+                                        <span className="text-[10px] text-muted-foreground">
+                                          {format(new Date(c.created_at), "HH:mm", { locale: ru })}
+                                        </span>
+                                        {c.user_id === user?.id && (
+                                          <button onClick={() => handleDeleteComment(c.id, post.id)} className="ml-auto p-1 rounded-full active:bg-destructive/10">
+                                            <Trash2 size={11} className="text-muted-foreground" />
+                                          </button>
+                                        )}
+                                      </div>
+                                      <p className="text-[13px] text-foreground/80 leading-snug">{c.text}</p>
+                                    </div>
+                                  </div>
+                                ))
+                              )}
+
+                              {/* Comment input */}
+                              <div className="flex gap-2 pt-1">
+                                <input
+                                  value={newComment}
+                                  onChange={(e) => setNewComment(e.target.value)}
+                                  placeholder="Комментарий..."
+                                  className="flex-1 bg-surface-1 border border-border rounded-xl py-2.5 px-3.5 text-[13px] text-foreground placeholder:text-muted-foreground outline-none"
+                                  onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSendComment(post.id); } }}
+                                />
+                                <button
+                                  onClick={() => handleSendComment(post.id)}
+                                  disabled={sendingComment || !newComment.trim()}
+                                  className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center disabled:opacity-40 transition"
+                                >
+                                  {sendingComment ? <Loader2 size={12} className="animate-spin text-primary-foreground" /> : <Send size={14} className="text-primary-foreground" />}
+                                </button>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </motion.article>
+                ))}
+
+                <div className="py-8 text-center">
+                  <p className="text-[12px] text-muted-foreground">Показаны все записи</p>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };
