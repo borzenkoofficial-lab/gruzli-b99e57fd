@@ -39,7 +39,7 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
     const job = payload.new as Tables<"jobs">;
     if (!job) return;
 
-    playNotificationSound();
+    playNewJob();
     vibrate();
 
     pushNotification({
