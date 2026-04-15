@@ -27,18 +27,22 @@ const DispatcherFeedScreen = forwardRef<HTMLDivElement, DispatcherFeedScreenProp
       .eq("dispatcher_id", user.id)
       .order("created_at", { ascending: false });
 
-    if (jobsData) {
-      // Fetch response counts
-      const jobsWithCounts = await Promise.all(
-        jobsData.map(async (job) => {
-          const { count } = await supabase
-            .from("job_responses")
-            .select("*", { count: "exact", head: true })
-            .eq("job_id", job.id);
-          return { ...job, response_count: count || 0 };
-        })
-      );
-      setJobs(jobsWithCounts);
+    if (jobsData && jobsData.length > 0) {
+      // Batch fetch all responses for these jobs
+      const jobIds = jobsData.map(j => j.id);
+      const { data: responses } = await supabase
+        .from("job_responses")
+        .select("job_id")
+        .in("job_id", jobIds);
+
+      const countMap: Record<string, number> = {};
+      responses?.forEach(r => {
+        countMap[r.job_id] = (countMap[r.job_id] || 0) + 1;
+      });
+
+      setJobs(jobsData.map(job => ({ ...job, response_count: countMap[job.id] || 0 })));
+    } else {
+      setJobs([]);
     }
     setLoading(false);
   };
