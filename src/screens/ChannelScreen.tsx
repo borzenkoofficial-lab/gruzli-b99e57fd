@@ -270,9 +270,37 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
             </div>
             <p className="text-[11px] text-muted-foreground">сообщество</p>
           </div>
-          <button className="w-9 h-9 rounded-xl flex items-center justify-center active:bg-surface-1 transition-colors">
-            <MoreHorizontal size={20} className="text-muted-foreground" />
-          </button>
+          <div className="relative">
+            <button onClick={() => isAdmin ? setShowMenu(!showMenu) : null} className="w-9 h-9 rounded-xl flex items-center justify-center active:bg-surface-1 transition-colors">
+              <MoreHorizontal size={20} className="text-muted-foreground" />
+            </button>
+            <AnimatePresence>
+              {showMenu && isAdmin && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: -4 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: -4 }}
+                  className="absolute right-0 top-11 w-52 bg-card border border-border rounded-2xl shadow-xl z-50 overflow-hidden"
+                >
+                  <button
+                    onClick={() => { coverInputRef.current?.click(); setShowMenu(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-foreground active:bg-surface-1 transition-colors"
+                  >
+                    <ImageIcon size={16} className="text-muted-foreground" />
+                    Изменить шапку
+                  </button>
+                  <div className="h-px bg-border mx-3" />
+                  <button
+                    onClick={() => { avatarInputRef.current?.click(); setShowMenu(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-foreground active:bg-surface-1 transition-colors"
+                  >
+                    <Camera size={16} className="text-muted-foreground" />
+                    Изменить аватар
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
