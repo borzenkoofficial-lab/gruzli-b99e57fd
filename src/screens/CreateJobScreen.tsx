@@ -53,6 +53,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
   const [quickMinimum, setQuickMinimum] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   const balance = profile?.balance || 0;
   const canAfford = balance >= JOB_POSTING_FEE;
