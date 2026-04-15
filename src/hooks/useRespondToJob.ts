@@ -44,69 +44,21 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
         }
       }
 
-      // 2. Find or create conversation with this dispatcher (reuse existing 1-on-1 chat)
-      let conversationId: string | null = null;
+      // 2. Find or create conversation with this dispatcher
+      const { data: dispProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", job.dispatcher_id)
+        .single();
 
-      const { data: myConvs } = await supabase
-        .from("conversation_participants")
-        .select("conversation_id")
-        .eq("user_id", user.id);
+      const { data: conversationId, error: convError } = await supabase.rpc("create_direct_conversation", {
+        _other_user_id: job.dispatcher_id,
+        _title: dispProfile?.full_name || job.title,
+      });
 
-      if (myConvs) {
-        for (const mc of myConvs) {
-          // Check if dispatcher is in this conversation (any shared conversation)
-          const { data: dispatcherIn } = await supabase
-            .from("conversation_participants")
-            .select("id")
-            .eq("conversation_id", mc.conversation_id)
-            .eq("user_id", job.dispatcher_id)
-            .single();
-
-          if (dispatcherIn) {
-            // Verify it's not a group chat
-            const { data: conv } = await supabase
-              .from("conversations")
-              .select("id, is_group")
-              .eq("id", mc.conversation_id)
-              .single();
-
-            if (conv && !conv.is_group) {
-              conversationId = conv.id;
-              break;
-            }
-          }
-        }
-      }
-
-      if (!conversationId) {
-        // New conversation — first time working with this dispatcher
-        conversationId = crypto.randomUUID();
-
-        // Fetch dispatcher name for chat title
-        const { data: dispProfile } = await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("user_id", job.dispatcher_id)
-          .single();
-
-        const { error: convError } = await supabase
-          .from("conversations")
-          .insert({ id: conversationId, title: dispProfile?.full_name || job.title });
-
-        if (convError) {
-          toast.error("Не удалось создать чат");
-          return false;
-        }
-
-        const { error: participantsError } = await supabase.from("conversation_participants").insert([
-          { conversation_id: conversationId, user_id: user.id },
-          { conversation_id: conversationId, user_id: job.dispatcher_id },
-        ]);
-
-        if (participantsError) {
-          toast.error("Не удалось добавить участников чата");
-          return false;
-        }
+      if (convError || !conversationId) {
+        toast.error("Не удалось создать чат");
+        return false;
       }
 
       // Always send a message about the job in the chat
