@@ -85,13 +85,22 @@ self.addEventListener("push", function (event) {
     }
   }
 
+  var vibrationPatterns = {
+    new_message: [80, 40, 80],
+    new_job: [100, 60, 100, 60, 150],
+    response: [120, 80, 200],
+    default: [100, 50, 100],
+  };
+
   var options = {
     body: data.body,
     icon: "/pwa-192x192.png",
     badge: "/pwa-192x192.png",
-    vibrate: [100, 50, 100],
+    vibrate: vibrationPatterns[data.type] || vibrationPatterns.default,
     data: data,
     tag: data.type || "default",
+    renotify: true,
+    silent: false,
   };
 
   event.waitUntil(self.registration.showNotification(data.title, options));
