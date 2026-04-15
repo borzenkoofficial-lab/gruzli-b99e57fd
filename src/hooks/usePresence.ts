@@ -3,17 +3,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 /**
- * Updates `last_seen_at` on the current user's profile every 30s
- * and on visibility change (hidden = offline, visible = online).
+ * Updates `last_seen_at` on the current user's profile every 60s
+ * and on visibility change (hidden → offline, visible → online).
+ * Debounced to avoid excessive DB writes.
  */
 export const usePresence = () => {
   const { user } = useAuth();
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastPingRef = useRef(0);
 
   useEffect(() => {
     if (!user) return;
 
     const ping = () => {
+      const now = Date.now();
+      // Debounce: skip if last ping was <15s ago
+      if (now - lastPingRef.current < 15_000) return;
+      lastPingRef.current = now;
+
       supabase
         .from("profiles")
         .update({ last_seen_at: new Date().toISOString() })
@@ -24,8 +31,8 @@ export const usePresence = () => {
     // Immediate ping
     ping();
 
-    // Periodic ping every 30s
-    intervalRef.current = setInterval(ping, 30_000);
+    // Periodic ping every 60s (was 30s)
+    intervalRef.current = setInterval(ping, 60_000);
 
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
