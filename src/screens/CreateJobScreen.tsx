@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Zap, Clock, MapPin, Train, Users, FileText, Loader2, DollarSign, Info, ChevronDown, Sparkles, AlertCircle } from "lucide-react";
+import { ArrowLeft, Zap, Clock, MapPin, Train, Users, FileText, Loader2, DollarSign, Info, ChevronDown, Sparkles, AlertCircle, Eye, Wallet, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
