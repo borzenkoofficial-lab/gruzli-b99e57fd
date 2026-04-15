@@ -382,15 +382,49 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             </div>
           </div>
 
-          {/* Balance */}
-          <div className="mx-5 mb-4 rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(220 65% 58%))' }}>
-            <div className="px-5 py-5">
-              <p className="text-primary-foreground/70 text-xs font-medium mb-1">Баланс для заявок</p>
-              <h2 className="text-primary-foreground text-3xl font-extrabold mb-1">{profile?.balance || 0} ₽</h2>
-              <p className="text-primary-foreground/50 text-xs">Для оплаты размещения заявок</p>
-            </div>
-            <div className="px-5 pb-4">
-              <button onClick={() => { setTopUpAmount(""); setShowTopUp(true); }} className="w-full py-3 rounded-xl bg-primary-foreground/20 text-primary-foreground text-sm font-bold tap-scale">💳 Пополнить баланс</button>
+          {/* Gruzli Bank Card — Dispatcher */}
+          <div className="mx-5 mb-4">
+            <div className="rounded-2xl overflow-hidden relative" style={{
+              background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+            }}>
+              {/* Chip & logo pattern */}
+              <div className="absolute top-0 right-0 w-32 h-32 opacity-[0.06]">
+                <div className="w-full h-full rounded-full border-[16px] border-white translate-x-8 -translate-y-8" />
+              </div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 opacity-[0.04]">
+                <div className="w-full h-full rounded-full border-[12px] border-white -translate-x-6 translate-y-6" />
+              </div>
+
+              <div className="px-5 pt-5 pb-2 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-6 rounded-[3px] bg-gradient-to-br from-amber-300 to-amber-500" />
+                  <span className="text-[10px] font-bold text-white/40 tracking-[0.2em] uppercase">Gruzli Bank</span>
+                </div>
+                <span className="text-[10px] font-medium text-white/30 tracking-wider">VIRTUAL</span>
+              </div>
+
+              <div className="px-5 pt-2 pb-1">
+                <p className="text-white/50 text-[10px] font-medium tracking-wider uppercase mb-1">Баланс счёта</p>
+                <h2 className="text-white text-3xl font-extrabold tracking-tight">{(profile?.balance || 0).toLocaleString("ru-RU")} ₽</h2>
+              </div>
+
+              <div className="px-5 pt-3 pb-2 flex items-center justify-between">
+                <div>
+                  <p className="text-white/30 text-[9px] tracking-wider uppercase">Держатель карты</p>
+                  <p className="text-white/70 text-[11px] font-semibold tracking-wide">{(profile?.full_name || "DISPATCHER").toUpperCase()}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-white/30 text-[9px] tracking-wider uppercase">№ карты</p>
+                  <p className="text-white/70 text-[11px] font-semibold tracking-widest">•••• {(profile?.display_id || "0000").slice(-4)}</p>
+                </div>
+              </div>
+
+              <div className="px-5 pb-4 pt-2">
+                <button onClick={() => { setTopUpAmount(""); setShowTopUp(true); }} className="w-full py-3 rounded-xl bg-white/10 backdrop-blur-sm text-white text-sm font-bold tap-scale active:bg-white/20 transition-colors border border-white/10">
+                  💳 Пополнить баланс
+                </button>
+              </div>
             </div>
           </div>
 
@@ -596,22 +630,54 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         </div>
       </div>
 
-      {/* Wallet */}
+      {/* Gruzli Bank Card — Worker */}
       <div className="px-5 pb-5">
-        <div className="bg-card border border-border rounded-2xl p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <CreditCard size={18} className="text-primary" />
-              <span className="text-sm font-bold text-foreground">Кошелёк</span>
-            </div>
-            <span className="text-lg font-extrabold text-bg-foreground">{profile?.balance || 0} ₽</span>
+        <div className="rounded-2xl overflow-hidden relative" style={{
+          background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+        }}>
+          <div className="absolute top-0 right-0 w-32 h-32 opacity-[0.06]">
+            <div className="w-full h-full rounded-full border-[16px] border-white translate-x-8 -translate-y-8" />
           </div>
-          <button onClick={() => setShowWallet(!showWallet)} className="w-full py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold tap-scale">💳 Вывести на карту</button>
-          {showWallet && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3 text-xs text-muted-foreground">
-              Минимальная сумма вывода: 1 000 ₽. Зачисление в течение 1-3 рабочих дней.
-            </motion.div>
-          )}
+          <div className="absolute bottom-0 left-0 w-24 h-24 opacity-[0.04]">
+            <div className="w-full h-full rounded-full border-[12px] border-white -translate-x-6 translate-y-6" />
+          </div>
+
+          <div className="px-5 pt-5 pb-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-6 rounded-[3px] bg-gradient-to-br from-amber-300 to-amber-500" />
+              <span className="text-[10px] font-bold text-white/40 tracking-[0.2em] uppercase">Gruzli Bank</span>
+            </div>
+            <span className="text-[10px] font-medium text-white/30 tracking-wider">VIRTUAL</span>
+          </div>
+
+          <div className="px-5 pt-2 pb-1">
+            <p className="text-white/50 text-[10px] font-medium tracking-wider uppercase mb-1">Баланс</p>
+            <h2 className="text-white text-3xl font-extrabold tracking-tight">{(profile?.balance || 0).toLocaleString("ru-RU")} ₽</h2>
+          </div>
+
+          <div className="px-5 pt-3 pb-2 flex items-center justify-between">
+            <div>
+              <p className="text-white/30 text-[9px] tracking-wider uppercase">Держатель карты</p>
+              <p className="text-white/70 text-[11px] font-semibold tracking-wide">{(profile?.full_name || "WORKER").toUpperCase()}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-white/30 text-[9px] tracking-wider uppercase">№ карты</p>
+              <p className="text-white/70 text-[11px] font-semibold tracking-widest">•••• {(profile?.display_id || "0000").slice(-4)}</p>
+            </div>
+          </div>
+
+          <div className="px-5 pb-4 pt-2">
+            <button onClick={() => {
+              if (onOpenSupport) {
+                onOpenSupport(`💰 Заявка на пополнение баланса\n\nСумма: ___ ₽\nID: ${profile?.display_id || user?.id?.slice(0, 8).toUpperCase()}\nИмя: ${profile?.full_name || "—"}\n\nПрошу пополнить баланс.`);
+              } else {
+                toast.info("Обратитесь в поддержку для пополнения баланса");
+              }
+            }} className="w-full py-3 rounded-xl bg-white/10 backdrop-blur-sm text-white text-sm font-bold tap-scale active:bg-white/20 transition-colors border border-white/10">
+              💳 Пополнить баланс
+            </button>
+          </div>
         </div>
       </div>
 
