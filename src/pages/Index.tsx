@@ -373,7 +373,7 @@ const Index = () => {
             )}
           </Suspense>
         </ErrorBoundary>
-        {!isDispatcher && <FAB />}
+        
         <BottomNav active={tab} onNavigate={handleNavigate} isDispatcher={isDispatcher} unreadMessages={unreadMessages} newJobsCount={newJobsCount} />
       </div>
     );
