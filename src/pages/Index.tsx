@@ -37,7 +37,7 @@ const PullToRefresh = lazy(() => import("@/components/PullToRefresh"));
 
 const Index = () => {
   const { role, user } = useAuth();
-  const { unreadMessages, newJobsCount, resetMessages, resetJobs } = useUnreadCounts();
+  const { unreadMessages, newJobsCount, resetMessages, resetJobs, refetchUnread } = useUnreadCounts();
   const isMobile = useIsMobile();
   const { jobId: routeJobId } = useParams<{ jobId?: string }>();
   const [supportUserId, setSupportUserId] = useState<string | null>(null);
