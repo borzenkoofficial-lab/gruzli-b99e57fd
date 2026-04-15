@@ -754,6 +754,10 @@ export type Database = {
         Args: { _amount: number; _target_user_id: string }
         Returns: undefined
       }
+      create_direct_conversation: {
+        Args: { _other_user_id: string; _title?: string }
+        Returns: string
+      }
       delete_conversation_fully: {
         Args: { _conversation_id: string }
         Returns: string[]
