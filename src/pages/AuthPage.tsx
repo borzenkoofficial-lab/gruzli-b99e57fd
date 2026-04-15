@@ -98,9 +98,9 @@ const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
-  const [legalAccepted, setLegalAccepted] = useState({ terms: false, privacy: false, personalData: false });
+  const [legalAccepted, setLegalAccepted] = useState({ terms: false, privacy: false, personalData: false, rules: false });
 
-  const allLegalAccepted = legalAccepted.terms && legalAccepted.privacy && legalAccepted.personalData;
+  const allLegalAccepted = legalAccepted.terms && legalAccepted.privacy && legalAccepted.personalData && legalAccepted.rules;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
