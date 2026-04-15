@@ -68,7 +68,12 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   const [vOrgType, setVOrgType] = useState<"ip" | "self" | "ooo">("self");
   const [vOrgName, setVOrgName] = useState("");
   const [vSending, setVSending] = useState(false);
+  const [supportUserId, setSupportUserId] = useState<string | null>(null);
 
+  useEffect(() => {
+    supabase.from("profiles").select("user_id").eq("phone", "89066466696").limit(1).single()
+      .then(({ data }) => { if (data) setSupportUserId(data.user_id); });
+  }, []);
   useEffect(() => {
     if (profile) {
       setFullName(profile.full_name || "");
