@@ -43,18 +43,31 @@ const Index = () => {
   const isMobile = useIsMobile();
   const { jobId: routeJobId } = useParams<{ jobId?: string }>();
   const [supportUserId, setSupportUserId] = useState<string | null>(null);
-  const SUPPORT_NAME = "Тех. поддержка";
-
+  const SUPPORT_NAME = "Gruzli Official";
 
   useEffect(() => {
+    // Find admin with email admin@gruzli.app (Gruzli Official)
     supabase
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "admin")
+      .from("profiles")
+      .select("user_id, full_name")
+      .eq("full_name", "Gruzli Official")
       .limit(1)
       .maybeSingle()
       .then(({ data }) => {
-        if (data) setSupportUserId(data.user_id);
+        if (data) {
+          setSupportUserId(data.user_id);
+        } else {
+          // Fallback: pick first admin
+          supabase
+            .from("user_roles")
+            .select("user_id")
+            .eq("role", "admin")
+            .limit(1)
+            .maybeSingle()
+            .then(({ data: roleData }) => {
+              if (roleData) setSupportUserId(roleData.user_id);
+            });
+        }
       });
   }, []);
   const [tab, setTab] = useState("feed");
@@ -391,13 +404,7 @@ const Index = () => {
                       <ProfileScreen
                         onOpenSettings={() => setShowSettings(true)}
                         onOpenNotifications={() => setShowNotifications(true)}
-                        onOpenSupport={(prefillMessage) => {
-                          if (prefillMessage) {
-                            handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage);
-                          } else {
-                            setShowSupportChat(true);
-                          }
-                        }}
+                        onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage)}
                         onOpenPremium={() => setShowPremium(true)}
                         onOpenCabinet={() => setShowCabinet(true)}
                       />
@@ -433,13 +440,7 @@ const Index = () => {
           <ProfileScreen
             onOpenSettings={() => setShowSettings(true)}
             onOpenNotifications={() => setShowNotifications(true)}
-            onOpenSupport={(prefillMessage) => {
-              if (prefillMessage) {
-                handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage);
-              } else {
-                setShowSupportChat(true);
-              }
-            }}
+            onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage)}
             onOpenPremium={() => setShowPremium(true)}
             onOpenCabinet={() => setShowCabinet(true)}
           />
