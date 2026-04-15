@@ -754,7 +754,10 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
               <span className="text-2xl font-extrabold text-primary-foreground">G</span>
             </div>
             <h2 className="text-lg font-bold text-foreground">Gruzli</h2>
-            <p className="text-xs text-muted-foreground mt-1">Версия 1.0.0</p>
+            <p className="text-xs text-muted-foreground mt-1">Версия 1.0.0 beta</p>
+            <div className="mx-auto mt-2 px-3 py-1.5 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
+              <p className="text-[11px] text-yellow-500 font-semibold">⚠️ Бета-версия — возможны ошибки в работе</p>
+            </div>
             <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
               Платформа для грузчиков и диспетчеров. Быстрый поиск работы и исполнителей.
             </p>
@@ -843,8 +846,9 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
           <MenuItem icon={LogOut} label="Выйти" desc="" onClick={signOut} destructive />
         </div>
 
-        <div className="text-center mt-4 mb-4">
-          <p className="text-[11px] text-muted-foreground">Gruzli v1.0.0</p>
+        <div className="text-center mt-4 mb-4 space-y-1">
+          <p className="text-[11px] text-muted-foreground">Gruzli v1.0.0 beta</p>
+          <p className="text-[10px] text-yellow-500/70">⚠️ Бета-версия — возможны ошибки</p>
         </div>
       </div>
     </div>

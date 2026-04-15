@@ -131,6 +131,8 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
   const [newSkill, setNewSkill] = useState("");
   const [weeklyStats, setWeeklyStats] = useState({ orders: 0, earned: 0, hours: 0 });
   const [monthlyStats, setMonthlyStats] = useState({ orders: 0, earned: 0, hours: 0 });
+  const [showTransactions, setShowTransactions] = useState(false);
+  const [transactions, setTransactions] = useState<{ type: "income" | "expense"; amount: number; description: string; date: string }[]>([]);
 
   const isDispatcher = role === "dispatcher";
   const isAdmin = role === "admin";
@@ -212,6 +214,31 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
       }
     };
     fetchStats();
+  }, [user]);
+
+  // Fetch transaction history from completed jobs
+  useEffect(() => {
+    if (!user) return;
+    const fetchTransactions = async () => {
+      const { data } = await supabase
+        .from("job_responses")
+        .select("id, created_at, earned, hours_worked, job_id, jobs(title)")
+        .eq("worker_id", user.id)
+        .eq("worker_status", "completed")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      
+      if (data) {
+        const txs = data.map((r: any) => ({
+          type: "income" as const,
+          amount: r.earned || 0,
+          description: r.jobs?.title || "Выполненный заказ",
+          date: new Date(r.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" }),
+        }));
+        setTransactions(txs);
+      }
+    };
+    fetchTransactions();
   }, [user]);
 
   // Fetch reviews for dispatcher
@@ -384,10 +411,16 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
           {/* Gruzli Bank Card — Dispatcher */}
           <div className="mx-5 mb-4">
-            <div className="rounded-2xl overflow-hidden relative" style={{
-              background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-            }}>
+            <motion.div
+              initial={{ opacity: 0, y: 40, rotateX: 8 }}
+              animate={{ opacity: 1, y: 0, rotateX: 0 }}
+              transition={{ type: "spring", damping: 20, stiffness: 200, delay: 0.15 }}
+              className="rounded-2xl overflow-hidden relative"
+              style={{
+                background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%)",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+              }}
+            >
               {/* Chip & logo pattern */}
               <div className="absolute top-0 right-0 w-32 h-32 opacity-[0.06]">
                 <div className="w-full h-full rounded-full border-[16px] border-white translate-x-8 -translate-y-8" />
@@ -425,7 +458,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
                   💳 Пополнить баланс
                 </button>
               </div>
-            </div>
+            </motion.div>
           </div>
 
           {/* Verification */}
@@ -632,10 +665,16 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
       {/* Gruzli Bank Card — Worker */}
       <div className="px-5 pb-5">
-        <div className="rounded-2xl overflow-hidden relative" style={{
-          background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-        }}>
+        <motion.div
+          initial={{ opacity: 0, y: 40, rotateX: 8 }}
+          animate={{ opacity: 1, y: 0, rotateX: 0 }}
+          transition={{ type: "spring", damping: 20, stiffness: 200, delay: 0.2 }}
+          className="rounded-2xl overflow-hidden relative"
+          style={{
+            background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+          }}
+        >
           <div className="absolute top-0 right-0 w-32 h-32 opacity-[0.06]">
             <div className="w-full h-full rounded-full border-[16px] border-white translate-x-8 -translate-y-8" />
           </div>
@@ -667,18 +706,59 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             </div>
           </div>
 
-          <div className="px-5 pb-4 pt-2">
+          <div className="px-5 pb-4 pt-2 flex gap-2">
             <button onClick={() => {
               if (onOpenSupport) {
                 onOpenSupport(`💰 Заявка на пополнение баланса\n\nСумма: ___ ₽\nID: ${profile?.display_id || user?.id?.slice(0, 8).toUpperCase()}\nИмя: ${profile?.full_name || "—"}\n\nПрошу пополнить баланс.`);
               } else {
                 toast.info("Обратитесь в поддержку для пополнения баланса");
               }
-            }} className="w-full py-3 rounded-xl bg-white/10 backdrop-blur-sm text-white text-sm font-bold tap-scale active:bg-white/20 transition-colors border border-white/10">
-              💳 Пополнить баланс
+            }} className="flex-1 py-3 rounded-xl bg-white/10 backdrop-blur-sm text-white text-sm font-bold tap-scale active:bg-white/20 transition-colors border border-white/10">
+              💳 Пополнить
+            </button>
+            <button onClick={() => setShowTransactions(!showTransactions)} className="py-3 px-4 rounded-xl bg-white/5 text-white/60 text-sm font-semibold tap-scale active:bg-white/10 transition-colors border border-white/5">
+              📋
             </button>
           </div>
-        </div>
+        </motion.div>
+
+        {/* Transaction History */}
+        {showTransactions && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mt-3 bg-card border border-border rounded-2xl overflow-hidden"
+          >
+            <div className="px-4 py-3 border-b border-border/50">
+              <h3 className="text-sm font-bold text-foreground">История транзакций</h3>
+            </div>
+            {transactions.length === 0 ? (
+              <div className="px-4 py-6 text-center">
+                <p className="text-xs text-muted-foreground">Транзакций пока нет</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border/30">
+                {transactions.map((tx, i) => (
+                  <div key={i} className="px-4 py-3 flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs ${
+                      tx.type === "income" ? "bg-green-500/15 text-green-500" : "bg-red-500/15 text-red-500"
+                    }`}>
+                      {tx.type === "income" ? "+" : "−"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-foreground truncate">{tx.description}</p>
+                      <p className="text-[10px] text-muted-foreground">{tx.date}</p>
+                    </div>
+                    <span className={`text-sm font-bold ${tx.type === "income" ? "text-green-500" : "text-red-500"}`}>
+                      {tx.type === "income" ? "+" : "−"}{tx.amount} ₽
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
       </div>
 
       {/* Skills — editable */}
