@@ -92,7 +92,7 @@ const featuresList = [
   { icon: MessageSquare, title: "Чат", desc: "Общайтесь напрямую" },
 ];
 
-const AuthPage = () => {
+const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
   const [mode, setMode] = useState<Mode>("welcome");
   const [role, setRole] = useState<Role>("worker");
   const [password, setPassword] = useState("");
@@ -460,6 +460,7 @@ const AuthPage = () => {
       </motion.form>
     </div>
   );
-};
+});
+AuthPage.displayName = "AuthPage";
 
 export default AuthPage;
