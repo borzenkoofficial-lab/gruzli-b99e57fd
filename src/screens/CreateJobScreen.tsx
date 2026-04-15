@@ -345,24 +345,145 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
             )}
           </motion.div>
 
-          {/* Submit */}
+          {/* Submit → Preview */}
           <motion.button
-            type="submit"
-            disabled={loading || !canAfford}
+            type="button"
+            onClick={handleShowPreview}
+            disabled={!canAfford}
             whileTap={{ scale: 0.97 }}
             className="w-full py-4 rounded-2xl bg-foreground text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-40 transition-all shadow-lg"
           >
-            {loading ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : (
-              <>
-                <Sparkles size={15} />
-                Опубликовать за {JOB_POSTING_FEE} ₽
-              </>
-            )}
+            <Eye size={15} />
+            Предпросмотр
           </motion.button>
         </div>
       </form>
+
+      {/* Preview overlay */}
+      <AnimatePresence>
+        {showPreview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-background flex flex-col"
+            style={{ height: 'calc(var(--vh, 1vh) * 100)' }}
+          >
+            {/* Preview header */}
+            <div className="flex items-center gap-3 px-4 safe-top pb-3 flex-shrink-0">
+              <button onClick={() => setShowPreview(false)} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:scale-95 transition-all">
+                <ArrowLeft size={18} className="text-foreground" />
+              </button>
+              <div className="flex-1">
+                <h1 className="text-lg font-bold text-foreground">Предпросмотр</h1>
+                <p className="text-[11px] text-muted-foreground -mt-0.5">Так заявка будет выглядеть в ленте</p>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 pb-32">
+              {/* Job card preview — matches FeedScreen style */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl bg-card border border-border p-4"
+              >
+                {/* Tags */}
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  {urgent && (
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-destructive/10 text-destructive text-[11px] font-semibold">
+                      <Zap size={10} /> Срочно
+                    </span>
+                  )}
+                  {quickMinimum && (
+                    <span className="px-2 py-0.5 rounded-md bg-[hsl(var(--online))]/10 text-[hsl(var(--online))] text-[11px] font-semibold">
+                      Быстрая минималка
+                    </span>
+                  )}
+                </div>
+
+                {/* Title & dispatcher */}
+                <h3 className="text-[15px] font-semibold text-foreground leading-snug">{title || "Название заявки"}</h3>
+                <div className="flex items-center gap-1 mt-1">
+                  <Users size={11} className="text-muted-foreground" />
+                  <span className="text-[11px] text-muted-foreground">{profile?.full_name || "Вы"}</span>
+                </div>
+
+                {description && (
+                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{description}</p>
+                )}
+
+                {/* Pay block */}
+                <div className="mt-3 rounded-xl bg-surface-1 border border-border px-3 py-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Wallet size={14} className="text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">Грузчик получит</span>
+                    </div>
+                    <span className="text-lg font-bold text-foreground">{totalCost > 0 ? totalCost.toLocaleString("ru-RU") : "—"} ₽</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {hourlyRate || "0"} ₽/час × {durationHours || "0"}ч
+                  </p>
+                </div>
+
+                {/* Meta info */}
+                <div className="flex items-center gap-3 text-[11px] text-muted-foreground mt-3 flex-wrap">
+                  {address && <span className="flex items-center gap-1"><MapPin size={11} /> {address}</span>}
+                  {metro && <span className="flex items-center gap-1"><Train size={11} /> {metro}</span>}
+                  {startTime && (
+                    <span className="flex items-center gap-1">
+                      <Clock size={11} /> {new Date(startTime).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1"><Users size={11} /> {workersNeeded} чел.</span>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
+                  <span className="text-lg font-bold text-foreground">{hourlyRate || "0"} ₽/час</span>
+                  <span className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-foreground text-background">
+                    Беру!
+                  </span>
+                </div>
+              </motion.div>
+
+              {/* Info hint */}
+              <div className="mt-4 flex items-start gap-2 px-1">
+                <Info size={14} className="text-muted-foreground shrink-0 mt-0.5" />
+                <p className="text-xs text-muted-foreground">
+                  Именно так грузчики увидят вашу заявку в ленте. Проверьте данные и нажмите «Опубликовать».
+                </p>
+              </div>
+            </div>
+
+            {/* Bottom actions */}
+            <div className="absolute bottom-0 left-0 right-0 p-4 pb-8 bg-gradient-to-t from-background via-background to-transparent">
+              <div className="flex gap-3">
+                <motion.button
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowPreview(false)}
+                  className="flex-1 py-4 rounded-2xl bg-card border border-border text-sm font-semibold text-foreground"
+                >
+                  Редактировать
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => { setShowPreview(false); handleSubmit(); }}
+                  disabled={loading}
+                  className="flex-[2] py-4 rounded-2xl bg-foreground text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-40 shadow-lg"
+                >
+                  {loading ? <Loader2 size={18} className="animate-spin" /> : (
+                    <>
+                      <Sparkles size={15} />
+                      Опубликовать за {JOB_POSTING_FEE} ₽
+                    </>
+                  )}
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
