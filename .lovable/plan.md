@@ -1,30 +1,54 @@
 
 
-# AI-помощник для описания заявки
+# AI-аналитика, умный поиск и модерация контента
 
-## Что сделаем
-Кнопка ✨ AI рядом с полем описания. Диспетчер пишет черновик → нажимает кнопку → AI переписывает текст грамотнее, структурированнее и профессиональнее. Также может дополнить описание на основе названия заявки, если описание пустое.
+Три AI-фичи на базе Lovable AI Gateway + edge functions.
 
-## План
+---
 
-### 1. Edge Function `improve-job-description`
-Новая функция `supabase/functions/improve-job-description/index.ts`:
-- Принимает `{ title, description }` 
-- Вызывает Lovable AI Gateway (`google/gemini-3-flash-preview`)
-- Системный промпт: "Ты — помощник диспетчера грузчиков. Перепиши описание заявки грамотно, структурированно и кратко. Если описание пустое — составь его по названию. Пиши на русском. Не добавляй лишнего."
-- Возвращает улучшенный текст (без стриминга, просто invoke)
+## 1. AI-аналитика диспетчера
 
-### 2. Кнопка AI в CreateJobScreen
-- Кнопка `✨ AI` (иконка Sparkles) под полем описания
-- При нажатии:
-  - Если нет ни title, ни description → toast "Сначала введите название"
-  - Показать лоадер на кнопке
-  - Вызвать `supabase.functions.invoke('improve-job-description', { body: { title, description } })`
-  - Заменить description улучшенным текстом
-  - Toast "Описание улучшено"
-- Кнопка неактивна во время загрузки
+**Что:** В кабинете диспетчера (вкладка "stats") — кнопка "✨ AI-совет". AI анализирует статистику заявок диспетчера и даёт персональные рекомендации.
 
-### Файлы
-1. **Создать** `supabase/functions/improve-job-description/index.ts` — edge function
-2. **Изменить** `src/screens/CreateJobScreen.tsx` — добавить кнопку AI и логику вызова
+**Edge Function** `dispatcher-analytics` — принимает объект со статистикой (кол-во заявок, средняя ставка, % принятых, среднее время отклика), отправляет в Gemini, получает 3-5 советов на русском.
+
+**UI:** Кнопка "✨ AI-совет" внизу вкладки stats в `DispatcherCabinetScreen.tsx`. При нажатии собирает текущую статистику, вызывает edge function, показывает карточку с рекомендациями. Лоадер во время загрузки.
+
+---
+
+## 2. Умный поиск заявок
+
+**Что:** В ленте (`FeedScreen.tsx`) — поле поиска вверху. Грузчик вводит текст ("переезд завтра утром", "тяжёлые работы за 500"), AI фильтрует подходящие заявки.
+
+**Edge Function** `smart-search-jobs` — принимает `{ query, jobs: [{id, title, description, address, hourly_rate, ...}] }`. AI возвращает массив ID подходящих заявок, отсортированных по релевантности. Используем tool calling для структурированного ответа.
+
+**UI:** Строка поиска с иконкой ✨ в FeedScreen. При вводе текста и нажатии Enter — вызов edge function, фильтрация ленты по возвращённым ID. Кнопка "✕" сбрасывает на обычный вид.
+
+---
+
+## 3. AI-модерация контента
+
+**Что:** Автоматическая проверка описаний заявок при создании и сообщений в чате. Блокирует спам, мат, подозрительный контент.
+
+**Edge Function** `moderate-content` — принимает `{ text, type: "job"|"message" }`. AI оценивает: `{ safe: boolean, reason?: string }`. Используем tool calling.
+
+**Интеграция:**
+- `CreateJobScreen.tsx` — перед публикацией заявки проверяем title + description. Если `safe: false` → показываем причину, не даём опубликовать.
+- `RealChatScreen.tsx` — перед отправкой сообщения проверяем текст. Если `safe: false` → toast с предупреждением.
+
+---
+
+## Файлы
+
+| Действие | Файл |
+|----------|------|
+| Создать | `supabase/functions/dispatcher-analytics/index.ts` |
+| Создать | `supabase/functions/smart-search-jobs/index.ts` |
+| Создать | `supabase/functions/moderate-content/index.ts` |
+| Изменить | `src/screens/DispatcherCabinetScreen.tsx` — кнопка AI-совет |
+| Изменить | `src/screens/FeedScreen.tsx` — умный поиск |
+| Изменить | `src/screens/CreateJobScreen.tsx` — модерация перед публикацией |
+| Изменить | `src/screens/RealChatScreen.tsx` — модерация сообщений |
+
+Миграции не нужны. Все три фичи используют `LOVABLE_API_KEY` (уже есть) и модель `google/gemini-3-flash-preview`.
 
