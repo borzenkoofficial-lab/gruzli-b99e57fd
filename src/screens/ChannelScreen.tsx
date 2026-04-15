@@ -90,6 +90,7 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
   const [showCompose, setShowCompose] = useState(false);
   const [subscriberCount, setSubscriberCount] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"wall" | "info">("wall");
+  const [showMenu, setShowMenu] = useState(false);
 
   // Cover & avatar from app_settings
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
@@ -112,9 +113,9 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
   const uploadImage = async (file: File, key: "channel_cover" | "channel_avatar") => {
     const ext = file.name.split(".").pop() || "jpg";
     const path = `${key}_${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage.from("chat-media").upload(path, file, { upsert: true });
+    const { error: upErr } = await supabase.storage.from("kartoteka-photos").upload(path, file, { upsert: true });
     if (upErr) { toast.error("Ошибка загрузки"); return; }
-    const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
+    const { data: urlData } = supabase.storage.from("kartoteka-photos").getPublicUrl(path);
     const url = urlData?.publicUrl;
     if (!url) return;
 
@@ -269,14 +270,42 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
             </div>
             <p className="text-[11px] text-muted-foreground">сообщество</p>
           </div>
-          <button className="w-9 h-9 rounded-xl flex items-center justify-center active:bg-surface-1 transition-colors">
-            <MoreHorizontal size={20} className="text-muted-foreground" />
-          </button>
+          <div className="relative">
+            <button onClick={() => isAdmin ? setShowMenu(!showMenu) : null} className="w-9 h-9 rounded-xl flex items-center justify-center active:bg-surface-1 transition-colors">
+              <MoreHorizontal size={20} className="text-muted-foreground" />
+            </button>
+            <AnimatePresence>
+              {showMenu && isAdmin && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9, y: -4 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: -4 }}
+                  className="absolute right-0 top-11 w-52 bg-card border border-border rounded-2xl shadow-xl z-50 overflow-hidden"
+                >
+                  <button
+                    onClick={() => { coverInputRef.current?.click(); setShowMenu(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-foreground active:bg-surface-1 transition-colors"
+                  >
+                    <ImageIcon size={16} className="text-muted-foreground" />
+                    Изменить шапку
+                  </button>
+                  <div className="h-px bg-border mx-3" />
+                  <button
+                    onClick={() => { avatarInputRef.current?.click(); setShowMenu(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-foreground active:bg-surface-1 transition-colors"
+                  >
+                    <Camera size={16} className="text-muted-foreground" />
+                    Изменить аватар
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0" onClick={() => showMenu && setShowMenu(false)}>
         {/* Cover */}
         <div className="relative">
           <div className="h-[120px] overflow-hidden">
@@ -288,14 +317,6 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,hsl(var(--primary)/0.4),transparent_60%)]" />
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,hsl(var(--accent)/0.3),transparent_60%)]" />
               </>
-            )}
-            {isAdmin && (
-              <button
-                onClick={() => coverInputRef.current?.click()}
-                className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-black/50 backdrop-blur flex items-center justify-center active:bg-black/70 transition-colors"
-              >
-                <Camera size={14} className="text-white" />
-              </button>
             )}
           </div>
         </div>
@@ -312,14 +333,6 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg border-[3px] border-card">
                     <span className="text-2xl font-black text-primary-foreground">G</span>
                   </div>
-                )}
-                {isAdmin && (
-                  <button
-                    onClick={() => avatarInputRef.current?.click()}
-                    className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center border-2 border-card"
-                  >
-                    <Camera size={10} className="text-primary-foreground" />
-                  </button>
                 )}
               </div>
               <div className="flex-1 min-w-0 pt-0.5">
