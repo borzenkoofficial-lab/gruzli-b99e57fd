@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, Check, CheckCheck, MoreVertical, Trash2, Ban, BellOff, Smile, Sticker } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, Check, CheckCheck, MoreVertical, Trash2, Ban, BellOff, Smile } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -8,7 +8,6 @@ import { playMessageSent } from "@/lib/sounds";
 import { formatLastSeen } from "@/hooks/usePresence";
 import type { Tables } from "@/integrations/supabase/types";
 import EmojiPicker from "@/components/chat/EmojiPicker";
-import StickerPicker from "@/components/chat/StickerPicker";
 import VoiceRecorder from "@/components/chat/VoiceRecorder";
 import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
 
@@ -143,7 +142,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const [otherUserId, setOtherUserId] = useState<string | null>(null);
   const [otherLastSeen, setOtherLastSeen] = useState<string | null>(null);
   const [showEmoji, setShowEmoji] = useState(false);
-  const [showStickers, setShowStickers] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -303,7 +302,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     setText("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
     setShowEmoji(false);
-    setShowStickers(false);
 
     playMessageSent();
 
