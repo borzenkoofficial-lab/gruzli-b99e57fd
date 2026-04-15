@@ -318,14 +318,6 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,hsl(var(--accent)/0.3),transparent_60%)]" />
               </>
             )}
-            {isAdmin && (
-              <button
-                onClick={() => coverInputRef.current?.click()}
-                className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-black/50 backdrop-blur flex items-center justify-center active:bg-black/70 transition-colors"
-              >
-                <Camera size={14} className="text-white" />
-              </button>
-            )}
           </div>
         </div>
 
@@ -341,14 +333,6 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
                   <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg border-[3px] border-card">
                     <span className="text-2xl font-black text-primary-foreground">G</span>
                   </div>
-                )}
-                {isAdmin && (
-                  <button
-                    onClick={() => avatarInputRef.current?.click()}
-                    className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center border-2 border-card"
-                  >
-                    <Camera size={10} className="text-primary-foreground" />
-                  </button>
                 )}
               </div>
               <div className="flex-1 min-w-0 pt-0.5">
