@@ -142,7 +142,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const [otherUserId, setOtherUserId] = useState<string | null>(null);
   const [otherLastSeen, setOtherLastSeen] = useState<string | null>(null);
   const [showEmoji, setShowEmoji] = useState(false);
-  const [showEmoji, setShowEmoji] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
