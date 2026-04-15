@@ -71,6 +71,8 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   const [expenseModal, setExpenseModal] = useState<{ jobId: string; title: string; workersCount: number } | null>(null);
   const [expensePerWorker, setExpensePerWorker] = useState("");
   const [dispatcherIncome, setDispatcherIncome] = useState("");
+  const [aiAdvice, setAiAdvice] = useState<string | null>(null);
+  const [aiAdviceLoading, setAiAdviceLoading] = useState(false);
 
   const fetchData = async () => {
     if (!user) return;
