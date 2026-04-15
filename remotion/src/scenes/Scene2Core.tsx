@@ -1,13 +1,13 @@
 import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig, Sequence } from "remotion";
 
 const features = [
-  { icon: "📋", title: "Заявки", desc: "Создание и управление заказами" },
-  { icon: "💬", title: "Чат", desc: "Мгновенные сообщения" },
-  { icon: "👥", title: "Диспетчеры", desc: "Управление командой" },
-  { icon: "⭐", title: "Рейтинг", desc: "Система отзывов" },
+  { icon: "▣", title: "Заявки", desc: "Создание и управление заказами", color: "hsl(230, 60%, 58%)" },
+  { icon: "◈", title: "Чат", desc: "Мгновенные сообщения", color: "hsl(200, 60%, 55%)" },
+  { icon: "◉", title: "Диспетчеры", desc: "Управление командой", color: "hsl(270, 60%, 55%)" },
+  { icon: "★", title: "Рейтинг", desc: "Система отзывов", color: "hsl(45, 80%, 55%)" },
 ];
 
-const FeatureCard: React.FC<{ icon: string; title: string; desc: string; index: number }> = ({ icon, title, desc, index }) => {
+const FeatureCard: React.FC<{ icon: string; title: string; desc: string; color: string; index: number }> = ({ icon, title, desc, color, index }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   
@@ -31,7 +31,7 @@ const FeatureCard: React.FC<{ icon: string; title: string; desc: string; index: 
         boxShadow: "0 20px 60px hsla(230, 50%, 10%, 0.5)",
       }}
     >
-      <div style={{ fontSize: 56, marginBottom: 16 }}>{icon}</div>
+      <div style={{ fontSize: 48, marginBottom: 16, color }}>{icon}</div>
       <div style={{ fontSize: 28, fontWeight: 700, color: "white", fontFamily: "sans-serif", marginBottom: 8 }}>{title}</div>
       <div style={{ fontSize: 18, color: "hsla(230, 20%, 70%, 0.8)", fontFamily: "sans-serif" }}>{desc}</div>
     </div>

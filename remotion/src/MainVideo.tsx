@@ -1,8 +1,6 @@
 import { AbsoluteFill } from "remotion";
 import { TransitionSeries, springTiming } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
-import { slide } from "@remotion/transitions/slide";
-import { wipe } from "@remotion/transitions/wipe";
 import { Scene1Intro } from "./scenes/Scene1Intro";
 import { Scene2Core } from "./scenes/Scene2Core";
 import { Scene3AI } from "./scenes/Scene3AI";
@@ -24,11 +22,11 @@ export const MainVideo: React.FC = () => {
         <TransitionSeries.Sequence durationInFrames={180}>
           <Scene2Core />
         </TransitionSeries.Sequence>
-        <TransitionSeries.Transition presentation={wipe({ direction: "from-left" })} timing={transitionTiming} />
+        <TransitionSeries.Transition presentation={fade()} timing={transitionTiming} />
         <TransitionSeries.Sequence durationInFrames={240}>
           <Scene3AI />
         </TransitionSeries.Sequence>
-        <TransitionSeries.Transition presentation={slide({ direction: "from-right" })} timing={transitionTiming} />
+        <TransitionSeries.Transition presentation={fade()} timing={transitionTiming} />
         <TransitionSeries.Sequence durationInFrames={150}>
           <Scene4Workflow />
         </TransitionSeries.Sequence>
