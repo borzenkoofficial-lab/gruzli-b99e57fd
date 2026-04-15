@@ -5,7 +5,7 @@ import {
   AlertTriangle, CheckCircle2, Crown, Users, Briefcase, User,
   ChevronDown, ChevronUp, Phone, Square, Timer, Wallet,
   TrendingUp, TrendingDown, BarChart3, DollarSign, FileText,
-  Calendar, Award,
+  Calendar, Award, Zap, Target, Activity,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -289,32 +289,65 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   const allWorkersCompleted = (workers: WorkerInfo[]) => workers.every((w) => w.workerStatus === "completed");
 
   const tabs: { id: CabinetTab; label: string; icon: typeof Briefcase }[] = [
-    { id: "active", label: "Активные", icon: Briefcase },
-    { id: "stats", label: "Финансы", icon: BarChart3 },
+    { id: "active", label: "Активные", icon: Activity },
+    { id: "stats", label: "Аналитика", icon: BarChart3 },
     { id: "history", label: "История", icon: FileText },
   ];
 
   return (
     <div className="min-h-screen bg-background pb-8">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 safe-top pb-3">
-        <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 transition-all">
-          <ArrowLeft size={18} className="text-foreground" />
-        </button>
-        <div className="flex-1">
-          <h1 className="text-lg font-bold text-foreground">Кабинет</h1>
-          <p className="text-xs text-muted-foreground">Управление и финансы</p>
+      <div className="px-4 safe-top pb-2">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 transition-all">
+            <ArrowLeft size={18} className="text-foreground" />
+          </button>
+          <div className="flex-1">
+            <h1 className="text-lg font-bold text-foreground">Кабинет диспетчера</h1>
+            <p className="text-[11px] text-muted-foreground">Управление заказами и финансы</p>
+          </div>
         </div>
+      </div>
+
+      {/* Quick Stats Banner */}
+      <div className="px-4 pb-3">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl overflow-hidden"
+          style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(220 65% 45%))" }}
+        >
+          <div className="px-4 py-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <p className="text-primary-foreground/60 text-[10px] font-medium uppercase tracking-wider">Активных заказов</p>
+                <p className="text-primary-foreground text-3xl font-extrabold">{activeJobs.length}</p>
+              </div>
+              <div className="w-px h-10 bg-primary-foreground/20" />
+              <div className="flex-1">
+                <p className="text-primary-foreground/60 text-[10px] font-medium uppercase tracking-wider">За неделю</p>
+                <p className="text-primary-foreground text-lg font-bold">{weeklyStats.profit >= 0 ? "+" : ""}{weeklyStats.profit.toLocaleString("ru-RU")} ₽</p>
+                <p className="text-primary-foreground/50 text-[10px]">{weeklyStats.jobs} заказов</p>
+              </div>
+              <div className="w-px h-10 bg-primary-foreground/20" />
+              <div className="flex-1 text-right">
+                <p className="text-primary-foreground/60 text-[10px] font-medium uppercase tracking-wider">За месяц</p>
+                <p className="text-primary-foreground text-lg font-bold">{monthlyStats.profit >= 0 ? "+" : ""}{monthlyStats.profit.toLocaleString("ru-RU")} ₽</p>
+                <p className="text-primary-foreground/50 text-[10px]">{monthlyStats.jobs} заказов</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       {/* Community button */}
       <div className="px-4 pb-3">
         <button
           onClick={onOpenCommunity}
-          className="w-full flex items-center gap-3 p-3 bg-primary/5 border border-primary/15 rounded-2xl active:bg-primary/10 transition-all"
+          className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border active:bg-surface-1 transition-all"
         >
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center shrink-0">
-            <Users size={18} className="text-primary-foreground" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0">
+            <Users size={18} className="text-primary" />
           </div>
           <div className="flex-1 text-left">
             <p className="text-sm font-bold text-foreground">Сообщество диспетчеров</p>
@@ -326,15 +359,16 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
 
       {/* Tab navigation */}
       <div className="px-4 pb-3">
-        <div className="flex gap-1 bg-muted/40 rounded-2xl p-1">
+        <div className="flex gap-1 bg-card border border-border rounded-2xl p-1">
           {tabs.map((t) => {
             const Icon = t.icon;
+            const isActive = currentTab === t.id;
             return (
               <button
                 key={t.id}
                 onClick={() => setCurrentTab(t.id)}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
-                  currentTab === t.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                  isActive ? "bg-foreground text-primary-foreground shadow-sm" : "text-muted-foreground"
                 }`}
               >
                 <Icon size={14} />
@@ -346,32 +380,47 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
       </div>
 
       {loading ? (
-        <div className="text-center py-16 text-muted-foreground text-sm">Загрузка...</div>
+        <div className="flex flex-col items-center justify-center py-20 gap-3">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-muted-foreground">Загрузка...</p>
+        </div>
       ) : (
         <>
           {/* ACTIVE JOBS TAB */}
           {currentTab === "active" && (
             activeJobs.length === 0 ? (
-              <div className="text-center py-16 px-6">
-                <div className="text-4xl mb-3">📋</div>
-                <p className="text-sm font-semibold text-foreground">Нет активных заявок с исполнителями</p>
-                <p className="text-xs text-muted-foreground mt-1">Когда грузчики будут приняты на заявки, они появятся здесь</p>
-              </div>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-16 px-8">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-card border border-border flex items-center justify-center">
+                  <Briefcase size={28} className="text-muted-foreground" />
+                </div>
+                <p className="text-sm font-bold text-foreground">Нет активных заказов</p>
+                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">Когда грузчики будут приняты на заявки, они появятся здесь</p>
+              </motion.div>
             ) : (
               <div className="px-4 space-y-3">
-                {activeJobs.map((aj) => {
+                {activeJobs.map((aj, jobIdx) => {
                   const isExpanded = expandedJobs.has(aj.job.id);
                   const totalEarned = getTotalEarned(aj.workers);
                   const isFinishing = aj.job.status === "finishing";
                   const allDone = allWorkersCompleted(aj.workers);
 
                   return (
-                    <motion.div key={aj.job.id} layout className={`bg-card border rounded-2xl overflow-hidden ${isFinishing ? "border-orange-500/30" : "border-border"}`}>
+                    <motion.div
+                      key={aj.job.id}
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: jobIdx * 0.05 }}
+                      className={`bg-card border rounded-2xl overflow-hidden ${isFinishing ? "border-orange-500/30" : "border-border"}`}
+                    >
                       <button onClick={() => toggleExpand(aj.job.id)} className="w-full p-4 flex items-start gap-3 text-left">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isFinishing ? "bg-orange-500/10" : allDone ? "bg-green-500/10" : "bg-primary/10"}`}>
+                          {isFinishing ? <Timer size={18} className="text-orange-500" /> : allDone ? <CheckCircle2 size={18} className="text-green-500" /> : <Briefcase size={18} className="text-primary" />}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <h3 className="text-sm font-bold text-foreground truncate">{aj.job.title}</h3>
                             {isFinishing && <span className="shrink-0 px-2 py-0.5 rounded-lg bg-orange-500/10 text-[10px] font-bold text-orange-500">Завершается</span>}
+                            {allDone && !isFinishing && <span className="shrink-0 px-2 py-0.5 rounded-lg bg-green-500/10 text-[10px] font-bold text-green-500">Готово</span>}
                           </div>
                           <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
                             {aj.job.address && <span className="flex items-center gap-1"><MapPin size={10} /> {aj.job.address}</span>}
@@ -379,12 +428,14 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                             {totalEarned > 0 && <span className="flex items-center gap-1 text-green-500"><Wallet size={10} /> {totalEarned.toLocaleString("ru-RU")} ₽</span>}
                           </div>
                         </div>
-                        {isExpanded ? <ChevronUp size={18} className="text-muted-foreground mt-1 shrink-0" /> : <ChevronDown size={18} className="text-muted-foreground mt-1 shrink-0" />}
+                        <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                          <ChevronDown size={18} className="text-muted-foreground mt-1 shrink-0" />
+                        </motion.div>
                       </button>
 
                       <AnimatePresence>
                         {isExpanded && (
-                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
+                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
                             <div className="px-4 pb-4 space-y-2">
                               {aj.workers.map((w) => {
                                 const ws = w.workerStatus ? WORKER_STATUS_MAP[w.workerStatus] : null;
@@ -393,7 +444,12 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                                 const needsReview = w.workerStatus === "completed" && !w.dispatcherReviewRating;
 
                                 return (
-                                  <div key={w.responseId} className="bg-surface-1 border border-border rounded-xl p-3">
+                                  <motion.div
+                                    key={w.responseId}
+                                    initial={{ opacity: 0, x: -8 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="bg-surface-1 border border-border rounded-xl p-3"
+                                  >
                                     <div className="flex items-center gap-3">
                                       <button onClick={() => onViewProfile?.(w.workerId)} className="shrink-0">
                                         <div className="relative">
@@ -466,26 +522,26 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                                         </a>
                                       )}
                                     </div>
-                                  </div>
+                                  </motion.div>
                                 );
                               })}
 
                               {/* Finish / Complete buttons */}
                               {!isFinishing && !allDone && (
-                                <button onClick={() => finishJob(aj.job.id, aj.workers)} disabled={finishingJobs.has(aj.job.id)} className="w-full mt-2 py-3 rounded-xl bg-destructive text-destructive-foreground text-sm font-bold active:scale-95 transition-all disabled:opacity-50">
+                                <button onClick={() => finishJob(aj.job.id, aj.workers)} disabled={finishingJobs.has(aj.job.id)} className="w-full mt-2 py-3 rounded-xl bg-destructive text-destructive-foreground text-sm font-bold active:scale-[0.98] transition-all disabled:opacity-50">
                                   ⏹ Завершить заказ
                                 </button>
                               )}
 
                               {allDone && (
-                                <div className="space-y-2">
-                                  <div className="text-center py-2">
+                                <div className="space-y-2 mt-1">
+                                  <div className="text-center py-2 bg-green-500/5 rounded-xl">
                                     <p className="text-xs font-bold text-green-500">✅ Все грузчики завершили работу</p>
                                     <p className="text-[10px] text-muted-foreground mt-0.5">Итого расход: {getTotalEarned(aj.workers).toLocaleString("ru-RU")} ₽</p>
                                   </div>
                                   <button
                                     onClick={() => completeJobFully(aj.job.id)}
-                                    className="w-full py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold active:scale-95 transition-all"
+                                    className="w-full py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold active:scale-[0.98] transition-all"
                                   >
                                     📊 Закрыть заказ и заполнить расход
                                   </button>
@@ -504,66 +560,88 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
 
           {/* STATS TAB */}
           {currentTab === "stats" && (
-            <div className="px-4 space-y-4">
-              {/* Period cards */}
+            <div className="px-4 space-y-3">
+              {/* Income/Expense Summary */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-card border border-border rounded-2xl p-4">
-                  <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1"><Calendar size={10} /> За неделю</p>
-                  <p className="text-xl font-extrabold text-foreground">{weeklyStats.jobs}</p>
-                  <p className="text-[10px] text-muted-foreground">заказов</p>
-                </div>
-                <div className="bg-card border border-border rounded-2xl p-4">
-                  <p className="text-[10px] text-muted-foreground mb-1 flex items-center gap-1"><Calendar size={10} /> За месяц</p>
-                  <p className="text-xl font-extrabold text-foreground">{monthlyStats.jobs}</p>
-                  <p className="text-[10px] text-muted-foreground">заказов</p>
-                </div>
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }} className="bg-card border border-border rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 rounded-xl bg-green-500/10 flex items-center justify-center">
+                      <TrendingUp size={14} className="text-green-500" />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Доход неделя</span>
+                  </div>
+                  <p className="text-xl font-extrabold text-green-500">{weeklyStats.income.toLocaleString("ru-RU")} ₽</p>
+                </motion.div>
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="bg-card border border-border rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-8 h-8 rounded-xl bg-destructive/10 flex items-center justify-center">
+                      <TrendingDown size={14} className="text-destructive" />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Расход неделя</span>
+                  </div>
+                  <p className="text-xl font-extrabold text-destructive">{weeklyStats.expense.toLocaleString("ru-RU")} ₽</p>
+                </motion.div>
               </div>
 
-              {/* Weekly income */}
-              <div className="bg-card border border-border rounded-2xl p-4">
-                <h3 className="text-xs font-bold text-foreground mb-3 flex items-center gap-1.5"><TrendingUp size={14} className="text-green-500" /> Доход за неделю</h3>
-                <p className="text-2xl font-extrabold text-green-500">{weeklyStats.income.toLocaleString("ru-RU")} ₽</p>
-                <div className="flex items-center gap-4 mt-2 text-xs">
-                  <span className="flex items-center gap-1 text-destructive"><TrendingDown size={12} /> Расход: {weeklyStats.expense.toLocaleString("ru-RU")} ₽</span>
-                </div>
-                <div className="mt-2 pt-2 border-t border-border">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Чистая прибыль</span>
-                    <span className={`text-sm font-extrabold ${weeklyStats.profit >= 0 ? "text-green-500" : "text-destructive"}`}>
+              {/* Profit card */}
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card border border-border rounded-2xl p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-1">Чистая прибыль за неделю</p>
+                    <p className={`text-2xl font-extrabold ${weeklyStats.profit >= 0 ? "text-green-500" : "text-destructive"}`}>
                       {weeklyStats.profit >= 0 ? "+" : ""}{weeklyStats.profit.toLocaleString("ru-RU")} ₽
-                    </span>
+                    </p>
+                  </div>
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${weeklyStats.profit >= 0 ? "bg-green-500/10" : "bg-destructive/10"}`}>
+                    <Target size={20} className={weeklyStats.profit >= 0 ? "text-green-500" : "text-destructive"} />
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Monthly income */}
-              <div className="bg-card border border-border rounded-2xl p-4">
-                <h3 className="text-xs font-bold text-foreground mb-3 flex items-center gap-1.5"><DollarSign size={14} className="text-primary" /> Доход за месяц</h3>
-                <p className="text-2xl font-extrabold text-primary">{monthlyStats.income.toLocaleString("ru-RU")} ₽</p>
-                <div className="flex items-center gap-4 mt-2 text-xs">
-                  <span className="flex items-center gap-1 text-destructive"><TrendingDown size={12} /> Расход: {monthlyStats.expense.toLocaleString("ru-RU")} ₽</span>
-                </div>
-                <div className="mt-2 pt-2 border-t border-border">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Чистая прибыль</span>
-                    <span className={`text-sm font-extrabold ${monthlyStats.profit >= 0 ? "text-green-500" : "text-destructive"}`}>
+              {/* Monthly */}
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card border border-border rounded-2xl p-4">
+                <h3 className="text-xs font-bold text-foreground mb-3 flex items-center gap-1.5"><DollarSign size={14} className="text-primary" /> За месяц</h3>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground mb-0.5">Доход</p>
+                    <p className="text-sm font-bold text-green-500">{monthlyStats.income.toLocaleString("ru-RU")} ₽</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground mb-0.5">Расход</p>
+                    <p className="text-sm font-bold text-destructive">{monthlyStats.expense.toLocaleString("ru-RU")} ₽</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground mb-0.5">Прибыль</p>
+                    <p className={`text-sm font-extrabold ${monthlyStats.profit >= 0 ? "text-foreground" : "text-destructive"}`}>
                       {monthlyStats.profit >= 0 ? "+" : ""}{monthlyStats.profit.toLocaleString("ru-RU")} ₽
-                    </span>
+                    </p>
                   </div>
                 </div>
-              </div>
+              </motion.div>
 
               {/* Chart */}
-              <div className="bg-card border border-border rounded-2xl p-4">
-                <h3 className="text-xs font-bold text-foreground mb-4 flex items-center gap-1.5"><BarChart3 size={14} /> График за неделю</h3>
-                <div className="flex items-end justify-between gap-1 h-32">
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card border border-border rounded-2xl p-4">
+                <h3 className="text-xs font-bold text-foreground mb-4 flex items-center gap-1.5"><BarChart3 size={14} className="text-primary" /> Динамика за неделю</h3>
+                <div className="flex items-end justify-between gap-2 h-28">
                   {chartData.map((d, i) => (
                     <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                      <div className="w-full flex flex-col items-center gap-0.5" style={{ height: 100 }}>
-                        <div className="w-3 rounded-full bg-green-500/80 transition-all" style={{ height: `${(d.income / maxChartVal) * 100}%`, minHeight: d.income > 0 ? 4 : 0 }} />
-                        <div className="w-3 rounded-full bg-destructive/60 transition-all" style={{ height: `${(d.expense / maxChartVal) * 100}%`, minHeight: d.expense > 0 ? 4 : 0 }} />
+                      <div className="w-full flex flex-col items-center gap-0.5" style={{ height: 90 }}>
+                        <motion.div
+                          initial={{ height: 0 }}
+                          animate={{ height: `${(d.income / maxChartVal) * 100}%` }}
+                          transition={{ delay: 0.3 + i * 0.05, duration: 0.4 }}
+                          className="w-4 rounded-full bg-green-500/80"
+                          style={{ minHeight: d.income > 0 ? 4 : 0 }}
+                        />
+                        <motion.div
+                          initial={{ height: 0 }}
+                          animate={{ height: `${(d.expense / maxChartVal) * 100}%` }}
+                          transition={{ delay: 0.35 + i * 0.05, duration: 0.4 }}
+                          className="w-4 rounded-full bg-destructive/60"
+                          style={{ minHeight: d.expense > 0 ? 4 : 0 }}
+                        />
                       </div>
-                      <span className="text-[9px] text-muted-foreground">{d.label}</span>
+                      <span className="text-[9px] text-muted-foreground font-medium">{d.label}</span>
                     </div>
                   ))}
                 </div>
@@ -571,35 +649,53 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                   <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500" /> Доход</span>
                   <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-destructive" /> Расход</span>
                 </div>
-              </div>
+              </motion.div>
             </div>
           )}
 
           {/* HISTORY TAB */}
           {currentTab === "history" && (
             completedStats.length === 0 ? (
-              <div className="text-center py-16 text-muted-foreground text-sm">Нет завершённых заказов</div>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-16 px-8">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-card border border-border flex items-center justify-center">
+                  <FileText size={28} className="text-muted-foreground" />
+                </div>
+                <p className="text-sm font-bold text-foreground">Нет завершённых заказов</p>
+                <p className="text-xs text-muted-foreground mt-1.5">Завершённые заказы появятся здесь</p>
+              </motion.div>
             ) : (
               <div className="px-4 space-y-2">
-                {completedStats.map((s) => (
-                  <div key={s.jobId} className="bg-card border border-border rounded-2xl p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-bold text-foreground truncate">{s.title}</h3>
-                        <p className="text-[11px] text-muted-foreground mt-0.5">
-                          {new Date(s.createdAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })} · {s.workersCount} чел.
-                        </p>
+                {completedStats.map((s, i) => {
+                  const profit = s.dispatcherIncome - s.totalExpense;
+                  return (
+                    <motion.div
+                      key={s.jobId}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.03 }}
+                      className="bg-card border border-border rounded-2xl p-4"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${profit >= 0 ? "bg-green-500/10" : "bg-destructive/10"}`}>
+                          {profit >= 0 ? <TrendingUp size={16} className="text-green-500" /> : <TrendingDown size={16} className="text-destructive" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm font-bold text-foreground truncate">{s.title}</h3>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            {new Date(s.createdAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })} · {s.workersCount} чел.
+                          </p>
+                        </div>
+                        <span className={`text-sm font-extrabold shrink-0 ${profit >= 0 ? "text-green-500" : "text-destructive"}`}>
+                          {profit >= 0 ? "+" : ""}{profit.toLocaleString("ru-RU")} ₽
+                        </span>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-4 mt-2 text-xs">
-                      <span className="flex items-center gap-1 text-green-500 font-bold"><TrendingUp size={12} /> +{s.dispatcherIncome.toLocaleString("ru-RU")} ₽</span>
-                      <span className="flex items-center gap-1 text-destructive font-bold"><TrendingDown size={12} /> -{s.totalExpense.toLocaleString("ru-RU")} ₽</span>
-                      <span className={`font-extrabold ${s.dispatcherIncome - s.totalExpense >= 0 ? "text-foreground" : "text-destructive"}`}>
-                        = {(s.dispatcherIncome - s.totalExpense).toLocaleString("ru-RU")} ₽
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                      <div className="flex items-center gap-4 mt-2.5 ml-13 text-[11px]">
+                        <span className="flex items-center gap-1 text-green-500/80"><TrendingUp size={10} /> {s.dispatcherIncome.toLocaleString("ru-RU")} ₽</span>
+                        <span className="flex items-center gap-1 text-destructive/80"><TrendingDown size={10} /> {s.totalExpense.toLocaleString("ru-RU")} ₽</span>
+                      </div>
+                    </motion.div>
+                  );
+                })}
               </div>
             )
           )}
@@ -609,12 +705,13 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
       {/* Review modal */}
       <AnimatePresence>
         {reviewModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center" onClick={() => setReviewModal(null)}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end justify-center" onClick={() => setReviewModal(null)}>
             <motion.div
               initial={{ y: 200 }} animate={{ y: 0 }} exit={{ y: 200 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg bg-card rounded-t-3xl p-6"
+              className="w-full max-w-lg bg-card rounded-t-3xl p-6 border-t border-border"
             >
+              <div className="w-10 h-1 bg-muted-foreground/20 rounded-full mx-auto mb-4" />
               <h3 className="text-lg font-bold text-foreground mb-1">Отзыв о {reviewModal.workerName}</h3>
               <p className="text-xs text-muted-foreground mb-4">Оцените работу исполнителя</p>
 
@@ -630,10 +727,10 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
                 placeholder="Комментарий (необязательно)..."
-                className="w-full bg-muted/40 rounded-xl p-3 text-sm text-foreground placeholder:text-muted-foreground outline-none border border-border/30 resize-none h-20 mb-4"
+                className="w-full bg-surface-1 rounded-xl p-3 text-sm text-foreground placeholder:text-muted-foreground outline-none border border-border resize-none h-20 mb-4"
               />
 
-              <button onClick={submitReview} className="w-full py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold active:scale-95 transition-all">
+              <button onClick={submitReview} className="w-full py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold active:scale-[0.98] transition-all">
                 Отправить отзыв
               </button>
             </motion.div>
@@ -644,51 +741,47 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
       {/* Expense modal */}
       <AnimatePresence>
         {expenseModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center" onClick={() => setExpenseModal(null)}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-end justify-center" onClick={() => setExpenseModal(null)}>
             <motion.div
               initial={{ y: 200 }} animate={{ y: 0 }} exit={{ y: 200 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg bg-card rounded-t-3xl p-6"
+              className="w-full max-w-lg bg-card rounded-t-3xl p-6 border-t border-border"
             >
+              <div className="w-10 h-1 bg-muted-foreground/20 rounded-full mx-auto mb-4" />
               <h3 className="text-lg font-bold text-foreground mb-1">Закрытие заказа</h3>
               <p className="text-xs text-muted-foreground mb-4">{expenseModal.title} · {expenseModal.workersCount} грузчиков</p>
 
               <div className="space-y-3 mb-4">
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">💰 Ваш доход (что получили от клиента)</label>
+                  <label className="text-xs text-muted-foreground mb-1.5 block font-medium">💰 Ваш доход (от клиента)</label>
                   <input
                     type="number"
                     value={dispatcherIncome}
                     onChange={(e) => setDispatcherIncome(e.target.value)}
                     placeholder="0"
-                    className="w-full bg-muted/40 rounded-xl p-3 text-lg font-bold text-foreground placeholder:text-muted-foreground outline-none border border-border/30"
+                    className="w-full bg-surface-1 rounded-xl p-3 text-lg font-bold text-foreground placeholder:text-muted-foreground outline-none border border-border"
                   />
                 </div>
 
                 <div className="bg-surface-1 border border-border rounded-xl p-3">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Расход на грузчиков (автоматически)</span>
-                    <span className="font-bold text-destructive">
-                      {activeJobs.find((a) => a.job.id === expenseModal.jobId)
-                        ? getTotalEarned(activeJobs.find((a) => a.job.id === expenseModal.jobId)!.workers).toLocaleString("ru-RU")
-                        : 0} ₽
+                    <span className="text-muted-foreground">Выплата грузчикам</span>
+                    <span className="font-bold text-foreground">
+                      {getTotalEarned(activeJobs.find((a) => a.job.id === expenseModal.jobId)?.workers || []).toLocaleString("ru-RU")} ₽
                     </span>
                   </div>
-                </div>
-
-                {dispatcherIncome && (
-                  <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-green-500 font-semibold">Чистая прибыль</span>
-                      <span className="text-lg font-extrabold text-green-500">
+                  {parseInt(dispatcherIncome) > 0 && (
+                    <div className="flex items-center justify-between text-xs mt-2 pt-2 border-t border-border">
+                      <span className="text-muted-foreground">Чистая прибыль</span>
+                      <span className={`font-extrabold ${(parseInt(dispatcherIncome) - getTotalEarned(activeJobs.find((a) => a.job.id === expenseModal.jobId)?.workers || [])) >= 0 ? "text-green-500" : "text-destructive"}`}>
                         {((parseInt(dispatcherIncome) || 0) - getTotalEarned(activeJobs.find((a) => a.job.id === expenseModal.jobId)?.workers || [])).toLocaleString("ru-RU")} ₽
                       </span>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
-              <button onClick={submitExpenseAndComplete} className="w-full py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold active:scale-95 transition-all">
+              <button onClick={submitExpenseAndComplete} className="w-full py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold active:scale-[0.98] transition-all">
                 ✅ Завершить и сохранить
               </button>
             </motion.div>
