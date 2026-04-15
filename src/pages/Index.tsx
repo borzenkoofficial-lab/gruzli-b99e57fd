@@ -43,6 +43,7 @@ const Index = () => {
   const [supportUserId, setSupportUserId] = useState<string | null>(null);
   const SUPPORT_NAME = "Тех. поддержка";
 
+
   useEffect(() => {
     supabase
       .from("profiles")
