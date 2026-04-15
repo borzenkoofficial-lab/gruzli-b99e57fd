@@ -100,7 +100,7 @@ const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup,
 });
 MessageBubble.displayName = "MessageBubble";
 
-const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile }: RealChatScreenProps) => {
+const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessagesRead }: RealChatScreenProps) => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [senderNames, setSenderNames] = useState<Record<string, string>>({});
