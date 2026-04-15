@@ -82,7 +82,8 @@ const SecurityModal = forwardRef<HTMLDivElement, { open: boolean; onClose: () =>
       )}
     </AnimatePresence>
   );
-};
+});
+SecurityModal.displayName = "SecurityModal";
 
 const featuresList = [
   { icon: Briefcase, title: "Заказы", desc: "Находите работу мгновенно" },
