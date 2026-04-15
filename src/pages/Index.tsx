@@ -143,48 +143,18 @@ const Index = () => {
       return false;
     }
 
-    const { data: myConvs, error: myConvsError } = await supabase
-      .from("conversation_participants")
-      .select("conversation_id")
-      .eq("user_id", user.id);
+    // Use security-definer function to find or create 1-on-1 conversation
+    const { data: conversationId, error } = await supabase.rpc("create_direct_conversation", {
+      _other_user_id: otherUserId,
+      _title: otherName,
+    });
 
-    if (myConvsError) return false;
-
-    let conversationId: string | null = null;
-
-    if (myConvs) {
-      for (const mc of myConvs) {
-        const { data: otherParticipant } = await supabase
-          .from("conversation_participants")
-          .select("id")
-          .eq("conversation_id", mc.conversation_id)
-          .eq("user_id", otherUserId)
-          .single();
-
-        if (otherParticipant) {
-          conversationId = mc.conversation_id;
-          break;
-        }
-      }
+    if (error || !conversationId) {
+      toast.error("Не удалось создать чат");
+      return false;
     }
 
-    if (!conversationId) {
-      conversationId = crypto.randomUUID();
-      const { error: convError } = await supabase
-        .from("conversations")
-        .insert({ id: conversationId, title: otherName });
-
-      if (convError) return false;
-
-      const { error: participantsError } = await supabase.from("conversation_participants").insert([
-        { conversation_id: conversationId, user_id: user.id },
-        { conversation_id: conversationId, user_id: otherUserId },
-      ]);
-
-      if (participantsError) return false;
-    }
-
-    if (prefillMessage && conversationId) {
+    if (prefillMessage) {
       await supabase.from("messages").insert({
         conversation_id: conversationId,
         sender_id: user.id,

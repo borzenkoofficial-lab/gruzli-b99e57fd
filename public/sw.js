@@ -98,9 +98,12 @@ self.addEventListener("push", function (event) {
     badge: "/pwa-192x192.png",
     vibrate: vibrationPatterns[data.type] || vibrationPatterns.default,
     data: data,
-    tag: data.type || "default",
+    tag: (data.type || "default") + "-" + Date.now(),
     renotify: true,
     silent: false,
+    requireInteraction: true,
+    urgency: "high",
+    importance: "high",
   };
 
   event.waitUntil(self.registration.showNotification(data.title, options));
