@@ -8,7 +8,7 @@ const frameNum = parseInt(process.argv[2] || "60");
 const outPath = process.argv[3] || "/tmp/frame.png";
 
 const bundled = await bundle({
-  entryPoint: path.resolve(__dirname, "src/index.ts"),
+  entryPoint: path.resolve(__dirname, "../src/index.ts"),
   webpackOverride: (config) => config,
 });
 const browser = await openBrowser("chrome", {
