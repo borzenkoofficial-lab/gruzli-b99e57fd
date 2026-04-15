@@ -216,6 +216,30 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
     fetchStats();
   }, [user]);
 
+  // Fetch transaction history from completed jobs
+  useEffect(() => {
+    if (!user) return;
+    const fetchTransactions = async () => {
+      const { data } = await supabase
+        .from("job_responses")
+        .select("id, created_at, earned, hours_worked, job_id, jobs(title)")
+        .eq("worker_id", user.id)
+        .eq("worker_status", "completed")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      
+      if (data) {
+        const txs = data.map((r: any) => ({
+          type: "income" as const,
+          amount: r.earned || 0,
+          description: r.jobs?.title || "Выполненный заказ",
+          date: new Date(r.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" }),
+        }));
+        setTransactions(txs);
+      }
+    };
+    fetchTransactions();
+
   // Fetch reviews for dispatcher
   useEffect(() => {
     if (!isDispatcher || !user) return;
