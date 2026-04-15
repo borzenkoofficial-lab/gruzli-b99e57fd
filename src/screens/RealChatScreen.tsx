@@ -23,6 +23,7 @@ interface RealChatScreenProps {
   title: string;
   onBack: () => void;
   onOpenProfile?: (userId: string) => void;
+  onMessagesRead?: () => void;
 }
 
 // Date separator helpers
