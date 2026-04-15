@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Heart, MessageCircle, Send, Loader2, Trash2, Share, MoreHorizontal, BadgeCheck, Users, Image as ImageIcon, Pin, Settings, Bell, ChevronRight, Eye } from "lucide-react";
+import { ArrowLeft, Heart, MessageCircle, Send, Loader2, Trash2, Share, MoreHorizontal, BadgeCheck, Users, Image as ImageIcon, Pin, Settings, Bell, ChevronRight, Eye, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -32,6 +32,13 @@ interface Comment {
   text: string;
   created_at: string;
   userName: string;
+}
+
+/** Stable pseudo-random 1000–2000 from post id */
+function fakeViews(id: string): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) | 0;
+  return 1000 + Math.abs(h) % 1001;
 }
 
 const placeholderPosts: Omit<Post, "liked">[] = [
@@ -70,6 +77,7 @@ const placeholderPosts: Omit<Post, "liked">[] = [
 const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
   const { user, role } = useAuth();
   const canPost = role === "dispatcher" || role === "admin";
+  const isAdmin = role === "admin";
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [newPostText, setNewPostText] = useState("");
@@ -83,10 +91,53 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
   const [subscriberCount, setSubscriberCount] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"wall" | "info">("wall");
 
+  // Cover & avatar from app_settings
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
-    supabase.from("app_settings").select("value").eq("id", "fake_subscribers").single()
-      .then(({ data }) => { if (data) setSubscriberCount((data.value as any)?.count ?? null); });
+    Promise.all([
+      supabase.from("app_settings").select("value").eq("id", "fake_subscribers").single(),
+      supabase.from("app_settings").select("value").eq("id", "channel_cover").single(),
+      supabase.from("app_settings").select("value").eq("id", "channel_avatar").single(),
+    ]).then(([subRes, coverRes, avatarRes]) => {
+      if (subRes.data) setSubscriberCount((subRes.data.value as any)?.count ?? null);
+      if (coverRes.data) setCoverUrl((coverRes.data.value as any)?.url ?? null);
+      if (avatarRes.data) setAvatarUrl((avatarRes.data.value as any)?.url ?? null);
+    });
   }, []);
+
+  const uploadImage = async (file: File, key: "channel_cover" | "channel_avatar") => {
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${key}_${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("chat-media").upload(path, file, { upsert: true });
+    if (upErr) { toast.error("Ошибка загрузки"); return; }
+    const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
+    const url = urlData?.publicUrl;
+    if (!url) return;
+
+    // upsert into app_settings
+    const { error } = await supabase.from("app_settings").upsert({ id: key, value: { url } as any });
+    if (error) { toast.error("Не удалось сохранить"); return; }
+
+    if (key === "channel_cover") setCoverUrl(url);
+    else setAvatarUrl(url);
+    toast.success(key === "channel_cover" ? "Шапка обновлена" : "Аватар обновлён");
+  };
+
+  const handleCoverUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) uploadImage(file, "channel_cover");
+    e.target.value = "";
+  };
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) uploadImage(file, "channel_avatar");
+    e.target.value = "";
+  };
 
   const fetchPosts = useCallback(async () => {
     if (!user) return;
@@ -201,6 +252,10 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
 
   return (
     <div className="flex flex-col h-screen bg-background overflow-hidden" style={{ height: "calc(var(--vh, 1vh) * 100)" }}>
+      {/* Hidden file inputs */}
+      <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverUpload} />
+      <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+
       {/* Top bar */}
       <div className="shrink-0 bg-card/95 backdrop-blur-xl border-b border-border z-20">
         <div className="flex items-center gap-3 px-4 safe-top pb-2.5">
@@ -222,11 +277,26 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
 
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
-        {/* VK-style cover / header */}
+        {/* Cover */}
         <div className="relative">
-          <div className="h-[120px] bg-gradient-to-br from-primary/40 via-primary/20 to-accent/30 overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,hsl(var(--primary)/0.4),transparent_60%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,hsl(var(--accent)/0.3),transparent_60%)]" />
+          <div className="h-[120px] overflow-hidden">
+            {coverUrl ? (
+              <img src={coverUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <>
+                <div className="w-full h-full bg-gradient-to-br from-primary/40 via-primary/20 to-accent/30" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,hsl(var(--primary)/0.4),transparent_60%)]" />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,hsl(var(--accent)/0.3),transparent_60%)]" />
+              </>
+            )}
+            {isAdmin && (
+              <button
+                onClick={() => coverInputRef.current?.click()}
+                className="absolute bottom-2 right-2 w-8 h-8 rounded-full bg-black/50 backdrop-blur flex items-center justify-center active:bg-black/70 transition-colors"
+              >
+                <Camera size={14} className="text-white" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -235,8 +305,22 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
           <div className="bg-card border border-border rounded-2xl p-4">
             <div className="flex gap-3.5">
               {/* Avatar */}
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg -mt-8 border-[3px] border-card">
-                <span className="text-2xl font-black text-primary-foreground">G</span>
+              <div className="relative -mt-8">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt="" className="w-16 h-16 rounded-2xl object-cover shadow-lg border-[3px] border-card" />
+                ) : (
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg border-[3px] border-card">
+                    <span className="text-2xl font-black text-primary-foreground">G</span>
+                  </div>
+                )}
+                {isAdmin && (
+                  <button
+                    onClick={() => avatarInputRef.current?.click()}
+                    className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary flex items-center justify-center border-2 border-card"
+                  >
+                    <Camera size={10} className="text-primary-foreground" />
+                  </button>
+                )}
               </div>
               <div className="flex-1 min-w-0 pt-0.5">
                 <div className="flex items-center gap-1.5">
@@ -314,7 +398,6 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
                   { label: "Категория", value: "Работа и бизнес" },
                   { label: "Участников", value: memberCount.toLocaleString("ru-RU") },
                   { label: "Создано", value: "2025" },
-                  { label: "Сайт", value: "gruzli.lovable.app" },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center justify-between">
                     <span className="text-[12px] text-muted-foreground">{item.label}</span>
@@ -380,8 +463,12 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
                     onClick={() => setShowCompose(true)}
                     className="w-full px-4 py-3 flex items-center gap-3 bg-card border-b border-border active:bg-surface-1 transition-colors"
                   >
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                      <span className="text-xs font-bold text-primary-foreground">G</span>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center overflow-hidden">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xs font-bold text-primary-foreground">G</span>
+                      )}
                     </div>
                     <span className="text-[13px] text-muted-foreground">Написать пост...</span>
                   </button>
@@ -412,8 +499,12 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
                     <div className="px-4 py-3.5">
                       {/* Post header */}
                       <div className="flex items-center gap-3 mb-2.5">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                          <span className="text-sm font-bold text-primary-foreground">G</span>
+                        <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                          {avatarUrl ? (
+                            <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="text-sm font-bold text-primary-foreground">G</span>
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1">
@@ -469,7 +560,7 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
 
                         <div className="ml-auto flex items-center gap-1 text-muted-foreground/50">
                           <Eye size={14} />
-                          <span className="text-[11px]">{Math.floor(Math.random() * 500 + 100)}</span>
+                          <span className="text-[11px]">{fakeViews(post.id).toLocaleString("ru-RU")}</span>
                         </div>
                       </div>
 
