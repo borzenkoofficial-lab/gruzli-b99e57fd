@@ -596,11 +596,6 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
 
   // Verification section
   if (section === "verification") {
-    const [supportUserId, setSupportUserId] = useState<string | null>(null);
-    useEffect(() => {
-      supabase.from("profiles").select("user_id").eq("phone", "89066466696").limit(1).single()
-        .then(({ data }) => { if (data) setSupportUserId(data.user_id); });
-    }, []);
 
     const handleSendVerification = async () => {
       if (!vFullName.trim() || !vAge || !vPhone.trim()) {
