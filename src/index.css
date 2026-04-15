@@ -123,6 +123,179 @@
     --sidebar-border: 0 0% 90%;
     --sidebar-ring: 0 0% 60%;
   }
+
+  /* Designer dark themes */
+  .theme-midnight {
+    --background: 222 47% 7%;
+    --foreground: 210 40% 93%;
+    --card: 222 41% 10%;
+    --card-foreground: 210 40% 93%;
+    --card-hover: 222 35% 14%;
+    --popover: 222 41% 10%;
+    --popover-foreground: 210 40% 93%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 222 35% 14%;
+    --secondary-foreground: 215 20% 65%;
+    --muted: 222 30% 16%;
+    --muted-foreground: 215 15% 50%;
+    --accent: 217 70% 18%;
+    --accent-foreground: 210 40% 93%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 222 30% 15%;
+    --input: 222 30% 15%;
+    --ring: 217 91% 60%;
+    --surface-1: 222 47% 7%;
+    --surface-2: 222 41% 10%;
+    --surface-3: 222 35% 14%;
+    --surface-4: 222 30% 18%;
+    --neu-shadow-light: 222 30% 16%;
+    --neu-shadow-dark: 222 50% 3%;
+    --cyan-glow: 217 91% 60%;
+    --cyan-light: 217 70% 75%;
+    --online: 145 65% 50%;
+    --badge: 217 91% 60%;
+    --bubble-own: 217 50% 16%;
+    --bubble-other: 222 35% 12%;
+    --sidebar-background: 222 47% 7%;
+    --sidebar-foreground: 210 40% 93%;
+    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 222 35% 14%;
+    --sidebar-accent-foreground: 210 40% 93%;
+    --sidebar-border: 222 30% 15%;
+    --sidebar-ring: 217 91% 60%;
+  }
+
+  .theme-emerald {
+    --background: 160 30% 6%;
+    --foreground: 150 20% 92%;
+    --card: 160 25% 9%;
+    --card-foreground: 150 20% 92%;
+    --card-hover: 160 20% 13%;
+    --popover: 160 25% 9%;
+    --popover-foreground: 150 20% 92%;
+    --primary: 160 84% 39%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 160 20% 13%;
+    --secondary-foreground: 155 15% 60%;
+    --muted: 160 18% 15%;
+    --muted-foreground: 155 10% 48%;
+    --accent: 160 40% 15%;
+    --accent-foreground: 150 20% 92%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 160 20% 14%;
+    --input: 160 20% 14%;
+    --ring: 160 84% 39%;
+    --surface-1: 160 30% 6%;
+    --surface-2: 160 25% 9%;
+    --surface-3: 160 20% 13%;
+    --surface-4: 160 18% 17%;
+    --neu-shadow-light: 160 18% 15%;
+    --neu-shadow-dark: 160 35% 3%;
+    --cyan-glow: 160 84% 39%;
+    --cyan-light: 160 60% 70%;
+    --online: 160 84% 39%;
+    --badge: 160 84% 39%;
+    --bubble-own: 160 35% 14%;
+    --bubble-other: 160 20% 11%;
+    --sidebar-background: 160 30% 6%;
+    --sidebar-foreground: 150 20% 92%;
+    --sidebar-primary: 160 84% 39%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 160 20% 13%;
+    --sidebar-accent-foreground: 150 20% 92%;
+    --sidebar-border: 160 20% 14%;
+    --sidebar-ring: 160 84% 39%;
+  }
+
+  .theme-crimson {
+    --background: 0 20% 7%;
+    --foreground: 0 10% 92%;
+    --card: 0 15% 10%;
+    --card-foreground: 0 10% 92%;
+    --card-hover: 0 12% 14%;
+    --popover: 0 15% 10%;
+    --popover-foreground: 0 10% 92%;
+    --primary: 346 77% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 12% 14%;
+    --secondary-foreground: 0 8% 60%;
+    --muted: 0 10% 16%;
+    --muted-foreground: 0 6% 48%;
+    --accent: 346 30% 16%;
+    --accent-foreground: 0 10% 92%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 12% 15%;
+    --input: 0 12% 15%;
+    --ring: 346 77% 50%;
+    --surface-1: 0 20% 7%;
+    --surface-2: 0 15% 10%;
+    --surface-3: 0 12% 14%;
+    --surface-4: 0 10% 18%;
+    --neu-shadow-light: 0 10% 16%;
+    --neu-shadow-dark: 0 25% 3%;
+    --cyan-glow: 346 77% 50%;
+    --cyan-light: 346 60% 72%;
+    --online: 145 65% 50%;
+    --badge: 346 77% 50%;
+    --bubble-own: 346 30% 15%;
+    --bubble-other: 0 12% 12%;
+    --sidebar-background: 0 20% 7%;
+    --sidebar-foreground: 0 10% 92%;
+    --sidebar-primary: 346 77% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 0 12% 14%;
+    --sidebar-accent-foreground: 0 10% 92%;
+    --sidebar-border: 0 12% 15%;
+    --sidebar-ring: 346 77% 50%;
+  }
+
+  .theme-amber {
+    --background: 30 25% 6%;
+    --foreground: 35 20% 92%;
+    --card: 30 20% 9%;
+    --card-foreground: 35 20% 92%;
+    --card-hover: 30 16% 13%;
+    --popover: 30 20% 9%;
+    --popover-foreground: 35 20% 92%;
+    --primary: 38 92% 50%;
+    --primary-foreground: 30 25% 6%;
+    --secondary: 30 16% 14%;
+    --secondary-foreground: 35 12% 60%;
+    --muted: 30 14% 16%;
+    --muted-foreground: 35 8% 48%;
+    --accent: 38 35% 16%;
+    --accent-foreground: 35 20% 92%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 30 16% 14%;
+    --input: 30 16% 14%;
+    --ring: 38 92% 50%;
+    --surface-1: 30 25% 6%;
+    --surface-2: 30 20% 9%;
+    --surface-3: 30 16% 13%;
+    --surface-4: 30 14% 17%;
+    --neu-shadow-light: 30 14% 16%;
+    --neu-shadow-dark: 30 30% 3%;
+    --cyan-glow: 38 92% 50%;
+    --cyan-light: 38 70% 72%;
+    --online: 145 65% 50%;
+    --badge: 38 92% 50%;
+    --bubble-own: 38 30% 14%;
+    --bubble-other: 30 16% 11%;
+    --sidebar-background: 30 25% 6%;
+    --sidebar-foreground: 35 20% 92%;
+    --sidebar-primary: 38 92% 50%;
+    --sidebar-primary-foreground: 30 25% 6%;
+    --sidebar-accent: 30 16% 13%;
+    --sidebar-accent-foreground: 35 20% 92%;
+    --sidebar-border: 30 16% 14%;
+    --sidebar-ring: 38 92% 50%;
+  }
 }
 
 @layer base {
