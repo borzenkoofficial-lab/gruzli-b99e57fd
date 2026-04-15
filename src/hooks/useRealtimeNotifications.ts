@@ -65,7 +65,7 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
     if (!msg) return;
     if (msg.sender_id === userIdRef.current) return;
 
-    playNotificationSound();
+    playMessageReceived();
     vibrate();
 
     toast("💬 Новое сообщение", {
@@ -87,7 +87,7 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
 
     // Worker: notify when dispatcher accepted their response
     if (resp.worker_id === userIdRef.current && resp.status === "accepted") {
-      playNotificationSound();
+      playSuccess();
       vibrate();
 
       toast("🎉 Вас выбрали!", {
@@ -115,7 +115,7 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
           completed: "🎉 Завершил работу",
         };
 
-        playNotificationSound();
+        playStatusUpdate();
         vibrate();
 
         const label = STATUS_LABELS[resp.worker_status] || resp.worker_status;
