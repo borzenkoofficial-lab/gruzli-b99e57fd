@@ -440,13 +440,7 @@ const Index = () => {
           <ProfileScreen
             onOpenSettings={() => setShowSettings(true)}
             onOpenNotifications={() => setShowNotifications(true)}
-            onOpenSupport={(prefillMessage) => {
-              if (prefillMessage) {
-                handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage);
-              } else {
-                setShowSupportChat(true);
-              }
-            }}
+            onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage)}
             onOpenPremium={() => setShowPremium(true)}
             onOpenCabinet={() => setShowCabinet(true)}
           />
