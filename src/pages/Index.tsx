@@ -40,8 +40,19 @@ const Index = () => {
   const { unreadMessages, newJobsCount, resetMessages, resetJobs } = useUnreadCounts();
   const isMobile = useIsMobile();
   const { jobId: routeJobId } = useParams<{ jobId?: string }>();
-  const SUPPORT_USER_ID = "de95eea5-d75b-4693-af15-020c58422126";
-  const SUPPORT_NAME = "Gruzli Official";
+  const [supportUserId, setSupportUserId] = useState<string | null>(null);
+  const SUPPORT_NAME = "Тех. поддержка";
+
+  useEffect(() => {
+    supabase
+      .from("profiles")
+      .select("user_id")
+      .eq("phone", "89066466696")
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setSupportUserId(data.user_id);
+      });
+  }, []);
   const [tab, setTab] = useState("feed");
 
   useEffect(() => {
