@@ -381,7 +381,7 @@ const AuthPage = () => {
               inputMode="text"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="admin@gruzli.app или +7 999 123-45-67"
+              placeholder="Телефон или email"
               required
               className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
             />
