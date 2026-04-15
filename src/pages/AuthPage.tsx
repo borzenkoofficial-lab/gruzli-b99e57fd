@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Users, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Zap, MessageSquare, Phone, Lock, Fingerprint, ShieldCheck, X, Calendar, Mail } from "lucide-react";
@@ -18,7 +18,7 @@ const phoneToEmail = (phone: string) => {
 /** Check if input looks like an email */
 const isEmail = (input: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.trim());
 
-const SecurityModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+const SecurityModal = forwardRef<HTMLDivElement, { open: boolean; onClose: () => void }>(({ open, onClose }, _ref) => {
   if (!open) return null;
 
   const features = [
@@ -82,7 +82,8 @@ const SecurityModal = ({ open, onClose }: { open: boolean; onClose: () => void }
       )}
     </AnimatePresence>
   );
-};
+});
+SecurityModal.displayName = "SecurityModal";
 
 const featuresList = [
   { icon: Briefcase, title: "Заказы", desc: "Находите работу мгновенно" },
@@ -91,7 +92,7 @@ const featuresList = [
   { icon: MessageSquare, title: "Чат", desc: "Общайтесь напрямую" },
 ];
 
-const AuthPage = () => {
+const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
   const [mode, setMode] = useState<Mode>("welcome");
   const [role, setRole] = useState<Role>("worker");
   const [password, setPassword] = useState("");
@@ -459,6 +460,7 @@ const AuthPage = () => {
       </motion.form>
     </div>
   );
-};
+});
+AuthPage.displayName = "AuthPage";
 
 export default AuthPage;
