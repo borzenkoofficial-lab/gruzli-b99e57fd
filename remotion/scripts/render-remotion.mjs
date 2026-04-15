@@ -28,11 +28,11 @@ await renderMedia({
   composition,
   serveUrl: bundled,
   codec: "h264",
-  outputLocation: "/mnt/documents/gruzli-presentation.mp4",
+  outputLocation: "/mnt/documents/gruzli-walkthrough.mp4",
   puppeteerInstance: browser,
   muted: true,
   concurrency: 1,
 });
 
 await browser.close({ silent: false });
-console.log("Done! Output: /mnt/documents/gruzli-presentation.mp4");
+console.log("Done! Output: /mnt/documents/gruzli-walkthrough.mp4");
