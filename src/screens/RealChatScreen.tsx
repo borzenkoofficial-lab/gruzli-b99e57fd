@@ -307,14 +307,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     setText("");
     if (textareaRef.current) { textareaRef.current.style.height = "auto"; }
 
-    try {
-      if (!(window as any).__sendAudio) {
-        (window as any).__sendAudio = new Audio("/send.wav");
-        (window as any).__sendAudio.volume = 0.3;
-      }
-      (window as any).__sendAudio.currentTime = 0;
-      (window as any).__sendAudio.play().catch(() => {});
-    } catch {}
+    playMessageSent();
 
     const optimisticMsg: Message = {
       id: `optimistic-${Date.now()}`,

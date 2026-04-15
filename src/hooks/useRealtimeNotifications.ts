@@ -4,30 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { getNotificationSettings } from "@/hooks/useNotificationSettings";
 import { pushNotification } from "@/screens/NotificationsScreen";
+import { playNewJob, playMessageReceived, playStatusUpdate, playSuccess } from "@/lib/sounds";
 import type { Tables } from "@/integrations/supabase/types";
-
-function playNotificationSound() {
-  const { sound } = getNotificationSettings();
-  if (!sound) return;
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const freqs = [880, 1100, 1320];
-    freqs.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = "sine";
-      const start = ctx.currentTime + i * 0.18;
-      osc.frequency.setValueAtTime(freq, start);
-      gain.gain.setValueAtTime(0.35, start);
-      gain.gain.exponentialRampToValueAtTime(0.01, start + 0.15);
-      osc.start(start);
-      osc.stop(start + 0.15);
-    });
-    setTimeout(() => ctx.close(), 1500);
-  } catch {}
-}
 
 function vibrate() {
   const { vibration } = getNotificationSettings();
