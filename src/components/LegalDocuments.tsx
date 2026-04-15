@@ -422,17 +422,17 @@ export const LegalCheckboxes = ({ accepted, onChange }: { accepted: { terms: boo
 };
 
 const CheckboxItem = ({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: React.ReactNode }) => (
-  <label className="flex items-center gap-3 cursor-pointer group">
+  <label className="flex items-center gap-2.5 cursor-pointer group">
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className={`relative w-9 h-[20px] rounded-full shrink-0 transition-colors duration-200 ${
+      className={`relative w-7 h-[16px] rounded-full shrink-0 transition-colors duration-200 ${
         checked ? "bg-foreground" : "bg-muted-foreground/30"
       }`}
     >
       <span
-        className={`absolute top-[2px] left-[2px] w-4 h-4 rounded-full bg-background shadow-sm transition-transform duration-200 ${
-          checked ? "translate-x-[16px]" : "translate-x-0"
+        className={`absolute top-[2px] left-[2px] w-3 h-3 rounded-full bg-background shadow-sm transition-transform duration-200 ${
+          checked ? "translate-x-[12px]" : "translate-x-0"
         }`}
       />
     </button>
