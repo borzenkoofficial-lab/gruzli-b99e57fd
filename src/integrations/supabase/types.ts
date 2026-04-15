@@ -553,6 +553,7 @@ export type Database = {
           availability: boolean[] | null
           avatar_url: string | null
           balance: number | null
+          birth_date: string | null
           blocked: boolean
           completed_orders: number | null
           created_at: string
@@ -574,6 +575,7 @@ export type Database = {
           availability?: boolean[] | null
           avatar_url?: string | null
           balance?: number | null
+          birth_date?: string | null
           blocked?: boolean
           completed_orders?: number | null
           created_at?: string
@@ -595,6 +597,7 @@ export type Database = {
           availability?: boolean[] | null
           avatar_url?: string | null
           balance?: number | null
+          birth_date?: string | null
           blocked?: boolean
           completed_orders?: number | null
           created_at?: string
