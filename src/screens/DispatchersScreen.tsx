@@ -81,9 +81,13 @@ const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => 
             >
               <div className="flex items-start gap-3">
                 <div className="relative flex-shrink-0">
-                  <div className="w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center text-sm font-semibold text-muted-foreground">
-                    {getInitials(d.full_name)}
-                  </div>
+                  {d.avatar_url ? (
+                    <img src={d.avatar_url} alt="" className="w-12 h-12 rounded-full object-cover" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-full bg-card border border-border flex items-center justify-center text-sm font-semibold text-muted-foreground">
+                      {getInitials(d.full_name)}
+                    </div>
+                  )}
                   <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-online border-2 border-card" />
                 </div>
                 <div className="flex-1 min-w-0">

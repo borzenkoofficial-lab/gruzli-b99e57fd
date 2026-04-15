@@ -164,6 +164,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   }, [showMenu]);
 
   const [resolvedTitle, setResolvedTitle] = useState(title);
+  const [otherAvatarUrl, setOtherAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user || !conversationId) return;
@@ -174,10 +175,11 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       const otherId = parts?.[0]?.user_id;
       if (otherId) {
         setOtherUserId(otherId);
-        const { data: profile } = await supabase.from("profiles").select("full_name, last_seen_at").eq("user_id", otherId).single();
+        const { data: profile } = await supabase.from("profiles").select("full_name, last_seen_at, avatar_url").eq("user_id", otherId).single();
         if (profile) {
           setOtherLastSeen((profile as any).last_seen_at);
           if (profile.full_name) setResolvedTitle(profile.full_name);
+          setOtherAvatarUrl(profile.avatar_url || null);
         }
       }
     };
@@ -495,14 +497,23 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
           className="flex items-center gap-2.5 flex-1 min-w-0 text-left py-1"
           onClick={() => otherUserId && onOpenProfile?.(otherUserId)}
         >
-          <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 relative"
-            style={{ background: getAvatarColor(resolvedTitle) }}
-          >
-            {initials}
-            {presenceInfo.isOnline && (
-              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-background" />
-            )}
-          </div>
+          {otherAvatarUrl ? (
+            <div className="w-9 h-9 rounded-full shrink-0 relative overflow-hidden">
+              <img src={otherAvatarUrl} alt="" className="w-full h-full object-cover" />
+              {presenceInfo.isOnline && (
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-background" />
+              )}
+            </div>
+          ) : (
+            <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 relative"
+              style={{ background: getAvatarColor(resolvedTitle) }}
+            >
+              {initials}
+              {presenceInfo.isOnline && (
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-background" />
+              )}
+            </div>
+          )}
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-foreground truncate leading-tight">{resolvedTitle}</h2>
             <p className={`text-[11px] leading-tight ${presenceInfo.isOnline ? "text-green-500" : "text-muted-foreground"}`}>
