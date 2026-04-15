@@ -331,36 +331,17 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     setSending(false);
   };
 
-  const handleSendSticker = async (sticker: string) => {
-    if (!user) return;
-    setShowStickers(false);
-    playMessageSent();
 
-    const optimisticMsg: Message = {
-      id: `optimistic-${Date.now()}`,
-      conversation_id: conversationId,
-      sender_id: user.id,
-      text: sticker,
-      message_type: "sticker",
-      created_at: new Date().toISOString(),
-      _optimistic: true,
-    };
-    setMessages((prev) => [...prev, optimisticMsg]);
 
-    await supabase.from("messages").insert({
-      conversation_id: conversationId, sender_id: user.id, text: sticker, message_type: "sticker",
-    });
-  };
 
   const handleSendVoice = async (blob: Blob, duration: number) => {
     if (!user) return;
     setIsRecording(false);
     
-    const ext = "webm";
-    const path = `${conversationId}/${Date.now()}_voice.${ext}`;
-    const { error: uploadError } = await supabase.storage.from("chat-media").upload(path, blob, { contentType: "audio/webm" });
+    const path = `voice/${conversationId}/${Date.now()}_voice.webm`;
+    const { error: uploadError } = await supabase.storage.from("kartoteka-photos").upload(path, blob, { contentType: "audio/webm" });
     if (uploadError) { toast.error("Ошибка загрузки"); return; }
-    const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
+    const { data: urlData } = supabase.storage.from("kartoteka-photos").getPublicUrl(path);
     
     playMessageSent();
 
@@ -662,7 +643,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
             <EmojiPicker onSelect={handleEmojiSelect} />
           </div>
         )}
-        {showStickers && (
           <div className="px-3 pb-1">
             <StickerPicker onSelect={handleSendSticker} />
           </div>
