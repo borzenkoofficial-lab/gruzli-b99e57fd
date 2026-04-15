@@ -50,7 +50,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
 
   // Theme state
-  const [theme, setTheme] = useState<"dark" | "light">(() => localStorage.getItem("theme") === "light" ? "light" : "dark");
+  const [theme, setTheme] = useState<string>(() => localStorage.getItem("theme") || "dark");
 
   // Language state
   const [language, setLanguage] = useState(() => localStorage.getItem("app_language") || "ru");
@@ -135,10 +135,14 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
     toast.info("Обратитесь в поддержку для удаления аккаунта");
   };
 
-  const toggleTheme = (newTheme: "dark" | "light") => {
+  const toggleTheme = (newTheme: string) => {
     setTheme(newTheme);
-    if (newTheme === "light") document.documentElement.classList.add("light");
-    else document.documentElement.classList.remove("light");
+    const el = document.documentElement;
+    // Remove all theme classes
+    el.classList.remove("light", "theme-midnight", "theme-emerald", "theme-crimson", "theme-amber");
+    // Apply the right class
+    if (newTheme === "light") el.classList.add("light");
+    else if (newTheme !== "dark") el.classList.add(newTheme);
     localStorage.setItem("theme", newTheme);
   };
 
