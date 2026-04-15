@@ -239,6 +239,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
       }
     };
     fetchTransactions();
+  }, [user]);
 
   // Fetch reviews for dispatcher
   useEffect(() => {
