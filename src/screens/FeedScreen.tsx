@@ -170,6 +170,33 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
 
       <PushNotificationBanner />
 
+      {/* Smart Search */}
+      <div className="mx-5 mt-2 mb-1">
+        <div className="flex items-center gap-2 bg-card border border-border rounded-2xl px-3 py-2.5">
+          {searchLoading ? (
+            <Loader2 size={16} className="text-primary animate-spin shrink-0" />
+          ) : (
+            <Sparkles size={16} className="text-primary shrink-0" />
+          )}
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") handleSmartSearch(); }}
+            placeholder="AI-поиск: «переезд завтра утром»..."
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none"
+          />
+          {searchQuery && (
+            <button onClick={clearSearch} className="shrink-0">
+              <X size={16} className="text-muted-foreground" />
+            </button>
+          )}
+        </div>
+        {searchResultIds !== null && (
+          <p className="text-[11px] text-muted-foreground mt-1 px-1">
+            Найдено: {filtered.length} заявок
+          </p>
+        )}
+      </div>
       {/* Stats bar */}
       <div className="mx-5 mt-3 mb-4 flex items-center gap-3">
         <div className="flex-1 rounded-xl bg-card border border-border px-4 py-3">
