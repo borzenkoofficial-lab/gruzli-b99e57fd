@@ -652,6 +652,55 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                   <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-destructive" /> Расход</span>
                 </div>
               </motion.div>
+              {/* AI Advice */}
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+                {aiAdvice ? (
+                  <div className="bg-card border border-primary/20 rounded-2xl p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <Sparkles size={14} className="text-primary" />
+                      </div>
+                      <span className="text-xs font-bold text-foreground">AI-совет</span>
+                      <button onClick={() => setAiAdvice(null)} className="ml-auto text-[10px] text-muted-foreground">✕</button>
+                    </div>
+                    <p className="text-[13px] text-foreground/90 leading-relaxed whitespace-pre-line">{aiAdvice}</p>
+                  </div>
+                ) : (
+                  <motion.button
+                    whileTap={{ scale: 0.97 }}
+                    onClick={async () => {
+                      setAiAdviceLoading(true);
+                      try {
+                        const { data, error } = await supabase.functions.invoke("dispatcher-analytics", {
+                          body: {
+                            stats: {
+                              totalJobs: completedStats.length,
+                              weeklyJobs: weeklyStats.jobs,
+                              avgRate: completedStats.length > 0
+                                ? Math.round(completedStats.reduce((s, j) => s + (j.totalExpense / Math.max(j.workersCount, 1)), 0) / completedStats.length)
+                                : 0,
+                              weeklyIncome: weeklyStats.income,
+                              weeklyExpense: weeklyStats.expense,
+                              weeklyProfit: weeklyStats.profit,
+                              monthlyProfit: monthlyStats.profit,
+                              activeJobsCount: activeJobs.length,
+                            },
+                          },
+                        });
+                        if (error) throw error;
+                        if (data?.error) toast.error(data.error);
+                        else if (data?.advice) setAiAdvice(data.advice);
+                      } catch { toast.error("Не удалось получить AI-совет"); }
+                      finally { setAiAdviceLoading(false); }
+                    }}
+                    disabled={aiAdviceLoading}
+                    className="w-full py-3.5 rounded-2xl bg-primary/10 border border-primary/20 text-primary text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
+                  >
+                    {aiAdviceLoading ? <Loader2 size={15} className="animate-spin" /> : <Sparkles size={15} />}
+                    {aiAdviceLoading ? "Анализирую..." : "✨ AI-совет по улучшению"}
+                  </motion.button>
+                )}
+              </motion.div>
             </div>
           )}
 
