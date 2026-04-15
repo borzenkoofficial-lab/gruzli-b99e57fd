@@ -54,6 +54,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
   const [focusedField, setFocusedField] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const balance = profile?.balance || 0;
   const canAfford = balance >= JOB_POSTING_FEE;
@@ -157,6 +158,43 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
                 className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none resize-none"
               />
             </InputBox>
+            <motion.button
+              type="button"
+              whileTap={{ scale: 0.95 }}
+              disabled={aiLoading}
+              onClick={async () => {
+                if (!title.trim() && !description.trim()) {
+                  toast.error("Сначала введите название заявки");
+                  return;
+                }
+                setAiLoading(true);
+                try {
+                  const { data, error } = await supabase.functions.invoke("improve-job-description", {
+                    body: { title: title.trim(), description: description.trim() },
+                  });
+                  if (error) throw error;
+                  if (data?.error) {
+                    toast.error(data.error);
+                  } else if (data?.improved) {
+                    setDescription(data.improved);
+                    toast.success("Описание улучшено ✨");
+                  }
+                } catch (err: any) {
+                  toast.error("Не удалось улучшить описание");
+                  console.error(err);
+                } finally {
+                  setAiLoading(false);
+                }
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/10 text-primary text-xs font-semibold border border-primary/20 hover:bg-primary/15 transition-all disabled:opacity-50"
+            >
+              {aiLoading ? (
+                <Loader2 size={13} className="animate-spin" />
+              ) : (
+                <Sparkles size={13} />
+              )}
+              {aiLoading ? "Улучшаю..." : "AI — улучшить описание"}
+            </motion.button>
           </Section>
 
           {/* Payment + Duration row */}
