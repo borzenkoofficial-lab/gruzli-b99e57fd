@@ -138,11 +138,12 @@ const AuthPage = () => {
         if (error) throw error;
 
         if (data.user) {
-          const updates: Record<string, any> = { phone: phone.trim() };
-          if (birthDate) updates.birth_date = birthDate;
           await supabase
             .from("profiles")
-            .update(updates)
+            .update({
+              phone: phone.trim(),
+              ...(birthDate ? { birth_date: birthDate } : {}),
+            })
             .eq("user_id", data.user.id);
         }
 
