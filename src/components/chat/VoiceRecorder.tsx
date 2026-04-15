@@ -13,7 +13,7 @@ const VoiceRecorder = ({ onSend, onCancel }: VoiceRecorderProps) => {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
-  const timerRef = useRef<NodeJS.Timer | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef(Date.now());
 
   const stopRecording = useCallback(() => {
