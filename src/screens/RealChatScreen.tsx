@@ -435,9 +435,17 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
 
   const handleDeleteConversation = async () => {
     if (!user) return;
+    if (!window.confirm("Диалог будет удалён у всех участников. Продолжить?")) return;
     setShowMenu(false);
-    await supabase.from("conversation_participants").delete().eq("conversation_id", conversationId).eq("user_id", user.id);
-    toast.success("Диалог удалён");
+    const { data: mediaUrls, error } = await supabase.rpc('delete_conversation_fully', { _conversation_id: conversationId });
+    if (error) { toast.error("Ошибка удаления"); return; }
+    if (mediaUrls?.length) {
+      const paths = (mediaUrls as string[]).map(u => {
+        try { const url = new URL(u); const parts = url.pathname.split('/object/public/chat-media/'); return parts[1] || parts[0]; } catch { return u; }
+      }).filter(Boolean);
+      if (paths.length) await supabase.storage.from('chat-media').remove(paths);
+    }
+    toast.success("Диалог полностью удалён");
     onBack();
   };
 

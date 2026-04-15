@@ -271,6 +271,14 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel }: RealChatsScreenProps) =>
           });
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "conversations" },
+        (payload) => {
+          const deleted = payload.old as any;
+          setConversations((prev) => prev.filter((c) => c.id !== deleted.id));
+        }
+      )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
@@ -342,9 +350,17 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel }: RealChatsScreenProps) =>
               onOpen={() => onOpenChat(conv.id, conv.otherName)}
               onDelete={async () => {
                 if (!user) return;
-                await supabase.from("conversation_participants").delete().eq("conversation_id", conv.id).eq("user_id", user.id);
+                if (!window.confirm("Диалог будет удалён у всех участников. Продолжить?")) return;
+                const { data: mediaUrls, error } = await supabase.rpc('delete_conversation_fully', { _conversation_id: conv.id });
+                if (error) { toast.error("Ошибка удаления"); return; }
+                if (mediaUrls?.length) {
+                  const paths = (mediaUrls as string[]).map(u => {
+                    try { const url = new URL(u); const parts = url.pathname.split('/object/public/chat-media/'); return parts[1] || parts[0]; } catch { return u; }
+                  }).filter(Boolean);
+                  if (paths.length) await supabase.storage.from('chat-media').remove(paths);
+                }
                 setConversations((prev) => prev.filter((c) => c.id !== conv.id));
-                toast.success("Диалог удалён");
+                toast.success("Диалог полностью удалён");
               }}
               onBlock={async () => {
                 if (!user) return;
