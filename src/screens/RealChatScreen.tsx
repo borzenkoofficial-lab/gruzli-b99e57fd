@@ -1,12 +1,16 @@
 import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, Check, CheckCheck, MoreVertical, Trash2, Ban, BellOff } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, Check, CheckCheck, MoreVertical, Trash2, Ban, BellOff, Smile, Sticker } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { playMessageSent } from "@/lib/sounds";
 import { formatLastSeen } from "@/hooks/usePresence";
 import type { Tables } from "@/integrations/supabase/types";
+import EmojiPicker from "@/components/chat/EmojiPicker";
+import StickerPicker from "@/components/chat/StickerPicker";
+import VoiceRecorder from "@/components/chat/VoiceRecorder";
+import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
 
 interface Message {
   id: string;
@@ -27,14 +31,12 @@ interface RealChatScreenProps {
   onMessagesRead?: () => void;
 }
 
-// Date separator helpers
 const formatDateSeparator = (dateStr: string) => {
   const date = new Date(dateStr);
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const yesterday = new Date(today.getTime() - 86400000);
   const msgDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
   if (msgDate.getTime() === today.getTime()) return "Сегодня";
   if (msgDate.getTime() === yesterday.getTime()) return "Вчера";
   return date.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
@@ -49,19 +51,22 @@ const isSameGroup = (a: Message, b: Message) =>
   a.sender_id === b.sender_id &&
   Math.abs(new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) < 120000;
 
-// Avatar color from name hash
-const avatarColors = [
-  "hsl(210 70% 55%)", "hsl(340 65% 55%)", "hsl(160 60% 45%)",
-  "hsl(30 80% 55%)", "hsl(270 60% 55%)", "hsl(190 70% 45%)",
-  "hsl(0 65% 55%)", "hsl(120 50% 45%)",
+const avatarGradients = [
+  "linear-gradient(135deg, #6366f1, #8b5cf6)",
+  "linear-gradient(135deg, #ec4899, #f43f5e)",
+  "linear-gradient(135deg, #10b981, #14b8a6)",
+  "linear-gradient(135deg, #f59e0b, #ef4444)",
+  "linear-gradient(135deg, #8b5cf6, #6366f1)",
+  "linear-gradient(135deg, #06b6d4, #3b82f6)",
+  "linear-gradient(135deg, #f43f5e, #fb923c)",
+  "linear-gradient(135deg, #22c55e, #16a34a)",
 ];
 const getAvatarColor = (name: string) => {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return avatarColors[Math.abs(hash) % avatarColors.length];
+  return avatarGradients[Math.abs(hash) % avatarGradients.length];
 };
 
-// Memoized message bubble
 const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup, renderMedia }: {
   msg: Message;
   isOwn: boolean;
@@ -72,22 +77,41 @@ const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup,
 }) => {
   const time = new Date(msg.created_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 
+  // Sticker message — render large without bubble
+  if (msg.message_type === "sticker") {
+    return (
+      <div className={`flex ${isOwn ? "justify-end" : "justify-start"} ${isLastInGroup ? "mb-2" : "mb-0.5"}`}>
+        <div className="max-w-[78%]">
+          <div className="text-5xl py-1 px-1">{msg.text}</div>
+          <div className={`flex items-center gap-1.5 ${isOwn ? "justify-end" : "justify-start"} px-1`}>
+            <span className="text-[10px] text-muted-foreground">{time}</span>
+            {isOwn && (
+              msg._optimistic
+                ? <Check size={12} className="text-muted-foreground" />
+                : <CheckCheck size={12} className="text-primary" />
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`flex ${isOwn ? "justify-end" : "justify-start"} ${isLastInGroup ? "mb-2" : "mb-0.5"} ${msg._optimistic ? "opacity-60" : ""}`}>
       <div className={`max-w-[78%] ${isOwn ? "items-end" : "items-start"}`}>
         {showSender && !isOwn && (
-          <p className="text-[11px] font-semibold mb-1 ml-3" style={{ color: getAvatarColor(senderName) }}>
+          <p className="text-[11px] font-semibold mb-1 ml-3 opacity-80" style={{ color: getAvatarColor(senderName).includes("#6366f1") ? "#818cf8" : "#8b5cf6" }}>
             {senderName}
           </p>
         )}
-        <div className={`relative px-3 py-2 ${
+        <div className={`relative px-3 py-[7px] ${
           isOwn
-            ? `bubble-own ${isLastInGroup ? "rounded-2xl rounded-br-sm" : "rounded-2xl"}`
-            : `bubble-other ${isLastInGroup ? "rounded-2xl rounded-bl-sm" : "rounded-2xl"}`
+            ? `bubble-own ${isLastInGroup ? "rounded-2xl rounded-br-[4px]" : "rounded-2xl"}`
+            : `bubble-other ${isLastInGroup ? "rounded-2xl rounded-bl-[4px]" : "rounded-2xl"}`
         }`}>
           {renderMedia(msg)}
           <div className={`flex items-end gap-1.5 mt-0.5 ${isOwn ? "justify-end" : "justify-start"}`}>
-            <span className="text-[10px] text-muted-foreground leading-none">{time}</span>
+            <span className="text-[10px] text-muted-foreground/70 leading-none">{time}</span>
             {isOwn && (
               msg._optimistic
                 ? <Check size={12} className="text-muted-foreground" />
@@ -118,6 +142,9 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const [showMenu, setShowMenu] = useState(false);
   const [otherUserId, setOtherUserId] = useState<string | null>(null);
   const [otherLastSeen, setOtherLastSeen] = useState<string | null>(null);
+  const [showEmoji, setShowEmoji] = useState(false);
+  const [showStickers, setShowStickers] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -129,7 +156,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   senderNamesRef.current = senderNames;
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // Close menu on outside click
   useEffect(() => {
     if (!showMenu) return;
     const handler = (e: MouseEvent) => {
@@ -141,24 +167,16 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
 
   const [resolvedTitle, setResolvedTitle] = useState(title);
 
-  // Fetch other user's presence and real name
   useEffect(() => {
     if (!user || !conversationId) return;
     const fetchOther = async () => {
       const { data: parts } = await supabase
-        .from("conversation_participants")
-        .select("user_id")
-        .eq("conversation_id", conversationId)
-        .neq("user_id", user.id)
-        .limit(1);
+        .from("conversation_participants").select("user_id")
+        .eq("conversation_id", conversationId).neq("user_id", user.id).limit(1);
       const otherId = parts?.[0]?.user_id;
       if (otherId) {
         setOtherUserId(otherId);
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name, last_seen_at")
-          .eq("user_id", otherId)
-          .single();
+        const { data: profile } = await supabase.from("profiles").select("full_name, last_seen_at").eq("user_id", otherId).single();
         if (profile) {
           setOtherLastSeen((profile as any).last_seen_at);
           if (profile.full_name) setResolvedTitle(profile.full_name);
@@ -167,19 +185,12 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     };
     fetchOther();
 
-    // Subscribe to presence changes
     const channel = supabase
       .channel(`presence-${conversationId}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "profiles" },
-        (payload) => {
-          const updated = payload.new as any;
-          if (updated.user_id === otherUserId) {
-            setOtherLastSeen(updated.last_seen_at);
-          }
-        }
-      )
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles" }, (payload) => {
+        const updated = payload.new as any;
+        if (updated.user_id === otherUserId) setOtherLastSeen(updated.last_seen_at);
+      })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
@@ -190,10 +201,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const scrollToBottom = useCallback((smooth = true) => {
     requestAnimationFrame(() => {
       if (scrollRef.current) {
-        scrollRef.current.scrollTo({
-          top: scrollRef.current.scrollHeight,
-          behavior: smooth ? "smooth" : "instant",
-        });
+        scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: smooth ? "smooth" : "instant" });
       }
     });
   }, []);
@@ -204,7 +212,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     return scrollHeight - scrollTop - clientHeight < 150;
   }, []);
 
-  // Auto-grow textarea
   const adjustTextarea = useCallback(() => {
     const ta = textareaRef.current;
     if (!ta) return;
@@ -244,27 +251,20 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     setTimeout(() => scrollToBottom(false), 50);
   };
 
-  // Mark conversation as read
   const markAsRead = useCallback(async () => {
     if (!user || !conversationId) return;
-    await supabase
-      .from("conversation_participants")
-      .update({ last_read_at: new Date().toISOString() })
-      .eq("conversation_id", conversationId)
-      .eq("user_id", user.id);
+    await supabase.from("conversation_participants").update({ last_read_at: new Date().toISOString() })
+      .eq("conversation_id", conversationId).eq("user_id", user.id);
     onMessagesRead?.();
   }, [user, conversationId, onMessagesRead]);
 
   useEffect(() => {
     fetchMessages();
-    // Mark as read when opening
     markAsRead();
 
     const channel = supabase
       .channel(`messages:${conversationId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
         async (payload) => {
           const newMsg = payload.new as Message;
           const wasNearBottom = isNearBottom();
@@ -279,10 +279,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
             const { data: profile } = await supabase.from("profiles").select("user_id, full_name").eq("user_id", newMsg.sender_id).single();
             if (profile) setSenderNames((prev) => ({ ...prev, [profile.user_id]: profile.full_name }));
           }
-          // Mark as read when new message arrives and user is viewing the chat
-          if (newMsg.sender_id !== user?.id) {
-            markAsRead();
-          }
+          if (newMsg.sender_id !== user?.id) markAsRead();
           if (wasNearBottom) setTimeout(() => scrollToBottom(), 50);
         }
       )
@@ -291,9 +288,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     return () => { supabase.removeChannel(channel); };
   }, [conversationId, markAsRead]);
 
-  useEffect(() => {
-    if (isNearBottom()) scrollToBottom();
-  }, [messages, scrollToBottom, isNearBottom]);
+  useEffect(() => { if (isNearBottom()) scrollToBottom(); }, [messages, scrollToBottom, isNearBottom]);
 
   useEffect(() => {
     return () => {
@@ -306,7 +301,9 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     if (!text.trim() || !user || sending) return;
     const msgText = text.trim();
     setText("");
-    if (textareaRef.current) { textareaRef.current.style.height = "auto"; }
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
+    setShowEmoji(false);
+    setShowStickers(false);
 
     playMessageSent();
 
@@ -323,10 +320,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
 
     setSending(true);
     const { error } = await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      sender_id: user.id,
-      text: msgText,
-      message_type: "text",
+      conversation_id: conversationId, sender_id: user.id, text: msgText, message_type: "text",
     });
     if (error) {
       setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
@@ -340,37 +334,75 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     setSending(false);
   };
 
+  const handleSendSticker = async (sticker: string) => {
+    if (!user) return;
+    setShowStickers(false);
+    playMessageSent();
+
+    const optimisticMsg: Message = {
+      id: `optimistic-${Date.now()}`,
+      conversation_id: conversationId,
+      sender_id: user.id,
+      text: sticker,
+      message_type: "sticker",
+      created_at: new Date().toISOString(),
+      _optimistic: true,
+    };
+    setMessages((prev) => [...prev, optimisticMsg]);
+
+    await supabase.from("messages").insert({
+      conversation_id: conversationId, sender_id: user.id, text: sticker, message_type: "sticker",
+    });
+  };
+
+  const handleSendVoice = async (blob: Blob, duration: number) => {
+    if (!user) return;
+    setIsRecording(false);
+    
+    const ext = "webm";
+    const path = `${conversationId}/${Date.now()}_voice.${ext}`;
+    const { error: uploadError } = await supabase.storage.from("chat-media").upload(path, blob, { contentType: "audio/webm" });
+    if (uploadError) { toast.error("Ошибка загрузки"); return; }
+    const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
+    
+    playMessageSent();
+
+    await supabase.from("messages").insert({
+      conversation_id: conversationId,
+      sender_id: user.id,
+      text: `voice:${duration}`,
+      media_url: urlData.publicUrl,
+      message_type: "voice",
+    });
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    setText((prev) => prev + emoji);
+    textareaRef.current?.focus();
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-    if (file.size > 10 * 1024 * 1024) { toast.error("Файл слишком большой (макс 10МБ)"); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error("Макс 10МБ"); return; }
 
     setUploading(true);
     setShowAttach(false);
     const ext = file.name.split(".").pop();
     const path = `${conversationId}/${Date.now()}.${ext}`;
     const { error: uploadError } = await supabase.storage.from("chat-media").upload(path, file);
-    if (uploadError) { toast.error("Ошибка загрузки файла"); setUploading(false); return; }
+    if (uploadError) { toast.error("Ошибка загрузки"); setUploading(false); return; }
     const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
     const isVideo = file.type.startsWith("video/");
     const isImage = file.type.startsWith("image/");
     const msgType = isVideo ? "video" : isImage ? "image" : "file";
-    const { error: msgError } = await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      sender_id: user.id,
-      text: file.name,
-      media_url: urlData.publicUrl,
-      message_type: msgType,
+    await supabase.from("messages").insert({
+      conversation_id: conversationId, sender_id: user.id, text: file.name, media_url: urlData.publicUrl, message_type: msgType,
     });
-    if (!msgError) {
-      supabase.functions.invoke("notify-email", {
-        body: { type: "new_message", conversation_id: conversationId, sender_id: user.id, text: `📎 ${file.name}` },
-      }).catch(() => {});
-    }
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -421,7 +453,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     }
   };
 
-  // Menu actions
   const handleDeleteConversation = async () => {
     if (!user) return;
     setShowMenu(false);
@@ -439,14 +470,16 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     else toast.success(`${resolvedTitle} добавлен в чёрный список`);
   };
 
-  const handleMuteNotifications = () => {
-    setShowMenu(false);
-    toast.success("Уведомления отключены");
-  };
+  const handleMuteNotifications = () => { setShowMenu(false); toast.success("Уведомления отключены"); };
 
   const hasActiveVoiceRoom = messages.some((m) => m.message_type === "voice_room" && m.sender_id !== user?.id);
 
   const renderMediaMessage = (msg: Message) => {
+    if (msg.message_type === "voice" && msg.media_url) {
+      const durationMatch = msg.text?.match(/^voice:(\d+)$/);
+      const dur = durationMatch ? parseInt(durationMatch[1]) : 0;
+      return <VoiceMessagePlayer url={msg.media_url} duration={dur} isOwn={msg.sender_id === user?.id} />;
+    }
     if (msg.message_type === "image" && msg.media_url) {
       return <img src={msg.media_url} alt="Фото" className="max-w-full rounded-xl max-h-60 object-cover cursor-pointer" onClick={() => window.open(msg.media_url!, "_blank")} />;
     }
@@ -464,7 +497,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
         </div>
       );
     }
-    return <p className="text-[13px] text-foreground leading-relaxed whitespace-pre-wrap">{msg.text}</p>;
+    return <p className="text-[13px] text-foreground leading-relaxed whitespace-pre-wrap break-words">{msg.text}</p>;
   };
 
   const initials = resolvedTitle.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
@@ -475,31 +508,32 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
 
       {/* Header */}
-      <div className="flex items-center gap-3 px-3 safe-top pb-3 border-b border-border/50">
+      <div className="flex items-center gap-2 px-2 safe-top pb-2.5 border-b border-border/30 bg-background/95 backdrop-blur-sm">
         <button onClick={onBack} className="w-9 h-9 rounded-full flex items-center justify-center text-foreground active:bg-muted/50 transition-colors">
           <ArrowLeft size={20} />
         </button>
 
-        {/* Clickable avatar + name → profile */}
         <button
-          className="flex items-center gap-3 flex-1 min-w-0 text-left"
+          className="flex items-center gap-2.5 flex-1 min-w-0 text-left py-1"
           onClick={() => otherUserId && onOpenProfile?.(otherUserId)}
         >
-          <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 relative" style={{ background: getAvatarColor(resolvedTitle) }}>
+          <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 relative"
+            style={{ background: getAvatarColor(resolvedTitle) }}
+          >
             {initials}
             {presenceInfo.isOnline && (
-              <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-green-500 border-2 border-background" />
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-background" />
             )}
           </div>
           <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-foreground truncate">{resolvedTitle}</h2>
-            <p className={`text-[11px] font-medium ${presenceInfo.isOnline ? "text-green-500" : "text-muted-foreground"}`}>
+            <h2 className="text-sm font-semibold text-foreground truncate leading-tight">{resolvedTitle}</h2>
+            <p className={`text-[11px] leading-tight ${presenceInfo.isOnline ? "text-green-500" : "text-muted-foreground"}`}>
               {presenceInfo.text}
             </p>
           </div>
         </button>
 
-        <div className="flex gap-1">
+        <div className="flex gap-0.5">
           {inVoiceRoom ? (
             <>
               <button onClick={toggleMic} className={`w-9 h-9 rounded-full flex items-center justify-center ${voiceActive ? "bg-primary/20 text-primary" : "text-destructive"}`}>
@@ -515,12 +549,8 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
             </button>
           )}
 
-          {/* Three dots menu */}
           <div className="relative" ref={menuRef}>
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors"
-            >
+            <button onClick={() => setShowMenu(!showMenu)} className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors">
               <MoreVertical size={18} />
             </button>
             <AnimatePresence>
@@ -532,26 +562,14 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
                   transition={{ duration: 0.15 }}
                   className="absolute right-0 top-11 w-52 bg-card border border-border rounded-2xl shadow-lg z-50 overflow-hidden"
                 >
-                  <button
-                    onClick={handleMuteNotifications}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted/50 transition-colors"
-                  >
-                    <BellOff size={16} className="text-muted-foreground" />
-                    Без звука
+                  <button onClick={handleMuteNotifications} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted/50 transition-colors">
+                    <BellOff size={16} className="text-muted-foreground" /> Без звука
                   </button>
-                  <button
-                    onClick={handleBlockUser}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted/50 transition-colors"
-                  >
-                    <Ban size={16} className="text-muted-foreground" />
-                    Чёрный список
+                  <button onClick={handleBlockUser} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted/50 transition-colors">
+                    <Ban size={16} className="text-muted-foreground" /> Чёрный список
                   </button>
-                  <button
-                    onClick={handleDeleteConversation}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 transition-colors"
-                  >
-                    <Trash2 size={16} />
-                    Удалить диалог
+                  <button onClick={handleDeleteConversation} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 transition-colors">
+                    <Trash2 size={16} /> Удалить диалог
                   </button>
                 </motion.div>
               )}
@@ -640,6 +658,20 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
         <div ref={bottomRef} />
       </div>
 
+      {/* Emoji / Sticker picker */}
+      <AnimatePresence>
+        {showEmoji && (
+          <div className="px-3 pb-1">
+            <EmojiPicker onSelect={handleEmojiSelect} />
+          </div>
+        )}
+        {showStickers && (
+          <div className="px-3 pb-1">
+            <StickerPicker onSelect={handleSendSticker} />
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Attach popup */}
       <AnimatePresence>
         {showAttach && (
@@ -662,34 +694,76 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
         )}
       </AnimatePresence>
 
-      {/* Input */}
-      <div className="px-3 pt-2 pb-3 border-t border-border/30">
+      {/* Input area */}
+      <div className="px-3 pt-2 pb-3 border-t border-border/20">
         {uploading && <div className="text-center text-xs text-primary mb-2 animate-pulse">Загрузка файла...</div>}
-        <div className="flex items-end gap-2">
-          <button onClick={() => setShowAttach(!showAttach)} className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0 mb-0.5">
-            <Paperclip size={20} />
-          </button>
-          <div className="flex-1 flex items-end bg-muted/40 rounded-3xl px-4 py-2 border border-border/40">
-            <textarea
-              ref={textareaRef}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Сообщение..."
-              rows={1}
-              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none resize-none leading-5 max-h-[120px]"
-              style={{ height: "20px" }}
+        
+        <AnimatePresence mode="wait">
+          {isRecording ? (
+            <VoiceRecorder
+              key="recorder"
+              onSend={handleSendVoice}
+              onCancel={() => setIsRecording(false)}
             />
-          </div>
-          <motion.button
-            onClick={handleSend}
-            disabled={!text.trim() || sending}
-            whileTap={{ scale: 0.85 }}
-            className="w-10 h-10 rounded-full bg-primary flex items-center justify-center disabled:opacity-40 transition-opacity shrink-0 mb-0.5"
-          >
-            <Send size={18} className="text-primary-foreground ml-0.5" />
-          </motion.button>
-        </div>
+          ) : (
+            <motion.div
+              key="input"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-end gap-1.5"
+            >
+              <button onClick={() => { setShowAttach(!showAttach); setShowEmoji(false); setShowStickers(false); }} className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0 mb-0.5">
+                <Paperclip size={20} />
+              </button>
+
+              <div className="flex-1 flex items-end bg-muted/40 rounded-3xl px-3 py-2 border border-border/30 gap-1">
+                <button
+                  onClick={() => { setShowEmoji(!showEmoji); setShowStickers(false); setShowAttach(false); }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0"
+                >
+                  <Smile size={20} />
+                </button>
+                <textarea
+                  ref={textareaRef}
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onFocus={() => { setShowEmoji(false); setShowStickers(false); }}
+                  placeholder="Сообщение..."
+                  rows={1}
+                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none resize-none leading-5 max-h-[120px] py-1"
+                  style={{ height: "20px" }}
+                />
+                <button
+                  onClick={() => { setShowStickers(!showStickers); setShowEmoji(false); setShowAttach(false); }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0"
+                >
+                  <Sticker size={18} />
+                </button>
+              </div>
+
+              {text.trim() ? (
+                <motion.button
+                  onClick={handleSend}
+                  disabled={sending}
+                  whileTap={{ scale: 0.85 }}
+                  className="w-10 h-10 rounded-full bg-primary flex items-center justify-center disabled:opacity-40 transition-opacity shrink-0 mb-0.5"
+                >
+                  <Send size={18} className="text-primary-foreground ml-0.5" />
+                </motion.button>
+              ) : (
+                <motion.button
+                  onClick={() => setIsRecording(true)}
+                  whileTap={{ scale: 0.85 }}
+                  className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0 mb-0.5"
+                >
+                  <Mic size={18} className="text-primary-foreground" />
+                </motion.button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
