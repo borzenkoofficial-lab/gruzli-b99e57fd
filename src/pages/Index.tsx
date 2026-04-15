@@ -46,9 +46,10 @@ const Index = () => {
 
   useEffect(() => {
     supabase
-      .from("profiles")
+      .from("user_roles")
       .select("user_id")
-      .eq("phone", "admin@gruzli.app")
+      .eq("role", "admin")
+      .limit(1)
       .maybeSingle()
       .then(({ data }) => {
         if (data) setSupportUserId(data.user_id);

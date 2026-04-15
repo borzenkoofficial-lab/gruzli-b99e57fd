@@ -71,7 +71,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   const [supportUserId, setSupportUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.from("profiles").select("user_id").eq("phone", "admin@gruzli.app").limit(1).single()
+    supabase.from("user_roles").select("user_id").eq("role", "admin").limit(1).single()
       .then(({ data }) => { if (data) setSupportUserId(data.user_id); });
   }, []);
   useEffect(() => {
