@@ -1,0 +1,10 @@
+[{
+"relation": ["delegate_permission/common.handle_all_urls"],
+"target": {
+"namespace": "android_app",
+"package_name": "app.gruzli.twa",
+"sha256_cert_fingerprints": [
+"86:03:54:4F:39:79:3F:F0:9E:EA:50:80:67:50:ED:CC:60:A6:F8:F2:80:4E:58:FD:73:22:06:18:7F:28:3A:BB"
+]
+}
+}]
