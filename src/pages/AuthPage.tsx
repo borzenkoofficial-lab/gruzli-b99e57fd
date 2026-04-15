@@ -1,13 +1,19 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Users, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Zap, MessageSquare, Phone, Lock, Fingerprint, ShieldCheck, X } from "lucide-react";
+import { User, Users, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Zap, MessageSquare, Phone, Lock, Fingerprint, ShieldCheck, X, Calendar } from "lucide-react";
 import { LegalCheckboxes } from "@/components/LegalDocuments";
 import { toast } from "sonner";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 
 type Mode = "welcome" | "login" | "register";
 type Role = "worker" | "dispatcher";
+
+/** Convert phone to a deterministic email for Supabase auth */
+const phoneToEmail = (phone: string) => {
+  const digits = phone.replace(/\D/g, "");
+  return `${digits}@phone.gruzli.app`;
+};
 
 const SecurityModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   if (!open) return null;
@@ -75,7 +81,7 @@ const SecurityModal = ({ open, onClose }: { open: boolean; onClose: () => void }
   );
 };
 
-const features = [
+const featuresList = [
   { icon: Briefcase, title: "Заказы", desc: "Находите работу мгновенно" },
   { icon: Shield, title: "Безопасно", desc: "Проверенные диспетчеры" },
   { icon: Zap, title: "Быстро", desc: "Отклик в одно нажатие" },
@@ -85,10 +91,10 @@ const features = [
 const AuthPage = () => {
   const [mode, setMode] = useState<Mode>("welcome");
   const [role, setRole] = useState<Role>("worker");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
@@ -101,6 +107,16 @@ const AuthPage = () => {
     setLoading(true);
 
     try {
+      const cleanPhone = phone.replace(/\D/g, "");
+
+      if (!cleanPhone || cleanPhone.length < 10) {
+        toast.error("Укажите корректный номер телефона");
+        setLoading(false);
+        return;
+      }
+
+      const email = phoneToEmail(phone);
+
       if (mode === "register") {
         if (!allLegalAccepted) {
           toast.error("Примите все юридические документы");
@@ -108,12 +124,7 @@ const AuthPage = () => {
           return;
         }
         if (!fullName.trim()) {
-          toast.error("Укажите имя");
-          setLoading(false);
-          return;
-        }
-        if (!phone.trim() || phone.replace(/\D/g, "").length < 10) {
-          toast.error("Укажите корректный номер телефона");
+          toast.error("Укажите ФИО");
           setLoading(false);
           return;
         }
@@ -126,11 +137,12 @@ const AuthPage = () => {
         });
         if (error) throw error;
 
-        // Update phone in profile after signup
         if (data.user) {
+          const updates: Record<string, any> = { phone: phone.trim() };
+          if (birthDate) updates.birth_date = birthDate;
           await supabase
             .from("profiles")
-            .update({ phone: phone.trim() })
+            .update(updates)
             .eq("user_id", data.user.id);
         }
 
@@ -141,7 +153,12 @@ const AuthPage = () => {
         toast.success("Добро пожаловать!");
       }
     } catch (err: any) {
-      toast.error(err.message || "Ошибка авторизации");
+      const msg = err.message || "Ошибка авторизации";
+      if (msg.includes("Invalid login")) {
+        toast.error("Неверный номер телефона или пароль");
+      } else {
+        toast.error(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -152,7 +169,6 @@ const AuthPage = () => {
     return (
       <div className="bg-background overflow-hidden flex flex-col h-screen" style={{ height: "100dvh" }}>
         <div className="mx-auto flex flex-1 w-full max-w-sm flex-col px-5 min-h-0" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}>
-          {/* Content area - centered vertically, takes remaining space */}
           <div className="flex flex-1 flex-col items-center justify-center gap-3 w-full min-h-0">
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -183,14 +199,13 @@ const AuthPage = () => {
             </p>
           </motion.div>
 
-          {/* Feature grid */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
             className="grid grid-cols-2 gap-3 w-full"
           >
-            {features.map((f, i) => (
+            {featuresList.map((f, i) => (
               <motion.div
                 key={f.title}
                 initial={{ opacity: 0, y: 10 }}
@@ -207,7 +222,6 @@ const AuthPage = () => {
             ))}
           </motion.div>
           </div>
-          {/* CTA buttons - pinned to bottom */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -243,7 +257,6 @@ const AuthPage = () => {
   // ─── AUTH FORM ───
   return (
     <div className="bg-background flex flex-col items-center px-6 safe-top pb-4 overflow-y-auto h-screen" style={{ minHeight: "100dvh", height: "100dvh" }}>
-      {/* Back + Logo */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -277,7 +290,7 @@ const AuthPage = () => {
         onSubmit={handleSubmit}
         className="w-full max-w-sm space-y-4"
       >
-        {/* Role selection (register only) */}
+        {/* Role selection + extra fields (register only) */}
         <AnimatePresence>
           {mode === "register" && (
             <motion.div
@@ -309,29 +322,28 @@ const AuthPage = () => {
 
               {/* Full name */}
               <div className="mt-4">
-                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Имя и фамилия</label>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">ФИО</label>
                 <div className="neu-inset rounded-xl px-4 py-3">
                   <input
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Иван Смирнов"
+                    placeholder="Иванов Иван Иванович"
                     className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
                   />
                 </div>
               </div>
 
-              {/* Phone number */}
+              {/* Birth date */}
               <div className="mt-3">
-                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Номер телефона</label>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Дата рождения</label>
                 <div className="neu-inset rounded-xl px-4 py-3 flex items-center gap-2">
-                  <Phone size={16} className="text-muted-foreground shrink-0" />
+                  <Calendar size={16} className="text-muted-foreground shrink-0" />
                   <input
-                    type="tel"
-                    inputMode="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+7 (999) 123-45-67"
+                    type="date"
+                    value={birthDate}
+                    onChange={(e) => setBirthDate(e.target.value)}
                     className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+                    style={{ colorScheme: "dark" }}
                   />
                 </div>
               </div>
@@ -339,15 +351,17 @@ const AuthPage = () => {
           )}
         </AnimatePresence>
 
-        {/* Email */}
+        {/* Phone */}
         <div>
-          <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Email</label>
-          <div className="neu-inset rounded-xl px-4 py-3">
+          <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Номер телефона</label>
+          <div className="neu-inset rounded-xl px-4 py-3 flex items-center gap-2">
+            <Phone size={16} className="text-muted-foreground shrink-0" />
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="email@example.com"
+              type="tel"
+              inputMode="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+7 (999) 123-45-67"
               required
               className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
             />
@@ -373,7 +387,7 @@ const AuthPage = () => {
           </div>
         </div>
 
-        {/* Legal checkboxes (register only) */}
+        {/* Legal toggles (register only) */}
         {mode === "register" && (
           <LegalCheckboxes
             accepted={legalAccepted}
