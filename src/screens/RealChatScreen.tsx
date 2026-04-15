@@ -643,10 +643,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
             <EmojiPicker onSelect={handleEmojiSelect} />
           </div>
         )}
-          <div className="px-3 pb-1">
-            <StickerPicker onSelect={handleSendSticker} />
-          </div>
-        )}
       </AnimatePresence>
 
       {/* Attach popup */}
