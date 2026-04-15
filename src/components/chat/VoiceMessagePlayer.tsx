@@ -47,18 +47,23 @@ const VoiceMessagePlayer = ({ url, duration: initialDuration, isOwn }: VoiceMess
     }
   };
 
-  const toggle = () => {
+  const toggle = async () => {
     const audio = audioRef.current;
     if (!audio) return;
 
     if (playing) {
       audio.pause();
       cancelAnimationFrame(animRef.current);
+      setPlaying(false);
     } else {
-      audio.play();
-      animRef.current = requestAnimationFrame(updateProgress);
+      try {
+        await audio.play();
+        animRef.current = requestAnimationFrame(updateProgress);
+        setPlaying(true);
+      } catch (err) {
+        console.warn("Audio play failed:", err);
+      }
     }
-    setPlaying(!playing);
   };
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
