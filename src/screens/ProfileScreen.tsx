@@ -131,6 +131,8 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
   const [newSkill, setNewSkill] = useState("");
   const [weeklyStats, setWeeklyStats] = useState({ orders: 0, earned: 0, hours: 0 });
   const [monthlyStats, setMonthlyStats] = useState({ orders: 0, earned: 0, hours: 0 });
+  const [showTransactions, setShowTransactions] = useState(false);
+  const [transactions, setTransactions] = useState<{ type: "income" | "expense"; amount: number; description: string; date: string }[]>([]);
 
   const isDispatcher = role === "dispatcher";
   const isAdmin = role === "admin";
