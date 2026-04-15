@@ -170,18 +170,21 @@ export type Database = {
           conversation_id: string
           created_at: string
           id: string
+          last_read_at: string | null
           user_id: string
         }
         Insert: {
           conversation_id: string
           created_at?: string
           id?: string
+          last_read_at?: string | null
           user_id: string
         }
         Update: {
           conversation_id?: string
           created_at?: string
           id?: string
+          last_read_at?: string | null
           user_id?: string
         }
         Relationships: [

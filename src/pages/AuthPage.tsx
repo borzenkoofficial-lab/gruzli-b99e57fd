@@ -152,6 +152,13 @@ const AuthPage = () => {
         });
         if (error) throw error;
 
+        // Detect fake signup (user already exists) — Supabase returns user with empty identities
+        if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
+          toast.error("Аккаунт с таким номером или email уже существует. Войдите.");
+          setLoading(false);
+          return;
+        }
+
         if (data.user) {
           await supabase
             .from("profiles")

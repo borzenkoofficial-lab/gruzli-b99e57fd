@@ -23,6 +23,7 @@ interface RealChatScreenProps {
   title: string;
   onBack: () => void;
   onOpenProfile?: (userId: string) => void;
+  onMessagesRead?: () => void;
 }
 
 // Date separator helpers
@@ -99,7 +100,7 @@ const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup,
 });
 MessageBubble.displayName = "MessageBubble";
 
-const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile }: RealChatScreenProps) => {
+const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessagesRead }: RealChatScreenProps) => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [senderNames, setSenderNames] = useState<Record<string, string>>({});
@@ -242,8 +243,21 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile }: RealCh
     setTimeout(() => scrollToBottom(false), 50);
   };
 
+  // Mark conversation as read
+  const markAsRead = useCallback(async () => {
+    if (!user || !conversationId) return;
+    await supabase
+      .from("conversation_participants")
+      .update({ last_read_at: new Date().toISOString() })
+      .eq("conversation_id", conversationId)
+      .eq("user_id", user.id);
+    onMessagesRead?.();
+  }, [user, conversationId, onMessagesRead]);
+
   useEffect(() => {
     fetchMessages();
+    // Mark as read when opening
+    markAsRead();
 
     const channel = supabase
       .channel(`messages:${conversationId}`)
@@ -264,13 +278,17 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile }: RealCh
             const { data: profile } = await supabase.from("profiles").select("user_id, full_name").eq("user_id", newMsg.sender_id).single();
             if (profile) setSenderNames((prev) => ({ ...prev, [profile.user_id]: profile.full_name }));
           }
+          // Mark as read when new message arrives and user is viewing the chat
+          if (newMsg.sender_id !== user?.id) {
+            markAsRead();
+          }
           if (wasNearBottom) setTimeout(() => scrollToBottom(), 50);
         }
       )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [conversationId]);
+  }, [conversationId, markAsRead]);
 
   useEffect(() => {
     if (isNearBottom()) scrollToBottom();

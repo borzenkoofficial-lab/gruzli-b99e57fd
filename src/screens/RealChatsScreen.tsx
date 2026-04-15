@@ -147,7 +147,7 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel }: RealChatsScreenProps) =>
 
     const { data: participations } = await supabase
       .from("conversation_participants")
-      .select("conversation_id")
+      .select("conversation_id, last_read_at")
       .eq("user_id", user.id);
 
     if (!participations || participations.length === 0) {
@@ -157,39 +157,40 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel }: RealChatsScreenProps) =>
     }
 
     const convIds = participations.map((p) => p.conversation_id);
+    const readMap: Record<string, string | null> = {};
+    participations.forEach((p) => { readMap[p.conversation_id] = (p as any).last_read_at; });
+
     const { data: convs } = await supabase.from("conversations").select("*").in("id", convIds);
 
     if (convs) {
-      // Batch: fetch all participants for all conversations
       const allConvIds = convs.map(c => c.id);
       const [allParticipantsRes, allLastMsgsRes] = await Promise.all([
         supabase.from("conversation_participants").select("conversation_id, user_id").in("conversation_id", allConvIds).neq("user_id", user.id),
         supabase.from("messages").select("conversation_id, text, created_at, sender_id").in("conversation_id", allConvIds).order("created_at", { ascending: false }),
       ]);
 
-      // Group participants by conversation
       const participantsByConv: Record<string, string[]> = {};
       allParticipantsRes.data?.forEach(p => {
         if (!participantsByConv[p.conversation_id]) participantsByConv[p.conversation_id] = [];
         participantsByConv[p.conversation_id].push(p.user_id);
       });
 
-      // Get last message per conversation
       const lastMsgByConv: Record<string, { text: string | null; created_at: string; sender_id: string }> = {};
       allLastMsgsRes.data?.forEach(m => {
         if (!lastMsgByConv[m.conversation_id]) lastMsgByConv[m.conversation_id] = m;
       });
 
-      // Count unread: messages not by me in last 24h
-      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      // Count unread: messages from others newer than last_read_at
       const unreadByConv: Record<string, number> = {};
       allLastMsgsRes.data?.forEach(m => {
-        if (m.sender_id !== user.id && m.created_at >= since) {
-          unreadByConv[m.conversation_id] = (unreadByConv[m.conversation_id] || 0) + 1;
+        if (m.sender_id !== user.id) {
+          const lastRead = readMap[m.conversation_id];
+          if (!lastRead || m.created_at > lastRead) {
+            unreadByConv[m.conversation_id] = (unreadByConv[m.conversation_id] || 0) + 1;
+          }
         }
       });
 
-      // Batch fetch all other-user profiles
       const allOtherIds = [...new Set(Object.values(participantsByConv).flat())];
       let profileMap: Record<string, { name: string; lastSeen: string | null }> = {};
       if (allOtherIds.length > 0) {
