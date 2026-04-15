@@ -620,7 +620,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
             .from("conversation_participants")
             .select("id")
             .eq("conversation_id", mc.conversation_id)
-            .eq("user_id", SUPPORT_USER_ID)
+            .eq("user_id", supportUserId!)
             .single();
           if (other) { conversationId = mc.conversation_id; break; }
         }
@@ -631,7 +631,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
         await supabase.from("conversations").insert({ id: conversationId, title: "Gruzli Official" });
         await supabase.from("conversation_participants").insert([
           { conversation_id: conversationId, user_id: user!.id },
-          { conversation_id: conversationId, user_id: SUPPORT_USER_ID },
+          { conversation_id: conversationId, user_id: supportUserId! },
         ]);
       }
 
