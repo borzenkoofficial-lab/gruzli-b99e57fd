@@ -389,7 +389,7 @@ export const LegalModal = ({ open, onClose, initialDoc }: LegalModalProps) => {
   );
 };
 
-export const LegalCheckboxes = ({ accepted, onChange }: { accepted: { terms: boolean; privacy: boolean; personalData: boolean }; onChange: (key: "terms" | "privacy" | "personalData", val: boolean) => void }) => {
+export const LegalCheckboxes = ({ accepted, onChange }: { accepted: { terms: boolean; privacy: boolean; personalData: boolean; rules: boolean }; onChange: (key: "terms" | "privacy" | "personalData" | "rules", val: boolean) => void }) => {
   const [legalDoc, setLegalDoc] = useState<DocType | null>(null);
 
   return (
@@ -409,6 +409,11 @@ export const LegalCheckboxes = ({ accepted, onChange }: { accepted: { terms: boo
           checked={accepted.personalData}
           onChange={(v) => onChange("personalData", v)}
           label={<>Даю согласие на <button type="button" onClick={() => setLegalDoc("personal_data")} className="text-primary underline underline-offset-2">обработку персональных данных</button></>}
+        />
+        <CheckboxItem
+          checked={accepted.rules}
+          onChange={(v) => onChange("rules", v)}
+          label={<>Я принимаю <button type="button" onClick={() => setLegalDoc("rules")} className="text-primary underline underline-offset-2">Правила использования приложения</button></>}
         />
       </div>
       <LegalModal open={!!legalDoc} onClose={() => setLegalDoc(null)} initialDoc={legalDoc || undefined} />
