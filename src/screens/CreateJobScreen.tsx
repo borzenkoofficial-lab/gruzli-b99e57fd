@@ -59,9 +59,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
   const canAfford = balance >= JOB_POSTING_FEE;
   const totalCost = parseInt(hourlyRate || "0") * parseFloat(durationHours || "0") * parseInt(workersNeeded || "0");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
+  const handleShowPreview = () => {
     if (!title.trim() || !hourlyRate) {
       toast.error("Заполните название и оплату");
       return;
@@ -70,6 +68,12 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
       toast.error(`Недостаточно средств. Нужно ${JOB_POSTING_FEE} ₽, на балансе ${balance} ₽`);
       return;
     }
+    setShowPreview(true);
+  };
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!user) return;
 
     setLoading(true);
     const { error: feeError } = await supabase
