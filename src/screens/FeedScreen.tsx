@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
-import { MapPin, Clock, Users, Zap, ChevronRight, Wallet, ArrowRight, Ban, UserPlus, Train } from "lucide-react";
+import { MapPin, Clock, Users, Zap, ChevronRight, Wallet, ArrowRight, Ban, UserPlus, Train, Search, X, Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRespondToJob } from "@/hooks/useRespondToJob";
@@ -27,6 +27,9 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
   const [respondedJobs, setRespondedJobs] = useState<Set<string>>(new Set());
   const [skippedJobs, setSkippedJobs] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchResultIds, setSearchResultIds] = useState<string[] | null>(null);
 
   const fetchJobs = async () => {
     setLoading(true);
@@ -96,12 +99,49 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
     };
   }, [user]);
 
+  const handleSmartSearch = async () => {
+    if (!searchQuery.trim()) {
+      setSearchResultIds(null);
+      return;
+    }
+    setSearchLoading(true);
+    try {
+      const jobsData = jobs.map((j) => ({
+        id: j.id, title: j.title, description: j.description,
+        address: j.address, metro: j.metro, hourly_rate: j.hourly_rate,
+        urgent: j.urgent, start_time: j.start_time,
+      }));
+      const { data, error } = await supabase.functions.invoke("smart-search-jobs", {
+        body: { query: searchQuery.trim(), jobs: jobsData },
+      });
+      if (error) throw error;
+      if (data?.error) { toast.error(data.error); }
+      else if (data?.job_ids) { setSearchResultIds(data.job_ids); }
+    } catch { toast.error("Ошибка умного поиска"); }
+    finally { setSearchLoading(false); }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSearchResultIds(null);
+  };
+
   const filtered = jobs
     .filter((j) => !skippedJobs.has(j.id))
     .filter((j) => {
       if (activeFilter === "Срочные") return j.urgent;
       if (activeFilter === "Быстрая минималка") return j.quick_minimum;
       return true;
+    })
+    .filter((j) => {
+      if (searchResultIds !== null) return searchResultIds.includes(j.id);
+      return true;
+    })
+    .sort((a, b) => {
+      if (searchResultIds !== null) {
+        return searchResultIds.indexOf(a.id) - searchResultIds.indexOf(b.id);
+      }
+      return 0;
     });
 
   const nearbyCount = jobs.length;
