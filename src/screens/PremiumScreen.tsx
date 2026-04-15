@@ -85,6 +85,7 @@ const PremiumScreen = ({ onBack, onOpenSupport }: PremiumScreenProps) => {
         <h1 className="text-lg font-bold text-foreground">Gruzli Premium</h1>
       </div>
 
+      <div className="flex-1 overflow-y-auto overscroll-contain pb-8">
       {/* Hero */}
       <div className="mx-5 mb-6 rounded-2xl overflow-hidden" style={{
         background: "linear-gradient(135deg, hsl(43 96% 56%), hsl(38 92% 50%), hsl(25 95% 53%))",
@@ -232,6 +233,7 @@ const PremiumScreen = ({ onBack, onOpenSupport }: PremiumScreenProps) => {
           </p>
         </div>
       )}
+      </div>
     </div>
   );
 };
