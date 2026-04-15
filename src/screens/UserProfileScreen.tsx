@@ -215,12 +215,16 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
       {/* Avatar & Name */}
       <div className="px-5 py-4">
         <div className="flex items-center gap-4">
-          <div
-            className="rounded-full bg-foreground flex items-center justify-center text-2xl font-bold text-primary-foreground"
-            style={{ width: 72, height: 72 }}
-          >
-            {initials}
-          </div>
+          {profile.avatar_url ? (
+            <img src={profile.avatar_url} alt="" className="rounded-full object-cover" style={{ width: 72, height: 72 }} />
+          ) : (
+            <div
+              className="rounded-full bg-foreground flex items-center justify-center text-2xl font-bold text-primary-foreground"
+              style={{ width: 72, height: 72 }}
+            >
+              {initials}
+            </div>
+          )}
           <div className="flex-1">
             <div className="flex items-center gap-1.5">
               <h2 className="text-lg font-bold text-foreground">{profile.full_name || "Пользователь"}</h2>
