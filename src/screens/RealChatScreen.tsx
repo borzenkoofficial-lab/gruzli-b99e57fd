@@ -300,6 +300,22 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const handleSend = async () => {
     if (!text.trim() || !user || sending) return;
     const msgText = text.trim();
+
+    // AI moderation for messages > 5 chars
+    if (msgText.length > 5) {
+      try {
+        const { data: modResult } = await supabase.functions.invoke("moderate-content", {
+          body: { text: msgText, type: "message" },
+        });
+        if (modResult && !modResult.safe) {
+          toast.error(modResult.reason || "Сообщение не прошло модерацию");
+          return;
+        }
+      } catch {
+        // Fail-open
+      }
+    }
+
     setText("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
     setShowEmoji(false);
