@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
+import { toast } from "sonner";
 import { useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
@@ -122,6 +123,10 @@ const Index = () => {
 
   const handleChatWithUser = async (otherUserId: string, otherName: string, prefillMessage?: string) => {
     if (!user) return false;
+    if (!otherUserId) {
+      toast.error("Не удалось связаться с поддержкой. Попробуйте позже.");
+      return false;
+    }
 
     const { data: myConvs, error: myConvsError } = await supabase
       .from("conversation_participants")
