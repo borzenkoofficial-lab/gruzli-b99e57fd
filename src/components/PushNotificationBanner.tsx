@@ -1,7 +1,7 @@
 import { Bell, X } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, forwardRef } from "react";
 
-const PushNotificationBanner = () => {
+const PushNotificationBanner = forwardRef<HTMLDivElement>((_props, _ref) => {
   const [dismissed, setDismissed] = useState(() => {
     return localStorage.getItem("push-banner-dismissed") === "true";
   });
@@ -50,6 +50,7 @@ const PushNotificationBanner = () => {
       </div>
     </div>
   );
-};
+});
+PushNotificationBanner.displayName = "PushNotificationBanner";
 
 export default PushNotificationBanner;
