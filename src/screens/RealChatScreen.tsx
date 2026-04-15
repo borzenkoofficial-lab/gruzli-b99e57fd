@@ -4,6 +4,7 @@ import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { playMessageSent } from "@/lib/sounds";
 import { formatLastSeen } from "@/hooks/usePresence";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -307,14 +308,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     setText("");
     if (textareaRef.current) { textareaRef.current.style.height = "auto"; }
 
-    try {
-      if (!(window as any).__sendAudio) {
-        (window as any).__sendAudio = new Audio("/send.wav");
-        (window as any).__sendAudio.volume = 0.3;
-      }
-      (window as any).__sendAudio.currentTime = 0;
-      (window as any).__sendAudio.play().catch(() => {});
-    } catch {}
+    playMessageSent();
 
     const optimisticMsg: Message = {
       id: `optimistic-${Date.now()}`,
