@@ -15,6 +15,9 @@ const phoneToEmail = (phone: string) => {
   return `${digits}@phone.gruzli.app`;
 };
 
+/** Check if input looks like an email */
+const isEmail = (input: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.trim());
+
 const SecurityModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   if (!open) return null;
 
