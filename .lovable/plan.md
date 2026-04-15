@@ -1,41 +1,77 @@
 
 
-# Полный пакет звуков уведомлений
+# Полное удаление диалога для всех участников
 
 ## Что сейчас
-Единственный звук — грубые синусоидальные тоны (880/1100/1320 Hz) через Web Audio API в `useRealtimeNotifications.ts`. Нет звука отправки сообщений. Push-уведомления используют стандартный системный звук.
+При удалении диалога удаляется только запись `conversation_participants` текущего пользователя — диалог пропадает у него, но остаётся у собеседника. Сообщения и медиафайлы остаются в базе и хранилище.
 
-## Что будет сделано
+## Что сделаем
+При удалении диалога любым участником — полностью удаляются:
+1. Все сообщения диалога (из таблицы `messages`)
+2. Медиафайлы из storage (`chat-media`)
+3. Все записи участников (`conversation_participants`)
+4. Сам диалог (`conversations`)
 
-### 1. Создать модуль звуков `src/lib/sounds.ts`
-Единый файл с набором мягких, минималистичных звуков через Web Audio API:
+Это освободит место в базе и хранилище.
 
-- **`playMessageSent()`** — короткий мягкий "свуп" (низкая частота ~400Hz, быстрый fade, sine wave) — при отправке сообщения
-- **`playMessageReceived()`** — два мягких тона (деревянный "knock" ~520/660Hz) — при получении нового сообщения  
-- **`playNewJob()`** — мелодичная тройка нот восходящая (~440/550/660Hz, triangle wave) — при новом заказе
-- **`playStatusUpdate()`** — один мягкий "ding" (~700Hz, sine) — при смене статуса
-- **`playSuccess()`** — два восходящих тона (~500/750Hz) — при принятии на заказ
+## План реализации
 
-Все звуки: тихие (gain 0.15-0.25), короткие (100-300ms), с плавными fade-out, triangle/sine волны для мягкого звучания.
+### 1. Создать серверную функцию (database function)
+SQL-функция `delete_conversation_fully(conv_id uuid)` с `SECURITY DEFINER`, которая:
+- Проверяет, что вызывающий — участник этого диалога
+- Собирает `media_url` из всех сообщений (для удаления файлов)
+- Удаляет `messages` → `conversation_participants` → `conversations` каскадно
+- Возвращает список media_url для очистки storage
 
-### 2. Обновить `useRealtimeNotifications.ts`
-- Заменить `playNotificationSound()` на конкретные звуки из нового модуля:
-  - Новый заказ → `playNewJob()`
-  - Новое сообщение → `playMessageReceived()`
-  - Статус обновлён → `playStatusUpdate()`
-  - Вас выбрали → `playSuccess()`
+### 2. Добавить RLS-политику DELETE на `conversations`
+Сейчас DELETE на `conversations` запрещён. Добавим политику: участник может удалить диалог.
 
-### 3. Добавить звук отправки в `RealChatScreen.tsx`
-- При отправке сообщения вызывать `playMessageSent()`
+### 3. Обновить клиентский код
+В `RealChatsScreen.tsx` и `RealChatScreen.tsx`:
+- Вызывать `supabase.rpc('delete_conversation_fully', { _conversation_id: conv.id })`
+- После успешного удаления — вызвать удаление медиафайлов из storage bucket `chat-media`
+- Добавить подтверждение ("Диалог будет удалён у всех участников")
 
-### 4. Push-уведомления (Service Worker)
-- В `public/sw.js` добавить разные паттерны вибрации по типу уведомления
-- Использовать `silent: false` и `tag` для группировки по типу
-- Push-звук управляется системой (OS), но можно добавить `actions` к уведомлениям для интерактивности
+### 4. Целостность
+- Голосовые комнаты (`voice_rooms`) тоже удаляются в функции
+- Realtime-подписки у собеседника автоматически получат событие DELETE и обновят UI
+- Групповые чаты (если `is_group = true`) можно защитить — удалять полностью только 1-на-1 диалоги, а в групповых просто выходить
 
-### Файлы для изменения
-- **Создать**: `src/lib/sounds.ts`
-- **Изменить**: `src/hooks/useRealtimeNotifications.ts`
-- **Изменить**: `src/screens/RealChatScreen.tsx`
-- **Изменить**: `public/sw.js`
+## Технические детали
+
+**Миграция (SQL):**
+```sql
+-- Функция полного удаления диалога
+CREATE OR REPLACE FUNCTION public.delete_conversation_fully(_conversation_id uuid)
+RETURNS text[]
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE media_urls text[];
+BEGIN
+  IF NOT is_conversation_participant(_conversation_id, auth.uid()) THEN
+    RAISE EXCEPTION 'Not a participant';
+  END IF;
+  
+  SELECT array_agg(media_url) INTO media_urls
+  FROM messages WHERE conversation_id = _conversation_id
+    AND media_url IS NOT NULL AND media_url != '';
+  
+  DELETE FROM messages WHERE conversation_id = _conversation_id;
+  DELETE FROM voice_rooms WHERE conversation_id = _conversation_id;
+  DELETE FROM conversation_participants WHERE conversation_id = _conversation_id;
+  DELETE FROM conversations WHERE id = _conversation_id;
+  
+  RETURN COALESCE(media_urls, '{}');
+END;
+$$;
+```
+
+**Клиент** — после вызова rpc, удалить файлы из storage:
+```ts
+const { data: urls } = await supabase.rpc('delete_conversation_fully', { _conversation_id: id });
+if (urls?.length) {
+  const paths = urls.map(u => /* извлечь path из URL */);
+  await supabase.storage.from('chat-media').remove(paths);
+}
+```
 
