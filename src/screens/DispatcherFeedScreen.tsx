@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Clock, MapPin, Users, Zap, ChevronRight, Trash2, Eye, MessageCircle } from "lucide-react";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
@@ -14,7 +14,7 @@ interface DispatcherFeedScreenProps {
   onRefreshRef?: React.MutableRefObject<(() => Promise<void>) | null>;
 }
 
-const DispatcherFeedScreen = ({ onCreateJob, onViewResponses, onRefreshRef }: DispatcherFeedScreenProps) => {
+const DispatcherFeedScreen = forwardRef<HTMLDivElement, DispatcherFeedScreenProps>(({ onCreateJob, onViewResponses, onRefreshRef }, _ref) => {
   const { user } = useAuth();
   const [jobs, setJobs] = useState<(Tables<"jobs"> & { response_count: number })[]>([]);
   const [loading, setLoading] = useState(true);
@@ -187,6 +187,7 @@ const DispatcherFeedScreen = ({ onCreateJob, onViewResponses, onRefreshRef }: Di
       )}
     </div>
   );
-};
+});
+DispatcherFeedScreen.displayName = "DispatcherFeedScreen";
 
 export default DispatcherFeedScreen;
