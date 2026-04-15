@@ -90,6 +90,7 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
   const [showCompose, setShowCompose] = useState(false);
   const [subscriberCount, setSubscriberCount] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"wall" | "info">("wall");
+  const [showMenu, setShowMenu] = useState(false);
 
   // Cover & avatar from app_settings
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
@@ -112,9 +113,9 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
   const uploadImage = async (file: File, key: "channel_cover" | "channel_avatar") => {
     const ext = file.name.split(".").pop() || "jpg";
     const path = `${key}_${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage.from("chat-media").upload(path, file, { upsert: true });
+    const { error: upErr } = await supabase.storage.from("kartoteka-photos").upload(path, file, { upsert: true });
     if (upErr) { toast.error("Ошибка загрузки"); return; }
-    const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
+    const { data: urlData } = supabase.storage.from("kartoteka-photos").getPublicUrl(path);
     const url = urlData?.publicUrl;
     if (!url) return;
 
