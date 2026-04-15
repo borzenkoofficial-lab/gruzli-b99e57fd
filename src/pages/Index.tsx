@@ -34,6 +34,7 @@ const NotificationsScreen = lazy(() => import("@/screens/NotificationsScreen"));
 const PremiumScreen = lazy(() => import("@/screens/PremiumScreen"));
 const DispatcherCabinetScreen = lazy(() => import("@/screens/DispatcherCabinetScreen"));
 const DispatcherCommunityScreen = lazy(() => import("@/screens/DispatcherCommunityScreen"));
+const SupportChatScreen = lazy(() => import("@/screens/SupportChatScreen"));
 const PullToRefresh = lazy(() => import("@/components/PullToRefresh"));
 
 const Index = () => {
@@ -88,6 +89,7 @@ const Index = () => {
   const [showPremium, setShowPremium] = useState(false);
   const [showCommunity, setShowCommunity] = useState(false);
   const [showCabinet, setShowCabinet] = useState(false);
+  const [showSupportChat, setShowSupportChat] = useState(false);
   const [viewJobDetail, setViewJobDetail] = useState<Tables<"jobs"> | null>(null);
 
   // Deep-link: open job from /job/:jobId (push notification click)
@@ -253,6 +255,17 @@ const Index = () => {
           />
         );
       }
+      if (showSupportChat) {
+        return (
+          <SupportChatScreen
+            onBack={() => setShowSupportChat(false)}
+            onOpenAdminChat={() => {
+              setShowSupportChat(false);
+              handleChatWithUser(supportUserId || '', SUPPORT_NAME);
+            }}
+          />
+        );
+      }
       if (viewJobDetail) {
         return (
           <JobDetailScreen
@@ -303,6 +316,17 @@ const Index = () => {
           }}
           onViewProfile={(userId) => { setShowCabinet(false); setViewProfileUserId(userId); }}
           onOpenCommunity={() => { setShowCabinet(false); setShowCommunity(true); }}
+        />
+      );
+    }
+    if (showSupportChat) {
+      return wrapSuspense(
+        <SupportChatScreen
+          onBack={() => setShowSupportChat(false)}
+          onOpenAdminChat={() => {
+            setShowSupportChat(false);
+            handleChatWithUser(supportUserId || '', SUPPORT_NAME);
+          }}
         />
       );
     }
@@ -367,7 +391,13 @@ const Index = () => {
                       <ProfileScreen
                         onOpenSettings={() => setShowSettings(true)}
                         onOpenNotifications={() => setShowNotifications(true)}
-                        onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage)}
+                        onOpenSupport={(prefillMessage) => {
+                          if (prefillMessage) {
+                            handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage);
+                          } else {
+                            setShowSupportChat(true);
+                          }
+                        }}
                         onOpenPremium={() => setShowPremium(true)}
                         onOpenCabinet={() => setShowCabinet(true)}
                       />
@@ -403,7 +433,13 @@ const Index = () => {
           <ProfileScreen
             onOpenSettings={() => setShowSettings(true)}
             onOpenNotifications={() => setShowNotifications(true)}
-            onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage)}
+            onOpenSupport={(prefillMessage) => {
+              if (prefillMessage) {
+                handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage);
+              } else {
+                setShowSupportChat(true);
+              }
+            }}
             onOpenPremium={() => setShowPremium(true)}
             onOpenCabinet={() => setShowCabinet(true)}
           />
