@@ -305,7 +305,7 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0" onClick={() => showMenu && setShowMenu(false)}>
         {/* Cover */}
         <div className="relative">
           <div className="h-[120px] overflow-hidden">
