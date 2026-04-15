@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, Check, CheckCheck, MoreVertical, Trash2, Ban, BellOff, Smile, Sticker } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, Check, CheckCheck, MoreVertical, Trash2, Ban, BellOff, Smile } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -8,7 +8,6 @@ import { playMessageSent } from "@/lib/sounds";
 import { formatLastSeen } from "@/hooks/usePresence";
 import type { Tables } from "@/integrations/supabase/types";
 import EmojiPicker from "@/components/chat/EmojiPicker";
-import StickerPicker from "@/components/chat/StickerPicker";
 import VoiceRecorder from "@/components/chat/VoiceRecorder";
 import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
 
@@ -143,7 +142,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const [otherUserId, setOtherUserId] = useState<string | null>(null);
   const [otherLastSeen, setOtherLastSeen] = useState<string | null>(null);
   const [showEmoji, setShowEmoji] = useState(false);
-  const [showStickers, setShowStickers] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -303,7 +301,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     setText("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
     setShowEmoji(false);
-    setShowStickers(false);
 
     playMessageSent();
 
@@ -334,36 +331,17 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     setSending(false);
   };
 
-  const handleSendSticker = async (sticker: string) => {
-    if (!user) return;
-    setShowStickers(false);
-    playMessageSent();
 
-    const optimisticMsg: Message = {
-      id: `optimistic-${Date.now()}`,
-      conversation_id: conversationId,
-      sender_id: user.id,
-      text: sticker,
-      message_type: "sticker",
-      created_at: new Date().toISOString(),
-      _optimistic: true,
-    };
-    setMessages((prev) => [...prev, optimisticMsg]);
 
-    await supabase.from("messages").insert({
-      conversation_id: conversationId, sender_id: user.id, text: sticker, message_type: "sticker",
-    });
-  };
 
   const handleSendVoice = async (blob: Blob, duration: number) => {
     if (!user) return;
     setIsRecording(false);
     
-    const ext = "webm";
-    const path = `${conversationId}/${Date.now()}_voice.${ext}`;
-    const { error: uploadError } = await supabase.storage.from("chat-media").upload(path, blob, { contentType: "audio/webm" });
+    const path = `voice/${conversationId}/${Date.now()}_voice.webm`;
+    const { error: uploadError } = await supabase.storage.from("kartoteka-photos").upload(path, blob, { contentType: "audio/webm" });
     if (uploadError) { toast.error("Ошибка загрузки"); return; }
-    const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
+    const { data: urlData } = supabase.storage.from("kartoteka-photos").getPublicUrl(path);
     
     playMessageSent();
 
@@ -665,11 +643,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
             <EmojiPicker onSelect={handleEmojiSelect} />
           </div>
         )}
-        {showStickers && (
-          <div className="px-3 pb-1">
-            <StickerPicker onSelect={handleSendSticker} />
-          </div>
-        )}
       </AnimatePresence>
 
       {/* Attach popup */}
@@ -713,13 +686,13 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
               exit={{ opacity: 0 }}
               className="flex items-end gap-1.5"
             >
-              <button onClick={() => { setShowAttach(!showAttach); setShowEmoji(false); setShowStickers(false); }} className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0 mb-0.5">
+              <button onClick={() => { setShowAttach(!showAttach); setShowEmoji(false); }} className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0 mb-0.5">
                 <Paperclip size={20} />
               </button>
 
               <div className="flex-1 flex items-end bg-muted/40 rounded-3xl px-3 py-2 border border-border/30 gap-1">
                 <button
-                  onClick={() => { setShowEmoji(!showEmoji); setShowStickers(false); setShowAttach(false); }}
+                  onClick={() => { setShowEmoji(!showEmoji); setShowAttach(false); }}
                   className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0"
                 >
                   <Smile size={20} />
@@ -729,18 +702,12 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  onFocus={() => { setShowEmoji(false); setShowStickers(false); }}
+                  onFocus={() => { setShowEmoji(false); }}
                   placeholder="Сообщение..."
                   rows={1}
                   className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none resize-none leading-5 max-h-[120px] py-1"
                   style={{ height: "20px" }}
                 />
-                <button
-                  onClick={() => { setShowStickers(!showStickers); setShowEmoji(false); setShowAttach(false); }}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0"
-                >
-                  <Sticker size={18} />
-                </button>
               </div>
 
               {text.trim() ? (
