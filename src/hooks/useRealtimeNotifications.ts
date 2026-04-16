@@ -6,12 +6,41 @@ import { getNotificationSettings } from "@/hooks/useNotificationSettings";
 import { pushNotification } from "@/screens/NotificationsScreen";
 import { playNewJob, playMessageReceived, playStatusUpdate, playSuccess } from "@/lib/sounds";
 import type { Tables } from "@/integrations/supabase/types";
+import { getActiveConversationId } from "@/lib/chatPresence";
 
 function vibrate() {
   const { vibration } = getNotificationSettings();
   if (!vibration) return;
   try {
     navigator.vibrate?.([200, 100, 200, 100, 300]);
+  } catch {}
+}
+
+async function showForegroundNotification(title: string, body: string, tag: string, url?: string) {
+  if (typeof window === "undefined") return;
+  if (document.visibilityState !== "visible") return;
+  if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+
+  const options = {
+    body,
+    icon: "/pwa-192x192.png",
+    badge: "/pwa-192x192.png",
+    tag,
+    renotify: true,
+    requireInteraction: true,
+    data: { url },
+  };
+
+  try {
+    const registration = await navigator.serviceWorker?.getRegistration();
+    if (registration) {
+      await registration.showNotification(title, options);
+      return;
+    }
+  } catch {}
+
+  try {
+    new Notification(title, options);
   } catch {}
 }
 
@@ -65,13 +94,24 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
     if (!msg) return;
     if (msg.sender_id === userIdRef.current) return;
 
+    const isCurrentConversationOpen = getActiveConversationId() === msg.conversation_id;
+
     playMessageReceived();
     vibrate();
 
-    toast("💬 Новое сообщение", {
-      description: msg.text || "Медиа-сообщение",
-      duration: 5000,
-    });
+    if (!isCurrentConversationOpen) {
+      toast("💬 Новое сообщение", {
+        description: msg.text || "Медиа-сообщение",
+        duration: 5000,
+      });
+
+      void showForegroundNotification(
+        "Новое сообщение",
+        msg.text || "Медиа-сообщение",
+        `message-${msg.conversation_id}`,
+        `/?openChat=${msg.conversation_id}`,
+      );
+    }
 
     pushNotification({
       type: "message",
