@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, Check, CheckCheck, MoreVertical, Trash2, Ban, BellOff, Smile } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, CheckCheck, Clock3, MoreVertical, Trash2, Ban, BellOff, Smile } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -10,6 +10,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import EmojiPicker from "@/components/chat/EmojiPicker";
 import VoiceRecorder from "@/components/chat/VoiceRecorder";
 import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
+import { setActiveConversationId } from "@/lib/chatPresence";
 
 interface Message {
   id: string;
@@ -20,7 +21,16 @@ interface Message {
   message_type: string | null;
   created_at: string;
   _optimistic?: boolean;
+  _status?: "sending" | "failed";
 }
+
+const DeliveryStatusIcon = ({ msg }: { msg: Message }) => {
+  if (msg._status === "sending" || msg._optimistic) {
+    return <Clock3 size={12} className="text-muted-foreground animate-pulse" />;
+  }
+
+  return <CheckCheck size={12} className="text-primary" />;
+};
 
 interface RealChatScreenProps {
   conversationId: string;
@@ -85,9 +95,7 @@ const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup,
           <div className={`flex items-center gap-1.5 ${isOwn ? "justify-end" : "justify-start"} px-1`}>
             <span className="text-[10px] text-muted-foreground">{time}</span>
             {isOwn && (
-              msg._optimistic
-                ? <Check size={12} className="text-muted-foreground" />
-                : <CheckCheck size={12} className="text-primary" />
+              <DeliveryStatusIcon msg={msg} />
             )}
           </div>
         </div>
@@ -112,9 +120,7 @@ const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup,
           <div className={`flex items-end gap-1.5 mt-0.5 ${isOwn ? "justify-end" : "justify-start"}`}>
             <span className="text-[10px] text-muted-foreground/70 leading-none">{time}</span>
             {isOwn && (
-              msg._optimistic
-                ? <Check size={12} className="text-muted-foreground" />
-                : <CheckCheck size={12} className="text-primary" />
+              <DeliveryStatusIcon msg={msg} />
             )}
           </div>
         </div>
@@ -151,8 +157,25 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const senderNamesRef = useRef(senderNames);
+  const sendLockRef = useRef(false);
   senderNamesRef.current = senderNames;
   const menuRef = useRef<HTMLDivElement>(null);
+
+  const appendMessage = useCallback((message: Message) => {
+    setMessages((prev) => (prev.some((item) => item.id === message.id) ? prev : [...prev, message]));
+  }, []);
+
+  const replaceOptimisticMessage = useCallback((optimisticId: string, nextMessage?: Message) => {
+    setMessages((prev) => {
+      const filtered = prev.filter((item) => item.id !== optimisticId);
+
+      if (!nextMessage || filtered.some((item) => item.id === nextMessage.id)) {
+        return filtered;
+      }
+
+      return [...filtered, nextMessage];
+    });
+  }, []);
 
   useEffect(() => {
     if (!showMenu) return;
@@ -162,6 +185,11 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [showMenu]);
+
+  useEffect(() => {
+    setActiveConversationId(conversationId);
+    return () => setActiveConversationId(null);
+  }, [conversationId]);
 
   const [resolvedTitle, setResolvedTitle] = useState(title);
   const [otherAvatarUrl, setOtherAvatarUrl] = useState<string | null>(null);
@@ -267,14 +295,9 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
         async (payload) => {
           const newMsg = payload.new as Message;
+          if (newMsg.sender_id === user?.id) return;
           const wasNearBottom = isNearBottom();
-          setMessages((prev) => {
-            const withoutOptimistic = prev.filter(
-              (m) => !(m._optimistic && m.sender_id === newMsg.sender_id && m.text === newMsg.text)
-            );
-            if (withoutOptimistic.some((m) => m.id === newMsg.id)) return withoutOptimistic;
-            return [...withoutOptimistic, newMsg];
-          });
+          appendMessage(newMsg);
           if (!senderNamesRef.current[newMsg.sender_id]) {
             const { data: profile } = await supabase.from("profiles").select("user_id, full_name").eq("user_id", newMsg.sender_id).single();
             if (profile) setSenderNames((prev) => ({ ...prev, [profile.user_id]: profile.full_name }));
@@ -286,7 +309,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [conversationId, markAsRead]);
+  }, [conversationId, markAsRead, user?.id, isNearBottom, scrollToBottom, appendMessage]);
 
   useEffect(() => { if (isNearBottom()) scrollToBottom(); }, [messages, scrollToBottom, isNearBottom]);
 
@@ -298,23 +321,9 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   }, []);
 
   const handleSend = async () => {
-    if (!text.trim() || !user || sending) return;
+    if (!text.trim() || !user || sendLockRef.current) return;
     const msgText = text.trim();
-
-    // AI moderation for messages > 5 chars
-    if (msgText.length > 5) {
-      try {
-        const { data: modResult } = await supabase.functions.invoke("moderate-content", {
-          body: { text: msgText, type: "message" },
-        });
-        if (modResult && !modResult.safe) {
-          toast.error(modResult.reason || "Сообщение не прошло модерацию");
-          return;
-        }
-      } catch {
-        // Fail-open
-      }
-    }
+    const optimisticId = `optimistic-${crypto.randomUUID()}`;
 
     setText("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
@@ -323,30 +332,51 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     playMessageSent();
 
     const optimisticMsg: Message = {
-      id: `optimistic-${Date.now()}`,
+      id: optimisticId,
       conversation_id: conversationId,
       sender_id: user.id,
       text: msgText,
       message_type: "text",
       created_at: new Date().toISOString(),
       _optimistic: true,
+      _status: "sending",
     };
-    setMessages((prev) => [...prev, optimisticMsg]);
+    appendMessage(optimisticMsg);
+    scrollToBottom(false);
 
+    sendLockRef.current = true;
     setSending(true);
-    const { error } = await supabase.from("messages").insert({
-      conversation_id: conversationId, sender_id: user.id, text: msgText, message_type: "text",
-    });
-    if (error) {
-      setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
-      setText(msgText);
-      toast.error("Не удалось отправить");
-    } else {
+
+    try {
+      const { data: insertedMessage, error } = await supabase
+        .from("messages")
+        .insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          text: msgText,
+          message_type: "text",
+        })
+        .select("*")
+        .single();
+
+      if (error || !insertedMessage) {
+        throw error || new Error("insert_failed");
+      }
+
+      replaceOptimisticMessage(optimisticId, insertedMessage as Message);
+      scrollToBottom(false);
+
       supabase.functions.invoke("notify-email", {
         body: { type: "new_message", conversation_id: conversationId, sender_id: user.id, text: msgText },
       }).catch(() => {});
+    } catch {
+      replaceOptimisticMessage(optimisticId);
+      setText(msgText);
+      toast.error("Не удалось отправить");
+    } finally {
+      sendLockRef.current = false;
+      setSending(false);
     }
-    setSending(false);
   };
 
 
