@@ -478,7 +478,7 @@ const SwipeableJobCard = ({
       </motion.div>
 
       <motion.div
-        drag="x"
+        drag={isBot ? false : "x"}
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.4}
         style={{ x }}
@@ -488,18 +488,20 @@ const SwipeableJobCard = ({
         onClick={handleTap}
         whileTap={{ scale: 0.985 }}
         whileHover={{ y: -1 }}
-        className="relative z-10 rounded-2xl bg-card border border-border p-4 cursor-pointer transition-colors hover:border-foreground/20 overflow-hidden"
+        className={`relative z-10 rounded-2xl bg-card border p-4 cursor-pointer transition-colors overflow-hidden ${
+          isBot
+            ? "border-destructive/25 opacity-70"
+            : "border-border hover:border-foreground/20"
+        }`}
       >
         {/* Top accent bar */}
         <div className={`absolute top-0 left-0 right-0 h-[3px] ${accentClass}`} />
 
-        {/* Bot overlay */}
+        {/* "Место занято" — corner badge, не перекрывает контент */}
         {isBot && (
-          <div className="absolute inset-0 z-30 rounded-2xl bg-background/60 backdrop-blur-[2px] flex items-center justify-center pointer-events-none">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive/15 border border-destructive/30">
-              <Ban size={12} className="text-destructive" />
-              <span className="text-[12px] font-semibold text-destructive">Место занято</span>
-            </div>
+          <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 px-2 py-0.5 rounded-md bg-destructive/15 border border-destructive/30">
+            <Ban size={10} className="text-destructive" />
+            <span className="text-[10px] font-semibold text-destructive uppercase tracking-wide">Занято</span>
           </div>
         )}
 
