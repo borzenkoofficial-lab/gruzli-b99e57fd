@@ -600,6 +600,22 @@
   }
 }
 
+/* Shimmer effect for premium buttons */
+@keyframes shimmer-slide {
+  0% { transform: translateX(-120%) skewX(-12deg); }
+  100% { transform: translateX(220%) skewX(-12deg); }
+}
+.btn-shimmer { position: relative; overflow: hidden; isolation: isolate; }
+.btn-shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.18), transparent);
+  transform: translateX(-120%) skewX(-12deg);
+  animation: shimmer-slide 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
 /* Reduced motion — disable all animations for accessibility */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
