@@ -1,8 +1,9 @@
 import { useState, useEffect, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Clock, MapPin, Users, Zap, ChevronRight, Trash2, Eye, MessageCircle } from "lucide-react";
+import { Plus, Clock, MapPin, Users, Zap, Trash2, Eye, Pencil, Minus } from "lucide-react";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 import PushNotificationBanner from "@/components/PushNotificationBanner";
+import EditJobModal from "@/components/EditJobModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
