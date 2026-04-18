@@ -196,15 +196,15 @@ const DispatcherFeedScreen = forwardRef<HTMLDivElement, DispatcherFeedScreenProp
                 <span className="flex items-center gap-1"><Users size={11} /> {job.workers_needed} чел.</span>
               </div>
 
-              <div className="bg-surface-1 border border-border rounded-xl px-3 py-2.5 mb-3">
+              <div className="rounded-xl px-3 py-2.5 mb-3 border border-white/10 bg-white/5 backdrop-blur-xl">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs text-muted-foreground">Оплата</span>
                   <div className="flex items-center gap-1.5">
                     <button
-                      onClick={() => handleAdjustRate(job, -10)}
+                      onClick={() => handleAdjustRate(job, -50)}
                       disabled={adjustingId === job.id || (job.hourly_rate || 0) <= 0}
-                      className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center active:scale-95 disabled:opacity-40 transition-all"
-                      title="Понизить на 10 ₽"
+                      className="w-8 h-8 rounded-lg border border-white/10 bg-white/10 backdrop-blur-md flex items-center justify-center active:scale-95 disabled:opacity-40 transition-all"
+                      title="Понизить на 50 ₽"
                     >
                       <Minus size={14} className="text-foreground" />
                     </button>
@@ -212,17 +212,17 @@ const DispatcherFeedScreen = forwardRef<HTMLDivElement, DispatcherFeedScreenProp
                       {job.hourly_rate} ₽/ч
                     </span>
                     <button
-                      onClick={() => handleAdjustRate(job, 10)}
+                      onClick={() => handleAdjustRate(job, 50)}
                       disabled={adjustingId === job.id}
-                      className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center active:scale-95 disabled:opacity-40 transition-all"
-                      title="Повысить на 10 ₽"
+                      className="w-8 h-8 rounded-lg border border-white/10 bg-white/10 backdrop-blur-md flex items-center justify-center active:scale-95 disabled:opacity-40 transition-all"
+                      title="Повысить на 50 ₽"
                     >
                       <Plus size={14} className="text-foreground" />
                     </button>
                   </div>
                 </div>
                 <p className="text-[10px] text-muted-foreground mt-1.5 text-right">
-                  Изменение цены переопубликует заявку
+                  Шаг — 50 ₽ · заявка автоматически переопубликуется
                 </p>
               </div>
 
@@ -235,14 +235,14 @@ const DispatcherFeedScreen = forwardRef<HTMLDivElement, DispatcherFeedScreenProp
                 </button>
                 <button
                   onClick={() => setEditingJob(job)}
-                  className="w-12 h-12 rounded-xl bg-card border border-border flex items-center justify-center active:bg-surface-1 transition-all"
+                  className="w-12 h-12 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center active:bg-white/10 transition-all"
                   title="Редактировать"
                 >
                   <Pencil size={16} className="text-foreground" />
                 </button>
                 <button
                   onClick={() => handleDelete(job.id)}
-                  className="w-12 h-12 rounded-xl bg-card border border-border flex items-center justify-center active:bg-surface-1 transition-all"
+                  className="w-12 h-12 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center active:bg-white/10 transition-all"
                   title="Удалить"
                 >
                   <Trash2 size={16} className="text-destructive" />
