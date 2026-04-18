@@ -157,7 +157,11 @@ const DispatcherFeedScreen = forwardRef<HTMLDivElement, DispatcherFeedScreenProp
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
-              className="bg-card border border-border rounded-2xl p-4"
+              className="relative rounded-2xl p-4 border border-white/10 backdrop-blur-2xl backdrop-saturate-150 bg-white/5 shadow-[0_8px_32px_-8px_hsl(0_0%_0%/0.4)] overflow-hidden"
+              style={{
+                backgroundImage:
+                  'linear-gradient(135deg, hsl(0 0% 100% / 0.08), hsl(0 0% 100% / 0.02))',
+              }}
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
