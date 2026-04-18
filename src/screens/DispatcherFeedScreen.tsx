@@ -19,8 +19,8 @@ const DispatcherFeedScreen = forwardRef<HTMLDivElement, DispatcherFeedScreenProp
   const { user } = useAuth();
   const [jobs, setJobs] = useState<(Tables<"jobs"> & { response_count: number })[]>([]);
   const [loading, setLoading] = useState(true);
-
-  const fetchJobs = async () => {
+  const [editingJob, setEditingJob] = useState<Tables<"jobs"> | null>(null);
+  const [adjustingId, setAdjustingId] = useState<string | null>(null);
     if (!user) return;
     const { data: jobsData } = await supabase
       .from("jobs")
