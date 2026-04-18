@@ -21,6 +21,8 @@ const DispatcherFeedScreen = forwardRef<HTMLDivElement, DispatcherFeedScreenProp
   const [loading, setLoading] = useState(true);
   const [editingJob, setEditingJob] = useState<Tables<"jobs"> | null>(null);
   const [adjustingId, setAdjustingId] = useState<string | null>(null);
+
+  const fetchJobs = async () => {
     if (!user) return;
     const { data: jobsData } = await supabase
       .from("jobs")
