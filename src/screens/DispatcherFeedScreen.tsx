@@ -1,8 +1,9 @@
 import { useState, useEffect, forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Clock, MapPin, Users, Zap, ChevronRight, Trash2, Eye, MessageCircle } from "lucide-react";
+import { Plus, Clock, MapPin, Users, Zap, Trash2, Eye, Pencil, Minus } from "lucide-react";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 import PushNotificationBanner from "@/components/PushNotificationBanner";
+import EditJobModal from "@/components/EditJobModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -18,6 +19,8 @@ const DispatcherFeedScreen = forwardRef<HTMLDivElement, DispatcherFeedScreenProp
   const { user } = useAuth();
   const [jobs, setJobs] = useState<(Tables<"jobs"> & { response_count: number })[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingJob, setEditingJob] = useState<Tables<"jobs"> | null>(null);
+  const [adjustingId, setAdjustingId] = useState<string | null>(null);
 
   const fetchJobs = async () => {
     if (!user) return;
@@ -65,6 +68,31 @@ const DispatcherFeedScreen = forwardRef<HTMLDivElement, DispatcherFeedScreenProp
       setJobs((prev) => prev.filter((j) => j.id !== jobId));
       toast.success("Заявка удалена");
     }
+  };
+
+  const handleAdjustRate = async (job: Tables<"jobs"> & { response_count: number }, delta: number) => {
+    const newRate = Math.max(0, (job.hourly_rate || 0) + delta);
+    if (newRate === job.hourly_rate) return;
+    setAdjustingId(job.id);
+    const { error } = await supabase
+      .from("jobs")
+      .update({ hourly_rate: newRate, status: "active" })
+      .eq("id", job.id);
+    setAdjustingId(null);
+    if (error) {
+      toast.error("Не удалось изменить оплату");
+      return;
+    }
+    setJobs((prev) =>
+      prev.map((j) => (j.id === job.id ? { ...j, hourly_rate: newRate, status: "active" } : j))
+    );
+    toast.success(`Оплата ${delta > 0 ? "повышена" : "понижена"} до ${newRate} ₽/час · переопубликована`);
+  };
+
+  const handleSaved = (updated: Tables<"jobs">) => {
+    setJobs((prev) =>
+      prev.map((j) => (j.id === updated.id ? { ...j, ...updated } : j))
+    );
   };
 
   const activeJobs = jobs.filter((j) => j.status === "active");
@@ -165,10 +193,33 @@ const DispatcherFeedScreen = forwardRef<HTMLDivElement, DispatcherFeedScreenProp
               </div>
 
               <div className="bg-surface-1 border border-border rounded-xl px-3 py-2.5 mb-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2">
                   <span className="text-xs text-muted-foreground">Оплата</span>
-                  <span className="text-lg font-extrabold text-bg-foreground">{job.hourly_rate} ₽/час</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleAdjustRate(job, -10)}
+                      disabled={adjustingId === job.id || (job.hourly_rate || 0) <= 0}
+                      className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center active:scale-95 disabled:opacity-40 transition-all"
+                      title="Понизить на 10 ₽"
+                    >
+                      <Minus size={14} className="text-foreground" />
+                    </button>
+                    <span className="text-lg font-extrabold text-foreground min-w-[80px] text-center">
+                      {job.hourly_rate} ₽/ч
+                    </span>
+                    <button
+                      onClick={() => handleAdjustRate(job, 10)}
+                      disabled={adjustingId === job.id}
+                      className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center active:scale-95 disabled:opacity-40 transition-all"
+                      title="Повысить на 10 ₽"
+                    >
+                      <Plus size={14} className="text-foreground" />
+                    </button>
+                  </div>
                 </div>
+                <p className="text-[10px] text-muted-foreground mt-1.5 text-right">
+                  Изменение цены переопубликует заявку
+                </p>
               </div>
 
               <div className="flex items-center gap-2">
@@ -179,8 +230,16 @@ const DispatcherFeedScreen = forwardRef<HTMLDivElement, DispatcherFeedScreenProp
                   <Eye size={14} /> Отклики ({job.response_count})
                 </button>
                 <button
+                  onClick={() => setEditingJob(job)}
+                  className="w-12 h-12 rounded-xl bg-card border border-border flex items-center justify-center active:bg-surface-1 transition-all"
+                  title="Редактировать"
+                >
+                  <Pencil size={16} className="text-foreground" />
+                </button>
+                <button
                   onClick={() => handleDelete(job.id)}
-                  className="w-12 h-12 rounded-xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all"
+                  className="w-12 h-12 rounded-xl bg-card border border-border flex items-center justify-center active:bg-surface-1 transition-all"
+                  title="Удалить"
                 >
                   <Trash2 size={16} className="text-destructive" />
                 </button>
@@ -188,6 +247,15 @@ const DispatcherFeedScreen = forwardRef<HTMLDivElement, DispatcherFeedScreenProp
             </motion.div>
           ))}
         </div>
+      )}
+
+      {editingJob && (
+        <EditJobModal
+          job={editingJob}
+          open={!!editingJob}
+          onClose={() => setEditingJob(null)}
+          onSaved={handleSaved}
+        />
       )}
     </div>
   );
