@@ -63,7 +63,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    const lines: string[] = ['🚛 <b>НОВАЯ ЗАЯВКА</b>', ''];
+    const isUpdate = job._updated === true;
+    const headerEmoji = isUpdate ? '🔄' : '🚛';
+    const headerText = isUpdate ? 'ЗАЯВКА ОБНОВЛЕНА' : 'НОВАЯ ЗАЯВКА';
+    const lines: string[] = [`${headerEmoji} <b>${headerText}</b>`, ''];
 
     if (job.title) lines.push(`<b>📋 Название:</b> ${escapeHtml(String(job.title))}`);
     if (job.description) lines.push(`<b>📝 Описание:</b> ${escapeHtml(String(job.description))}`);
