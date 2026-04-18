@@ -70,6 +70,31 @@ const DispatcherFeedScreen = forwardRef<HTMLDivElement, DispatcherFeedScreenProp
     }
   };
 
+  const handleAdjustRate = async (job: Tables<"jobs"> & { response_count: number }, delta: number) => {
+    const newRate = Math.max(0, (job.hourly_rate || 0) + delta);
+    if (newRate === job.hourly_rate) return;
+    setAdjustingId(job.id);
+    const { error } = await supabase
+      .from("jobs")
+      .update({ hourly_rate: newRate, status: "active" })
+      .eq("id", job.id);
+    setAdjustingId(null);
+    if (error) {
+      toast.error("Не удалось изменить оплату");
+      return;
+    }
+    setJobs((prev) =>
+      prev.map((j) => (j.id === job.id ? { ...j, hourly_rate: newRate, status: "active" } : j))
+    );
+    toast.success(`Оплата ${delta > 0 ? "повышена" : "понижена"} до ${newRate} ₽/час · переопубликована`);
+  };
+
+  const handleSaved = (updated: Tables<"jobs">) => {
+    setJobs((prev) =>
+      prev.map((j) => (j.id === updated.id ? { ...j, ...updated } : j))
+    );
+  };
+
   const activeJobs = jobs.filter((j) => j.status === "active");
   const closedJobs = jobs.filter((j) => j.status !== "active");
 
