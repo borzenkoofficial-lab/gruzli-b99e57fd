@@ -261,8 +261,8 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
         />
         <StatCard
           icon={Wallet}
-          label="Можно заработать"
-          value={`${maxEarnings.toLocaleString("ru-RU")} ₽`}
+          label="Средний доход/день"
+          value={`~${avgDailyEarnings.toLocaleString("ru-RU")} ₽`}
           accent="from-online/40 to-online/0"
         />
       </div>
