@@ -163,7 +163,12 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
     });
 
   const nearbyCount = jobs.length;
-  const maxEarnings = jobs.reduce((sum, j) => sum + j.hourly_rate * (Number(j.duration_hours) || 4), 0);
+  // Реалистичный средний заработок за день: ~3 заявки в день из доступных,
+  // берём средний чек по активным заявкам и умножаем на 3.
+  const avgJobPay = jobs.length > 0
+    ? jobs.reduce((sum, j) => sum + j.hourly_rate * (Number(j.duration_hours) || 4), 0) / jobs.length
+    : 0;
+  const avgDailyEarnings = Math.round((avgJobPay * 3) / 50) * 50; // округляем до 50 ₽
 
   const handleRespond = async (jobId: string) => {
     if (!user) return;
