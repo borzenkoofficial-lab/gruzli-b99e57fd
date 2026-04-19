@@ -7,6 +7,7 @@ import { useNotificationSettings } from "@/hooks/useNotificationSettings";
 import { toast } from "sonner";
 import { z } from "zod";
 import { LegalModal } from "@/components/LegalDocuments";
+import { TelegramLinkCard } from "@/components/TelegramLinkCard";
 
 const profileSchema = z.object({
   full_name: z.string().trim().min(2, "Минимум 2 символа").max(100, "Максимум 100 символов"),
@@ -434,6 +435,8 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
               </div>
             ))}
           </div>
+
+          <TelegramLinkCard />
         </div>
       </ScrollWrapper>
     );

@@ -689,6 +689,33 @@ export type Database = {
         }
         Relationships: []
       }
+      telegram_link_codes: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       telegram_subscribers: {
         Row: {
           chat_id: number
@@ -698,6 +725,7 @@ export type Database = {
           is_active: boolean
           last_name: string | null
           updated_at: string
+          user_id: string | null
           username: string | null
         }
         Insert: {
@@ -708,6 +736,7 @@ export type Database = {
           is_active?: boolean
           last_name?: string | null
           updated_at?: string
+          user_id?: string | null
           username?: string | null
         }
         Update: {
@@ -718,6 +747,7 @@ export type Database = {
           is_active?: boolean
           last_name?: string | null
           updated_at?: string
+          user_id?: string | null
           username?: string | null
         }
         Relationships: []
@@ -777,6 +807,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _notify_telegram_personal: {
+        Args: { _payload: Json }
+        Returns: undefined
+      }
       admin_list_users: {
         Args: never
         Returns: {
