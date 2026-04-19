@@ -9,9 +9,11 @@ const GATEWAY_URL = 'https://connector-gateway.lovable.dev/telegram';
 const MAX_RUNTIME_MS = 55_000;
 const MIN_REMAINING_MS = 5_000;
 
+const WEB_APP_URL = 'https://gruzli.lovable.app/';
 const WELCOME_TEXT =
   '👋 <b>Привет!</b> Вы подписались на уведомления Грузли.\n\n' +
-  'Здесь будут приходить новые заявки на грузчиков. Чтобы откликнуться — нажимайте кнопку под заявкой.';
+  'Здесь будут приходить новые заявки на грузчиков. Чтобы откликнуться — нажимайте кнопку под заявкой.\n\n' +
+  '👇 Откройте приложение, чтобы посмотреть все заявки и свой профиль.';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -128,6 +130,11 @@ Deno.serve(async (req) => {
             text: WELCOME_TEXT,
             parse_mode: 'HTML',
             disable_web_page_preview: true,
+            reply_markup: {
+              inline_keyboard: [[
+                { text: '🚀 Открыть приложение', web_app: { url: WEB_APP_URL } },
+              ]],
+            },
           }),
         }).catch((e) => console.error('[telegram-poll] welcome send error:', e));
       }
