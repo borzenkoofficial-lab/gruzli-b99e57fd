@@ -9,9 +9,11 @@ const GATEWAY_URL = 'https://connector-gateway.lovable.dev/telegram';
 const MAX_RUNTIME_MS = 55_000;
 const MIN_REMAINING_MS = 5_000;
 
+const WEB_APP_URL = 'https://gruzli.lovable.app/';
 const WELCOME_TEXT =
   '👋 <b>Привет!</b> Вы подписались на уведомления Грузли.\n\n' +
-  'Здесь будут приходить новые заявки на грузчиков. Чтобы откликнуться — нажимайте кнопку под заявкой.';
+  'Здесь будут приходить новые заявки на грузчиков. Чтобы откликнуться — нажимайте кнопку под заявкой.\n\n' +
+  '👇 Откройте приложение, чтобы посмотреть все заявки и свой профиль.';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
