@@ -97,19 +97,42 @@ Deno.serve(async (req) => {
       const isStart = text.toLowerCase().startsWith('/start');
 
       if (isStart) {
-        // Upsert subscriber
+        // Parse /start CODE for account linking
+        const parts = text.split(/\s+/);
+        const linkCode = parts.length > 1 ? parts[1].trim() : null;
+        let linkedUserId: string | null = null;
+        let linkSuccess = false;
+
+        if (linkCode) {
+          const { data: codeRow } = await supabase
+            .from('telegram_link_codes')
+            .select('user_id, expires_at, used_at')
+            .eq('code', linkCode)
+            .maybeSingle();
+
+          if (codeRow && !codeRow.used_at && new Date(codeRow.expires_at) > new Date()) {
+            linkedUserId = codeRow.user_id;
+            linkSuccess = true;
+            await supabase
+              .from('telegram_link_codes')
+              .update({ used_at: new Date().toISOString() })
+              .eq('code', linkCode);
+          }
+        }
+
+        // Upsert subscriber (with user_id if linked)
+        const subRow: Record<string, unknown> = {
+          chat_id: chatId,
+          username: msg.from?.username ?? null,
+          first_name: msg.from?.first_name ?? null,
+          last_name: msg.from?.last_name ?? null,
+          is_active: true,
+        };
+        if (linkedUserId) subRow.user_id = linkedUserId;
+
         const { error: upsertErr } = await supabase
           .from('telegram_subscribers')
-          .upsert(
-            {
-              chat_id: chatId,
-              username: msg.from?.username ?? null,
-              first_name: msg.from?.first_name ?? null,
-              last_name: msg.from?.last_name ?? null,
-              is_active: true,
-            },
-            { onConflict: 'chat_id' },
-          );
+          .upsert(subRow, { onConflict: 'chat_id' });
 
         if (upsertErr) {
           console.error('[telegram-poll] subscriber upsert error:', upsertErr.message);
@@ -117,7 +140,10 @@ Deno.serve(async (req) => {
           newSubscribers++;
         }
 
-        // Send welcome message
+        const greetingText = linkSuccess
+          ? '✅ <b>Аккаунт привязан!</b>\n\nТеперь личные уведомления (новые сообщения, отклики, статусы заявок) будут приходить вам в Telegram.\n\n👇 Откройте приложение, чтобы продолжить работу.'
+          : WELCOME_TEXT;
+
         await fetch(`${GATEWAY_URL}/sendMessage`, {
           method: 'POST',
           headers: {
@@ -127,7 +153,7 @@ Deno.serve(async (req) => {
           },
           body: JSON.stringify({
             chat_id: chatId,
-            text: WELCOME_TEXT,
+            text: greetingText,
             parse_mode: 'HTML',
             disable_web_page_preview: true,
             reply_markup: {
