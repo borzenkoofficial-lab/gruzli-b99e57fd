@@ -93,46 +93,78 @@ Deno.serve(async (req) => {
 
     const text = lines.join('\n');
 
-    const webAppUrl = `https://gruzli.lovable.app/?job=${encodeURIComponent(job.id)}`;
+    // Load active subscribers
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    let chatIds: number[] = [];
 
-    const body = {
-      chat_id: CHAT_ID,
-      text,
-      parse_mode: 'HTML',
-      disable_web_page_preview: true,
-      reply_markup: {
-        inline_keyboard: [[
-          { text: 'Откликнуться в приложении', web_app: { url: webAppUrl } },
-        ]],
-      },
-    };
+    if (supabaseUrl && supabaseServiceKey) {
+      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+      const { data: subs, error: subsErr } = await supabase
+        .from('telegram_subscribers')
+        .select('chat_id')
+        .eq('is_active', true);
 
-    console.log(`[telegram] Sending job ${job.id} to chat ${CHAT_ID}`);
-
-    const response = await fetch(`${GATEWAY_URL}/sendMessage`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'X-Connection-Api-Key': TELEGRAM_API_KEY,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error(`[telegram] Send failed [${response.status}]:`, data);
-      return new Response(
-        JSON.stringify({ error: 'Telegram send failed', details: data }),
-        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-      );
+      if (subsErr) {
+        console.error('[telegram] subscribers load error:', subsErr.message);
+      } else {
+        chatIds = (subs ?? []).map((s: { chat_id: number }) => s.chat_id);
+      }
     }
 
-    console.log(`[telegram] Sent successfully, message_id=${data?.result?.message_id}`);
+    if (chatIds.length === 0) {
+      console.log('[telegram] No subscribers, falling back to admin chat');
+      chatIds = [FALLBACK_CHAT_ID];
+    }
+
+    const webAppUrl = `https://gruzli.lovable.app/?job=${encodeURIComponent(job.id)}`;
+    const replyMarkup = {
+      inline_keyboard: [[
+        { text: 'Откликнуться в приложении', web_app: { url: webAppUrl } },
+      ]],
+    };
+
+    console.log(`[telegram] Sending job ${job.id} to ${chatIds.length} subscriber(s)`);
+
+    const results = await Promise.allSettled(
+      chatIds.map(async (chatId) => {
+        const response = await fetch(`${GATEWAY_URL}/sendMessage`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+            'X-Connection-Api-Key': TELEGRAM_API_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text,
+            parse_mode: 'HTML',
+            disable_web_page_preview: true,
+            reply_markup: replyMarkup,
+          }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          // Mark blocked / kicked users as inactive
+          if (data?.error_code === 403 && supabaseUrl && supabaseServiceKey) {
+            const supabase = createClient(supabaseUrl, supabaseServiceKey);
+            await supabase
+              .from('telegram_subscribers')
+              .update({ is_active: false })
+              .eq('chat_id', chatId);
+          }
+          throw new Error(`chat ${chatId} [${response.status}]: ${JSON.stringify(data)}`);
+        }
+        return data?.result?.message_id;
+      }),
+    );
+
+    const sent = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.length - sent;
+    console.log(`[telegram] Sent: ${sent}, failed: ${failed}`);
 
     return new Response(
-      JSON.stringify({ ok: true, message_id: data?.result?.message_id }),
+      JSON.stringify({ ok: true, sent, failed, total: chatIds.length }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   } catch (err) {
