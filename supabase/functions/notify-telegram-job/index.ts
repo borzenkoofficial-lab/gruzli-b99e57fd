@@ -3,8 +3,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
 const GATEWAY_URL = 'https://connector-gateway.lovable.dev/telegram';
-const CHAT_ID = 6518626060;
+// Fallback chat for backwards compatibility (admin) — used only if no subscribers exist
+const FALLBACK_CHAT_ID = 6518626060;
 
 function escapeHtml(s: string): string {
   return s
