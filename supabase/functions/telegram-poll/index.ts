@@ -130,6 +130,11 @@ Deno.serve(async (req) => {
             text: WELCOME_TEXT,
             parse_mode: 'HTML',
             disable_web_page_preview: true,
+            reply_markup: {
+              inline_keyboard: [[
+                { text: '🚀 Открыть приложение', web_app: { url: WEB_APP_URL } },
+              ]],
+            },
           }),
         }).catch((e) => console.error('[telegram-poll] welcome send error:', e));
       }
