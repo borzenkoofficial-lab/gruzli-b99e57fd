@@ -38,28 +38,30 @@ const AdminPage = () => {
 
         {/* Tabs */}
         <Tabs defaultValue="dashboard">
-          <TabsList className="w-full grid grid-cols-5">
-            <TabsTrigger value="dashboard" className="gap-1 text-xs px-1">
-              <LayoutDashboard className="h-4 w-4" />
-              <span className="hidden sm:inline">Дашборд</span>
-            </TabsTrigger>
-            <TabsTrigger value="users" className="gap-1 text-xs px-1">
-              <Users className="h-4 w-4" />
-              <span className="hidden sm:inline">Юзеры</span>
-            </TabsTrigger>
-            <TabsTrigger value="chats" className="gap-1 text-xs px-1">
-              <MessageSquare className="h-4 w-4" />
-              <span className="hidden sm:inline">Чаты</span>
-            </TabsTrigger>
-            <TabsTrigger value="jobs" className="gap-1 text-xs px-1">
-              <Briefcase className="h-4 w-4" />
-              <span className="hidden sm:inline">Заказы</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="gap-1 text-xs px-1">
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Настройки</span>
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-1 px-1">
+            <TabsList className="w-full min-w-[480px] grid grid-cols-6">
+              <TabsTrigger value="dashboard" className="gap-1 text-xs px-1">
+                <LayoutDashboard className="h-4 w-4" />
+                <span className="hidden sm:inline">Дашборд</span>
+              </TabsTrigger>
+              <TabsTrigger value="users" className="gap-1 text-xs px-1">
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Юзеры</span>
+              </TabsTrigger>
+              <TabsTrigger value="chats" className="gap-1 text-xs px-1">
+                <MessageSquare className="h-4 w-4" />
+                <span className="hidden sm:inline">Чаты</span>
+              </TabsTrigger>
+              <TabsTrigger value="jobs" className="gap-1 text-xs px-1">
+                <Briefcase className="h-4 w-4" />
+                <span className="hidden sm:inline">Заказы</span>
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="gap-1 text-xs px-1">
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">Настройки</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="dashboard">
             <AdminDashboardTab />
