@@ -551,6 +551,39 @@ export type Database = {
           },
         ]
       }
+      password_reset_codes: {
+        Row: {
+          attempts: number
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           availability: boolean[] | null
@@ -568,6 +601,7 @@ export type Database = {
           phone: string | null
           premium_until: string | null
           rating: number | null
+          recovery_code: string | null
           skills: string[] | null
           total_earned: number | null
           updated_at: string
@@ -590,6 +624,7 @@ export type Database = {
           phone?: string | null
           premium_until?: string | null
           rating?: number | null
+          recovery_code?: string | null
           skills?: string[] | null
           total_earned?: number | null
           updated_at?: string
@@ -612,6 +647,7 @@ export type Database = {
           phone?: string | null
           premium_until?: string | null
           rating?: number | null
+          recovery_code?: string | null
           skills?: string[] | null
           total_earned?: number | null
           updated_at?: string
@@ -811,6 +847,10 @@ export type Database = {
         Args: { _payload: Json }
         Returns: undefined
       }
+      admin_get_user_recovery_code: {
+        Args: { _target_user_id: string }
+        Returns: string
+      }
       admin_list_users: {
         Args: never
         Returns: {
@@ -819,9 +859,11 @@ export type Database = {
           blocked: boolean
           completed_orders: number
           created_at: string
+          email: string
           full_name: string
           phone: string
           rating: number
+          recovery_code: string
           role: string
           user_id: string
           verified: boolean
@@ -855,6 +897,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      generate_recovery_code: { Args: never; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Users, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Zap, MessageSquare, Phone, Lock, Fingerprint, ShieldCheck, X, Calendar, Mail } from "lucide-react";
 import { LegalCheckboxes } from "@/components/LegalDocuments";
+import { ForgotPasswordModal } from "@/components/ForgotPasswordModal";
+import { RecoveryCodeBanner } from "@/components/RecoveryCodeBanner";
 import { toast } from "sonner";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 
@@ -102,6 +104,8 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [showRecoveryFor, setShowRecoveryFor] = useState<string | null>(null);
   const [legalAccepted, setLegalAccepted] = useState({ terms: false, privacy: false, personalData: false, rules: false });
 
   const allLegalAccepted = legalAccepted.terms && legalAccepted.privacy && legalAccepted.personalData && legalAccepted.rules;
@@ -168,6 +172,12 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
               ...(birthDate ? { birth_date: birthDate } : {}),
             })
             .eq("user_id", data.user.id);
+
+          // Show recovery code banner before entering the app.
+          // The user is signed in, so RLS allows reading their own recovery_code.
+          setShowRecoveryFor(data.user.id);
+          setLoading(false);
+          return;
         }
 
         toast.success("Регистрация успешна!");
@@ -439,6 +449,16 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
           )}
         </button>
 
+        {mode === "login" && (
+          <button
+            type="button"
+            onClick={() => setForgotOpen(true)}
+            className="w-full text-center text-xs text-primary font-semibold py-1"
+          >
+            Забыли пароль?
+          </button>
+        )}
+
         <p className="text-center text-xs text-muted-foreground">
           {mode === "login" ? "Нет аккаунта? " : "Уже есть аккаунт? "}
           <button
@@ -457,6 +477,10 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
           </span>
         </button>
         <SecurityModal open={securityOpen} onClose={() => setSecurityOpen(false)} />
+        <ForgotPasswordModal open={forgotOpen} onClose={() => setForgotOpen(false)} />
+        {showRecoveryFor && (
+          <RecoveryCodeBanner userId={showRecoveryFor} onClose={() => setShowRecoveryFor(null)} />
+        )}
       </motion.form>
     </div>
   );
