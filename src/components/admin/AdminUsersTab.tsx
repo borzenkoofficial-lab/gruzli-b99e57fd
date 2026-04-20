@@ -122,8 +122,8 @@ const AdminUsersTab = () => {
       {loading ? (
         <div className="text-center py-8 text-muted-foreground">Загрузка...</div>
       ) : (
-        <div className="rounded-lg border overflow-hidden">
-          <Table>
+        <div className="rounded-lg border overflow-x-auto">
+          <Table className="min-w-[640px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Имя</TableHead>
