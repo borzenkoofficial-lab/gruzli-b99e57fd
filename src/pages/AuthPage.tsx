@@ -173,12 +173,9 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
             })
             .eq("user_id", data.user.id);
 
-          // Sign out so the recovery code banner is shown before entering the app.
-          // Save credentials to auto-login after the user confirms they saved the code.
-          const userIdForBanner = data.user.id;
-          sessionStorage.setItem("pending_login", JSON.stringify({ email, password }));
-          await supabase.auth.signOut();
-          setShowRecoveryFor(userIdForBanner);
+          // Show recovery code banner before entering the app.
+          // The user is signed in, so RLS allows reading their own recovery_code.
+          setShowRecoveryFor(data.user.id);
           setLoading(false);
           return;
         }
