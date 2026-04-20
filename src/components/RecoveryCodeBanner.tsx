@@ -85,8 +85,8 @@ export const RecoveryCodeBanner = ({ userId, onClose }: RecoveryCodeBannerProps)
             )}
           </div>
 
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 mb-4">
-            <p className="text-[11px] text-amber-200/90 leading-relaxed">
+          <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-3 mb-4">
+            <p className="text-[11px] text-destructive leading-relaxed">
               ⚠️ Запишите код в надёжное место. Без него и без пароля вы не сможете войти в аккаунт.
             </p>
           </div>

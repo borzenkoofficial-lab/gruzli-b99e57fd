@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Users, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Zap, MessageSquare, Phone, Lock, Fingerprint, ShieldCheck, X, Calendar, Mail } from "lucide-react";
 import { LegalCheckboxes } from "@/components/LegalDocuments";
+import { ForgotPasswordModal } from "@/components/ForgotPasswordModal";
+import { RecoveryCodeBanner } from "@/components/RecoveryCodeBanner";
 import { toast } from "sonner";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 
