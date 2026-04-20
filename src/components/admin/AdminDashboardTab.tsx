@@ -120,7 +120,8 @@ const AdminDashboardTab = () => {
           {ratings.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">Оценок пока нет</p>
           ) : (
-            <Table>
+            <div className="overflow-x-auto">
+            <Table className="min-w-[520px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Пользователь</TableHead>
@@ -146,6 +147,7 @@ const AdminDashboardTab = () => {
                 ))}
               </TableBody>
             </Table>
+            </div>
           )}
         </CardContent>
       </Card>

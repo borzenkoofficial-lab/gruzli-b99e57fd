@@ -66,8 +66,8 @@ const AdminJobsTab = () => {
       {loading ? (
         <div className="text-center py-8 text-muted-foreground">Загрузка...</div>
       ) : (
-        <div className="rounded-lg border overflow-hidden">
-          <Table>
+        <div className="rounded-lg border overflow-x-auto">
+          <Table className="min-w-[720px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Заказ</TableHead>
