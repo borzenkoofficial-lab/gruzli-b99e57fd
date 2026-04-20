@@ -172,6 +172,15 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
               ...(birthDate ? { birth_date: birthDate } : {}),
             })
             .eq("user_id", data.user.id);
+
+          // Sign out so the recovery code banner is shown before entering the app.
+          // Save credentials to auto-login after the user confirms they saved the code.
+          const userIdForBanner = data.user.id;
+          sessionStorage.setItem("pending_login", JSON.stringify({ email, password }));
+          await supabase.auth.signOut();
+          setShowRecoveryFor(userIdForBanner);
+          setLoading(false);
+          return;
         }
 
         toast.success("Регистрация успешна!");
