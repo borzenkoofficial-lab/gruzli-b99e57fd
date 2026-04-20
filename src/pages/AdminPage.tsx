@@ -39,7 +39,7 @@ const AdminPage = () => {
         {/* Tabs */}
         <Tabs defaultValue="dashboard">
           <div className="overflow-x-auto -mx-1 px-1">
-            <TabsList className="w-full min-w-[480px] grid grid-cols-6">
+            <TabsList className="w-full min-w-[480px] grid grid-cols-5">
               <TabsTrigger value="dashboard" className="gap-1 text-xs px-1">
                 <LayoutDashboard className="h-4 w-4" />
                 <span className="hidden sm:inline">Дашборд</span>
