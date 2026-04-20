@@ -449,6 +449,16 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
           )}
         </button>
 
+        {mode === "login" && (
+          <button
+            type="button"
+            onClick={() => setForgotOpen(true)}
+            className="w-full text-center text-xs text-primary font-semibold py-1"
+          >
+            Забыли пароль?
+          </button>
+        )}
+
         <p className="text-center text-xs text-muted-foreground">
           {mode === "login" ? "Нет аккаунта? " : "Уже есть аккаунт? "}
           <button
@@ -467,6 +477,10 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
           </span>
         </button>
         <SecurityModal open={securityOpen} onClose={() => setSecurityOpen(false)} />
+        <ForgotPasswordModal open={forgotOpen} onClose={() => setForgotOpen(false)} />
+        {showRecoveryFor && (
+          <RecoveryCodeBanner userId={showRecoveryFor} onClose={() => setShowRecoveryFor(null)} />
+        )}
       </motion.form>
     </div>
   );
