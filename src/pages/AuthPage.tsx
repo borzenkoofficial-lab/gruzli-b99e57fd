@@ -104,6 +104,8 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [showRecoveryFor, setShowRecoveryFor] = useState<string | null>(null);
   const [legalAccepted, setLegalAccepted] = useState({ terms: false, privacy: false, personalData: false, rules: false });
 
   const allLegalAccepted = legalAccepted.terms && legalAccepted.privacy && legalAccepted.personalData && legalAccepted.rules;
