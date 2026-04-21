@@ -210,6 +210,7 @@ Deno.serve(async (req) => {
           const messageBody = `Заказ: ${jobData.title}. Завершите работу для подсчёта.`;
           const result = await sendPushToUsers(supabase, [body.worker_id], {
             title: "⏹ Завершите работу", body: messageBody, url,
+            tag: `status-${body.job_id}-${body.worker_id}`,
           });
           sent += result.sent;
           failed += result.failed;
@@ -217,6 +218,7 @@ Deno.serve(async (req) => {
           const messageBody = `${workerName} · ${jobData.title}`;
           const result = await sendPushToUsers(supabase, [jobData.dispatcher_id], {
             title: statusLabel, body: messageBody, url,
+            tag: `status-${body.job_id}-${body.worker_id}`,
           });
           sent += result.sent;
           failed += result.failed;
