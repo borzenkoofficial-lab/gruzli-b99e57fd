@@ -79,7 +79,7 @@ async function sendProgressierPush(params: {
 async function sendPushToUsers(
   supabase: any,
   userIds: string[],
-  payload: { title: string; body: string; url: string }
+  payload: { title: string; body: string; url: string; tag?: string }
 ): Promise<{ sent: number; failed: number }> {
   let sent = 0;
   let failed = 0;
@@ -97,6 +97,7 @@ async function sendPushToUsers(
         title: payload.title,
         body: payload.body,
         url: payload.url,
+        tag: payload.tag,
       });
 
       if (result.ok) sent++;
