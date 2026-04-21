@@ -173,7 +173,8 @@ Deno.serve(async (req) => {
         .neq("user_id", body.sender_id);
 
       const targetUserIds = (participants || []).map((p: any) => p.user_id);
-      const result = await sendPushToUsers(supabase, targetUserIds, { title, body: messageBody, url });
+      const tag = `chat-${body.conversation_id}`;
+      const result = await sendPushToUsers(supabase, targetUserIds, { title, body: messageBody, url, tag });
       sent += result.sent;
       failed += result.failed;
 
