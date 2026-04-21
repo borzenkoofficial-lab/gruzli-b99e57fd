@@ -542,7 +542,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
 
       {/* Header */}
-      <div className="flex items-center gap-2 px-2 safe-top pb-2.5 border-b border-border/30 bg-background/95 backdrop-blur-sm">
+      <div className="relative z-40 flex items-center gap-2 px-2 safe-top pb-2.5 border-b border-border/30 bg-background/95 backdrop-blur-sm">
         <button onClick={onBack} className="w-9 h-9 rounded-full flex items-center justify-center text-foreground active:bg-muted/50 transition-colors">
           <ArrowLeft size={20} />
         </button>
