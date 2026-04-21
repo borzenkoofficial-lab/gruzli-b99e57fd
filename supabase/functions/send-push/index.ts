@@ -38,6 +38,7 @@ async function sendProgressierPush(params: {
   title: string;
   body: string;
   url: string;
+  tag?: string;
 }) {
   const apiKey = Deno.env.get("PROGRESSIER_API_KEY");
   if (!apiKey) {
@@ -56,6 +57,9 @@ async function sendProgressierPush(params: {
         title: params.title,
         body: params.body,
         url: params.url,
+        // tag de-duplicates notifications on-device: a newer one with the
+        // same tag replaces the older instead of stacking.
+        tag: params.tag,
         recipients: { email: params.recipientEmail },
       }),
     });
