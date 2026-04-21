@@ -149,7 +149,8 @@ Deno.serve(async (req) => {
         .eq("role", "worker");
 
       const workerIds = (workers || []).map((w: any) => w.user_id);
-      const result = await sendPushToUsers(supabase, workerIds, { title, body: messageBody, url });
+      const tag = body.job_id ? `job-${body.job_id}` : "job";
+      const result = await sendPushToUsers(supabase, workerIds, { title, body: messageBody, url, tag });
       sent += result.sent;
       failed += result.failed;
 
