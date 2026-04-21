@@ -38,6 +38,7 @@ async function sendProgressierPush(params: {
   title: string;
   body: string;
   url: string;
+  tag?: string;
 }) {
   const apiKey = Deno.env.get("PROGRESSIER_API_KEY");
   if (!apiKey) {
@@ -56,6 +57,9 @@ async function sendProgressierPush(params: {
         title: params.title,
         body: params.body,
         url: params.url,
+        // tag de-duplicates notifications on-device: a newer one with the
+        // same tag replaces the older instead of stacking.
+        tag: params.tag,
         recipients: { email: params.recipientEmail },
       }),
     });
@@ -75,7 +79,7 @@ async function sendProgressierPush(params: {
 async function sendPushToUsers(
   supabase: any,
   userIds: string[],
-  payload: { title: string; body: string; url: string }
+  payload: { title: string; body: string; url: string; tag?: string }
 ): Promise<{ sent: number; failed: number }> {
   let sent = 0;
   let failed = 0;
@@ -93,6 +97,7 @@ async function sendPushToUsers(
         title: payload.title,
         body: payload.body,
         url: payload.url,
+        tag: payload.tag,
       });
 
       if (result.ok) sent++;
@@ -144,7 +149,8 @@ Deno.serve(async (req) => {
         .eq("role", "worker");
 
       const workerIds = (workers || []).map((w: any) => w.user_id);
-      const result = await sendPushToUsers(supabase, workerIds, { title, body: messageBody, url });
+      const tag = body.job_id ? `job-${body.job_id}` : "job";
+      const result = await sendPushToUsers(supabase, workerIds, { title, body: messageBody, url, tag });
       sent += result.sent;
       failed += result.failed;
 
@@ -167,7 +173,8 @@ Deno.serve(async (req) => {
         .neq("user_id", body.sender_id);
 
       const targetUserIds = (participants || []).map((p: any) => p.user_id);
-      const result = await sendPushToUsers(supabase, targetUserIds, { title, body: messageBody, url });
+      const tag = `chat-${body.conversation_id}`;
+      const result = await sendPushToUsers(supabase, targetUserIds, { title, body: messageBody, url, tag });
       sent += result.sent;
       failed += result.failed;
 
@@ -203,6 +210,7 @@ Deno.serve(async (req) => {
           const messageBody = `Заказ: ${jobData.title}. Завершите работу для подсчёта.`;
           const result = await sendPushToUsers(supabase, [body.worker_id], {
             title: "⏹ Завершите работу", body: messageBody, url,
+            tag: `status-${body.job_id}-${body.worker_id}`,
           });
           sent += result.sent;
           failed += result.failed;
@@ -210,6 +218,7 @@ Deno.serve(async (req) => {
           const messageBody = `${workerName} · ${jobData.title}`;
           const result = await sendPushToUsers(supabase, [jobData.dispatcher_id], {
             title: statusLabel, body: messageBody, url,
+            tag: `status-${body.job_id}-${body.worker_id}`,
           });
           sent += result.sent;
           failed += result.failed;
