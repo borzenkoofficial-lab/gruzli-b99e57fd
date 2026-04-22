@@ -88,9 +88,9 @@ const IncomingCallListener = () => {
               </button>
               <button
                 onClick={accept}
-                className="w-11 h-11 rounded-full bg-green-600 flex items-center justify-center"
+                className="w-11 h-11 rounded-full bg-online flex items-center justify-center"
               >
-                <Phone size={18} className="text-white" />
+                <Phone size={18} className="text-primary-foreground" />
               </button>
             </div>
           </motion.div>
