@@ -875,8 +875,8 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
                   onFocus={() => { setShowEmoji(false); }}
                   placeholder="Сообщение..."
                   rows={1}
-                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none resize-none leading-5 max-h-[120px] py-1"
-                  style={{ height: "20px" }}
+                  className="flex-1 bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground outline-none resize-none leading-5 max-h-[120px] py-1"
+                  style={{ height: "22px" }}
                 />
               </div>
 
