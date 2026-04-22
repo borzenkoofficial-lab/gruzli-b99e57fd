@@ -184,85 +184,24 @@ const DispatcherCommunityScreen = ({ onBack, onOpenProfile }: DispatcherCommunit
 
   useEffect(() => { adjustTextarea(); }, [text, adjustTextarea]);
 
-  // Get or create community conversation
+  // Get or create community conversation, and join as participant via RPC
   useEffect(() => {
     if (!user) return;
     const init = async () => {
-      // Check if community exists
-      const { data: setting } = await supabase
-        .from("app_settings")
-        .select("value")
-        .eq("id", COMMUNITY_SETTING_KEY)
-        .single();
-
-      let convId: string | null = setting ? (setting.value as any)?.conversation_id : null;
-
-      if (!convId) {
-        // Create the community conversation
-        convId = crypto.randomUUID();
-        const { error: convErr } = await supabase.from("conversations").insert({
-          id: convId,
-          title: "Сообщество диспетчеров",
-          is_group: true,
-        });
-        if (convErr) {
-          // Maybe another user created it concurrently
-          const { data: retry } = await supabase
-            .from("app_settings")
-            .select("value")
-            .eq("id", COMMUNITY_SETTING_KEY)
-            .single();
-          convId = retry ? (retry.value as any)?.conversation_id : null;
-          if (!convId) { toast.error("Не удалось создать сообщество"); setLoading(false); return; }
-        } else {
-          await supabase.from("app_settings").upsert({
-            id: COMMUNITY_SETTING_KEY,
-            value: { conversation_id: convId } as any,
-          });
-          // Add creator as participant
-          await supabase.from("conversation_participants").insert({
-            conversation_id: convId,
-            user_id: user.id,
-          });
-          // Add system welcome message
-          await supabase.from("messages").insert({
-            conversation_id: convId,
-            sender_id: user.id,
-            text: "🚛 Сообщество диспетчеров создано! Здесь вы можете общаться, делиться советами и решать рабочие вопросы.",
-            message_type: "system",
-          });
-        }
+      const { data: convId, error } = await supabase.rpc("join_dispatcher_community");
+      if (error || !convId) {
+        toast.error("Не удалось войти в сообщество");
+        setLoading(false);
+        return;
       }
 
-      // Check if user is participant
-      const { data: participant } = await supabase
-        .from("conversation_participants")
-        .select("id")
-        .eq("conversation_id", convId)
-        .eq("user_id", user.id)
-        .single();
-
-      if (!participant) {
-        // Join
-        await supabase.from("conversation_participants").insert({
-          conversation_id: convId,
-          user_id: user.id,
-        });
-        await supabase.from("messages").insert({
-          conversation_id: convId,
-          sender_id: user.id,
-          text: "присоединился к сообществу",
-          message_type: "system",
-        });
-      }
-
-      setConversationId(convId);
+      setConversationId(convId as string);
 
       // Get members count
       const { count } = await supabase
         .from("conversation_participants")
         .select("id", { count: "exact", head: true })
-        .eq("conversation_id", convId);
+        .eq("conversation_id", convId as string);
       setMembersCount(count || 0);
     };
     init();
