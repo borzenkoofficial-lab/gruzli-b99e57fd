@@ -741,31 +741,51 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
                 <div key={msg.id}>
                   {showDateSep && (
                     <div className="flex justify-center my-3">
-                      <span className="text-[11px] text-muted-foreground bg-muted/60 px-3 py-1 rounded-full">{formatDateSeparator(msg.created_at)}</span>
+                      <span className="text-[12px] text-muted-foreground bg-muted/60 px-3 py-1 rounded-full">{formatDateSeparator(msg.created_at)}</span>
                     </div>
                   )}
                   <div className="flex justify-center my-2">
-                    <span className="text-[11px] text-muted-foreground bg-muted/40 px-3 py-1 rounded-full">{msg.text}</span>
+                    <span className="text-[12px] text-muted-foreground bg-muted/40 px-3 py-1 rounded-full">{msg.text}</span>
                   </div>
                 </div>
               );
             }
 
+            // Build reply preview if this message replies to another one
+            let replyPreview: ReplyPreview | null = null;
+            if (msg.reply_to_id) {
+              const original = messages.find((m) => m.id === msg.reply_to_id);
+              if (original) {
+                let txt = "Сообщение";
+                if (original.message_type === "voice") txt = "🎤 Голосовое сообщение";
+                else if (original.message_type === "image") txt = "📷 Фото";
+                else if (original.message_type === "video") txt = "📹 Видео";
+                else if (original.message_type === "sticker") txt = original.text || "Стикер";
+                else txt = original.text || "Медиа";
+                const sName = original.sender_id === user?.id ? "Вы" : (senderNames[original.sender_id] || "...");
+                replyPreview = { id: original.id, senderName: sName, text: txt };
+              }
+            }
+
             return (
-              <div key={msg.id}>
+              <div key={msg.id} id={`msg-${msg.id}`}>
                 {showDateSep && (
                   <div className="flex justify-center my-3">
-                    <span className="text-[11px] text-muted-foreground bg-muted/60 px-3 py-1 rounded-full font-medium">{formatDateSeparator(msg.created_at)}</span>
+                    <span className="text-[12px] text-muted-foreground bg-muted/60 px-3 py-1 rounded-full font-medium">{formatDateSeparator(msg.created_at)}</span>
                   </div>
                 )}
-                <MessageBubble
-                  msg={msg}
-                  isOwn={isOwn}
-                  showSender={isFirstInGroup}
-                  senderName={senderNames[msg.sender_id] || "..."}
-                  isLastInGroup={isLastInGroup}
-                  renderMedia={renderMediaMessage}
-                />
+                <SwipeableMessage onReply={() => handleReplyToMessage(msg)}>
+                  <MessageBubble
+                    msg={msg}
+                    isOwn={isOwn}
+                    showSender={isFirstInGroup}
+                    senderName={senderNames[msg.sender_id] || "..."}
+                    isLastInGroup={isLastInGroup}
+                    renderMedia={renderMediaMessage}
+                    replyPreview={replyPreview}
+                    onReplyClick={scrollToMessage}
+                  />
+                </SwipeableMessage>
               </div>
             );
           })
