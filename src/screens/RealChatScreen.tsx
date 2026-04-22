@@ -85,13 +85,15 @@ const getAvatarColor = (name: string) => {
   return avatarGradients[Math.abs(hash) % avatarGradients.length];
 };
 
-const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup, renderMedia }: {
+const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup, renderMedia, replyPreview, onReplyClick }: {
   msg: Message;
   isOwn: boolean;
   showSender: boolean;
   senderName: string;
   isLastInGroup: boolean;
   renderMedia: (msg: Message) => React.ReactNode;
+  replyPreview?: ReplyPreview | null;
+  onReplyClick?: (id: string) => void;
 }) => {
   const time = new Date(msg.created_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 
@@ -102,7 +104,7 @@ const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup,
         <div className="max-w-[78%]">
           <div className="text-5xl py-1 px-1">{msg.text}</div>
           <div className={`flex items-center gap-1.5 ${isOwn ? "justify-end" : "justify-start"} px-1`}>
-            <span className="text-[10px] text-muted-foreground">{time}</span>
+            <span className="text-[11px] text-muted-foreground">{time}</span>
             {isOwn && (
               <DeliveryStatusIcon msg={msg} />
             )}
@@ -116,18 +118,27 @@ const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup,
     <div className={`flex ${isOwn ? "justify-end" : "justify-start"} ${isLastInGroup ? "mb-2" : "mb-0.5"} ${msg._optimistic ? "opacity-60" : ""}`}>
       <div className={`max-w-[78%] ${isOwn ? "items-end" : "items-start"}`}>
         {showSender && !isOwn && (
-          <p className="text-[11px] font-semibold mb-1 ml-3 opacity-80" style={{ color: getAvatarColor(senderName).includes("#6366f1") ? "#818cf8" : "#8b5cf6" }}>
+          <p className="text-[12px] font-semibold mb-1 ml-3 opacity-80" style={{ color: getAvatarColor(senderName).includes("#6366f1") ? "#818cf8" : "#8b5cf6" }}>
             {senderName}
           </p>
         )}
-        <div className={`relative px-3 py-[7px] ${
+        <div className={`relative px-3 py-2 ${
           isOwn
             ? `bubble-own ${isLastInGroup ? "rounded-2xl rounded-br-[4px]" : "rounded-2xl"}`
             : `bubble-other ${isLastInGroup ? "rounded-2xl rounded-bl-[4px]" : "rounded-2xl"}`
         }`}>
+          {replyPreview && (
+            <button
+              onClick={() => onReplyClick?.(replyPreview.id)}
+              className="w-full text-left mb-1.5 pl-2 pr-2 py-1 rounded-md bg-foreground/5 border-l-[3px] border-primary block"
+            >
+              <p className="text-[12px] font-semibold text-primary truncate">{replyPreview.senderName}</p>
+              <p className="text-[12px] text-muted-foreground truncate">{replyPreview.text}</p>
+            </button>
+          )}
           {renderMedia(msg)}
           <div className={`flex items-end gap-1.5 mt-0.5 ${isOwn ? "justify-end" : "justify-start"}`}>
-            <span className="text-[10px] text-muted-foreground/70 leading-none">{time}</span>
+            <span className="text-[11px] text-muted-foreground/70 leading-none">{time}</span>
             {isOwn && (
               <DeliveryStatusIcon msg={msg} />
             )}
