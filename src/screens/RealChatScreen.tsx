@@ -583,6 +583,14 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       toast.error("Не удалось определить собеседника");
       return;
     }
+    // Get caller's display name
+    const { data: selfProfile } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("user_id", user.id)
+      .single();
+    const fromName = selfProfile?.full_name || "Пользователь";
+
     // Notify the other user via their personal channel
     const ch = supabase.channel(`user-calls:${otherUserId}`);
     await new Promise<void>((resolve) => {
@@ -591,12 +599,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     await ch.send({
       type: "broadcast",
       event: "ring",
-      payload: {
-        conversationId,
-        fromUserId: user.id,
-        fromName: resolvedTitle.includes(senderNamesRef.current[user.id] || "") ? "Собеседник" : (senderNamesRef.current[user.id] || "Пользователь"),
-        mode: callMode,
-      },
+      payload: { conversationId, fromUserId: user.id, fromName, mode: callMode },
     });
     supabase.removeChannel(ch);
     setActiveCall(callMode);
