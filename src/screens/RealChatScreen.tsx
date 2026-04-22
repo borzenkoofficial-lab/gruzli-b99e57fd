@@ -648,20 +648,20 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
         </button>
 
         <div className="flex gap-0.5">
-          {inVoiceRoom ? (
-            <>
-              <button onClick={toggleMic} className={`w-9 h-9 rounded-full flex items-center justify-center ${voiceActive ? "bg-primary/20 text-primary" : "text-destructive"}`}>
-                {voiceActive ? <Mic size={18} /> : <MicOff size={18} />}
-              </button>
-              <button onClick={leaveVoiceRoom} className="w-9 h-9 rounded-full bg-destructive/15 flex items-center justify-center">
-                <Phone size={18} className="text-destructive" />
-              </button>
-            </>
-          ) : (
-            <button onClick={hasActiveVoiceRoom ? joinVoiceRoom : startVoiceRoom} className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors">
-              <Phone size={18} />
-            </button>
-          )}
+          <button
+            onClick={() => startCall("audio")}
+            className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors"
+            aria-label="Аудиозвонок"
+          >
+            <Phone size={18} />
+          </button>
+          <button
+            onClick={() => startCall("video")}
+            className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors"
+            aria-label="Видеозвонок"
+          >
+            <Video size={18} />
+          </button>
 
           <div className="relative" ref={menuRef}>
             <button onClick={() => setShowMenu(!showMenu)} className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors">
