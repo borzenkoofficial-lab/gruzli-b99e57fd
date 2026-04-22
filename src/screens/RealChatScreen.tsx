@@ -22,8 +22,15 @@ interface Message {
   media_url?: string | null;
   message_type: string | null;
   created_at: string;
+  reply_to_id?: string | null;
   _optimistic?: boolean;
   _status?: "sending" | "failed";
+}
+
+interface ReplyPreview {
+  id: string;
+  senderName: string;
+  text: string;
 }
 
 const DeliveryStatusIcon = ({ msg }: { msg: Message }) => {
