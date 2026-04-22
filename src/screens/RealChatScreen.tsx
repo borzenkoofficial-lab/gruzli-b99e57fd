@@ -342,14 +342,37 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     };
   }, []);
 
+  const handleReplyToMessage = useCallback((m: Message) => {
+    let preview = "Сообщение";
+    if (m.message_type === "voice") preview = "🎤 Голосовое сообщение";
+    else if (m.message_type === "image") preview = "📷 Фото";
+    else if (m.message_type === "video") preview = "📹 Видео";
+    else if (m.message_type === "sticker") preview = m.text || "Стикер";
+    else preview = m.text || "Медиа";
+    const senderName = m.sender_id === user?.id ? "Вы" : (senderNamesRef.current[m.sender_id] || resolvedTitle);
+    setReplyTo({ id: m.id, senderName, text: preview });
+    textareaRef.current?.focus();
+  }, [user?.id, resolvedTitle]);
+
+  const scrollToMessage = useCallback((id: string) => {
+    const el = document.getElementById(`msg-${id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-2", "ring-primary/60", "rounded-2xl");
+      setTimeout(() => el.classList.remove("ring-2", "ring-primary/60", "rounded-2xl"), 1500);
+    }
+  }, []);
+
   const handleSend = async () => {
     if (!text.trim() || !user || sendLockRef.current) return;
     const msgText = text.trim();
+    const replyId = replyTo?.id ?? null;
     const optimisticId = `optimistic-${crypto.randomUUID()}`;
 
     setText("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
     setShowEmoji(false);
+    setReplyTo(null);
 
     playMessageSent();
 
@@ -360,6 +383,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       text: msgText,
       message_type: "text",
       created_at: new Date().toISOString(),
+      reply_to_id: replyId,
       _optimistic: true,
       _status: "sending",
     };
@@ -377,6 +401,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
           sender_id: user.id,
           text: msgText,
           message_type: "text",
+          reply_to_id: replyId,
         })
         .select("*")
         .single();
