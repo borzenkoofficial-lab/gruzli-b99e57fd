@@ -571,14 +571,11 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       return (
         <div className="flex items-center gap-2">
           <Phone size={14} className="text-primary" />
-          <span className="text-sm">{msg.text}</span>
-          {!inVoiceRoom && msg.sender_id !== user?.id && (
-            <button onClick={joinVoiceRoom} className="ml-2 px-3 py-1 rounded-lg bg-foreground text-primary-foreground text-xs font-semibold">Войти</button>
-          )}
+          <span className="text-[15px]">{msg.text}</span>
         </div>
       );
     }
-    return <p className="text-[13px] text-foreground leading-relaxed whitespace-pre-wrap break-words">{msg.text}</p>;
+    return <p className="text-[15px] text-foreground leading-relaxed whitespace-pre-wrap break-words">{msg.text}</p>;
   };
 
   const initials = resolvedTitle.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
