@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, CheckCheck, Clock3, MoreVertical, Trash2, Ban, BellOff, Smile } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, CheckCheck, Clock3, MoreVertical, Trash2, Ban, BellOff, Smile, Reply as ReplyIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -10,6 +10,8 @@ import type { Tables } from "@/integrations/supabase/types";
 import EmojiPicker from "@/components/chat/EmojiPicker";
 import VoiceRecorder from "@/components/chat/VoiceRecorder";
 import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
+import SwipeableMessage from "@/components/chat/SwipeableMessage";
+import CallModal, { type CallMode } from "@/components/chat/CallModal";
 import { setActiveConversationId } from "@/lib/chatPresence";
 
 interface Message {
@@ -20,8 +22,15 @@ interface Message {
   media_url?: string | null;
   message_type: string | null;
   created_at: string;
+  reply_to_id?: string | null;
   _optimistic?: boolean;
   _status?: "sending" | "failed";
+}
+
+interface ReplyPreview {
+  id: string;
+  senderName: string;
+  text: string;
 }
 
 const DeliveryStatusIcon = ({ msg }: { msg: Message }) => {
@@ -76,13 +85,15 @@ const getAvatarColor = (name: string) => {
   return avatarGradients[Math.abs(hash) % avatarGradients.length];
 };
 
-const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup, renderMedia }: {
+const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup, renderMedia, replyPreview, onReplyClick }: {
   msg: Message;
   isOwn: boolean;
   showSender: boolean;
   senderName: string;
   isLastInGroup: boolean;
   renderMedia: (msg: Message) => React.ReactNode;
+  replyPreview?: ReplyPreview | null;
+  onReplyClick?: (id: string) => void;
 }) => {
   const time = new Date(msg.created_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 
@@ -93,7 +104,7 @@ const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup,
         <div className="max-w-[78%]">
           <div className="text-5xl py-1 px-1">{msg.text}</div>
           <div className={`flex items-center gap-1.5 ${isOwn ? "justify-end" : "justify-start"} px-1`}>
-            <span className="text-[10px] text-muted-foreground">{time}</span>
+            <span className="text-[11px] text-muted-foreground">{time}</span>
             {isOwn && (
               <DeliveryStatusIcon msg={msg} />
             )}
@@ -107,18 +118,27 @@ const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup,
     <div className={`flex ${isOwn ? "justify-end" : "justify-start"} ${isLastInGroup ? "mb-2" : "mb-0.5"} ${msg._optimistic ? "opacity-60" : ""}`}>
       <div className={`max-w-[78%] ${isOwn ? "items-end" : "items-start"}`}>
         {showSender && !isOwn && (
-          <p className="text-[11px] font-semibold mb-1 ml-3 opacity-80" style={{ color: getAvatarColor(senderName).includes("#6366f1") ? "#818cf8" : "#8b5cf6" }}>
+          <p className="text-[12px] font-semibold mb-1 ml-3 opacity-80" style={{ color: getAvatarColor(senderName).includes("#6366f1") ? "#818cf8" : "#8b5cf6" }}>
             {senderName}
           </p>
         )}
-        <div className={`relative px-3 py-[7px] ${
+        <div className={`relative px-3 py-2 ${
           isOwn
             ? `bubble-own ${isLastInGroup ? "rounded-2xl rounded-br-[4px]" : "rounded-2xl"}`
             : `bubble-other ${isLastInGroup ? "rounded-2xl rounded-bl-[4px]" : "rounded-2xl"}`
         }`}>
+          {replyPreview && (
+            <button
+              onClick={() => onReplyClick?.(replyPreview.id)}
+              className="w-full text-left mb-1.5 pl-2 pr-2 py-1 rounded-md bg-foreground/5 border-l-[3px] border-primary block"
+            >
+              <p className="text-[12px] font-semibold text-primary truncate">{replyPreview.senderName}</p>
+              <p className="text-[12px] text-muted-foreground truncate">{replyPreview.text}</p>
+            </button>
+          )}
           {renderMedia(msg)}
           <div className={`flex items-end gap-1.5 mt-0.5 ${isOwn ? "justify-end" : "justify-start"}`}>
-            <span className="text-[10px] text-muted-foreground/70 leading-none">{time}</span>
+            <span className="text-[11px] text-muted-foreground/70 leading-none">{time}</span>
             {isOwn && (
               <DeliveryStatusIcon msg={msg} />
             )}
@@ -149,6 +169,8 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const [otherLastSeen, setOtherLastSeen] = useState<string | null>(null);
   const [showEmoji, setShowEmoji] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [replyTo, setReplyTo] = useState<ReplyPreview | null>(null);
+  const [activeCall, setActiveCall] = useState<CallMode | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -320,14 +342,37 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     };
   }, []);
 
+  const handleReplyToMessage = useCallback((m: Message) => {
+    let preview = "Сообщение";
+    if (m.message_type === "voice") preview = "🎤 Голосовое сообщение";
+    else if (m.message_type === "image") preview = "📷 Фото";
+    else if (m.message_type === "video") preview = "📹 Видео";
+    else if (m.message_type === "sticker") preview = m.text || "Стикер";
+    else preview = m.text || "Медиа";
+    const senderName = m.sender_id === user?.id ? "Вы" : (senderNamesRef.current[m.sender_id] || resolvedTitle);
+    setReplyTo({ id: m.id, senderName, text: preview });
+    textareaRef.current?.focus();
+  }, [user?.id, resolvedTitle]);
+
+  const scrollToMessage = useCallback((id: string) => {
+    const el = document.getElementById(`msg-${id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-2", "ring-primary/60", "rounded-2xl");
+      setTimeout(() => el.classList.remove("ring-2", "ring-primary/60", "rounded-2xl"), 1500);
+    }
+  }, []);
+
   const handleSend = async () => {
     if (!text.trim() || !user || sendLockRef.current) return;
     const msgText = text.trim();
+    const replyId = replyTo?.id ?? null;
     const optimisticId = `optimistic-${crypto.randomUUID()}`;
 
     setText("");
     if (textareaRef.current) textareaRef.current.style.height = "auto";
     setShowEmoji(false);
+    setReplyTo(null);
 
     playMessageSent();
 
@@ -338,6 +383,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       text: msgText,
       message_type: "text",
       created_at: new Date().toISOString(),
+      reply_to_id: replyId,
       _optimistic: true,
       _status: "sending",
     };
@@ -355,6 +401,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
           sender_id: user.id,
           text: msgText,
           message_type: "text",
+          reply_to_id: replyId,
         })
         .select("*")
         .single();
@@ -524,14 +571,38 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       return (
         <div className="flex items-center gap-2">
           <Phone size={14} className="text-primary" />
-          <span className="text-sm">{msg.text}</span>
-          {!inVoiceRoom && msg.sender_id !== user?.id && (
-            <button onClick={joinVoiceRoom} className="ml-2 px-3 py-1 rounded-lg bg-foreground text-primary-foreground text-xs font-semibold">Войти</button>
-          )}
+          <span className="text-[15px]">{msg.text}</span>
         </div>
       );
     }
-    return <p className="text-[13px] text-foreground leading-relaxed whitespace-pre-wrap break-words">{msg.text}</p>;
+    return <p className="text-[15px] text-foreground leading-relaxed whitespace-pre-wrap break-words">{msg.text}</p>;
+  };
+
+  const startCall = async (callMode: CallMode) => {
+    if (!user || !otherUserId) {
+      toast.error("Не удалось определить собеседника");
+      return;
+    }
+    // Get caller's display name
+    const { data: selfProfile } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("user_id", user.id)
+      .single();
+    const fromName = selfProfile?.full_name || "Пользователь";
+
+    // Notify the other user via their personal channel
+    const ch = supabase.channel(`user-calls:${otherUserId}`);
+    await new Promise<void>((resolve) => {
+      ch.subscribe((s) => { if (s === "SUBSCRIBED") resolve(); });
+    });
+    await ch.send({
+      type: "broadcast",
+      event: "ring",
+      payload: { conversationId, fromUserId: user.id, fromName, mode: callMode },
+    });
+    supabase.removeChannel(ch);
+    setActiveCall(callMode);
   };
 
   const initials = resolvedTitle.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
@@ -577,20 +648,20 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
         </button>
 
         <div className="flex gap-0.5">
-          {inVoiceRoom ? (
-            <>
-              <button onClick={toggleMic} className={`w-9 h-9 rounded-full flex items-center justify-center ${voiceActive ? "bg-primary/20 text-primary" : "text-destructive"}`}>
-                {voiceActive ? <Mic size={18} /> : <MicOff size={18} />}
-              </button>
-              <button onClick={leaveVoiceRoom} className="w-9 h-9 rounded-full bg-destructive/15 flex items-center justify-center">
-                <Phone size={18} className="text-destructive" />
-              </button>
-            </>
-          ) : (
-            <button onClick={hasActiveVoiceRoom ? joinVoiceRoom : startVoiceRoom} className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors">
-              <Phone size={18} />
-            </button>
-          )}
+          <button
+            onClick={() => startCall("audio")}
+            className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors"
+            aria-label="Аудиозвонок"
+          >
+            <Phone size={18} />
+          </button>
+          <button
+            onClick={() => startCall("video")}
+            className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors"
+            aria-label="Видеозвонок"
+          >
+            <Video size={18} />
+          </button>
 
           <div className="relative" ref={menuRef}>
             <button onClick={() => setShowMenu(!showMenu)} className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors">
@@ -621,16 +692,17 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
         </div>
       </div>
 
-      {/* Voice room banner */}
+      {/* Active call modal */}
       <AnimatePresence>
-        {inVoiceRoom && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden" style={{ background: "linear-gradient(135deg, hsl(145 65% 40%), hsl(160 60% 45%))" }}>
-            <div className="px-4 py-2.5 flex items-center gap-3">
-              <div className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
-              <span className="text-white text-xs font-semibold flex-1">Голосовой звонок {voiceActive ? "· Микрофон вкл" : "· Микрофон выкл"}</span>
-              <button onClick={leaveVoiceRoom} className="text-white/80 text-xs font-medium">Завершить</button>
-            </div>
-          </motion.div>
+        {activeCall && user && otherUserId && (
+          <CallModal
+            conversationId={conversationId}
+            selfUserId={user.id}
+            peerName={resolvedTitle}
+            mode={activeCall}
+            role="caller"
+            onClose={() => setActiveCall(null)}
+          />
         )}
       </AnimatePresence>
 
@@ -669,31 +741,51 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
                 <div key={msg.id}>
                   {showDateSep && (
                     <div className="flex justify-center my-3">
-                      <span className="text-[11px] text-muted-foreground bg-muted/60 px-3 py-1 rounded-full">{formatDateSeparator(msg.created_at)}</span>
+                      <span className="text-[12px] text-muted-foreground bg-muted/60 px-3 py-1 rounded-full">{formatDateSeparator(msg.created_at)}</span>
                     </div>
                   )}
                   <div className="flex justify-center my-2">
-                    <span className="text-[11px] text-muted-foreground bg-muted/40 px-3 py-1 rounded-full">{msg.text}</span>
+                    <span className="text-[12px] text-muted-foreground bg-muted/40 px-3 py-1 rounded-full">{msg.text}</span>
                   </div>
                 </div>
               );
             }
 
+            // Build reply preview if this message replies to another one
+            let replyPreview: ReplyPreview | null = null;
+            if (msg.reply_to_id) {
+              const original = messages.find((m) => m.id === msg.reply_to_id);
+              if (original) {
+                let txt = "Сообщение";
+                if (original.message_type === "voice") txt = "🎤 Голосовое сообщение";
+                else if (original.message_type === "image") txt = "📷 Фото";
+                else if (original.message_type === "video") txt = "📹 Видео";
+                else if (original.message_type === "sticker") txt = original.text || "Стикер";
+                else txt = original.text || "Медиа";
+                const sName = original.sender_id === user?.id ? "Вы" : (senderNames[original.sender_id] || "...");
+                replyPreview = { id: original.id, senderName: sName, text: txt };
+              }
+            }
+
             return (
-              <div key={msg.id}>
+              <div key={msg.id} id={`msg-${msg.id}`}>
                 {showDateSep && (
                   <div className="flex justify-center my-3">
-                    <span className="text-[11px] text-muted-foreground bg-muted/60 px-3 py-1 rounded-full font-medium">{formatDateSeparator(msg.created_at)}</span>
+                    <span className="text-[12px] text-muted-foreground bg-muted/60 px-3 py-1 rounded-full font-medium">{formatDateSeparator(msg.created_at)}</span>
                   </div>
                 )}
-                <MessageBubble
-                  msg={msg}
-                  isOwn={isOwn}
-                  showSender={isFirstInGroup}
-                  senderName={senderNames[msg.sender_id] || "..."}
-                  isLastInGroup={isLastInGroup}
-                  renderMedia={renderMediaMessage}
-                />
+                <SwipeableMessage onReply={() => handleReplyToMessage(msg)}>
+                  <MessageBubble
+                    msg={msg}
+                    isOwn={isOwn}
+                    showSender={isFirstInGroup}
+                    senderName={senderNames[msg.sender_id] || "..."}
+                    isLastInGroup={isLastInGroup}
+                    renderMedia={renderMediaMessage}
+                    replyPreview={replyPreview}
+                    onReplyClick={scrollToMessage}
+                  />
+                </SwipeableMessage>
               </div>
             );
           })
@@ -735,6 +827,19 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       {/* Input area */}
       <div className="px-3 pt-2 pb-3 border-t border-border/20">
         {uploading && <div className="text-center text-xs text-primary mb-2 animate-pulse">Загрузка файла...</div>}
+
+        {replyTo && (
+          <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-xl bg-muted/40 border-l-[3px] border-primary">
+            <ReplyIcon size={16} className="text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-semibold text-primary truncate">Ответ {replyTo.senderName}</p>
+              <p className="text-[12px] text-muted-foreground truncate">{replyTo.text}</p>
+            </div>
+            <button onClick={() => setReplyTo(null)} className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50">
+              <X size={14} />
+            </button>
+          </div>
+        )}
         
         <AnimatePresence mode="wait">
           {isRecording ? (
@@ -770,8 +875,8 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
                   onFocus={() => { setShowEmoji(false); }}
                   placeholder="Сообщение..."
                   rows={1}
-                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none resize-none leading-5 max-h-[120px] py-1"
-                  style={{ height: "20px" }}
+                  className="flex-1 bg-transparent text-[15px] text-foreground placeholder:text-muted-foreground outline-none resize-none leading-5 max-h-[120px] py-1"
+                  style={{ height: "22px" }}
                 />
               </div>
 

@@ -13,6 +13,7 @@ import SplashScreen from "@/components/SplashScreen";
 import NewJobAlert from "@/components/NewJobAlert";
 import AppRatingModal from "@/components/AppRatingModal";
 import OnboardingTour from "@/components/OnboardingTour";
+import IncomingCallListener from "@/components/chat/IncomingCallListener";
 import type { Tables } from "@/integrations/supabase/types";
 
 import Index from "./pages/Index";
@@ -67,6 +68,7 @@ const AppRoutes = () => {
         </Routes>
       </Suspense>
       <AppRatingModal />
+      <IncomingCallListener />
       {role === "worker" && (
         <NewJobAlert
           job={alertQueue[0] ?? null}

@@ -100,11 +100,11 @@ const SwipeableChatItem = ({
 
         <div className="flex-1 min-w-0 border-b border-border/20 pb-3">
           <div className="flex items-center justify-between">
-            <span className="text-[15px] font-semibold text-foreground truncate">{conv.otherName}</span>
-            <span className={`text-[11px] shrink-0 ml-2 ${conv.unreadCount > 0 ? "text-primary font-semibold" : "text-muted-foreground"}`}>{conv.lastTime}</span>
+            <span className="text-[16px] font-semibold text-foreground truncate">{conv.otherName}</span>
+            <span className={`text-[12px] shrink-0 ml-2 ${conv.unreadCount > 0 ? "text-primary font-semibold" : "text-muted-foreground"}`}>{conv.lastTime}</span>
           </div>
           <div className="flex items-center justify-between mt-0.5">
-            <p className="text-[13px] text-muted-foreground truncate pr-2">{conv.lastMessage}</p>
+            <p className="text-[14px] text-muted-foreground truncate pr-2">{conv.lastMessage}</p>
             {conv.unreadCount > 0 && (
               <span className="ml-2 min-w-[22px] h-[22px] px-1.5 rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex items-center justify-center shrink-0">
                 {conv.unreadCount > 99 ? "99+" : conv.unreadCount}
@@ -320,8 +320,8 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel }: RealChatsScreenProps) =>
             <Megaphone size={22} />
           </div>
           <div className="flex-1 text-left min-w-0 border-b border-border/20 pb-3">
-            <span className="text-[15px] font-semibold text-foreground">Gruzli Official</span>
-            <p className="text-[13px] text-muted-foreground mt-0.5 truncate">Новости и обновления</p>
+            <span className="text-[16px] font-semibold text-foreground">Gruzli Official</span>
+            <p className="text-[14px] text-muted-foreground mt-0.5 truncate">Новости и обновления</p>
           </div>
         </button>
       </div>
