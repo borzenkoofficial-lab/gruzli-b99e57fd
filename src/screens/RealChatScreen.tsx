@@ -827,6 +827,19 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       {/* Input area */}
       <div className="px-3 pt-2 pb-3 border-t border-border/20">
         {uploading && <div className="text-center text-xs text-primary mb-2 animate-pulse">Загрузка файла...</div>}
+
+        {replyTo && (
+          <div className="flex items-center gap-2 mb-2 px-3 py-2 rounded-xl bg-muted/40 border-l-[3px] border-primary">
+            <ReplyIcon size={16} className="text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-semibold text-primary truncate">Ответ {replyTo.senderName}</p>
+              <p className="text-[12px] text-muted-foreground truncate">{replyTo.text}</p>
+            </div>
+            <button onClick={() => setReplyTo(null)} className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50">
+              <X size={14} />
+            </button>
+          </div>
+        )}
         
         <AnimatePresence mode="wait">
           {isRecording ? (
