@@ -692,16 +692,17 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
         </div>
       </div>
 
-      {/* Voice room banner */}
+      {/* Active call modal */}
       <AnimatePresence>
-        {inVoiceRoom && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden" style={{ background: "linear-gradient(135deg, hsl(145 65% 40%), hsl(160 60% 45%))" }}>
-            <div className="px-4 py-2.5 flex items-center gap-3">
-              <div className="w-2.5 h-2.5 rounded-full bg-white animate-pulse" />
-              <span className="text-white text-xs font-semibold flex-1">Голосовой звонок {voiceActive ? "· Микрофон вкл" : "· Микрофон выкл"}</span>
-              <button onClick={leaveVoiceRoom} className="text-white/80 text-xs font-medium">Завершить</button>
-            </div>
-          </motion.div>
+        {activeCall && user && otherUserId && (
+          <CallModal
+            conversationId={conversationId}
+            selfUserId={user.id}
+            peerName={resolvedTitle}
+            mode={activeCall}
+            role="caller"
+            onClose={() => setActiveCall(null)}
+          />
         )}
       </AnimatePresence>
 
