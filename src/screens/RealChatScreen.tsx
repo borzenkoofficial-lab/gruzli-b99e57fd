@@ -578,6 +578,30 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     return <p className="text-[15px] text-foreground leading-relaxed whitespace-pre-wrap break-words">{msg.text}</p>;
   };
 
+  const startCall = async (callMode: CallMode) => {
+    if (!user || !otherUserId) {
+      toast.error("Не удалось определить собеседника");
+      return;
+    }
+    // Notify the other user via their personal channel
+    const ch = supabase.channel(`user-calls:${otherUserId}`);
+    await new Promise<void>((resolve) => {
+      ch.subscribe((s) => { if (s === "SUBSCRIBED") resolve(); });
+    });
+    await ch.send({
+      type: "broadcast",
+      event: "ring",
+      payload: {
+        conversationId,
+        fromUserId: user.id,
+        fromName: resolvedTitle.includes(senderNamesRef.current[user.id] || "") ? "Собеседник" : (senderNamesRef.current[user.id] || "Пользователь"),
+        mode: callMode,
+      },
+    });
+    supabase.removeChannel(ch);
+    setActiveCall(callMode);
+  };
+
   const initials = resolvedTitle.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
   return (
