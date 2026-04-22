@@ -915,6 +915,7 @@ export type Database = {
         Args: { _conversation_id: string; _user_id: string }
         Returns: boolean
       }
+      join_dispatcher_community: { Args: never; Returns: string }
       move_to_dlq: {
         Args: {
           dlq_name: string
