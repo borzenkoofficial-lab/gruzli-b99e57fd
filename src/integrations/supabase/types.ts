@@ -417,6 +417,7 @@ export type Database = {
           hourly_rate: number
           id: string
           is_bot: boolean
+          is_official: boolean
           metro: string | null
           quick_minimum: boolean | null
           start_time: string | null
@@ -437,6 +438,7 @@ export type Database = {
           hourly_rate?: number
           id?: string
           is_bot?: boolean
+          is_official?: boolean
           metro?: string | null
           quick_minimum?: boolean | null
           start_time?: string | null
@@ -457,6 +459,7 @@ export type Database = {
           hourly_rate?: number
           id?: string
           is_bot?: boolean
+          is_official?: boolean
           metro?: string | null
           quick_minimum?: boolean | null
           start_time?: string | null

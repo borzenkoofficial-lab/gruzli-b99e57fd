@@ -447,8 +447,12 @@ const SwipeableJobCard = ({
     return Date.now() - created < 10 * 60 * 1000;
   }, [job.created_at]);
 
+  const isOfficial = (job as any).is_official;
+
   // Top accent bar color
-  const accentClass = job.urgent
+  const accentClass = isOfficial
+    ? "bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-300"
+    : job.urgent
     ? "bg-gradient-to-r from-destructive via-destructive/70 to-destructive/0"
     : job.quick_minimum
     ? "bg-gradient-to-r from-online via-online/70 to-online/0"
@@ -486,17 +490,25 @@ const SwipeableJobCard = ({
         drag={isBot ? false : "x"}
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.4}
-        style={{ x }}
+        style={{
+          x,
+          ...(isOfficial ? {
+            background: "linear-gradient(135deg, hsl(45 90% 55% / 0.12), hsl(38 85% 50% / 0.06) 40%, hsl(var(--card)) 100%)",
+            boxShadow: "0 0 0 1px hsl(45 90% 55% / 0.25), 0 8px 24px -8px hsl(45 90% 55% / 0.25)",
+          } : {}),
+        }}
         onDragStart={handleDragStart}
         onDrag={handleDrag}
         onDragEnd={handleDragEnd}
         onClick={handleTap}
         whileTap={{ scale: 0.985 }}
         whileHover={{ y: -1 }}
-        className={`relative z-10 rounded-2xl bg-card border p-4 cursor-pointer transition-colors overflow-hidden ${
-          isBot
-            ? "border-destructive/25 opacity-70"
-            : "border-border hover:border-foreground/20"
+        className={`relative z-10 rounded-2xl border p-4 cursor-pointer transition-colors overflow-hidden ${
+          isOfficial
+            ? "border-yellow-400/40"
+            : isBot
+            ? "border-destructive/25 opacity-70 bg-card"
+            : "border-border hover:border-foreground/20 bg-card"
         }`}
       >
         {/* Top accent bar */}
@@ -512,6 +524,13 @@ const SwipeableJobCard = ({
 
         {/* Tags */}
         <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+          {isOfficial && (
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-yellow-400/25 to-amber-400/15 text-yellow-600 dark:text-yellow-400 text-[10.5px] font-bold border border-yellow-400/40">
+              <img src={gruzliLogo} alt="Gruzli" className="w-3 h-3 rounded-sm object-cover" />
+              <span>Официально от Gruzli</span>
+              <Check size={9} strokeWidth={3} className="text-yellow-500" />
+            </span>
+          )}
           {job.urgent && (
             <span className="relative flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-destructive/20 to-destructive/10 text-destructive text-[10.5px] font-semibold border border-destructive/20">
               <span className="relative flex h-1.5 w-1.5">
@@ -538,13 +557,27 @@ const SwipeableJobCard = ({
 
         {/* Dispatcher */}
         <button
-          onClick={(e) => { e.stopPropagation(); onOpenProfile?.(); }}
+          onClick={(e) => { e.stopPropagation(); if (!isOfficial) onOpenProfile?.(); }}
           className="flex items-center gap-2 mt-2 tap-scale"
         >
-          <div className="h-5 w-5 rounded-full bg-surface-3 border border-border flex items-center justify-center text-[9px] font-bold text-foreground/80">
-            {getInitials(dispatcherName)}
-          </div>
-          <span className="text-[11.5px] text-muted-foreground">{dispatcherName}</span>
+          {isOfficial ? (
+            <>
+              <div className="h-5 w-5 rounded-full bg-yellow-400 border border-yellow-500 flex items-center justify-center overflow-hidden">
+                <img src={gruzliLogo} alt="Gruzli" className="w-full h-full object-cover" />
+              </div>
+              <span className="text-[11.5px] font-semibold text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
+                Gruzli
+                <Check size={10} strokeWidth={3} className="text-yellow-500" />
+              </span>
+            </>
+          ) : (
+            <>
+              <div className="h-5 w-5 rounded-full bg-surface-3 border border-border flex items-center justify-center text-[9px] font-bold text-foreground/80">
+                {getInitials(dispatcherName)}
+              </div>
+              <span className="text-[11.5px] text-muted-foreground">{dispatcherName}</span>
+            </>
+          )}
         </button>
 
         {job.description && (
