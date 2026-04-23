@@ -41,6 +41,8 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
     setResponding(false);
   };
 
+  const isOfficial = job.is_official;
+
   return (
     <div className="min-h-screen bg-background pb-8">
       {/* Header */}
@@ -52,6 +54,30 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
       </div>
 
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="px-5">
+        {/* Official Gruzli banner */}
+        {isOfficial && (
+          <div
+            className="mb-4 rounded-2xl p-4 border border-yellow-400/40 flex items-center gap-3"
+            style={{
+              background: "linear-gradient(135deg, hsl(45 95% 55% / 0.18), hsl(38 90% 50% / 0.08))",
+              boxShadow: "0 8px 24px -8px hsl(45 90% 55% / 0.35)",
+            }}
+          >
+            <div className="w-12 h-12 rounded-xl bg-yellow-400 flex items-center justify-center overflow-hidden flex-shrink-0 border-2 border-yellow-500">
+              <img src={gruzliLogo} alt="Gruzli" className="w-full h-full object-cover" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-bold text-yellow-700 dark:text-yellow-300">Официальная заявка</span>
+                <ShieldCheck size={14} className="text-yellow-500" />
+              </div>
+              <p className="text-[11.5px] text-yellow-700/80 dark:text-yellow-300/70 leading-tight mt-0.5">
+                От команды Gruzli — гарантированная оплата
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1.5">
@@ -62,13 +88,23 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
               )}
             </div>
             <h1 className="text-lg font-bold text-foreground">{job.title}</h1>
-            <button
-              onClick={() => onOpenProfile?.(job.dispatcher_id)}
-              className="flex items-center gap-1.5 mt-1.5 active:opacity-70"
-            >
-              <UserPlus size={12} className="text-primary" />
-              <span className="text-xs text-primary font-medium">{dispatcherName}</span>
-            </button>
+            {isOfficial ? (
+              <div className="flex items-center gap-1.5 mt-1.5">
+                <div className="w-4 h-4 rounded-full bg-yellow-400 flex items-center justify-center overflow-hidden">
+                  <img src={gruzliLogo} alt="Gruzli" className="w-full h-full object-cover" />
+                </div>
+                <span className="text-xs font-semibold text-yellow-600 dark:text-yellow-400">Gruzli</span>
+                <Check size={11} strokeWidth={3} className="text-yellow-500" />
+              </div>
+            ) : (
+              <button
+                onClick={() => onOpenProfile?.(job.dispatcher_id)}
+                className="flex items-center gap-1.5 mt-1.5 active:opacity-70"
+              >
+                <UserPlus size={12} className="text-primary" />
+                <span className="text-xs text-primary font-medium">{dispatcherName}</span>
+              </button>
+            )}
           </div>
         </div>
 
