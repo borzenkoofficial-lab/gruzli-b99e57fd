@@ -557,13 +557,27 @@ const SwipeableJobCard = ({
 
         {/* Dispatcher */}
         <button
-          onClick={(e) => { e.stopPropagation(); onOpenProfile?.(); }}
+          onClick={(e) => { e.stopPropagation(); if (!isOfficial) onOpenProfile?.(); }}
           className="flex items-center gap-2 mt-2 tap-scale"
         >
-          <div className="h-5 w-5 rounded-full bg-surface-3 border border-border flex items-center justify-center text-[9px] font-bold text-foreground/80">
-            {getInitials(dispatcherName)}
-          </div>
-          <span className="text-[11.5px] text-muted-foreground">{dispatcherName}</span>
+          {isOfficial ? (
+            <>
+              <div className="h-5 w-5 rounded-full bg-yellow-400 border border-yellow-500 flex items-center justify-center overflow-hidden">
+                <img src={gruzliLogo} alt="Gruzli" className="w-full h-full object-cover" />
+              </div>
+              <span className="text-[11.5px] font-semibold text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
+                Gruzli
+                <Check size={10} strokeWidth={3} className="text-yellow-500" />
+              </span>
+            </>
+          ) : (
+            <>
+              <div className="h-5 w-5 rounded-full bg-surface-3 border border-border flex items-center justify-center text-[9px] font-bold text-foreground/80">
+                {getInitials(dispatcherName)}
+              </div>
+              <span className="text-[11.5px] text-muted-foreground">{dispatcherName}</span>
+            </>
+          )}
         </button>
 
         {job.description && (
