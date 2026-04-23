@@ -447,8 +447,12 @@ const SwipeableJobCard = ({
     return Date.now() - created < 10 * 60 * 1000;
   }, [job.created_at]);
 
+  const isOfficial = (job as any).is_official;
+
   // Top accent bar color
-  const accentClass = job.urgent
+  const accentClass = isOfficial
+    ? "bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-300"
+    : job.urgent
     ? "bg-gradient-to-r from-destructive via-destructive/70 to-destructive/0"
     : job.quick_minimum
     ? "bg-gradient-to-r from-online via-online/70 to-online/0"
