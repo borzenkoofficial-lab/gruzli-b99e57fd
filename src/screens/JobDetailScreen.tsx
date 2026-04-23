@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Clock, Users, Zap, MessageCircle, User, Wallet, UserPlus } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Users, Zap, MessageCircle, User, Wallet, UserPlus, Check, ShieldCheck } from "lucide-react";
 import { useRespondToJob } from "@/hooks/useRespondToJob";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
+import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 
 interface JobDetailScreenProps {
-  job: Tables<"jobs">;
+  job: Tables<"jobs"> & { is_official?: boolean };
   onBack: () => void;
   onOpenChat?: (conversationId: string, title: string) => void;
   onOpenProfile?: (userId: string) => void;
