@@ -497,11 +497,17 @@ const SwipeableJobCard = ({
         onClick={handleTap}
         whileTap={{ scale: 0.985 }}
         whileHover={{ y: -1 }}
-        className={`relative z-10 rounded-2xl bg-card border p-4 cursor-pointer transition-colors overflow-hidden ${
-          isBot
-            ? "border-destructive/25 opacity-70"
-            : "border-border hover:border-foreground/20"
+        className={`relative z-10 rounded-2xl border p-4 cursor-pointer transition-colors overflow-hidden ${
+          isOfficial
+            ? "border-yellow-400/40"
+            : isBot
+            ? "border-destructive/25 opacity-70 bg-card"
+            : "border-border hover:border-foreground/20 bg-card"
         }`}
+        style={isOfficial ? {
+          background: "linear-gradient(135deg, hsl(45 90% 55% / 0.12), hsl(38 85% 50% / 0.06) 40%, hsl(var(--card)) 100%)",
+          boxShadow: "0 0 0 1px hsl(45 90% 55% / 0.25), 0 8px 24px -8px hsl(45 90% 55% / 0.25)",
+        } : undefined}
       >
         {/* Top accent bar */}
         <div className={`absolute top-0 left-0 right-0 h-[3px] ${accentClass}`} />
@@ -516,6 +522,13 @@ const SwipeableJobCard = ({
 
         {/* Tags */}
         <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+          {isOfficial && (
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-yellow-400/25 to-amber-400/15 text-yellow-600 dark:text-yellow-400 text-[10.5px] font-bold border border-yellow-400/40">
+              <img src={gruzliLogo} alt="Gruzli" className="w-3 h-3 rounded-sm object-cover" />
+              <span>Официально от Gruzli</span>
+              <Check size={9} strokeWidth={3} className="text-yellow-500" />
+            </span>
+          )}
           {job.urgent && (
             <span className="relative flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-destructive/20 to-destructive/10 text-destructive text-[10.5px] font-semibold border border-destructive/20">
               <span className="relative flex h-1.5 w-1.5">
