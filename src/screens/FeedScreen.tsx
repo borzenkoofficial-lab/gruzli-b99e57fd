@@ -490,7 +490,13 @@ const SwipeableJobCard = ({
         drag={isBot ? false : "x"}
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.4}
-        style={{ x }}
+        style={{
+          x,
+          ...(isOfficial ? {
+            background: "linear-gradient(135deg, hsl(45 90% 55% / 0.12), hsl(38 85% 50% / 0.06) 40%, hsl(var(--card)) 100%)",
+            boxShadow: "0 0 0 1px hsl(45 90% 55% / 0.25), 0 8px 24px -8px hsl(45 90% 55% / 0.25)",
+          } : {}),
+        }}
         onDragStart={handleDragStart}
         onDrag={handleDrag}
         onDragEnd={handleDragEnd}
@@ -504,10 +510,6 @@ const SwipeableJobCard = ({
             ? "border-destructive/25 opacity-70 bg-card"
             : "border-border hover:border-foreground/20 bg-card"
         }`}
-        style={isOfficial ? {
-          background: "linear-gradient(135deg, hsl(45 90% 55% / 0.12), hsl(38 85% 50% / 0.06) 40%, hsl(var(--card)) 100%)",
-          boxShadow: "0 0 0 1px hsl(45 90% 55% / 0.25), 0 8px 24px -8px hsl(45 90% 55% / 0.25)",
-        } : undefined}
       >
         {/* Top accent bar */}
         <div className={`absolute top-0 left-0 right-0 h-[3px] ${accentClass}`} />
