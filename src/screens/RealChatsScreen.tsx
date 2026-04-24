@@ -128,16 +128,19 @@ interface ConversationItem {
   otherAvatarUrl: string | null;
   unreadCount: number;
   otherLastSeen: string | null;
+  isCommunity?: boolean;
 }
 
 interface RealChatsScreenProps {
   onOpenChat: (conversationId: string, title: string) => void;
   onOpenChannel: () => void;
+  onOpenCommunity?: () => void;
 }
 
-const RealChatsScreen = ({ onOpenChat, onOpenChannel }: RealChatsScreenProps) => {
+const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealChatsScreenProps) => {
   const { user } = useAuth();
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
+  const [communityId, setCommunityId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const conversationsRef = useRef(conversations);
