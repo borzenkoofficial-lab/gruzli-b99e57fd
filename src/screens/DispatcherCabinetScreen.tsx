@@ -598,9 +598,18 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                                         <MessageCircle size={13} className="text-primary" /> Написать
                                       </button>
                                       {w.profile?.phone && (
-                                        <a href={`tel:${w.profile.phone}`} className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-card border border-border text-xs font-semibold text-foreground active:bg-surface-1 transition-all">
-                                          <Phone size={13} className="text-green-500" /> Звонок
+                                        <a href={`tel:${w.profile.phone}`} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-card border border-border text-xs font-semibold text-foreground active:bg-surface-1 transition-all">
+                                          <Phone size={13} className="text-green-500" />
                                         </a>
+                                      )}
+                                      {w.workerStatus !== "completed" && (
+                                        <button
+                                          onClick={() => setSosModal({ job: aj.job, workerId: w.workerId, workerName: w.profile?.full_name || "Грузчик" })}
+                                          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-destructive/10 border border-destructive/30 text-xs font-bold text-destructive active:scale-[0.98] transition-all"
+                                          title="Срочная замена"
+                                        >
+                                          <AlertTriangle size={13} /> SOS
+                                        </button>
                                       )}
                                     </div>
                                   </motion.div>
