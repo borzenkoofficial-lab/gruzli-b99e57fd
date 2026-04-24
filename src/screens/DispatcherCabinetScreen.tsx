@@ -200,6 +200,47 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     return { jobs: monthJobs.length, income: totalIncome, expense: totalExpense, profit };
   }, [completedStats]);
 
+  const dailyProfit = useMemo(() => {
+    const today = new Date();
+    const dayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const dayEnd = dayStart + 86400000;
+    return completedStats
+      .filter((s) => {
+        const t = new Date(s.createdAt).getTime();
+        return t >= dayStart && t < dayEnd;
+      })
+      .reduce((sum, j) => sum + (j.dispatcherIncome - j.totalExpense), 0);
+  }, [completedStats]);
+
+  const exportCSV = () => {
+    if (completedStats.length === 0) {
+      toast.error("Нет данных для экспорта");
+      return;
+    }
+    const rows = [
+      ["Дата", "Заявка", "Грузчиков", "Доход (₽)", "Расход (₽)", "Прибыль (₽)"],
+      ...completedStats.map((s) => [
+        new Date(s.createdAt).toLocaleDateString("ru-RU"),
+        `"${s.title.replace(/"/g, '""')}"`,
+        String(s.workersCount),
+        String(s.dispatcherIncome),
+        String(s.totalExpense),
+        String(s.dispatcherIncome - s.totalExpense),
+      ]),
+    ];
+    const csv = "\ufeff" + rows.map((r) => r.join(";")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `gruzli-otchet-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("📊 Отчёт скачан");
+  };
+
   // Weekly chart data (last 7 days)
   const chartData = useMemo(() => {
     const days: { label: string; income: number; expense: number }[] = [];
