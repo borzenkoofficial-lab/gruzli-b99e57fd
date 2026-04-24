@@ -229,6 +229,39 @@ export type Database = {
           },
         ]
       }
+      dispatcher_goals: {
+        Row: {
+          checklist: Json
+          checklist_date: string
+          created_at: string
+          daily_profit_goal: number
+          dispatcher_id: string
+          id: string
+          updated_at: string
+          weekly_profit_goal: number
+        }
+        Insert: {
+          checklist?: Json
+          checklist_date?: string
+          created_at?: string
+          daily_profit_goal?: number
+          dispatcher_id: string
+          id?: string
+          updated_at?: string
+          weekly_profit_goal?: number
+        }
+        Update: {
+          checklist?: Json
+          checklist_date?: string
+          created_at?: string
+          daily_profit_goal?: number
+          dispatcher_id?: string
+          id?: string
+          updated_at?: string
+          weekly_profit_goal?: number
+        }
+        Relationships: []
+      }
       dispatcher_reviews: {
         Row: {
           created_at: string
@@ -405,6 +438,60 @@ export type Database = {
           },
         ]
       }
+      job_templates: {
+        Row: {
+          address: string | null
+          created_at: string
+          description: string | null
+          dispatcher_id: string
+          duration_hours: number | null
+          hourly_rate: number
+          id: string
+          metro: string | null
+          name: string
+          quick_minimum: boolean | null
+          title: string
+          updated_at: string
+          urgent: boolean | null
+          use_count: number
+          workers_needed: number | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string
+          description?: string | null
+          dispatcher_id: string
+          duration_hours?: number | null
+          hourly_rate?: number
+          id?: string
+          metro?: string | null
+          name: string
+          quick_minimum?: boolean | null
+          title: string
+          updated_at?: string
+          urgent?: boolean | null
+          use_count?: number
+          workers_needed?: number | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string
+          description?: string | null
+          dispatcher_id?: string
+          duration_hours?: number | null
+          hourly_rate?: number
+          id?: string
+          metro?: string | null
+          name?: string
+          quick_minimum?: boolean | null
+          title?: string
+          updated_at?: string
+          urgent?: boolean | null
+          use_count?: number
+          workers_needed?: number | null
+        }
+        Relationships: []
+      }
       jobs: {
         Row: {
           address: string | null
@@ -420,8 +507,12 @@ export type Database = {
           is_official: boolean
           metro: string | null
           quick_minimum: boolean | null
+          recurring_rule: string | null
+          replacement_for_job_id: string | null
+          replacement_for_worker_id: string | null
           start_time: string | null
           status: string | null
+          template_id: string | null
           title: string
           updated_at: string
           urgent: boolean | null
@@ -441,8 +532,12 @@ export type Database = {
           is_official?: boolean
           metro?: string | null
           quick_minimum?: boolean | null
+          recurring_rule?: string | null
+          replacement_for_job_id?: string | null
+          replacement_for_worker_id?: string | null
           start_time?: string | null
           status?: string | null
+          template_id?: string | null
           title: string
           updated_at?: string
           urgent?: boolean | null
@@ -462,14 +557,33 @@ export type Database = {
           is_official?: boolean
           metro?: string | null
           quick_minimum?: boolean | null
+          recurring_rule?: string | null
+          replacement_for_job_id?: string | null
+          replacement_for_worker_id?: string | null
           start_time?: string | null
           status?: string | null
+          template_id?: string | null
           title?: string
           updated_at?: string
           urgent?: boolean | null
           workers_needed?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "jobs_replacement_for_job_id_fkey"
+            columns: ["replacement_for_job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "job_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       kartoteka: {
         Row: {

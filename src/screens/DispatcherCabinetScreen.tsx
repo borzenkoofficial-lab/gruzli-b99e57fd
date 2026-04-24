@@ -6,11 +6,16 @@ import {
   ChevronDown, ChevronUp, Phone, Square, Timer, Wallet,
   TrendingUp, TrendingDown, BarChart3, DollarSign, FileText,
   Calendar, Award, Zap, Target, Activity, Sparkles, Loader2,
+  Download, Trophy,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
+import JobTemplatesModal from "@/components/dispatcher/JobTemplatesModal";
+import TopWorkersModal from "@/components/dispatcher/TopWorkersModal";
+import GoalsModal from "@/components/dispatcher/GoalsModal";
+import SOSReplacementModal from "@/components/dispatcher/SOSReplacementModal";
 
 interface DispatcherCabinetScreenProps {
   onBack: () => void;
@@ -73,6 +78,10 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   const [dispatcherIncome, setDispatcherIncome] = useState("");
   const [aiAdvice, setAiAdvice] = useState<string | null>(null);
   const [aiAdviceLoading, setAiAdviceLoading] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showTopWorkers, setShowTopWorkers] = useState(false);
+  const [showGoals, setShowGoals] = useState(false);
+  const [sosModal, setSosModal] = useState<{ job: any; workerId: string; workerName: string } | null>(null);
 
   const fetchData = async () => {
     if (!user) return;
@@ -190,6 +199,47 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     const profit = totalIncome - totalExpense;
     return { jobs: monthJobs.length, income: totalIncome, expense: totalExpense, profit };
   }, [completedStats]);
+
+  const dailyProfit = useMemo(() => {
+    const today = new Date();
+    const dayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const dayEnd = dayStart + 86400000;
+    return completedStats
+      .filter((s) => {
+        const t = new Date(s.createdAt).getTime();
+        return t >= dayStart && t < dayEnd;
+      })
+      .reduce((sum, j) => sum + (j.dispatcherIncome - j.totalExpense), 0);
+  }, [completedStats]);
+
+  const exportCSV = () => {
+    if (completedStats.length === 0) {
+      toast.error("Нет данных для экспорта");
+      return;
+    }
+    const rows = [
+      ["Дата", "Заявка", "Грузчиков", "Доход (₽)", "Расход (₽)", "Прибыль (₽)"],
+      ...completedStats.map((s) => [
+        new Date(s.createdAt).toLocaleDateString("ru-RU"),
+        `"${s.title.replace(/"/g, '""')}"`,
+        String(s.workersCount),
+        String(s.dispatcherIncome),
+        String(s.totalExpense),
+        String(s.dispatcherIncome - s.totalExpense),
+      ]),
+    ];
+    const csv = "\ufeff" + rows.map((r) => r.join(";")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `gruzli-otchet-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("📊 Отчёт скачан");
+  };
 
   // Weekly chart data (last 7 days)
   const chartData = useMemo(() => {
@@ -359,6 +409,35 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
         </button>
       </div>
 
+      {/* Quick actions: Templates, Top workers, Goals, Export */}
+      <div className="px-4 pb-3">
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { icon: FileText, label: "Шаблоны", color: "text-blue-400", bg: "bg-blue-500/10", onClick: () => setShowTemplates(true) },
+            { icon: Trophy, label: "Топ", color: "text-yellow-500", bg: "bg-yellow-500/10", onClick: () => setShowTopWorkers(true) },
+            { icon: Target, label: "Цели", color: "text-primary", bg: "bg-primary/10", onClick: () => setShowGoals(true) },
+            { icon: Download, label: "Отчёт", color: "text-green-500", bg: "bg-green-500/10", onClick: exportCSV },
+          ].map((a, i) => {
+            const Ic = a.icon;
+            return (
+              <motion.button
+                key={a.label}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04 }}
+                onClick={a.onClick}
+                className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl bg-card border border-border active:bg-surface-1 transition-all"
+              >
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${a.bg}`}>
+                  <Ic size={16} className={a.color} />
+                </div>
+                <span className="text-[10px] font-bold text-foreground">{a.label}</span>
+              </motion.button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Tab navigation */}
       <div className="px-4 pb-3">
         <div className="flex gap-1 bg-card border border-border rounded-2xl p-1">
@@ -519,9 +598,18 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                                         <MessageCircle size={13} className="text-primary" /> Написать
                                       </button>
                                       {w.profile?.phone && (
-                                        <a href={`tel:${w.profile.phone}`} className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-card border border-border text-xs font-semibold text-foreground active:bg-surface-1 transition-all">
-                                          <Phone size={13} className="text-green-500" /> Звонок
+                                        <a href={`tel:${w.profile.phone}`} className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-card border border-border text-xs font-semibold text-foreground active:bg-surface-1 transition-all">
+                                          <Phone size={13} className="text-green-500" />
                                         </a>
+                                      )}
+                                      {w.workerStatus !== "completed" && (
+                                        <button
+                                          onClick={() => setSosModal({ job: aj.job, workerId: w.workerId, workerName: w.profile?.full_name || "Грузчик" })}
+                                          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-destructive/10 border border-destructive/30 text-xs font-bold text-destructive active:scale-[0.98] transition-all"
+                                          title="Срочная замена"
+                                        >
+                                          <AlertTriangle size={13} /> SOS
+                                        </button>
                                       )}
                                     </div>
                                   </motion.div>
@@ -839,6 +927,28 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* New cabinet features */}
+      <JobTemplatesModal open={showTemplates} onClose={() => setShowTemplates(false)} />
+      <TopWorkersModal
+        open={showTopWorkers}
+        onClose={() => setShowTopWorkers(false)}
+        onChat={(id, name) => { setShowTopWorkers(false); onChatWithWorker(id, name); }}
+        onViewProfile={(id) => { setShowTopWorkers(false); onViewProfile?.(id); }}
+      />
+      <GoalsModal
+        open={showGoals}
+        onClose={() => setShowGoals(false)}
+        todayProfit={dailyProfit}
+        weekProfit={weeklyStats.profit}
+      />
+      <SOSReplacementModal
+        open={!!sosModal}
+        onClose={() => setSosModal(null)}
+        job={sosModal?.job || null}
+        workerId={sosModal?.workerId || null}
+        workerName={sosModal?.workerName || ""}
+      />
     </div>
   );
 };
