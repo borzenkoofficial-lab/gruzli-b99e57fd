@@ -376,7 +376,10 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
               key={conv.id}
               conv={conv}
               index={i}
-              onOpen={() => onOpenChat(conv.id, conv.otherName)}
+              onOpen={() => {
+                if (conv.isCommunity && onOpenCommunity) onOpenCommunity();
+                else onOpenChat(conv.id, conv.otherName);
+              }}
               onDelete={async () => {
                 if (!user) return;
                 if (!window.confirm("Диалог будет удалён у всех участников. Продолжить?")) return;
