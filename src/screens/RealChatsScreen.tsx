@@ -204,7 +204,12 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
       const items = convs.map(conv => {
         const otherIds = participantsByConv[conv.id] || [];
         const otherProfile = otherIds.length > 0 ? profileMap[otherIds[0]] : null;
-        const otherName = conv.is_group ? (conv.title || "Группа") : (otherProfile?.name || conv.title || "Чат");
+        const isCommunity = communityId !== null && conv.id === communityId;
+        const otherName = isCommunity
+          ? "Сообщество диспетчеров"
+          : conv.is_group
+            ? (conv.title || "Группа")
+            : (otherProfile?.name || conv.title || "Чат");
         const lastMsg = lastMsgByConv[conv.id];
         
         let lastMsgText = "Нет сообщений";
@@ -226,9 +231,10 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
             : "",
           lastTimestamp: lastMsg?.created_at || conv.created_at,
           otherName,
-          otherAvatarUrl: otherProfile?.avatarUrl || null,
+          otherAvatarUrl: isCommunity ? null : (otherProfile?.avatarUrl || null),
           unreadCount: unreadByConv[conv.id] || 0,
-          otherLastSeen: otherProfile?.lastSeen || null,
+          otherLastSeen: isCommunity ? null : (otherProfile?.lastSeen || null),
+          isCommunity,
         };
       });
       items.sort((a, b) => new Date(b.lastTimestamp).getTime() - new Date(a.lastTimestamp).getTime());
