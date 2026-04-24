@@ -83,7 +83,14 @@ const SwipeableChatItem = ({
         className="relative z-10 flex items-center gap-3 px-4 py-3 cursor-pointer active:bg-muted/20 transition-colors bg-background"
       >
         <div className="relative shrink-0">
-          {conv.otherAvatarUrl ? (
+          {conv.isCommunity ? (
+            <div
+              className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-lg font-extrabold shadow-lg"
+              style={{ background: "linear-gradient(135deg, hsl(45 95% 55%), hsl(35 90% 50%))", color: "#1a1a1a" }}
+            >
+              G
+            </div>
+          ) : conv.otherAvatarUrl ? (
             <img src={conv.otherAvatarUrl} alt="" className="w-[52px] h-[52px] rounded-full object-cover shadow-lg" />
           ) : (
             <div
@@ -93,7 +100,7 @@ const SwipeableChatItem = ({
               {initials}
             </div>
           )}
-          {conv.otherLastSeen && formatLastSeen(conv.otherLastSeen).isOnline && (
+          {!conv.isCommunity && conv.otherLastSeen && formatLastSeen(conv.otherLastSeen).isOnline && (
             <div className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-[2.5px] border-background" />
           )}
         </div>
