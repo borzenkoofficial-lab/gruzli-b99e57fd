@@ -78,6 +78,10 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   const [dispatcherIncome, setDispatcherIncome] = useState("");
   const [aiAdvice, setAiAdvice] = useState<string | null>(null);
   const [aiAdviceLoading, setAiAdviceLoading] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showTopWorkers, setShowTopWorkers] = useState(false);
+  const [showGoals, setShowGoals] = useState(false);
+  const [sosModal, setSosModal] = useState<{ job: any; workerId: string; workerName: string } | null>(null);
 
   const fetchData = async () => {
     if (!user) return;
