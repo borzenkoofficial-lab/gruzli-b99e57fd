@@ -6,11 +6,16 @@ import {
   ChevronDown, ChevronUp, Phone, Square, Timer, Wallet,
   TrendingUp, TrendingDown, BarChart3, DollarSign, FileText,
   Calendar, Award, Zap, Target, Activity, Sparkles, Loader2,
+  Download, Trophy,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
+import JobTemplatesModal from "@/components/dispatcher/JobTemplatesModal";
+import TopWorkersModal from "@/components/dispatcher/TopWorkersModal";
+import GoalsModal from "@/components/dispatcher/GoalsModal";
+import SOSReplacementModal from "@/components/dispatcher/SOSReplacementModal";
 
 interface DispatcherCabinetScreenProps {
   onBack: () => void;
