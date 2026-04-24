@@ -83,7 +83,14 @@ const SwipeableChatItem = ({
         className="relative z-10 flex items-center gap-3 px-4 py-3 cursor-pointer active:bg-muted/20 transition-colors bg-background"
       >
         <div className="relative shrink-0">
-          {conv.otherAvatarUrl ? (
+          {conv.isCommunity ? (
+            <div
+              className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-lg font-extrabold shadow-lg"
+              style={{ background: "linear-gradient(135deg, hsl(45 95% 55%), hsl(35 90% 50%))", color: "#1a1a1a" }}
+            >
+              G
+            </div>
+          ) : conv.otherAvatarUrl ? (
             <img src={conv.otherAvatarUrl} alt="" className="w-[52px] h-[52px] rounded-full object-cover shadow-lg" />
           ) : (
             <div
@@ -93,7 +100,7 @@ const SwipeableChatItem = ({
               {initials}
             </div>
           )}
-          {conv.otherLastSeen && formatLastSeen(conv.otherLastSeen).isOnline && (
+          {!conv.isCommunity && conv.otherLastSeen && formatLastSeen(conv.otherLastSeen).isOnline && (
             <div className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-[2.5px] border-background" />
           )}
         </div>
@@ -128,16 +135,19 @@ interface ConversationItem {
   otherAvatarUrl: string | null;
   unreadCount: number;
   otherLastSeen: string | null;
+  isCommunity?: boolean;
 }
 
 interface RealChatsScreenProps {
   onOpenChat: (conversationId: string, title: string) => void;
   onOpenChannel: () => void;
+  onOpenCommunity?: () => void;
 }
 
-const RealChatsScreen = ({ onOpenChat, onOpenChannel }: RealChatsScreenProps) => {
+const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealChatsScreenProps) => {
   const { user } = useAuth();
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
+  const [communityId, setCommunityId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const conversationsRef = useRef(conversations);
@@ -201,7 +211,12 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel }: RealChatsScreenProps) =>
       const items = convs.map(conv => {
         const otherIds = participantsByConv[conv.id] || [];
         const otherProfile = otherIds.length > 0 ? profileMap[otherIds[0]] : null;
-        const otherName = conv.is_group ? (conv.title || "Группа") : (otherProfile?.name || conv.title || "Чат");
+        const isCommunity = communityId !== null && conv.id === communityId;
+        const otherName = isCommunity
+          ? "Сообщество диспетчеров"
+          : conv.is_group
+            ? (conv.title || "Группа")
+            : (otherProfile?.name || conv.title || "Чат");
         const lastMsg = lastMsgByConv[conv.id];
         
         let lastMsgText = "Нет сообщений";
@@ -223,16 +238,30 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel }: RealChatsScreenProps) =>
             : "",
           lastTimestamp: lastMsg?.created_at || conv.created_at,
           otherName,
-          otherAvatarUrl: otherProfile?.avatarUrl || null,
+          otherAvatarUrl: isCommunity ? null : (otherProfile?.avatarUrl || null),
           unreadCount: unreadByConv[conv.id] || 0,
-          otherLastSeen: otherProfile?.lastSeen || null,
+          otherLastSeen: isCommunity ? null : (otherProfile?.lastSeen || null),
+          isCommunity,
         };
       });
       items.sort((a, b) => new Date(b.lastTimestamp).getTime() - new Date(a.lastTimestamp).getTime());
       setConversations(items);
     }
     setLoading(false);
-  }, [user]);
+  }, [user, communityId]);
+
+  useEffect(() => {
+    const loadCommunityId = async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("id", "dispatcher_community_conversation_id")
+        .maybeSingle();
+      const id = (data?.value as any)?.conversation_id ?? null;
+      setCommunityId(id);
+    };
+    loadCommunityId();
+  }, []);
 
   useEffect(() => {
     fetchConversations();
@@ -347,7 +376,10 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel }: RealChatsScreenProps) =>
               key={conv.id}
               conv={conv}
               index={i}
-              onOpen={() => onOpenChat(conv.id, conv.otherName)}
+              onOpen={() => {
+                if (conv.isCommunity && onOpenCommunity) onOpenCommunity();
+                else onOpenChat(conv.id, conv.otherName);
+              }}
               onDelete={async () => {
                 if (!user) return;
                 if (!window.confirm("Диалог будет удалён у всех участников. Продолжить?")) return;
