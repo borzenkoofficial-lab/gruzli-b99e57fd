@@ -403,7 +403,7 @@ const Index = () => {
           )
         )}
         {tab === "orders" && <OrdersScreen />}
-        {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} />}
+        {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} onOpenCommunity={() => setShowCommunity(true)} />}
         {tab === "kartoteka" && <KartotekaScreen />}
         {tab === "dispatchers" && !isDispatcher && <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />}
         {tab === "profile" && (
