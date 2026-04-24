@@ -927,6 +927,28 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* New cabinet features */}
+      <JobTemplatesModal open={showTemplates} onClose={() => setShowTemplates(false)} />
+      <TopWorkersModal
+        open={showTopWorkers}
+        onClose={() => setShowTopWorkers(false)}
+        onChat={(id, name) => { setShowTopWorkers(false); onChatWithWorker(id, name); }}
+        onViewProfile={(id) => { setShowTopWorkers(false); onViewProfile?.(id); }}
+      />
+      <GoalsModal
+        open={showGoals}
+        onClose={() => setShowGoals(false)}
+        todayProfit={dailyProfit}
+        weekProfit={weeklyStats.profit}
+      />
+      <SOSReplacementModal
+        open={!!sosModal}
+        onClose={() => setSosModal(null)}
+        job={sosModal?.job || null}
+        workerId={sosModal?.workerId || null}
+        workerName={sosModal?.workerName || ""}
+      />
     </div>
   );
 };
