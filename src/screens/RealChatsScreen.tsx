@@ -241,7 +241,20 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
       setConversations(items);
     }
     setLoading(false);
-  }, [user]);
+  }, [user, communityId]);
+
+  useEffect(() => {
+    const loadCommunityId = async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("id", "dispatcher_community_conversation_id")
+        .maybeSingle();
+      const id = (data?.value as any)?.conversation_id ?? null;
+      setCommunityId(id);
+    };
+    loadCommunityId();
+  }, []);
 
   useEffect(() => {
     fetchConversations();
