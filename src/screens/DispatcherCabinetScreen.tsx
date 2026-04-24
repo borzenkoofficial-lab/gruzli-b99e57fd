@@ -409,6 +409,35 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
         </button>
       </div>
 
+      {/* Quick actions: Templates, Top workers, Goals, Export */}
+      <div className="px-4 pb-3">
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { icon: FileText, label: "Шаблоны", color: "text-blue-400", bg: "bg-blue-500/10", onClick: () => setShowTemplates(true) },
+            { icon: Trophy, label: "Топ", color: "text-yellow-500", bg: "bg-yellow-500/10", onClick: () => setShowTopWorkers(true) },
+            { icon: Target, label: "Цели", color: "text-primary", bg: "bg-primary/10", onClick: () => setShowGoals(true) },
+            { icon: Download, label: "Отчёт", color: "text-green-500", bg: "bg-green-500/10", onClick: exportCSV },
+          ].map((a, i) => {
+            const Ic = a.icon;
+            return (
+              <motion.button
+                key={a.label}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04 }}
+                onClick={a.onClick}
+                className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl bg-card border border-border active:bg-surface-1 transition-all"
+              >
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${a.bg}`}>
+                  <Ic size={16} className={a.color} />
+                </div>
+                <span className="text-[10px] font-bold text-foreground">{a.label}</span>
+              </motion.button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Tab navigation */}
       <div className="px-4 pb-3">
         <div className="flex gap-1 bg-card border border-border rounded-2xl p-1">
