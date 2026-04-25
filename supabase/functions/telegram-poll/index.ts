@@ -126,96 +126,107 @@ Deno.serve(async (req) => {
         const m = u.my_chat_member;
         const chat = m.chat;
         const newStatus: string = m.new_chat_member?.status ?? '';
-        const isChannel = chat?.type === 'channel';
+        const isBroadcast = chat?.type === 'channel' || chat?.type === 'group' || chat?.type === 'supergroup';
         const removed = newStatus === 'left' || newStatus === 'kicked';
 
-        if (isChannel && removed) {
-          // Deactivate any user channels with this chat_id
+        if (isBroadcast && removed) {
           await supabase
             .from('telegram_user_channels')
             .update({ is_active: false })
             .eq('chat_id', chat.id);
-          console.log(`[telegram-poll] Bot removed from channel ${chat.id}, deactivated`);
+          console.log(`[telegram-poll] Bot removed from ${chat.type} ${chat.id}, deactivated`);
         }
 
-        if (isChannel && (newStatus === 'administrator' || newStatus === 'member')) {
-          // Bot added to channel — store metadata so we can show user a hint to send /link CODE
-          // Channel record is created/updated only when the user posts the link code
-          console.log(`[telegram-poll] Bot added to channel ${chat.id} (${chat.title ?? ''})`);
+        if (isBroadcast && (newStatus === 'administrator' || newStatus === 'member')) {
+          console.log(`[telegram-poll] Bot added to ${chat.type} ${chat.id} (${chat.title ?? ''})`);
         }
         totalProcessed++;
         continue;
       }
+
+      // Helper for linking a chat (channel or group) via code
+      const tryLinkChat = async (chat: any, text: string): Promise<boolean> => {
+        const codeMatch = text.match(CODE_RE);
+        if (!codeMatch) return false;
+        const code = codeMatch[1];
+
+        const { data: codeRow } = await supabase
+          .from('telegram_link_codes')
+          .select('user_id, expires_at, used_at, purpose')
+          .eq('code', code)
+          .maybeSingle();
+
+        if (
+          codeRow &&
+          !codeRow.used_at &&
+          new Date(codeRow.expires_at) > new Date() &&
+          (codeRow.purpose === 'channel' || codeRow.purpose === 'personal')
+        ) {
+          const { error: chErr } = await supabase
+            .from('telegram_user_channels')
+            .upsert(
+              {
+                user_id: codeRow.user_id,
+                chat_id: chat.id,
+                title: chat.title ?? null,
+                username: chat.username ?? null,
+                is_active: true,
+              },
+              { onConflict: 'user_id,chat_id' },
+            );
+
+          if (chErr) {
+            console.error('[telegram-poll] chat upsert error:', chErr.message);
+            return false;
+          }
+
+          newChannels++;
+          await supabase
+            .from('telegram_link_codes')
+            .update({ used_at: new Date().toISOString() })
+            .eq('code', code);
+
+          const label = chat.type === 'channel' ? 'Канал' : 'Группа';
+          await sendTelegram(
+            LOVABLE_API_KEY,
+            TELEGRAM_API_KEY,
+            chat.id,
+            `✅ <b>${label} привязан${chat.type === 'channel' ? '' : 'а'} к Грузли!</b>\n\nТеперь все новые заявки будут публиковаться сюда автоматически.`,
+          );
+          return true;
+        }
+
+        await sendTelegram(
+          LOVABLE_API_KEY,
+          TELEGRAM_API_KEY,
+          chat.id,
+          '⚠️ Код недействителен или просрочен. Сгенерируйте новый код в приложении Грузли.',
+        );
+        return false;
+      };
 
       // ============ Handle channel posts (for linking a channel) ============
       if (u.channel_post) {
         const post = u.channel_post;
         const chat = post.chat;
         if (!chat?.id || chat.type !== 'channel') continue;
-
         const text: string = (post.text ?? post.caption ?? '').trim();
-        const codeMatch = text.match(CODE_RE);
-
-        if (codeMatch) {
-          const code = codeMatch[1];
-          const { data: codeRow } = await supabase
-            .from('telegram_link_codes')
-            .select('user_id, expires_at, used_at, purpose')
-            .eq('code', code)
-            .maybeSingle();
-
-          if (
-            codeRow &&
-            !codeRow.used_at &&
-            new Date(codeRow.expires_at) > new Date() &&
-            (codeRow.purpose === 'channel' || codeRow.purpose === 'personal')
-          ) {
-            // Link the channel to the user
-            const { error: chErr } = await supabase
-              .from('telegram_user_channels')
-              .upsert(
-                {
-                  user_id: codeRow.user_id,
-                  chat_id: chat.id,
-                  title: chat.title ?? null,
-                  username: chat.username ?? null,
-                  is_active: true,
-                },
-                { onConflict: 'user_id,chat_id' },
-              );
-
-            if (chErr) {
-              console.error('[telegram-poll] channel upsert error:', chErr.message);
-            } else {
-              newChannels++;
-              await supabase
-                .from('telegram_link_codes')
-                .update({ used_at: new Date().toISOString() })
-                .eq('code', code);
-
-              await sendTelegram(
-                LOVABLE_API_KEY,
-                TELEGRAM_API_KEY,
-                chat.id,
-                '✅ <b>Канал привязан к Грузли!</b>\n\nТеперь все новые заявки будут публиковаться сюда автоматически.',
-              );
-            }
-          } else {
-            await sendTelegram(
-              LOVABLE_API_KEY,
-              TELEGRAM_API_KEY,
-              chat.id,
-              '⚠️ Код недействителен или просрочен. Сгенерируйте новый код в приложении Грузли.',
-            );
-          }
-        }
+        if (text) await tryLinkChat(chat, text);
         totalProcessed++;
         continue;
       }
 
-      // ============ Handle private messages ============
+      // ============ Handle messages (private + groups + supergroups) ============
       const msg = u.message;
       if (!msg?.chat?.id) continue;
+
+      // Group / supergroup — only used for linking via code
+      if (msg.chat.type === 'group' || msg.chat.type === 'supergroup') {
+        const text: string = (msg.text ?? msg.caption ?? '').trim();
+        if (text) await tryLinkChat(msg.chat, text);
+        totalProcessed++;
+        continue;
+      }
 
       const text: string = (msg.text ?? '').trim();
       const chatId: number = msg.chat.id;
