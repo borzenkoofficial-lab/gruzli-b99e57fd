@@ -438,6 +438,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
           </div>
 
           <TelegramLinkCard />
+          <TelegramChannelsCard />
         </div>
       </ScrollWrapper>
     );
