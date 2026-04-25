@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { LegalModal } from "@/components/LegalDocuments";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
+import { TelegramChannelsCard } from "@/components/TelegramChannelsCard";
 
 const profileSchema = z.object({
   full_name: z.string().trim().min(2, "Минимум 2 символа").max(100, "Максимум 100 символов"),
