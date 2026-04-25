@@ -15,6 +15,37 @@ const WELCOME_TEXT =
   'Здесь будут приходить новые заявки на грузчиков. Чтобы откликнуться — нажимайте кнопку под заявкой.\n\n' +
   '👇 Откройте приложение, чтобы посмотреть все заявки и свой профиль.';
 
+// Match a code anywhere in the text (8 chars from the allowed alphabet)
+const CODE_RE = /\b([ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8})\b/;
+
+async function sendTelegram(
+  apiKey: string,
+  connectionKey: string,
+  chatId: number,
+  text: string,
+  extra: Record<string, unknown> = {},
+) {
+  try {
+    await fetch(`${GATEWAY_URL}/sendMessage`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'X-Connection-Api-Key': connectionKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true,
+        ...extra,
+      }),
+    });
+  } catch (e) {
+    console.error('[telegram-poll] sendMessage failed:', e);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -53,6 +84,7 @@ Deno.serve(async (req) => {
   let currentOffset: number = state.update_offset;
   let totalProcessed = 0;
   let newSubscribers = 0;
+  let newChannels = 0;
 
   while (true) {
     const elapsed = Date.now() - startTime;
@@ -72,7 +104,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         offset: currentOffset,
         timeout,
-        allowed_updates: ['message'],
+        allowed_updates: ['message', 'channel_post', 'my_chat_member'],
       }),
     });
 
@@ -89,6 +121,99 @@ Deno.serve(async (req) => {
     if (updates.length === 0) continue;
 
     for (const u of updates) {
+      // ============ Handle bot being added/removed from chat ============
+      if (u.my_chat_member) {
+        const m = u.my_chat_member;
+        const chat = m.chat;
+        const newStatus: string = m.new_chat_member?.status ?? '';
+        const isChannel = chat?.type === 'channel';
+        const removed = newStatus === 'left' || newStatus === 'kicked';
+
+        if (isChannel && removed) {
+          // Deactivate any user channels with this chat_id
+          await supabase
+            .from('telegram_user_channels')
+            .update({ is_active: false })
+            .eq('chat_id', chat.id);
+          console.log(`[telegram-poll] Bot removed from channel ${chat.id}, deactivated`);
+        }
+
+        if (isChannel && (newStatus === 'administrator' || newStatus === 'member')) {
+          // Bot added to channel — store metadata so we can show user a hint to send /link CODE
+          // Channel record is created/updated only when the user posts the link code
+          console.log(`[telegram-poll] Bot added to channel ${chat.id} (${chat.title ?? ''})`);
+        }
+        totalProcessed++;
+        continue;
+      }
+
+      // ============ Handle channel posts (for linking a channel) ============
+      if (u.channel_post) {
+        const post = u.channel_post;
+        const chat = post.chat;
+        if (!chat?.id || chat.type !== 'channel') continue;
+
+        const text: string = (post.text ?? post.caption ?? '').trim();
+        const codeMatch = text.match(CODE_RE);
+
+        if (codeMatch) {
+          const code = codeMatch[1];
+          const { data: codeRow } = await supabase
+            .from('telegram_link_codes')
+            .select('user_id, expires_at, used_at, purpose')
+            .eq('code', code)
+            .maybeSingle();
+
+          if (
+            codeRow &&
+            !codeRow.used_at &&
+            new Date(codeRow.expires_at) > new Date() &&
+            (codeRow.purpose === 'channel' || codeRow.purpose === 'personal')
+          ) {
+            // Link the channel to the user
+            const { error: chErr } = await supabase
+              .from('telegram_user_channels')
+              .upsert(
+                {
+                  user_id: codeRow.user_id,
+                  chat_id: chat.id,
+                  title: chat.title ?? null,
+                  username: chat.username ?? null,
+                  is_active: true,
+                },
+                { onConflict: 'user_id,chat_id' },
+              );
+
+            if (chErr) {
+              console.error('[telegram-poll] channel upsert error:', chErr.message);
+            } else {
+              newChannels++;
+              await supabase
+                .from('telegram_link_codes')
+                .update({ used_at: new Date().toISOString() })
+                .eq('code', code);
+
+              await sendTelegram(
+                LOVABLE_API_KEY,
+                TELEGRAM_API_KEY,
+                chat.id,
+                '✅ <b>Канал привязан к Грузли!</b>\n\nТеперь все новые заявки будут публиковаться сюда автоматически.',
+              );
+            }
+          } else {
+            await sendTelegram(
+              LOVABLE_API_KEY,
+              TELEGRAM_API_KEY,
+              chat.id,
+              '⚠️ Код недействителен или просрочен. Сгенерируйте новый код в приложении Грузли.',
+            );
+          }
+        }
+        totalProcessed++;
+        continue;
+      }
+
+      // ============ Handle private messages ============
       const msg = u.message;
       if (!msg?.chat?.id) continue;
 
@@ -97,7 +222,6 @@ Deno.serve(async (req) => {
       const isStart = text.toLowerCase().startsWith('/start');
 
       if (isStart) {
-        // Parse /start CODE for account linking
         const parts = text.split(/\s+/);
         const linkCode = parts.length > 1 ? parts[1].trim() : null;
         let linkedUserId: string | null = null;
@@ -106,11 +230,16 @@ Deno.serve(async (req) => {
         if (linkCode) {
           const { data: codeRow } = await supabase
             .from('telegram_link_codes')
-            .select('user_id, expires_at, used_at')
+            .select('user_id, expires_at, used_at, purpose')
             .eq('code', linkCode)
             .maybeSingle();
 
-          if (codeRow && !codeRow.used_at && new Date(codeRow.expires_at) > new Date()) {
+          if (
+            codeRow &&
+            !codeRow.used_at &&
+            new Date(codeRow.expires_at) > new Date() &&
+            codeRow.purpose !== 'channel'
+          ) {
             linkedUserId = codeRow.user_id;
             linkSuccess = true;
             await supabase
@@ -120,7 +249,6 @@ Deno.serve(async (req) => {
           }
         }
 
-        // Upsert subscriber (with user_id if linked)
         const subRow: Record<string, unknown> = {
           chat_id: chatId,
           username: msg.from?.username ?? null,
@@ -144,25 +272,13 @@ Deno.serve(async (req) => {
           ? '✅ <b>Аккаунт привязан!</b>\n\nТеперь личные уведомления (новые сообщения, отклики, статусы заявок) будут приходить вам в Telegram.\n\n👇 Откройте приложение, чтобы продолжить работу.'
           : WELCOME_TEXT;
 
-        await fetch(`${GATEWAY_URL}/sendMessage`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-            'X-Connection-Api-Key': TELEGRAM_API_KEY,
-            'Content-Type': 'application/json',
+        await sendTelegram(LOVABLE_API_KEY, TELEGRAM_API_KEY, chatId, greetingText, {
+          reply_markup: {
+            inline_keyboard: [[
+              { text: '🚀 Открыть приложение', web_app: { url: WEB_APP_URL } },
+            ]],
           },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text: greetingText,
-            parse_mode: 'HTML',
-            disable_web_page_preview: true,
-            reply_markup: {
-              inline_keyboard: [[
-                { text: '🚀 Открыть приложение', web_app: { url: WEB_APP_URL } },
-              ]],
-            },
-          }),
-        }).catch((e) => console.error('[telegram-poll] welcome send error:', e));
+        });
       }
 
       totalProcessed++;
@@ -186,7 +302,7 @@ Deno.serve(async (req) => {
   }
 
   return new Response(
-    JSON.stringify({ ok: true, processed: totalProcessed, newSubscribers, finalOffset: currentOffset }),
+    JSON.stringify({ ok: true, processed: totalProcessed, newSubscribers, newChannels, finalOffset: currentOffset }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
   );
 });
