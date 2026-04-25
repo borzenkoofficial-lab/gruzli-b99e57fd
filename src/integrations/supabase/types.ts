@@ -858,6 +858,7 @@ export type Database = {
           created_at: string
           expires_at: string
           id: string
+          purpose: string
           used_at: string | null
           user_id: string
         }
@@ -866,6 +867,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
+          purpose?: string
           used_at?: string | null
           user_id: string
         }
@@ -874,6 +876,7 @@ export type Database = {
           created_at?: string
           expires_at?: string
           id?: string
+          purpose?: string
           used_at?: string | null
           user_id?: string
         }
@@ -911,6 +914,39 @@ export type Database = {
           last_name?: string | null
           updated_at?: string
           user_id?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
+      telegram_user_channels: {
+        Row: {
+          chat_id: number
+          created_at: string
+          id: string
+          is_active: boolean
+          title: string | null
+          updated_at: string
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          chat_id: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          title?: string | null
+          updated_at?: string
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          chat_id?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          title?: string | null
+          updated_at?: string
+          user_id?: string
           username?: string | null
         }
         Relationships: []
