@@ -93,13 +93,16 @@ Deno.serve(async (req) => {
 
     const text = lines.join('\n');
 
-    // Load active subscribers
+    // Load active subscribers (private chats) and user channels
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    let chatIds: number[] = [];
+    let subscriberChatIds: number[] = [];
+    let channelChatIds: number[] = [];
+    const supabase = supabaseUrl && supabaseServiceKey
+      ? createClient(supabaseUrl, supabaseServiceKey)
+      : null;
 
-    if (supabaseUrl && supabaseServiceKey) {
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    if (supabase) {
       const { data: subs, error: subsErr } = await supabase
         .from('telegram_subscribers')
         .select('chat_id')
@@ -108,13 +111,24 @@ Deno.serve(async (req) => {
       if (subsErr) {
         console.error('[telegram] subscribers load error:', subsErr.message);
       } else {
-        chatIds = (subs ?? []).map((s: { chat_id: number }) => s.chat_id);
+        subscriberChatIds = (subs ?? []).map((s: { chat_id: number }) => s.chat_id);
+      }
+
+      const { data: channels, error: chErr } = await supabase
+        .from('telegram_user_channels')
+        .select('chat_id')
+        .eq('is_active', true);
+
+      if (chErr) {
+        console.error('[telegram] channels load error:', chErr.message);
+      } else {
+        channelChatIds = (channels ?? []).map((c: { chat_id: number }) => c.chat_id);
       }
     }
 
-    if (chatIds.length === 0) {
-      console.log('[telegram] No subscribers, falling back to admin chat');
-      chatIds = [FALLBACK_CHAT_ID];
+    if (subscriberChatIds.length === 0 && channelChatIds.length === 0) {
+      console.log('[telegram] No subscribers/channels, falling back to admin chat');
+      subscriberChatIds = [FALLBACK_CHAT_ID];
     }
 
     const webAppUrl = `https://gruzli.lovable.app/?job=${encodeURIComponent(job.id)}`;
@@ -123,11 +137,22 @@ Deno.serve(async (req) => {
         { text: 'Откликнуться в приложении', web_app: { url: webAppUrl } },
       ]],
     };
+    // Channels: don't include web_app buttons (channels do not support them)
+    const channelReplyMarkup = {
+      inline_keyboard: [[
+        { text: 'Открыть в приложении', url: webAppUrl },
+      ]],
+    };
 
-    console.log(`[telegram] Sending job ${job.id} to ${chatIds.length} subscriber(s)`);
+    const allTargets: { chatId: number; isChannel: boolean }[] = [
+      ...subscriberChatIds.map((id) => ({ chatId: id, isChannel: false })),
+      ...channelChatIds.map((id) => ({ chatId: id, isChannel: true })),
+    ];
+
+    console.log(`[telegram] Sending job ${job.id} to ${subscriberChatIds.length} subs + ${channelChatIds.length} channels`);
 
     const results = await Promise.allSettled(
-      chatIds.map(async (chatId) => {
+      allTargets.map(async ({ chatId, isChannel }) => {
         const response = await fetch(`${GATEWAY_URL}/sendMessage`, {
           method: 'POST',
           headers: {
@@ -140,18 +165,24 @@ Deno.serve(async (req) => {
             text,
             parse_mode: 'HTML',
             disable_web_page_preview: true,
-            reply_markup: replyMarkup,
+            reply_markup: isChannel ? channelReplyMarkup : replyMarkup,
           }),
         });
         const data = await response.json();
         if (!response.ok) {
-          // Mark blocked / kicked users as inactive
-          if (data?.error_code === 403 && supabaseUrl && supabaseServiceKey) {
-            const supabase = createClient(supabaseUrl, supabaseServiceKey);
-            await supabase
-              .from('telegram_subscribers')
-              .update({ is_active: false })
-              .eq('chat_id', chatId);
+          // Mark blocked / kicked targets as inactive
+          if ((data?.error_code === 403 || data?.error_code === 400) && supabase) {
+            if (isChannel) {
+              await supabase
+                .from('telegram_user_channels')
+                .update({ is_active: false })
+                .eq('chat_id', chatId);
+            } else {
+              await supabase
+                .from('telegram_subscribers')
+                .update({ is_active: false })
+                .eq('chat_id', chatId);
+            }
           }
           throw new Error(`chat ${chatId} [${response.status}]: ${JSON.stringify(data)}`);
         }
@@ -164,7 +195,13 @@ Deno.serve(async (req) => {
     console.log(`[telegram] Sent: ${sent}, failed: ${failed}`);
 
     return new Response(
-      JSON.stringify({ ok: true, sent, failed, total: chatIds.length }),
+      JSON.stringify({
+        ok: true,
+        sent,
+        failed,
+        subscribers: subscriberChatIds.length,
+        channels: channelChatIds.length,
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   } catch (err) {
