@@ -220,6 +220,8 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
 
       <PushNotificationBanner />
 
+      <MaxChannelBanner />
+
       {/* Smart Search */}
       <div className="mx-5 mt-3 mb-1">
         <div className="group relative rounded-2xl bg-gradient-to-br from-foreground/15 via-border to-border p-[1px] transition-all focus-within:from-foreground/40 focus-within:via-foreground/20">
