@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 import PushNotificationBanner from "@/components/PushNotificationBanner";
+import { MaxChannelBanner } from "@/components/MaxChannelBanner";
 
 type FilterKey = "all" | "urgent" | "quick";
 const filters: { key: FilterKey; label: string; icon: typeof Sparkles }[] = [
