@@ -442,7 +442,8 @@
     overflow-x: hidden;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: calc(var(--bottom-nav-height) - 16px);
+    /* Bottom nav (80px) + safe area + breathing room so content fully clears the floating pill */
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 24px);
   }
 
   /* Floating pill nav wrapper */
@@ -662,7 +663,7 @@
   }
 
   .app-scroll {
-    padding-bottom: calc(var(--bottom-nav-height) - 20px);
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 16px);
   }
 }
 
