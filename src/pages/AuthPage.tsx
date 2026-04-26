@@ -324,79 +324,73 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
         onSubmit={handleSubmit}
         className="w-full max-w-sm space-y-4"
       >
-        {/* Role selection + extra fields (register only) */}
-        <AnimatePresence>
-          {mode === "register" && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden"
-            >
-              <p className="text-sm font-semibold text-foreground mb-2">Кто вы?</p>
-              <div className="grid grid-cols-2 gap-3">
-                {([
-                  { id: "worker" as Role, label: "Грузчик", icon: User, desc: "Беру заказы" },
-                  { id: "dispatcher" as Role, label: "Диспетчер", icon: Users, desc: "Размещаю заказы" },
-                ]).map((r) => (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() => setRole(r.id)}
-                    className={`p-4 rounded-2xl text-center transition-all ${
-                      role === r.id ? "gradient-primary text-primary-foreground" : "neu-card text-foreground"
-                    }`}
-                  >
-                    <r.icon size={24} className="mx-auto mb-2" />
-                    <p className="text-sm font-bold">{r.label}</p>
-                    <p className={`text-[11px] mt-0.5 ${role === r.id ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{r.desc}</p>
-                  </button>
-                ))}
-              </div>
+        {/* Role selection + extra fields (register only) — no height animation, it kills mobile keyboard focus */}
+        {mode === "register" && (
+          <div>
+            <p className="text-sm font-semibold text-foreground mb-2">Кто вы?</p>
+            <div className="grid grid-cols-2 gap-3">
+              {([
+                { id: "worker" as Role, label: "Грузчик", icon: User, desc: "Беру заказы" },
+                { id: "dispatcher" as Role, label: "Диспетчер", icon: Users, desc: "Размещаю заказы" },
+              ]).map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onClick={() => setRole(r.id)}
+                  className={`p-4 rounded-2xl text-center transition-colors ${
+                    role === r.id ? "gradient-primary text-primary-foreground" : "neu-card text-foreground"
+                  }`}
+                >
+                  <r.icon size={24} className="mx-auto mb-2" />
+                  <p className="text-sm font-bold">{r.label}</p>
+                  <p className={`text-[11px] mt-0.5 ${role === r.id ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{r.desc}</p>
+                </button>
+              ))}
+            </div>
 
-              {/* Full name */}
-              <div className="mt-4">
-                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">ФИО</label>
-                <div className="neu-inset rounded-xl px-4 py-3">
-                  <input
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Иванов Иван Иванович"
-                    className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-                  />
-                </div>
+            {/* Full name */}
+            <div className="mt-4">
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">ФИО</label>
+              <div className="neu-inset rounded-xl px-4 py-3">
+                <input
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Иванов Иван Иванович"
+                  autoComplete="name"
+                  className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+                />
               </div>
+            </div>
 
-              {/* Birth date */}
-              <div className="mt-3">
-                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Дата рождения</label>
-                <div className="neu-inset rounded-xl px-4 py-3 flex items-center gap-2">
-                  <Calendar size={16} className="text-muted-foreground shrink-0" />
-                  <input
-                    type="date"
-                    value={birthDate}
-                    onChange={(e) => setBirthDate(e.target.value)}
-                    className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-                    style={{ colorScheme: "dark" }}
-                  />
-                </div>
+            {/* Birth date */}
+            <div className="mt-3">
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Дата рождения</label>
+              <div className="neu-inset rounded-xl px-4 py-3 flex items-center gap-2">
+                <Calendar size={16} className="text-muted-foreground shrink-0" />
+                <input
+                  type="date"
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+                  style={{ colorScheme: "dark" }}
+                />
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            </div>
+          </div>
+        )}
 
-        {/* Email or Phone */}
+        {/* Email or Phone — icon stays static so input does NOT remount on each keystroke */}
         <div>
           <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Email или номер телефона</label>
           <div className="neu-inset rounded-xl px-4 py-3 flex items-center gap-2">
-            {isEmail(phone) ? (
-              <Mail size={16} className="text-muted-foreground shrink-0" />
-            ) : (
-              <Phone size={16} className="text-muted-foreground shrink-0" />
-            )}
+            <Phone size={16} className="text-muted-foreground shrink-0" />
             <input
               type="text"
               inputMode="text"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              autoComplete={mode === "login" ? "username" : "email"}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="Телефон или email"
@@ -406,20 +400,32 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
           </div>
         </div>
 
-        {/* Password */}
+        {/* Password — keep input mounted, toggle visibility via -webkit-text-security so the keyboard stays open */}
         <div>
           <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Пароль</label>
           <div className="neu-inset rounded-xl px-4 py-3 flex items-center">
             <input
-              type={showPassword ? "text" : "password"}
+              type="text"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
               minLength={6}
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
+              style={{
+                WebkitTextSecurity: showPassword ? "none" : "disc",
+                textSecurity: showPassword ? "none" : "disc",
+              } as React.CSSProperties}
               className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
             />
-            <button type="button" onClick={() => setShowPassword(!showPassword)}>
+            <button
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => setShowPassword(!showPassword)}
+            >
               {showPassword ? <EyeOff size={16} className="text-muted-foreground" /> : <Eye size={16} className="text-muted-foreground" />}
             </button>
           </div>
@@ -470,7 +476,7 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
           </button>
         </p>
 
-        <button onClick={() => setSecurityOpen(true)} className="flex items-center justify-center gap-1.5 mt-4 opacity-50 hover:opacity-80 transition-opacity cursor-pointer">
+        <button type="button" onClick={() => setSecurityOpen(true)} className="flex items-center justify-center gap-1.5 mt-4 mx-auto opacity-50 hover:opacity-80 transition-opacity cursor-pointer">
           <Shield size={14} className="text-foreground" />
           <span className="text-[10px] text-muted-foreground tracking-wide">
             Защищено <span className="font-bold text-foreground">PRO.SC</span>
@@ -481,7 +487,7 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
         {showRecoveryFor && (
           <RecoveryCodeBanner userId={showRecoveryFor} onClose={() => setShowRecoveryFor(null)} />
         )}
-      </motion.form>
+      </form>
     </div>
   );
 });
