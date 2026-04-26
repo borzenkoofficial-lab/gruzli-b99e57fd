@@ -290,12 +290,15 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
 
   // ─── AUTH FORM ───
   return (
-    <div className="bg-background flex flex-col items-center px-6 safe-top pb-4 overflow-y-auto h-screen" style={{ minHeight: "100dvh", height: "100dvh" }}>
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-sm mb-6"
-      >
+    <div
+      className="bg-background flex flex-col items-center px-6 safe-top overflow-y-auto"
+      style={{
+        height: "calc(var(--vh, 1vh) * 100)",
+        paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 32px)",
+        WebkitOverflowScrolling: "touch",
+      }}
+    >
+      <div className="w-full max-w-sm mb-6">
         <button
           onClick={() => setMode("welcome")}
           className="text-sm text-muted-foreground mb-6 flex items-center gap-1"
@@ -315,12 +318,9 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
             </p>
           </div>
         </div>
-      </motion.div>
+      </div>
 
-      <motion.form
-        key={mode}
-        initial={{ opacity: 0, x: mode === "login" ? -20 : 20 }}
-        animate={{ opacity: 1, x: 0 }}
+      <form
         onSubmit={handleSubmit}
         className="w-full max-w-sm space-y-4"
       >
