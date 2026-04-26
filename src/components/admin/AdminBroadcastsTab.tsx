@@ -398,7 +398,7 @@ const AdminBroadcastsTab = () => {
                     </div>
                     <div className="shrink-0 text-right">
                       {ok && (
-                        <CheckCircle2 className="h-4 w-4 text-green-500 inline" />
+                        <CheckCircle2 className="h-4 w-4 text-primary inline" />
                       )}
                       {failed && <XCircle className="h-4 w-4 text-destructive inline" />}
                       {sending && (
