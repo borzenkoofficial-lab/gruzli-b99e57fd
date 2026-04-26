@@ -77,6 +77,60 @@ export type Database = {
         }
         Relationships: []
       }
+      broadcasts: {
+        Row: {
+          created_at: string
+          created_by: string
+          error_message: string | null
+          failed_count: number
+          finished_at: string | null
+          id: string
+          image_url: string | null
+          link_label: string | null
+          link_url: string | null
+          sent_count: number
+          status: string
+          target_channels: boolean
+          target_personal: boolean
+          text: string
+          total_targets: number
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          error_message?: string | null
+          failed_count?: number
+          finished_at?: string | null
+          id?: string
+          image_url?: string | null
+          link_label?: string | null
+          link_url?: string | null
+          sent_count?: number
+          status?: string
+          target_channels?: boolean
+          target_personal?: boolean
+          text?: string
+          total_targets?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          error_message?: string | null
+          failed_count?: number
+          finished_at?: string | null
+          id?: string
+          image_url?: string | null
+          link_label?: string | null
+          link_url?: string | null
+          sent_count?: number
+          status?: string
+          target_channels?: boolean
+          target_personal?: boolean
+          text?: string
+          total_targets?: number
+        }
+        Relationships: []
+      }
       channel_post_comments: {
         Row: {
           created_at: string
