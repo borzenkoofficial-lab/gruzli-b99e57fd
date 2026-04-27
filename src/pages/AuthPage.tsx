@@ -1,7 +1,7 @@
 import { useState, forwardRef, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Users, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Zap, MessageSquare, Phone, Lock, Fingerprint, ShieldCheck, X, Calendar, Mail, Sparkles, Wallet, MapPin, ChevronRight } from "lucide-react";
+import { User, Users, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Phone, Lock, Fingerprint, ShieldCheck, X, Calendar, Sparkles, Wallet, ChevronRight } from "lucide-react";
 import { LegalCheckboxes } from "@/components/LegalDocuments";
 import { ForgotPasswordModal } from "@/components/ForgotPasswordModal";
 import { RecoveryCodeBanner } from "@/components/RecoveryCodeBanner";
