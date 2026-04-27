@@ -331,7 +331,7 @@ const AdminBroadcastsTab = () => {
             Получателей: <span className="font-bold text-foreground">{audienceTotal}</span>
           </p>
           <Button
-            onClick={handleSend}
+            onClick={validateAndConfirm}
             disabled={sending || (!text.trim() && !imageUrl) || audienceTotal === 0}
             className="w-full sm:w-auto"
           >
