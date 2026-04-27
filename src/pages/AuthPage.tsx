@@ -87,11 +87,28 @@ const SecurityModal = forwardRef<HTMLDivElement, { open: boolean; onClose: () =>
 });
 SecurityModal.displayName = "SecurityModal";
 
-const featuresList = [
-  { icon: Briefcase, title: "Заказы", desc: "Находите работу мгновенно" },
-  { icon: Shield, title: "Безопасно", desc: "Проверенные диспетчеры" },
-  { icon: Zap, title: "Быстро", desc: "Отклик в одно нажатие" },
-  { icon: MessageSquare, title: "Чат", desc: "Общайтесь напрямую" },
+const onboardingSlides = [
+  {
+    icon: Briefcase,
+    title: "Заказы рядом",
+    headline: "Работа в один свайп",
+    desc: "Сотни заказов от проверенных диспетчеров каждый день. Откликайтесь мгновенно — без созвонов и ожидания.",
+    accent: "01",
+  },
+  {
+    icon: Wallet,
+    title: "Прозрачные выплаты",
+    headline: "Видите, сколько заработаете",
+    desc: "Ставка, длительность и итоговая сумма указаны заранее. Никаких сюрпризов после смены.",
+    accent: "02",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Безопасность",
+    headline: "Под защитой PRO.SC",
+    desc: "Верифицированные пользователи, рейтинги и многоуровневое шифрование данных. Только надёжные сделки.",
+    accent: "03",
+  },
 ];
 
 const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
