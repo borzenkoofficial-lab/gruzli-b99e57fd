@@ -1,7 +1,7 @@
-import { useState, forwardRef } from "react";
+import { useState, forwardRef, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Users, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Zap, MessageSquare, Phone, Lock, Fingerprint, ShieldCheck, X, Calendar, Mail } from "lucide-react";
+import { User, Users, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Phone, Lock, Fingerprint, ShieldCheck, X, Calendar, Sparkles, Wallet, ChevronRight } from "lucide-react";
 import { LegalCheckboxes } from "@/components/LegalDocuments";
 import { ForgotPasswordModal } from "@/components/ForgotPasswordModal";
 import { RecoveryCodeBanner } from "@/components/RecoveryCodeBanner";
@@ -87,11 +87,28 @@ const SecurityModal = forwardRef<HTMLDivElement, { open: boolean; onClose: () =>
 });
 SecurityModal.displayName = "SecurityModal";
 
-const featuresList = [
-  { icon: Briefcase, title: "Заказы", desc: "Находите работу мгновенно" },
-  { icon: Shield, title: "Безопасно", desc: "Проверенные диспетчеры" },
-  { icon: Zap, title: "Быстро", desc: "Отклик в одно нажатие" },
-  { icon: MessageSquare, title: "Чат", desc: "Общайтесь напрямую" },
+const onboardingSlides = [
+  {
+    icon: Briefcase,
+    title: "Заказы рядом",
+    headline: "Работа в один свайп",
+    desc: "Сотни заказов от проверенных диспетчеров каждый день. Откликайтесь мгновенно — без созвонов и ожидания.",
+    accent: "01",
+  },
+  {
+    icon: Wallet,
+    title: "Прозрачные выплаты",
+    headline: "Видите, сколько заработаете",
+    desc: "Ставка, длительность и итоговая сумма указаны заранее. Никаких сюрпризов после смены.",
+    accent: "02",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Безопасность",
+    headline: "Под защитой PRO.SC",
+    desc: "Верифицированные пользователи, рейтинги и многоуровневое шифрование данных. Только надёжные сделки.",
+    accent: "03",
+  },
 ];
 
 const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
@@ -107,6 +124,8 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [showRecoveryFor, setShowRecoveryFor] = useState<string | null>(null);
   const [legalAccepted, setLegalAccepted] = useState({ terms: false, privacy: false, personalData: false, rules: false });
+  const [slideIndex, setSlideIndex] = useState(0);
+  const touchStartX = useRef<number | null>(null);
 
   const allLegalAccepted = legalAccepted.terms && legalAccepted.privacy && legalAccepted.personalData && legalAccepted.rules;
 
@@ -200,129 +219,230 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
 
   // ─── WELCOME / ONBOARDING ───
   if (mode === "welcome") {
+    const slide = onboardingSlides[slideIndex];
+    const Icon = slide.icon;
+    const isLastSlide = slideIndex === onboardingSlides.length - 1;
+
+    const goNext = () => {
+      if (isLastSlide) setMode("register");
+      else setSlideIndex((i) => Math.min(i + 1, onboardingSlides.length - 1));
+    };
+    const goPrev = () => setSlideIndex((i) => Math.max(i - 1, 0));
+
+    const onTouchStart = (e: React.TouchEvent) => {
+      touchStartX.current = e.touches[0].clientX;
+    };
+    const onTouchEnd = (e: React.TouchEvent) => {
+      if (touchStartX.current === null) return;
+      const dx = e.changedTouches[0].clientX - touchStartX.current;
+      if (dx < -40) goNext();
+      else if (dx > 40) goPrev();
+      touchStartX.current = null;
+    };
+
     return (
-      <div className="bg-background overflow-hidden flex flex-col h-screen" style={{ height: "100dvh" }}>
-        <div className="mx-auto flex flex-1 w-full max-w-sm flex-col px-5 min-h-0" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 12px)" }}>
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 w-full min-h-0">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5 }}
-            className="mb-2"
-          >
-            <div className="w-24 h-24 rounded-3xl overflow-hidden shadow-lg mx-auto">
-              <img
-                src={gruzliLogo}
-                alt="Gruzli"
-                className="w-full h-full object-cover"
-              />
+      <div
+        className="bg-background overflow-hidden flex flex-col h-screen relative"
+        style={{ height: "100dvh" }}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+      >
+        {/* Ambient grid backdrop */}
+        <div
+          className="absolute inset-0 opacity-[0.04] pointer-events-none"
+          style={{
+            backgroundImage:
+              "linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)",
+            backgroundSize: "40px 40px",
+            maskImage: "radial-gradient(ellipse at top, black 20%, transparent 70%)",
+            WebkitMaskImage: "radial-gradient(ellipse at top, black 20%, transparent 70%)",
+          }}
+        />
+
+        <div
+          className="mx-auto flex flex-1 w-full max-w-sm flex-col px-6 min-h-0 relative z-10"
+          style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 20px)" }}
+        >
+          {/* Top bar */}
+          <div className="flex items-center justify-between w-full shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-xl overflow-hidden border border-border">
+                <img src={gruzliLogo} alt="Gruzli" className="w-full h-full object-cover" />
+              </div>
+              <span className="text-base font-extrabold text-foreground tracking-tight">Gruzli</span>
             </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-center mb-1"
-          >
-            <h1 className="text-2xl font-extrabold text-foreground mb-2">
-              Gruzli<span className="text-primary">.</span>
-            </h1>
-            <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
-              Платформа, которая соединяет грузчиков и диспетчеров. Быстро, удобно, надёжно.
-            </p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="grid grid-cols-2 gap-3 w-full"
-          >
-            {featuresList.map((f, i) => (
-              <motion.div
-                key={f.title}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.5 + i * 0.1 }}
-                className="neu-card rounded-2xl p-3 text-center"
-              >
-                <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                  <f.icon size={18} className="text-primary" />
-                </div>
-                <p className="text-xs font-bold text-foreground">{f.title}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{f.desc}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-          </div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-            className="space-y-2.5 w-full shrink-0 pb-4"
-          >
-            <button
-              onClick={() => setMode("register")}
-              className="w-full py-4 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"
-            >
-              Начать работу
-              <ArrowRight size={16} />
-            </button>
             <button
               onClick={() => setMode("login")}
-              className="w-full py-3.5 rounded-2xl neu-card text-foreground text-sm font-semibold active:scale-95 transition-transform"
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-full border border-border"
             >
-              У меня есть аккаунт
+              Войти
             </button>
-            <button onClick={() => setSecurityOpen(true)} className="flex items-center justify-center gap-1.5 mt-2 opacity-50 hover:opacity-80 transition-opacity cursor-pointer">
-              <Shield size={14} className="text-foreground" />
+          </div>
+
+          {/* Slide content */}
+          <div className="flex flex-1 flex-col items-start justify-center w-full min-h-0 py-6">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={slideIndex}
+                initial={{ opacity: 0, x: 30 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -30 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="w-full"
+              >
+                {/* Big visual card */}
+                <div className="relative w-full aspect-[4/3] rounded-3xl bg-card border border-border overflow-hidden mb-7">
+                  {/* Decorative concentric circles */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    {[1, 0.7, 0.45, 0.25].map((s, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: s, opacity: 0.06 + i * 0.04 }}
+                        transition={{ delay: 0.1 + i * 0.08, duration: 0.5 }}
+                        className="absolute w-72 h-72 rounded-full border border-foreground"
+                      />
+                    ))}
+                  </div>
+
+                  <div className="absolute top-5 left-5 text-[11px] font-bold tracking-[0.3em] text-muted-foreground">
+                    {slide.accent} / 0{onboardingSlides.length}
+                  </div>
+
+                  <div className="absolute top-4 right-4 px-2.5 py-1 rounded-full bg-foreground text-background text-[10px] font-bold uppercase tracking-wider">
+                    {slide.title}
+                  </div>
+
+                  <motion.div
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.15, type: "spring", damping: 15 }}
+                    className="absolute inset-0 flex items-center justify-center"
+                  >
+                    <div className="w-24 h-24 rounded-3xl bg-foreground text-background flex items-center justify-center shadow-2xl">
+                      <Icon size={42} strokeWidth={1.6} />
+                    </div>
+                  </motion.div>
+
+                  <div className="absolute bottom-4 left-5 right-5 flex items-center justify-between text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                    <span>Gruzli platform</span>
+                    <span className="flex items-center gap-1">
+                      <Sparkles size={10} /> Live
+                    </span>
+                  </div>
+                </div>
+
+                <h1 className="text-[28px] leading-[1.15] font-extrabold text-foreground tracking-tight mb-3">
+                  {slide.headline}
+                </h1>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  {slide.desc}
+                </p>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* Bottom area */}
+          <div className="w-full shrink-0 pb-5 space-y-4">
+            <div className="flex items-center justify-center gap-2">
+              {onboardingSlides.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setSlideIndex(i)}
+                  className={`h-1.5 rounded-full transition-all ${
+                    i === slideIndex ? "w-7 bg-foreground" : "w-1.5 bg-muted"
+                  }`}
+                  aria-label={`Слайд ${i + 1}`}
+                />
+              ))}
+            </div>
+
+            <button
+              onClick={goNext}
+              className="w-full py-4 rounded-2xl bg-foreground text-background text-sm font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+            >
+              {isLastSlide ? "Создать аккаунт" : "Далее"}
+              <ChevronRight size={16} />
+            </button>
+
+            <button
+              onClick={() => setSecurityOpen(true)}
+              className="flex items-center justify-center gap-1.5 mx-auto opacity-50 hover:opacity-80 transition-opacity cursor-pointer"
+            >
+              <Shield size={12} className="text-foreground" />
               <span className="text-[10px] text-muted-foreground tracking-wide">
                 Защищено <span className="font-bold text-foreground">PRO.SC</span>
               </span>
             </button>
             <SecurityModal open={securityOpen} onClose={() => setSecurityOpen(false)} />
-          </motion.div>
+          </div>
         </div>
       </div>
     );
   }
 
+
   // ─── AUTH FORM ───
   return (
     <div
-      className="bg-background flex flex-col items-center px-6 safe-top overflow-y-auto"
+      className="bg-background flex flex-col items-center px-6 overflow-y-auto relative"
       style={{
         height: "calc(var(--vh, 1vh) * 100)",
+        paddingTop: "calc(env(safe-area-inset-top, 0px) + 16px)",
         paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 32px)",
         WebkitOverflowScrolling: "touch",
       }}
     >
-      <div className="w-full max-w-sm mb-6">
+      {/* Ambient backdrop */}
+      <div
+        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        style={{
+          backgroundImage:
+            "linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+          maskImage: "radial-gradient(ellipse at top, black 10%, transparent 60%)",
+          WebkitMaskImage: "radial-gradient(ellipse at top, black 10%, transparent 60%)",
+        }}
+      />
+
+      <div className="w-full max-w-sm mb-6 relative z-10">
         <button
           onClick={() => setMode("welcome")}
-          className="text-sm text-muted-foreground mb-6 flex items-center gap-1"
+          className="text-xs text-muted-foreground mb-5 flex items-center gap-1 hover:text-foreground transition-colors"
         >
           ← Назад
         </button>
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-12 h-12 rounded-xl overflow-hidden">
-            <img src={gruzliLogo} alt="Gruzli" className="w-full h-full object-cover" />
+
+        {/* Hero block */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-8 h-8 rounded-lg overflow-hidden border border-border">
+              <img src={gruzliLogo} alt="Gruzli" className="w-full h-full object-cover" />
+            </div>
+            <span className="text-xs font-bold text-foreground tracking-tight uppercase">Gruzli</span>
+            <span className="ml-auto text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+              {mode === "login" ? "Шаг 01" : "Шаг 01 / 02"}
+            </span>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-foreground">
-              {mode === "login" ? "Вход" : "Регистрация"}
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              {mode === "login" ? "Войдите в свой аккаунт" : "Создайте аккаунт за минуту"}
-            </p>
-          </div>
+
+          <h2 className="text-[32px] leading-[1.1] font-extrabold text-foreground tracking-tight mb-2">
+            {mode === "login" ? (
+              <>С возвращением<span className="text-muted-foreground">.</span></>
+            ) : (
+              <>Создайте аккаунт<span className="text-muted-foreground">.</span></>
+            )}
+          </h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {mode === "login"
+              ? "Введите данные, чтобы продолжить работу"
+              : "Заполните данные — это займёт меньше минуты"}
+          </p>
         </div>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-4"
+        className="w-full max-w-sm space-y-4 relative z-10"
       >
         {/* Role selection + extra fields (register only) — no height animation, it kills mobile keyboard focus */}
         {mode === "register" && (
