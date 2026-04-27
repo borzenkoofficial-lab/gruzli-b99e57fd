@@ -430,6 +430,27 @@ const AdminBroadcastsTab = () => {
           </div>
         )}
       </Card>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Отправить рассылку?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Сообщение получат примерно <strong>{audienceTotal}</strong>{" "}
+              {targetPersonal && targetChannels
+                ? "подписчиков и каналов"
+                : targetPersonal
+                ? "личных подписчиков"
+                : "каналов и групп"}
+              . Отменить отправку будет нельзя.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSend}>Отправить</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
