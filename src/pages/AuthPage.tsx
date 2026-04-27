@@ -385,32 +385,58 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
   // ─── AUTH FORM ───
   return (
     <div
-      className="bg-background flex flex-col items-center px-6 safe-top overflow-y-auto"
+      className="bg-background flex flex-col items-center px-6 overflow-y-auto relative"
       style={{
         height: "calc(var(--vh, 1vh) * 100)",
+        paddingTop: "calc(env(safe-area-inset-top, 0px) + 16px)",
         paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 32px)",
         WebkitOverflowScrolling: "touch",
       }}
     >
-      <div className="w-full max-w-sm mb-6">
+      {/* Ambient backdrop */}
+      <div
+        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        style={{
+          backgroundImage:
+            "linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+          maskImage: "radial-gradient(ellipse at top, black 10%, transparent 60%)",
+          WebkitMaskImage: "radial-gradient(ellipse at top, black 10%, transparent 60%)",
+        }}
+      />
+
+      <div className="w-full max-w-sm mb-6 relative z-10">
         <button
           onClick={() => setMode("welcome")}
-          className="text-sm text-muted-foreground mb-6 flex items-center gap-1"
+          className="text-xs text-muted-foreground mb-5 flex items-center gap-1 hover:text-foreground transition-colors"
         >
           ← Назад
         </button>
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-12 h-12 rounded-xl overflow-hidden">
-            <img src={gruzliLogo} alt="Gruzli" className="w-full h-full object-cover" />
+
+        {/* Hero block */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-8 h-8 rounded-lg overflow-hidden border border-border">
+              <img src={gruzliLogo} alt="Gruzli" className="w-full h-full object-cover" />
+            </div>
+            <span className="text-xs font-bold text-foreground tracking-tight uppercase">Gruzli</span>
+            <span className="ml-auto text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+              {mode === "login" ? "Шаг 01" : "Шаг 01 / 02"}
+            </span>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-foreground">
-              {mode === "login" ? "Вход" : "Регистрация"}
-            </h2>
-            <p className="text-xs text-muted-foreground">
-              {mode === "login" ? "Войдите в свой аккаунт" : "Создайте аккаунт за минуту"}
-            </p>
-          </div>
+
+          <h2 className="text-[32px] leading-[1.1] font-extrabold text-foreground tracking-tight mb-2">
+            {mode === "login" ? (
+              <>С возвращением<span className="text-muted-foreground">.</span></>
+            ) : (
+              <>Создайте аккаунт<span className="text-muted-foreground">.</span></>
+            )}
+          </h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {mode === "login"
+              ? "Введите данные, чтобы продолжить работу"
+              : "Заполните данные — это займёт меньше минуты"}
+          </p>
         </div>
       </div>
 
