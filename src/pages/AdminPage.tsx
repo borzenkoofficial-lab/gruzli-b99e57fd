@@ -24,8 +24,14 @@ const AdminPage = () => {
   if (loading || role !== "admin") return null;
 
   return (
-    <div className="min-h-screen bg-background overflow-y-auto">
-      <div className="max-w-5xl mx-auto p-4 space-y-6 pb-32">
+    <div
+      className="bg-background overflow-y-auto overscroll-contain"
+      style={{ height: "calc(var(--vh, 1vh) * 100)", WebkitOverflowScrolling: "touch" as any }}
+    >
+      <div
+        className="max-w-5xl mx-auto p-4 space-y-6"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 96px)" }}
+      >
         {/* Header */}
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>

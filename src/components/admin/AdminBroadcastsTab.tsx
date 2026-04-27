@@ -8,6 +8,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Megaphone,
   Image as ImageIcon,
   Link2,
@@ -50,6 +60,7 @@ const AdminBroadcastsTab = () => {
   const [targetPersonal, setTargetPersonal] = useState(true);
   const [targetChannels, setTargetChannels] = useState(true);
   const [sending, setSending] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [history, setHistory] = useState<Broadcast[]>([]);
   const [counts, setCounts] = useState<AudienceCounts>({ subscribers: 0, channels: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -121,7 +132,7 @@ const AdminBroadcastsTab = () => {
     setImageUrl(null);
   };
 
-  const handleSend = async () => {
+  const validateAndConfirm = () => {
     if (!text.trim() && !imageUrl) {
       toast.error("Добавьте текст или картинку");
       return;
@@ -134,15 +145,15 @@ const AdminBroadcastsTab = () => {
       toast.error("Укажите подпись для ссылки");
       return;
     }
-
-    const total = (targetPersonal ? counts.subscribers : 0) + (targetChannels ? counts.channels : 0);
-    if (
-      !confirm(
-        `Отправить рассылку примерно ${total} получателям?\nОтменить будет нельзя.`,
-      )
-    )
+    if (linkUrl && !/^https?:\/\//i.test(linkUrl.trim())) {
+      toast.error("Ссылка должна начинаться с http:// или https://");
       return;
+    }
+    setConfirmOpen(true);
+  };
 
+  const handleSend = async () => {
+    setConfirmOpen(false);
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke("admin-broadcast-telegram", {
@@ -156,6 +167,7 @@ const AdminBroadcastsTab = () => {
         },
       });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       toast.success(`Отправлено: ${data?.sent ?? 0} из ${data?.total ?? 0}`);
       reset();
       await loadHistory();
@@ -319,7 +331,7 @@ const AdminBroadcastsTab = () => {
             Получателей: <span className="font-bold text-foreground">{audienceTotal}</span>
           </p>
           <Button
-            onClick={handleSend}
+            onClick={validateAndConfirm}
             disabled={sending || (!text.trim() && !imageUrl) || audienceTotal === 0}
             className="w-full sm:w-auto"
           >
@@ -418,6 +430,27 @@ const AdminBroadcastsTab = () => {
           </div>
         )}
       </Card>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Отправить рассылку?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Сообщение получат примерно <strong>{audienceTotal}</strong>{" "}
+              {targetPersonal && targetChannels
+                ? "подписчиков и каналов"
+                : targetPersonal
+                ? "личных подписчиков"
+                : "каналов и групп"}
+              . Отменить отправку будет нельзя.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSend}>Отправить</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
