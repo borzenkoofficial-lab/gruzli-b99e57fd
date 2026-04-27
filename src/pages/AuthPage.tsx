@@ -124,6 +124,8 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [showRecoveryFor, setShowRecoveryFor] = useState<string | null>(null);
   const [legalAccepted, setLegalAccepted] = useState({ terms: false, privacy: false, personalData: false, rules: false });
+  const [slideIndex, setSlideIndex] = useState(0);
+  const touchStartX = useRef<number | null>(null);
 
   const allLegalAccepted = legalAccepted.terms && legalAccepted.privacy && legalAccepted.personalData && legalAccepted.rules;
 
