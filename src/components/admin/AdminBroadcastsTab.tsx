@@ -132,7 +132,7 @@ const AdminBroadcastsTab = () => {
     setImageUrl(null);
   };
 
-  const handleSend = async () => {
+  const validateAndConfirm = () => {
     if (!text.trim() && !imageUrl) {
       toast.error("Добавьте текст или картинку");
       return;
@@ -145,15 +145,15 @@ const AdminBroadcastsTab = () => {
       toast.error("Укажите подпись для ссылки");
       return;
     }
-
-    const total = (targetPersonal ? counts.subscribers : 0) + (targetChannels ? counts.channels : 0);
-    if (
-      !confirm(
-        `Отправить рассылку примерно ${total} получателям?\nОтменить будет нельзя.`,
-      )
-    )
+    if (linkUrl && !/^https?:\/\//i.test(linkUrl.trim())) {
+      toast.error("Ссылка должна начинаться с http:// или https://");
       return;
+    }
+    setConfirmOpen(true);
+  };
 
+  const handleSend = async () => {
+    setConfirmOpen(false);
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke("admin-broadcast-telegram", {
@@ -167,6 +167,7 @@ const AdminBroadcastsTab = () => {
         },
       });
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
       toast.success(`Отправлено: ${data?.sent ?? 0} из ${data?.total ?? 0}`);
       reset();
       await loadHistory();
