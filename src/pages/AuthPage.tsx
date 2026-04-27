@@ -442,7 +442,7 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
 
       <form
         onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-4"
+        className="w-full max-w-sm space-y-4 relative z-10"
       >
         {/* Role selection + extra fields (register only) — no height animation, it kills mobile keyboard focus */}
         {mode === "register" && (
