@@ -60,6 +60,7 @@ const AdminBroadcastsTab = () => {
   const [targetPersonal, setTargetPersonal] = useState(true);
   const [targetChannels, setTargetChannels] = useState(true);
   const [sending, setSending] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [history, setHistory] = useState<Broadcast[]>([]);
   const [counts, setCounts] = useState<AudienceCounts>({ subscribers: 0, channels: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
