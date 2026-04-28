@@ -20,7 +20,7 @@ const FeedScreen = lazy(() => import("@/screens/FeedScreen"));
 const JobDetailScreen = lazy(() => import("@/screens/JobDetailScreen"));
 const OrdersScreen = lazy(() => import("@/screens/OrdersScreen"));
 const ProfileScreen = lazy(() => import("@/screens/ProfileScreen"));
-const DispatcherFeedScreen = lazy(() => import("@/screens/DispatcherFeedScreen"));
+
 const CreateJobScreen = lazy(() => import("@/screens/CreateJobScreen"));
 const JobResponsesScreen = lazy(() => import("@/screens/JobResponsesScreen"));
 const RealChatsScreen = lazy(() => import("@/screens/RealChatsScreen"));
@@ -235,6 +235,8 @@ const Index = () => {
             }}
             onViewProfile={(userId) => { setShowCabinet(false); setViewProfileUserId(userId); }}
             onOpenCommunity={() => { setShowCabinet(false); setShowCommunity(true); }}
+            onViewResponses={setViewResponsesJob}
+            onCreateJob={() => setShowCreateJob(true)}
           />
         );
       }
@@ -299,6 +301,8 @@ const Index = () => {
           }}
           onViewProfile={(userId) => { setShowCabinet(false); setViewProfileUserId(userId); }}
           onOpenCommunity={() => { setShowCabinet(false); setShowCommunity(true); }}
+          onViewResponses={setViewResponsesJob}
+          onCreateJob={() => setShowCreateJob(true)}
         />
       );
     }
@@ -365,6 +369,7 @@ const Index = () => {
                     onOpenCommunity={() => setShowCommunity(true)}
                     onViewResponses={setViewResponsesJob}
                     onRefreshRef={feedRefreshRef}
+                    onCreateJob={() => setShowCreateJob(true)}
                   />
                 ) : (
                   <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
@@ -413,6 +418,7 @@ const Index = () => {
               onOpenCommunity={() => setShowCommunity(true)}
               onViewResponses={setViewResponsesJob}
               onRefreshRef={feedRefreshRef}
+              onCreateJob={() => setShowCreateJob(true)}
             />
           ) : (
             <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />

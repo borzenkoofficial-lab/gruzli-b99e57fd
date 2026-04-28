@@ -25,8 +25,11 @@ interface DispatcherCabinetScreenProps {
   onOpenCommunity?: () => void;
   onViewResponses?: (job: Tables<"jobs">) => void;
   onRefreshRef?: React.MutableRefObject<(() => Promise<void>) | null>;
+  onCreateJob?: () => void;
   embedded?: boolean;
 }
+
+type MyJobsCategory = "open" | "in_progress" | "completed";
 
 interface WorkerInfo {
   responseId: string;
@@ -66,7 +69,7 @@ const WORKER_STATUS_MAP: Record<string, { label: string; icon: typeof CheckCircl
   completed: { label: "Завершил", icon: CheckCircle2, color: "text-green-400", bg: "bg-green-400/10" },
 };
 
-const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOpenCommunity, onViewResponses, onRefreshRef, embedded }: DispatcherCabinetScreenProps) => {
+const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOpenCommunity, onViewResponses, onRefreshRef, onCreateJob, embedded }: DispatcherCabinetScreenProps) => {
   const { user } = useAuth();
   const [activeJobs, setActiveJobs] = useState<ActiveJob[]>([]);
   const [completedStats, setCompletedStats] = useState<CompletedJobStat[]>([]);
@@ -91,6 +94,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   const [myJobs, setMyJobs] = useState<(Tables<"jobs"> & { response_count: number })[]>([]);
   const [editingJob, setEditingJob] = useState<Tables<"jobs"> | null>(null);
   const [adjustingId, setAdjustingId] = useState<string | null>(null);
+  const [myCategory, setMyCategory] = useState<MyJobsCategory>("open");
 
   const fetchMyJobs = async () => {
     if (!user) return;
@@ -541,20 +545,67 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
       ) : (
         <>
           {/* ACTIVE JOBS TAB */}
-          {currentTab === "active" && (
+          {currentTab === "active" && (() => {
+            const inProgressJobIds = new Set(activeJobs.map((aj) => aj.job.id));
+            const openJobs = myJobs.filter((j) => j.status === "active" && !inProgressJobIds.has(j.id));
+            const completedMyJobs = myJobs.filter((j) => j.status === "completed");
+            const categories: { id: MyJobsCategory; label: string; count: number }[] = [
+              { id: "open", label: "Активные", count: openJobs.length },
+              { id: "in_progress", label: "В работе", count: activeJobs.length },
+              { id: "completed", label: "Завершённые", count: completedMyJobs.length },
+            ];
+            return (
             <>
-              {/* My jobs section (merged from former dispatcher feed) */}
-              <div className="px-4 pb-2 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-foreground">Мои заявки</h2>
-                <span className="text-[11px] text-muted-foreground">{myJobs.length}</span>
-              </div>
-              {myJobs.length === 0 ? (
-                <div className="mx-4 mb-5 rounded-2xl bg-card border border-border p-5 text-center">
-                  <p className="text-xs text-muted-foreground">У вас пока нет заявок</p>
+              {/* Create job CTA */}
+              {onCreateJob && (
+                <div className="px-4 pb-3">
+                  <button
+                    onClick={onCreateJob}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-foreground text-primary-foreground font-bold text-sm tap-scale"
+                  >
+                    <Plus size={18} /> Создать заявку
+                  </button>
                 </div>
-              ) : (
+              )}
+
+              {/* Category sub-tabs */}
+              <div className="px-4 pb-3">
+                <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+                  {categories.map((c) => {
+                    const isActive = myCategory === c.id;
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => setMyCategory(c.id)}
+                        className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all border ${
+                          isActive
+                            ? "bg-foreground text-primary-foreground border-foreground"
+                            : "bg-card text-muted-foreground border-border"
+                        }`}
+                      >
+                        {c.label}
+                        <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
+                          isActive ? "bg-primary-foreground/15 text-primary-foreground" : "bg-muted text-foreground"
+                        }`}>{c.count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* OPEN: postings without accepted workers */}
+              {myCategory === "open" && (
+                openJobs.length === 0 ? (
+                  <div className="mx-4 mb-5 rounded-2xl bg-card border border-border p-6 text-center">
+                    <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-card border border-border flex items-center justify-center">
+                      <Briefcase size={24} className="text-muted-foreground" />
+                    </div>
+                    <p className="text-sm font-bold text-foreground">Нет активных заявок</p>
+                    <p className="text-xs text-muted-foreground mt-1.5">Создайте новую заявку, чтобы получить отклики</p>
+                  </div>
+                ) : (
                 <div className="px-4 pb-5 space-y-3">
-                  {myJobs.map((job, i) => (
+                  {openJobs.map((job, i) => (
                     <motion.div
                       key={job.id}
                       initial={{ opacity: 0, y: 12 }}
@@ -651,13 +702,12 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                     </motion.div>
                   ))}
                 </div>
+                )
               )}
 
-              {/* In-progress orders section (workers accepted) */}
-              <div className="px-4 pb-2 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-foreground">В работе</h2>
-                <span className="text-[11px] text-muted-foreground">{activeJobs.length}</span>
-              </div>
+              {/* IN-PROGRESS: orders with accepted workers */}
+              {myCategory === "in_progress" && (
+                <>
               {activeJobs.length === 0 ? (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-10 px-8">
                   <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-card border border-border flex items-center justify-center">
@@ -836,8 +886,51 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                 })}
               </div>
               )}
+                </>
+              )}
+
+              {/* COMPLETED: my completed jobs */}
+              {myCategory === "completed" && (
+                completedMyJobs.length === 0 ? (
+                  <div className="mx-4 mb-5 rounded-2xl bg-card border border-border p-6 text-center">
+                    <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-card border border-border flex items-center justify-center">
+                      <CheckCircle2 size={24} className="text-muted-foreground" />
+                    </div>
+                    <p className="text-sm font-bold text-foreground">Завершённых заявок ещё нет</p>
+                    <p className="text-xs text-muted-foreground mt-1.5">Закрытые заказы появятся здесь</p>
+                  </div>
+                ) : (
+                  <div className="px-4 pb-5 space-y-3">
+                    {completedMyJobs.map((job, i) => (
+                      <motion.div
+                        key={job.id}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: Math.min(i, 6) * 0.04 }}
+                        className="bg-card border border-border rounded-2xl p-4"
+                      >
+                        <div className="flex items-start justify-between mb-2 gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <span className="px-2 py-0.5 rounded-lg bg-green-500/15 text-green-500 text-[11px] font-semibold">Завершена</span>
+                              <span className="text-[10px] text-muted-foreground">{new Date(job.created_at).toLocaleDateString("ru-RU")}</span>
+                            </div>
+                            <h3 className="text-[14px] font-semibold text-foreground truncate">{job.title}</h3>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
+                          {job.address && <span className="flex items-center gap-1"><MapPin size={11} /> {job.address}</span>}
+                          <span className="flex items-center gap-1"><Users size={11} /> {job.workers_needed} чел.</span>
+                          <span className="flex items-center gap-1"><Wallet size={11} /> {job.hourly_rate} ₽/ч</span>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )
+              )}
             </>
-          )}
+            );
+          })()}
 
           {/* STATS TAB */}
           {currentTab === "stats" && (
