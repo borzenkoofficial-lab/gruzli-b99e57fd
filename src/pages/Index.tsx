@@ -418,6 +418,7 @@ const Index = () => {
               onOpenCommunity={() => setShowCommunity(true)}
               onViewResponses={setViewResponsesJob}
               onRefreshRef={feedRefreshRef}
+              onCreateJob={() => setShowCreateJob(true)}
             />
           ) : (
             <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
