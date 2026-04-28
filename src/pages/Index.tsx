@@ -384,7 +384,7 @@ const Index = () => {
                         onOpenNotifications={() => setShowNotifications(true)}
                         onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage)}
                         onOpenPremium={() => setShowPremium(true)}
-                        onOpenCabinet={() => setShowCabinet(true)}
+                        onOpenCabinet={() => { setShowCabinet(false); handleNavigate("feed"); }}
                       />
                     )}
                   </motion.div>
@@ -428,7 +428,7 @@ const Index = () => {
             onOpenNotifications={() => setShowNotifications(true)}
             onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage)}
             onOpenPremium={() => setShowPremium(true)}
-            onOpenCabinet={() => setShowCabinet(true)}
+            onOpenCabinet={() => { setShowCabinet(false); handleNavigate("feed"); }}
           />
         )}
       </Suspense>
