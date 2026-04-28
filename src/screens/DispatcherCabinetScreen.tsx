@@ -94,6 +94,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   const [myJobs, setMyJobs] = useState<(Tables<"jobs"> & { response_count: number })[]>([]);
   const [editingJob, setEditingJob] = useState<Tables<"jobs"> | null>(null);
   const [adjustingId, setAdjustingId] = useState<string | null>(null);
+  const [myCategory, setMyCategory] = useState<MyJobsCategory>("open");
 
   const fetchMyJobs = async () => {
     if (!user) return;
