@@ -231,15 +231,24 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     setLoading(false);
   };
 
+  const refreshAll = async () => {
+    await Promise.all([fetchData(), fetchMyJobs()]);
+  };
+
   useEffect(() => {
-    fetchData();
+    refreshAll();
     if (!user) return;
     const channel = supabase
       .channel("dispatcher-cabinet")
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "job_responses" }, () => fetchData())
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "job_responses" }, () => refreshAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "jobs", filter: `dispatcher_id=eq.${user.id}` }, () => fetchMyJobs())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user?.id]);
+
+  useEffect(() => {
+    if (onRefreshRef) onRefreshRef.current = refreshAll;
+  }, [onRefreshRef]);
 
   // Stats calculations
   const weeklyStats = useMemo(() => {
