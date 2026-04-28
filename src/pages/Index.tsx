@@ -405,7 +405,15 @@ const Index = () => {
       <Suspense fallback={<ScreenSkeleton />}>
         {tab === "feed" && (
           isDispatcher ? (
-            <DispatcherFeedScreen onCreateJob={() => setShowCreateJob(true)} onViewResponses={setViewResponsesJob} onRefreshRef={feedRefreshRef} />
+            <DispatcherCabinetScreen
+              embedded
+              onBack={() => {}}
+              onChatWithWorker={async (workerId, workerName) => { await handleChatWithUser(workerId, workerName); }}
+              onViewProfile={setViewProfileUserId}
+              onOpenCommunity={() => setShowCommunity(true)}
+              onViewResponses={setViewResponsesJob}
+              onRefreshRef={feedRefreshRef}
+            />
           ) : (
             <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
           )
