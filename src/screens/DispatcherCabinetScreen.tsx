@@ -542,15 +542,132 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
         <>
           {/* ACTIVE JOBS TAB */}
           {currentTab === "active" && (
-            activeJobs.length === 0 ? (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-16 px-8">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-card border border-border flex items-center justify-center">
-                  <Briefcase size={28} className="text-muted-foreground" />
+            <>
+              {/* My jobs section (merged from former dispatcher feed) */}
+              <div className="px-4 pb-2 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-foreground">Мои заявки</h2>
+                <span className="text-[11px] text-muted-foreground">{myJobs.length}</span>
+              </div>
+              {myJobs.length === 0 ? (
+                <div className="mx-4 mb-5 rounded-2xl bg-card border border-border p-5 text-center">
+                  <p className="text-xs text-muted-foreground">У вас пока нет заявок</p>
                 </div>
-                <p className="text-sm font-bold text-foreground">Нет активных заказов</p>
-                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">Когда грузчики будут приняты на заявки, они появятся здесь</p>
-              </motion.div>
-            ) : (
+              ) : (
+                <div className="px-4 pb-5 space-y-3">
+                  {myJobs.map((job, i) => (
+                    <motion.div
+                      key={job.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: Math.min(i, 6) * 0.04 }}
+                      className="relative rounded-2xl p-4 border border-white/10 backdrop-blur-2xl backdrop-saturate-150 bg-white/5 shadow-[0_8px_32px_-8px_hsl(0_0%_0%/0.4)] overflow-hidden"
+                      style={{ backgroundImage: 'linear-gradient(135deg, hsl(0 0% 100% / 0.08), hsl(0 0% 100% / 0.02))' }}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            {job.urgent && (
+                              <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-destructive/20 text-destructive text-[11px] font-semibold">
+                                <Zap size={10} /> Срочно
+                              </span>
+                            )}
+                            {(job as any).quick_minimum && (
+                              <span className="px-2 py-0.5 rounded-lg bg-online/20 text-online text-[11px] font-semibold">
+                                Быстрая минималка
+                              </span>
+                            )}
+                            <span className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold ${
+                              job.status === "active" ? "bg-online/15 text-online" : "bg-muted text-muted-foreground"
+                            }`}>
+                              {job.status === "active" ? "Активна" : "Закрыта"}
+                            </span>
+                          </div>
+                          <h3 className="text-[15px] font-semibold text-foreground">{job.title}</h3>
+                        </div>
+                      </div>
+
+                      {job.description && (
+                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{job.description}</p>
+                      )}
+
+                      <div className="flex items-center gap-3 text-[11px] text-muted-foreground mb-3 flex-wrap">
+                        {job.address && <span className="flex items-center gap-1"><MapPin size={11} /> {job.address}</span>}
+                        {job.start_time && <span className="flex items-center gap-1"><Clock size={11} /> {new Date(job.start_time).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>}
+                        <span className="flex items-center gap-1"><Users size={11} /> {job.workers_needed} чел.</span>
+                      </div>
+
+                      <div className="rounded-xl px-3 py-2.5 mb-3 border border-white/10 bg-white/5 backdrop-blur-xl">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs text-muted-foreground">Оплата</span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => handleAdjustRate(job, -50)}
+                              disabled={adjustingId === job.id || (job.hourly_rate || 0) <= 0}
+                              className="w-8 h-8 rounded-lg border border-white/10 bg-white/10 backdrop-blur-md flex items-center justify-center active:scale-95 disabled:opacity-40 transition-all"
+                              title="Понизить на 50 ₽"
+                            >
+                              <Minus size={14} className="text-foreground" />
+                            </button>
+                            <span className="text-lg font-extrabold text-foreground min-w-[80px] text-center">
+                              {job.hourly_rate} ₽/ч
+                            </span>
+                            <button
+                              onClick={() => handleAdjustRate(job, 50)}
+                              disabled={adjustingId === job.id}
+                              className="w-8 h-8 rounded-lg border border-white/10 bg-white/10 backdrop-blur-md flex items-center justify-center active:scale-95 disabled:opacity-40 transition-all"
+                              title="Повысить на 50 ₽"
+                            >
+                              <Plus size={14} className="text-foreground" />
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-1.5 text-right">
+                          Шаг — 50 ₽ · заявка автоматически переопубликуется
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => onViewResponses?.(job)}
+                          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-semibold tap-scale"
+                        >
+                          <Eye size={14} /> Отклики ({job.response_count})
+                        </button>
+                        <button
+                          onClick={() => setEditingJob(job)}
+                          className="w-12 h-12 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center active:bg-white/10 transition-all"
+                          title="Редактировать"
+                        >
+                          <Pencil size={16} className="text-foreground" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteJob(job.id)}
+                          className="w-12 h-12 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center active:bg-white/10 transition-all"
+                          title="Удалить"
+                        >
+                          <Trash2 size={16} className="text-destructive" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+
+              {/* In-progress orders section (workers accepted) */}
+              <div className="px-4 pb-2 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-foreground">В работе</h2>
+                <span className="text-[11px] text-muted-foreground">{activeJobs.length}</span>
+              </div>
+              {activeJobs.length === 0 ? (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-10 px-8">
+                  <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-card border border-border flex items-center justify-center">
+                    <Briefcase size={24} className="text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-bold text-foreground">Нет активных заказов</p>
+                  <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">Когда грузчики будут приняты на заявки, они появятся здесь</p>
+                </motion.div>
+              ) : null}
+              {activeJobs.length > 0 && (
               <div className="px-4 space-y-3">
                 {activeJobs.map((aj, jobIdx) => {
                   const isExpanded = expandedJobs.has(aj.job.id);
