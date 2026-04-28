@@ -6,7 +6,7 @@ import {
   ChevronDown, ChevronUp, Phone, Square, Timer, Wallet,
   TrendingUp, TrendingDown, BarChart3, DollarSign, FileText,
   Calendar, Award, Zap, Target, Activity, Sparkles, Loader2,
-  Download, Trophy,
+  Download, Trophy, Eye, Pencil, Trash2, Plus, Minus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,12 +16,16 @@ import JobTemplatesModal from "@/components/dispatcher/JobTemplatesModal";
 import TopWorkersModal from "@/components/dispatcher/TopWorkersModal";
 import GoalsModal from "@/components/dispatcher/GoalsModal";
 import SOSReplacementModal from "@/components/dispatcher/SOSReplacementModal";
+import EditJobModal from "@/components/EditJobModal";
 
 interface DispatcherCabinetScreenProps {
   onBack: () => void;
   onChatWithWorker: (workerId: string, workerName: string) => void;
   onViewProfile?: (userId: string) => void;
   onOpenCommunity?: () => void;
+  onViewResponses?: (job: Tables<"jobs">) => void;
+  onRefreshRef?: React.MutableRefObject<(() => Promise<void>) | null>;
+  embedded?: boolean;
 }
 
 interface WorkerInfo {
