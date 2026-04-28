@@ -1140,6 +1140,14 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
         workerId={sosModal?.workerId || null}
         workerName={sosModal?.workerName || ""}
       />
+      {editingJob && (
+        <EditJobModal
+          job={editingJob}
+          open={!!editingJob}
+          onClose={() => setEditingJob(null)}
+          onSaved={handleJobSaved}
+        />
+      )}
     </div>
   );
 };
