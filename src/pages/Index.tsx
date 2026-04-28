@@ -20,7 +20,7 @@ const FeedScreen = lazy(() => import("@/screens/FeedScreen"));
 const JobDetailScreen = lazy(() => import("@/screens/JobDetailScreen"));
 const OrdersScreen = lazy(() => import("@/screens/OrdersScreen"));
 const ProfileScreen = lazy(() => import("@/screens/ProfileScreen"));
-const DispatcherFeedScreen = lazy(() => import("@/screens/DispatcherFeedScreen"));
+
 const CreateJobScreen = lazy(() => import("@/screens/CreateJobScreen"));
 const JobResponsesScreen = lazy(() => import("@/screens/JobResponsesScreen"));
 const RealChatsScreen = lazy(() => import("@/screens/RealChatsScreen"));
