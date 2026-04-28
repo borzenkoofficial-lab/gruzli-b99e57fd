@@ -702,13 +702,12 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                     </motion.div>
                   ))}
                 </div>
+                )
               )}
 
-              {/* In-progress orders section (workers accepted) */}
-              <div className="px-4 pb-2 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-foreground">В работе</h2>
-                <span className="text-[11px] text-muted-foreground">{activeJobs.length}</span>
-              </div>
+              {/* IN-PROGRESS: orders with accepted workers */}
+              {myCategory === "in_progress" && (
+                <>
               {activeJobs.length === 0 ? (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-10 px-8">
                   <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-card border border-border flex items-center justify-center">
