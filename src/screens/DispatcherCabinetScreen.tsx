@@ -886,8 +886,51 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                 })}
               </div>
               )}
+                </>
+              )}
+
+              {/* COMPLETED: my completed jobs */}
+              {myCategory === "completed" && (
+                completedMyJobs.length === 0 ? (
+                  <div className="mx-4 mb-5 rounded-2xl bg-card border border-border p-6 text-center">
+                    <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-card border border-border flex items-center justify-center">
+                      <CheckCircle2 size={24} className="text-muted-foreground" />
+                    </div>
+                    <p className="text-sm font-bold text-foreground">Завершённых заявок ещё нет</p>
+                    <p className="text-xs text-muted-foreground mt-1.5">Закрытые заказы появятся здесь</p>
+                  </div>
+                ) : (
+                  <div className="px-4 pb-5 space-y-3">
+                    {completedMyJobs.map((job, i) => (
+                      <motion.div
+                        key={job.id}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: Math.min(i, 6) * 0.04 }}
+                        className="bg-card border border-border rounded-2xl p-4"
+                      >
+                        <div className="flex items-start justify-between mb-2 gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                              <span className="px-2 py-0.5 rounded-lg bg-green-500/15 text-green-500 text-[11px] font-semibold">Завершена</span>
+                              <span className="text-[10px] text-muted-foreground">{new Date(job.created_at).toLocaleDateString("ru-RU")}</span>
+                            </div>
+                            <h3 className="text-[14px] font-semibold text-foreground truncate">{job.title}</h3>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
+                          {job.address && <span className="flex items-center gap-1"><MapPin size={11} /> {job.address}</span>}
+                          <span className="flex items-center gap-1"><Users size={11} /> {job.workers_needed} чел.</span>
+                          <span className="flex items-center gap-1"><Wallet size={11} /> {job.hourly_rate} ₽/ч</span>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                )
+              )}
             </>
-          )}
+            );
+          })()}
 
           {/* STATS TAB */}
           {currentTab === "stats" && (
