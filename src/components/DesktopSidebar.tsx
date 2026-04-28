@@ -28,7 +28,6 @@ const DesktopSidebar = ({ active, onNavigate, isDispatcher, unreadMessages = 0, 
   ];
 
   const dispatcherTabs = [
-    { id: "feed", label: "Заявки", icon: ClipboardList, badge: 0 },
     { id: "chats", label: "Чаты", icon: MessageCircle, badge: unreadMessages },
     { id: "kartoteka", label: "Картотека", icon: FolderOpen, badge: 0 },
     { id: "profile", label: "Профиль", icon: User, badge: 0 },
