@@ -545,18 +545,65 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
       ) : (
         <>
           {/* ACTIVE JOBS TAB */}
-          {currentTab === "active" && (
+          {currentTab === "active" && (() => {
+            const inProgressJobIds = new Set(activeJobs.map((aj) => aj.job.id));
+            const openJobs = myJobs.filter((j) => j.status === "active" && !inProgressJobIds.has(j.id));
+            const completedMyJobs = myJobs.filter((j) => j.status === "completed");
+            const categories: { id: MyJobsCategory; label: string; count: number }[] = [
+              { id: "open", label: "Активные", count: openJobs.length },
+              { id: "in_progress", label: "В работе", count: activeJobs.length },
+              { id: "completed", label: "Завершённые", count: completedMyJobs.length },
+            ];
+            return (
             <>
-              {/* My jobs section (merged from former dispatcher feed) */}
-              <div className="px-4 pb-2 flex items-center justify-between">
-                <h2 className="text-sm font-bold text-foreground">Мои заявки</h2>
-                <span className="text-[11px] text-muted-foreground">{myJobs.length}</span>
-              </div>
-              {myJobs.length === 0 ? (
-                <div className="mx-4 mb-5 rounded-2xl bg-card border border-border p-5 text-center">
-                  <p className="text-xs text-muted-foreground">У вас пока нет заявок</p>
+              {/* Create job CTA */}
+              {onCreateJob && (
+                <div className="px-4 pb-3">
+                  <button
+                    onClick={onCreateJob}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-foreground text-primary-foreground font-bold text-sm tap-scale"
+                  >
+                    <Plus size={18} /> Создать заявку
+                  </button>
                 </div>
-              ) : (
+              )}
+
+              {/* Category sub-tabs */}
+              <div className="px-4 pb-3">
+                <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+                  {categories.map((c) => {
+                    const isActive = myCategory === c.id;
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => setMyCategory(c.id)}
+                        className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all border ${
+                          isActive
+                            ? "bg-foreground text-primary-foreground border-foreground"
+                            : "bg-card text-muted-foreground border-border"
+                        }`}
+                      >
+                        {c.label}
+                        <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
+                          isActive ? "bg-primary-foreground/15 text-primary-foreground" : "bg-muted text-foreground"
+                        }`}>{c.count}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* OPEN: postings without accepted workers */}
+              {myCategory === "open" && (
+                openJobs.length === 0 ? (
+                  <div className="mx-4 mb-5 rounded-2xl bg-card border border-border p-6 text-center">
+                    <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-card border border-border flex items-center justify-center">
+                      <Briefcase size={24} className="text-muted-foreground" />
+                    </div>
+                    <p className="text-sm font-bold text-foreground">Нет активных заявок</p>
+                    <p className="text-xs text-muted-foreground mt-1.5">Создайте новую заявку, чтобы получить отклики</p>
+                  </div>
+                ) : (
                 <div className="px-4 pb-5 space-y-3">
                   {myJobs.map((job, i) => (
                     <motion.div
