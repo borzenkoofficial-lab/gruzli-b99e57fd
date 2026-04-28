@@ -25,8 +25,11 @@ interface DispatcherCabinetScreenProps {
   onOpenCommunity?: () => void;
   onViewResponses?: (job: Tables<"jobs">) => void;
   onRefreshRef?: React.MutableRefObject<(() => Promise<void>) | null>;
+  onCreateJob?: () => void;
   embedded?: boolean;
 }
+
+type MyJobsCategory = "open" | "in_progress" | "completed";
 
 interface WorkerInfo {
   responseId: string;
