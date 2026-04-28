@@ -357,7 +357,15 @@ const Index = () => {
             {tab === "feed" ? (
               <PullToRefresh onRefresh={handlePullRefresh}>
                 {isDispatcher ? (
-                  <DispatcherFeedScreen onCreateJob={() => setShowCreateJob(true)} onViewResponses={setViewResponsesJob} onRefreshRef={feedRefreshRef} />
+                  <DispatcherCabinetScreen
+                    embedded
+                    onBack={() => {}}
+                    onChatWithWorker={async (workerId, workerName) => { await handleChatWithUser(workerId, workerName); }}
+                    onViewProfile={setViewProfileUserId}
+                    onOpenCommunity={() => setShowCommunity(true)}
+                    onViewResponses={setViewResponsesJob}
+                    onRefreshRef={feedRefreshRef}
+                  />
                 ) : (
                   <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
                 )}
@@ -376,7 +384,7 @@ const Index = () => {
                         onOpenNotifications={() => setShowNotifications(true)}
                         onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage)}
                         onOpenPremium={() => setShowPremium(true)}
-                        onOpenCabinet={() => setShowCabinet(true)}
+                        onOpenCabinet={() => { setShowCabinet(false); handleNavigate("feed"); }}
                       />
                     )}
                   </motion.div>
@@ -397,7 +405,15 @@ const Index = () => {
       <Suspense fallback={<ScreenSkeleton />}>
         {tab === "feed" && (
           isDispatcher ? (
-            <DispatcherFeedScreen onCreateJob={() => setShowCreateJob(true)} onViewResponses={setViewResponsesJob} onRefreshRef={feedRefreshRef} />
+            <DispatcherCabinetScreen
+              embedded
+              onBack={() => {}}
+              onChatWithWorker={async (workerId, workerName) => { await handleChatWithUser(workerId, workerName); }}
+              onViewProfile={setViewProfileUserId}
+              onOpenCommunity={() => setShowCommunity(true)}
+              onViewResponses={setViewResponsesJob}
+              onRefreshRef={feedRefreshRef}
+            />
           ) : (
             <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
           )
@@ -412,7 +428,7 @@ const Index = () => {
             onOpenNotifications={() => setShowNotifications(true)}
             onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage)}
             onOpenPremium={() => setShowPremium(true)}
-            onOpenCabinet={() => setShowCabinet(true)}
+            onOpenCabinet={() => { setShowCabinet(false); handleNavigate("feed"); }}
           />
         )}
       </Suspense>

@@ -6,7 +6,7 @@ import {
   ChevronDown, ChevronUp, Phone, Square, Timer, Wallet,
   TrendingUp, TrendingDown, BarChart3, DollarSign, FileText,
   Calendar, Award, Zap, Target, Activity, Sparkles, Loader2,
-  Download, Trophy,
+  Download, Trophy, Eye, Pencil, Trash2, Plus, Minus,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,12 +16,16 @@ import JobTemplatesModal from "@/components/dispatcher/JobTemplatesModal";
 import TopWorkersModal from "@/components/dispatcher/TopWorkersModal";
 import GoalsModal from "@/components/dispatcher/GoalsModal";
 import SOSReplacementModal from "@/components/dispatcher/SOSReplacementModal";
+import EditJobModal from "@/components/EditJobModal";
 
 interface DispatcherCabinetScreenProps {
   onBack: () => void;
   onChatWithWorker: (workerId: string, workerName: string) => void;
   onViewProfile?: (userId: string) => void;
   onOpenCommunity?: () => void;
+  onViewResponses?: (job: Tables<"jobs">) => void;
+  onRefreshRef?: React.MutableRefObject<(() => Promise<void>) | null>;
+  embedded?: boolean;
 }
 
 interface WorkerInfo {
@@ -62,7 +66,7 @@ const WORKER_STATUS_MAP: Record<string, { label: string; icon: typeof CheckCircl
   completed: { label: "Завершил", icon: CheckCircle2, color: "text-green-400", bg: "bg-green-400/10" },
 };
 
-const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOpenCommunity }: DispatcherCabinetScreenProps) => {
+const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOpenCommunity, onViewResponses, onRefreshRef, embedded }: DispatcherCabinetScreenProps) => {
   const { user } = useAuth();
   const [activeJobs, setActiveJobs] = useState<ActiveJob[]>([]);
   const [completedStats, setCompletedStats] = useState<CompletedJobStat[]>([]);
@@ -82,6 +86,64 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   const [showTopWorkers, setShowTopWorkers] = useState(false);
   const [showGoals, setShowGoals] = useState(false);
   const [sosModal, setSosModal] = useState<{ job: any; workerId: string; workerName: string } | null>(null);
+
+  // My jobs (full list of dispatcher's jobs — merged from former DispatcherFeedScreen)
+  const [myJobs, setMyJobs] = useState<(Tables<"jobs"> & { response_count: number })[]>([]);
+  const [editingJob, setEditingJob] = useState<Tables<"jobs"> | null>(null);
+  const [adjustingId, setAdjustingId] = useState<string | null>(null);
+
+  const fetchMyJobs = async () => {
+    if (!user) return;
+    const { data: jobsData } = await supabase
+      .from("jobs")
+      .select("*")
+      .eq("dispatcher_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (jobsData && jobsData.length > 0) {
+      const jobIds = jobsData.map(j => j.id);
+      const { data: responses } = await supabase
+        .from("job_responses")
+        .select("job_id")
+        .in("job_id", jobIds);
+      const countMap: Record<string, number> = {};
+      responses?.forEach(r => { countMap[r.job_id] = (countMap[r.job_id] || 0) + 1; });
+      setMyJobs(jobsData.map(job => ({ ...job, response_count: countMap[job.id] || 0 })));
+    } else {
+      setMyJobs([]);
+    }
+  };
+
+  const handleDeleteJob = async (jobId: string) => {
+    const { error } = await supabase.from("jobs").delete().eq("id", jobId);
+    if (error) {
+      toast.error("Ошибка удаления");
+    } else {
+      setMyJobs((prev) => prev.filter((j) => j.id !== jobId));
+      toast.success("Заявка удалена");
+    }
+  };
+
+  const handleAdjustRate = async (job: Tables<"jobs"> & { response_count: number }, delta: number) => {
+    const newRate = Math.max(0, (job.hourly_rate || 0) + delta);
+    if (newRate === job.hourly_rate) return;
+    setAdjustingId(job.id);
+    const { error } = await supabase
+      .from("jobs")
+      .update({ hourly_rate: newRate, status: "active" })
+      .eq("id", job.id);
+    setAdjustingId(null);
+    if (error) {
+      toast.error("Не удалось изменить оплату");
+      return;
+    }
+    setMyJobs((prev) => prev.map((j) => (j.id === job.id ? { ...j, hourly_rate: newRate, status: "active" } : j)));
+    toast.success(`Оплата ${delta > 0 ? "повышена" : "понижена"} до ${newRate} ₽/час · переопубликована`);
+  };
+
+  const handleJobSaved = (updated: Tables<"jobs">) => {
+    setMyJobs((prev) => prev.map((j) => (j.id === updated.id ? { ...j, ...updated } : j)));
+  };
 
   const fetchData = async () => {
     if (!user) return;
@@ -169,15 +231,24 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     setLoading(false);
   };
 
+  const refreshAll = async () => {
+    await Promise.all([fetchData(), fetchMyJobs()]);
+  };
+
   useEffect(() => {
-    fetchData();
+    refreshAll();
     if (!user) return;
     const channel = supabase
       .channel("dispatcher-cabinet")
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "job_responses" }, () => fetchData())
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "job_responses" }, () => refreshAll())
+      .on("postgres_changes", { event: "*", schema: "public", table: "jobs", filter: `dispatcher_id=eq.${user.id}` }, () => fetchMyJobs())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user?.id]);
+
+  useEffect(() => {
+    if (onRefreshRef) onRefreshRef.current = refreshAll;
+  }, [onRefreshRef]);
 
   // Stats calculations
   const weeklyStats = useMemo(() => {
@@ -347,16 +418,18 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   ];
 
   return (
-    <div className="h-full w-full overflow-y-auto overflow-x-hidden bg-background pb-8 overscroll-contain" style={{ WebkitOverflowScrolling: "touch" }}>
+    <div className="h-full w-full overflow-y-auto overflow-x-hidden bg-background overscroll-contain" style={{ WebkitOverflowScrolling: "touch", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 7rem)" }}>
       {/* Header */}
       <div className="px-4 safe-top pb-2">
         <div className="flex items-center gap-3">
-          <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 transition-all">
-            <ArrowLeft size={18} className="text-foreground" />
-          </button>
+          {!embedded && (
+            <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 transition-all">
+              <ArrowLeft size={18} className="text-foreground" />
+            </button>
+          )}
           <div className="flex-1">
             <h1 className="text-lg font-bold text-foreground">Кабинет диспетчера</h1>
-            <p className="text-[11px] text-muted-foreground">Управление заказами и финансы</p>
+            <p className="text-[11px] text-muted-foreground">Заявки · заказы · финансы</p>
           </div>
         </div>
       </div>
@@ -469,15 +542,132 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
         <>
           {/* ACTIVE JOBS TAB */}
           {currentTab === "active" && (
-            activeJobs.length === 0 ? (
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-16 px-8">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-card border border-border flex items-center justify-center">
-                  <Briefcase size={28} className="text-muted-foreground" />
+            <>
+              {/* My jobs section (merged from former dispatcher feed) */}
+              <div className="px-4 pb-2 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-foreground">Мои заявки</h2>
+                <span className="text-[11px] text-muted-foreground">{myJobs.length}</span>
+              </div>
+              {myJobs.length === 0 ? (
+                <div className="mx-4 mb-5 rounded-2xl bg-card border border-border p-5 text-center">
+                  <p className="text-xs text-muted-foreground">У вас пока нет заявок</p>
                 </div>
-                <p className="text-sm font-bold text-foreground">Нет активных заказов</p>
-                <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">Когда грузчики будут приняты на заявки, они появятся здесь</p>
-              </motion.div>
-            ) : (
+              ) : (
+                <div className="px-4 pb-5 space-y-3">
+                  {myJobs.map((job, i) => (
+                    <motion.div
+                      key={job.id}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: Math.min(i, 6) * 0.04 }}
+                      className="relative rounded-2xl p-4 border border-white/10 backdrop-blur-2xl backdrop-saturate-150 bg-white/5 shadow-[0_8px_32px_-8px_hsl(0_0%_0%/0.4)] overflow-hidden"
+                      style={{ backgroundImage: 'linear-gradient(135deg, hsl(0 0% 100% / 0.08), hsl(0 0% 100% / 0.02))' }}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            {job.urgent && (
+                              <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-destructive/20 text-destructive text-[11px] font-semibold">
+                                <Zap size={10} /> Срочно
+                              </span>
+                            )}
+                            {(job as any).quick_minimum && (
+                              <span className="px-2 py-0.5 rounded-lg bg-online/20 text-online text-[11px] font-semibold">
+                                Быстрая минималка
+                              </span>
+                            )}
+                            <span className={`px-2 py-0.5 rounded-lg text-[11px] font-semibold ${
+                              job.status === "active" ? "bg-online/15 text-online" : "bg-muted text-muted-foreground"
+                            }`}>
+                              {job.status === "active" ? "Активна" : "Закрыта"}
+                            </span>
+                          </div>
+                          <h3 className="text-[15px] font-semibold text-foreground">{job.title}</h3>
+                        </div>
+                      </div>
+
+                      {job.description && (
+                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{job.description}</p>
+                      )}
+
+                      <div className="flex items-center gap-3 text-[11px] text-muted-foreground mb-3 flex-wrap">
+                        {job.address && <span className="flex items-center gap-1"><MapPin size={11} /> {job.address}</span>}
+                        {job.start_time && <span className="flex items-center gap-1"><Clock size={11} /> {new Date(job.start_time).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>}
+                        <span className="flex items-center gap-1"><Users size={11} /> {job.workers_needed} чел.</span>
+                      </div>
+
+                      <div className="rounded-xl px-3 py-2.5 mb-3 border border-white/10 bg-white/5 backdrop-blur-xl">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs text-muted-foreground">Оплата</span>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => handleAdjustRate(job, -50)}
+                              disabled={adjustingId === job.id || (job.hourly_rate || 0) <= 0}
+                              className="w-8 h-8 rounded-lg border border-white/10 bg-white/10 backdrop-blur-md flex items-center justify-center active:scale-95 disabled:opacity-40 transition-all"
+                              title="Понизить на 50 ₽"
+                            >
+                              <Minus size={14} className="text-foreground" />
+                            </button>
+                            <span className="text-lg font-extrabold text-foreground min-w-[80px] text-center">
+                              {job.hourly_rate} ₽/ч
+                            </span>
+                            <button
+                              onClick={() => handleAdjustRate(job, 50)}
+                              disabled={adjustingId === job.id}
+                              className="w-8 h-8 rounded-lg border border-white/10 bg-white/10 backdrop-blur-md flex items-center justify-center active:scale-95 disabled:opacity-40 transition-all"
+                              title="Повысить на 50 ₽"
+                            >
+                              <Plus size={14} className="text-foreground" />
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-1.5 text-right">
+                          Шаг — 50 ₽ · заявка автоматически переопубликуется
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => onViewResponses?.(job)}
+                          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-semibold tap-scale"
+                        >
+                          <Eye size={14} /> Отклики ({job.response_count})
+                        </button>
+                        <button
+                          onClick={() => setEditingJob(job)}
+                          className="w-12 h-12 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center active:bg-white/10 transition-all"
+                          title="Редактировать"
+                        >
+                          <Pencil size={16} className="text-foreground" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteJob(job.id)}
+                          className="w-12 h-12 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center active:bg-white/10 transition-all"
+                          title="Удалить"
+                        >
+                          <Trash2 size={16} className="text-destructive" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+
+              {/* In-progress orders section (workers accepted) */}
+              <div className="px-4 pb-2 flex items-center justify-between">
+                <h2 className="text-sm font-bold text-foreground">В работе</h2>
+                <span className="text-[11px] text-muted-foreground">{activeJobs.length}</span>
+              </div>
+              {activeJobs.length === 0 ? (
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-10 px-8">
+                  <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-card border border-border flex items-center justify-center">
+                    <Briefcase size={24} className="text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-bold text-foreground">Нет активных заказов</p>
+                  <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">Когда грузчики будут приняты на заявки, они появятся здесь</p>
+                </motion.div>
+              ) : null}
+              {activeJobs.length > 0 && (
               <div className="px-4 space-y-3">
                 {activeJobs.map((aj, jobIdx) => {
                   const isExpanded = expandedJobs.has(aj.job.id);
@@ -645,7 +835,8 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                   );
                 })}
               </div>
-            )
+              )}
+            </>
           )}
 
           {/* STATS TAB */}
@@ -949,6 +1140,14 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
         workerId={sosModal?.workerId || null}
         workerName={sosModal?.workerName || ""}
       />
+      {editingJob && (
+        <EditJobModal
+          job={editingJob}
+          open={!!editingJob}
+          onClose={() => setEditingJob(null)}
+          onSaved={handleJobSaved}
+        />
+      )}
     </div>
   );
 };
