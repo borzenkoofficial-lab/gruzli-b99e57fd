@@ -835,7 +835,8 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                   );
                 })}
               </div>
-            )
+              )}
+            </>
           )}
 
           {/* STATS TAB */}
