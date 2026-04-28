@@ -605,7 +605,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                   </div>
                 ) : (
                 <div className="px-4 pb-5 space-y-3">
-                  {myJobs.map((job, i) => (
+                  {openJobs.map((job, i) => (
                     <motion.div
                       key={job.id}
                       initial={{ opacity: 0, y: 12 }}
