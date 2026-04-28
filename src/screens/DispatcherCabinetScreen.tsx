@@ -66,7 +66,7 @@ const WORKER_STATUS_MAP: Record<string, { label: string; icon: typeof CheckCircl
   completed: { label: "Завершил", icon: CheckCircle2, color: "text-green-400", bg: "bg-green-400/10" },
 };
 
-const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOpenCommunity }: DispatcherCabinetScreenProps) => {
+const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOpenCommunity, onViewResponses, onRefreshRef, embedded }: DispatcherCabinetScreenProps) => {
   const { user } = useAuth();
   const [activeJobs, setActiveJobs] = useState<ActiveJob[]>([]);
   const [completedStats, setCompletedStats] = useState<CompletedJobStat[]>([]);
@@ -86,6 +86,64 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   const [showTopWorkers, setShowTopWorkers] = useState(false);
   const [showGoals, setShowGoals] = useState(false);
   const [sosModal, setSosModal] = useState<{ job: any; workerId: string; workerName: string } | null>(null);
+
+  // My jobs (full list of dispatcher's jobs — merged from former DispatcherFeedScreen)
+  const [myJobs, setMyJobs] = useState<(Tables<"jobs"> & { response_count: number })[]>([]);
+  const [editingJob, setEditingJob] = useState<Tables<"jobs"> | null>(null);
+  const [adjustingId, setAdjustingId] = useState<string | null>(null);
+
+  const fetchMyJobs = async () => {
+    if (!user) return;
+    const { data: jobsData } = await supabase
+      .from("jobs")
+      .select("*")
+      .eq("dispatcher_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (jobsData && jobsData.length > 0) {
+      const jobIds = jobsData.map(j => j.id);
+      const { data: responses } = await supabase
+        .from("job_responses")
+        .select("job_id")
+        .in("job_id", jobIds);
+      const countMap: Record<string, number> = {};
+      responses?.forEach(r => { countMap[r.job_id] = (countMap[r.job_id] || 0) + 1; });
+      setMyJobs(jobsData.map(job => ({ ...job, response_count: countMap[job.id] || 0 })));
+    } else {
+      setMyJobs([]);
+    }
+  };
+
+  const handleDeleteJob = async (jobId: string) => {
+    const { error } = await supabase.from("jobs").delete().eq("id", jobId);
+    if (error) {
+      toast.error("Ошибка удаления");
+    } else {
+      setMyJobs((prev) => prev.filter((j) => j.id !== jobId));
+      toast.success("Заявка удалена");
+    }
+  };
+
+  const handleAdjustRate = async (job: Tables<"jobs"> & { response_count: number }, delta: number) => {
+    const newRate = Math.max(0, (job.hourly_rate || 0) + delta);
+    if (newRate === job.hourly_rate) return;
+    setAdjustingId(job.id);
+    const { error } = await supabase
+      .from("jobs")
+      .update({ hourly_rate: newRate, status: "active" })
+      .eq("id", job.id);
+    setAdjustingId(null);
+    if (error) {
+      toast.error("Не удалось изменить оплату");
+      return;
+    }
+    setMyJobs((prev) => prev.map((j) => (j.id === job.id ? { ...j, hourly_rate: newRate, status: "active" } : j)));
+    toast.success(`Оплата ${delta > 0 ? "повышена" : "понижена"} до ${newRate} ₽/час · переопубликована`);
+  };
+
+  const handleJobSaved = (updated: Tables<"jobs">) => {
+    setMyJobs((prev) => prev.map((j) => (j.id === updated.id ? { ...j, ...updated } : j)));
+  };
 
   const fetchData = async () => {
     if (!user) return;
