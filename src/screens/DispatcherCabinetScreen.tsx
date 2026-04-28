@@ -69,7 +69,7 @@ const WORKER_STATUS_MAP: Record<string, { label: string; icon: typeof CheckCircl
   completed: { label: "Завершил", icon: CheckCircle2, color: "text-green-400", bg: "bg-green-400/10" },
 };
 
-const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOpenCommunity, onViewResponses, onRefreshRef, embedded }: DispatcherCabinetScreenProps) => {
+const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOpenCommunity, onViewResponses, onRefreshRef, onCreateJob, embedded }: DispatcherCabinetScreenProps) => {
   const { user } = useAuth();
   const [activeJobs, setActiveJobs] = useState<ActiveJob[]>([]);
   const [completedStats, setCompletedStats] = useState<CompletedJobStat[]>([]);
