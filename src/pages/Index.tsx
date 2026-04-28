@@ -235,6 +235,8 @@ const Index = () => {
             }}
             onViewProfile={(userId) => { setShowCabinet(false); setViewProfileUserId(userId); }}
             onOpenCommunity={() => { setShowCabinet(false); setShowCommunity(true); }}
+            onViewResponses={setViewResponsesJob}
+            onCreateJob={() => setShowCreateJob(true)}
           />
         );
       }
