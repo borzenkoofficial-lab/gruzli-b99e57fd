@@ -321,226 +321,325 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
   // ─── DISPATCHER PROFILE ───
   if (isDispatcher) {
+    const totalProfit = (profile as any)?.total_earned || 0;
+    const weekProfit = weeklyStats.earned || 0;
+    const ratingValue = avgRating || Number(profile?.rating) || 5.0;
+
     return (
       <>
         <VerifiedPopup open={showVerified} onClose={() => setShowVerified(false)} />
         {showTopUp && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center px-6" onClick={() => setShowTopUp(false)}>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/50 backdrop-blur-md" />
             <motion.div
-              initial={{ opacity: 0, scale: 0.85, y: 20 }}
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 350 }}
               className="relative bg-card border border-border rounded-3xl p-6 max-w-sm w-full space-y-4"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="text-center">
-                <div className="mx-auto w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-3">
-                  <Banknote size={28} className="text-primary" />
+                <div className="mx-auto w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center mb-3">
+                  <Banknote size={26} className="text-primary" />
                 </div>
                 <h3 className="text-lg font-bold text-foreground">Пополнение баланса</h3>
-                <p className="text-xs text-muted-foreground mt-1">Введите сумму пополнения, заявка будет отправлена администратору</p>
+                <p className="text-xs text-muted-foreground mt-1">Заявка будет отправлена администратору</p>
               </div>
               <div className="space-y-3">
-                <div className="bg-surface-1 border border-border rounded-2xl p-1">
-                  <input type="number" inputMode="numeric" placeholder="Введите сумму в ₽" value={topUpAmount} onChange={(e) => setTopUpAmount(e.target.value)} className="w-full bg-transparent px-4 py-3 text-center text-lg font-bold text-foreground placeholder:text-muted-foreground/50 outline-none" autoFocus />
+                <div className="bg-surface-1 border border-border rounded-2xl">
+                  <input type="number" inputMode="numeric" placeholder="Сумма в ₽" value={topUpAmount} onChange={(e) => setTopUpAmount(e.target.value)} className="w-full bg-transparent px-4 py-3.5 text-center text-xl font-bold text-foreground placeholder:text-muted-foreground/50 outline-none" autoFocus />
                 </div>
-                <div className="flex gap-2">
+                <div className="grid grid-cols-4 gap-2">
                   {[500, 1000, 2000, 5000].map((amount) => (
-                    <button key={amount} onClick={() => setTopUpAmount(String(amount))} className="flex-1 py-2 rounded-xl bg-card border border-border text-xs font-semibold text-foreground active:bg-surface-1 border border-border transition-all">{amount} ₽</button>
+                    <button key={amount} onClick={() => setTopUpAmount(String(amount))} className="py-2 rounded-xl bg-surface-1 border border-border text-xs font-semibold text-foreground active:scale-95 transition-all">{amount}</button>
                   ))}
                 </div>
               </div>
               <div className="flex gap-2 pt-1">
-                <button onClick={() => setShowTopUp(false)} className="flex-1 py-2.5 rounded-2xl bg-card border border-border text-sm font-semibold text-muted-foreground active:bg-surface-1 border border-border transition-all">Отмена</button>
+                <button onClick={() => setShowTopUp(false)} className="flex-1 py-3 rounded-2xl bg-surface-1 border border-border text-sm font-semibold text-muted-foreground active:scale-95 transition-all">Отмена</button>
                 <button onClick={() => {
                   const amt = parseInt(topUpAmount);
                   if (!amt || amt <= 0) { toast.error("Введите корректную сумму"); return; }
                   setShowTopUp(false);
                   onOpenSupport?.(`💰 Заявка на пополнение баланса\n\nСумма: ${amt} ₽\nID пользователя: ${user?.id?.slice(0, 8).toUpperCase()}\nИмя: ${profile?.full_name || "—"}\n\nПрошу пополнить баланс.`);
-                }} className="flex-1 py-2.5 rounded-2xl bg-foreground text-sm font-bold text-primary-foreground tap-scale">Пополнить</button>
+                }} className="flex-1 py-3 rounded-2xl bg-foreground text-sm font-bold text-primary-foreground active:scale-95 transition-all">Пополнить</button>
               </div>
             </motion.div>
           </div>
         )}
-        <div>
-          <div className="px-5 safe-top pb-2 flex items-center justify-between">
+
+        <div className="pb-6">
+          {/* Header */}
+          <div className="px-5 safe-top pb-3 flex items-center justify-between">
             <h1 className="text-xl font-bold text-foreground">Профиль</h1>
-            <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center">
-              <Bell size={18} className="text-muted-foreground" />
-            </button>
-          </div>
-          <div className="px-5 py-4">
-            <div className="flex items-center gap-4">
-              <div className="relative" style={{ width: 72, height: 72 }}>
-                {profile?.avatar_url ? (
-                  <img src={profile.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
-                ) : (
-                  <div className="w-full h-full rounded-full bg-foreground flex items-center justify-center text-2xl font-bold text-primary-foreground">{initials}</div>
-                )}
-              </div>
-              <div className="flex-1">
-                <h2 className="text-lg font-bold text-foreground">{profile?.full_name || "Диспетчер"}</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">@{profile?.full_name?.toLowerCase().replace(/\s+/g, "_") || "dispatcher"}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <Shield size={12} className="text-primary" />
-                  <span className="text-xs text-primary font-semibold">Диспетчер</span>
-                  {profile?.verified && (
-                    <button onClick={() => setShowVerified(true)} className="ml-1 px-2 py-0.5 rounded-full bg-primary/10 text-[10px] text-primary font-bold cursor-pointer hover:bg-primary/20 transition-colors">✓ Верифицирован</button>
-                  )}
-                </div>
-              </div>
+            <div className="flex items-center gap-2">
+              <button onClick={onOpenNotifications} aria-label="Уведомления" className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center active:scale-95 transition-transform">
+                <Bell size={18} className="text-muted-foreground" />
+              </button>
+              <button onClick={onOpenSettings} aria-label="Настройки" className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center active:scale-95 transition-transform">
+                <Settings size={18} className="text-muted-foreground" />
+              </button>
             </div>
           </div>
 
-          {/* ID Card */}
-          <div className="mx-5 mb-4">
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Hash size={16} className="text-primary" />
-                  <span className="text-xs font-semibold text-muted-foreground">Индивидуальный ID</span>
+          {/* Hero: identity card */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className="mx-5 mb-3 rounded-3xl bg-card border border-border overflow-hidden"
+          >
+            <div className="relative p-5">
+              {/* Decorative grid */}
+              <div
+                className="absolute inset-0 opacity-[0.03] pointer-events-none"
+                style={{
+                  backgroundImage: "linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)",
+                  backgroundSize: "24px 24px",
+                }}
+              />
+              <div className="relative flex items-start gap-4">
+                <AvatarWithUpload profile={profile} user={user} editable />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <h2 className="text-lg font-bold text-foreground truncate">{profile?.full_name || "Диспетчер"}</h2>
+                    {profile?.verified && (
+                      <button onClick={() => setShowVerified(true)} aria-label="Аккаунт верифицирован">
+                        <BadgeCheck size={18} className="text-primary" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="inline-flex items-center gap-1.5 mt-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20">
+                    <Shield size={11} className="text-primary" />
+                    <span className="text-[11px] font-bold text-primary uppercase tracking-wider">Диспетчер</span>
+                  </div>
+                  <div className="flex items-center gap-3 mt-2.5">
+                    <div className="flex items-center gap-1">
+                      <Star size={13} className="text-primary fill-primary" />
+                      <span className="text-sm font-bold text-foreground">{ratingValue.toFixed(1)}</span>
+                      <span className="text-[11px] text-muted-foreground ml-0.5">· {reviews.length}</span>
+                    </div>
+                    <button onClick={copyId} className="flex items-center gap-1 active:scale-95 transition-transform">
+                      {idCopied ? <CheckCircle2 size={12} className="text-primary" /> : <Hash size={12} className="text-muted-foreground" />}
+                      <span className="text-[11px] font-semibold text-muted-foreground tracking-wider">{shortId}</span>
+                    </button>
+                  </div>
                 </div>
-                <button onClick={copyId} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border tap-scale transition-colors">
-                  {idCopied ? <CheckCircle2 size={14} className="text-primary" /> : <Copy size={14} className="text-muted-foreground" />}
-                  <span className="text-sm font-bold text-foreground tracking-wider">{shortId}</span>
-                </button>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Gruzli Bank Card — Dispatcher */}
-          <div className="mx-5 mb-4">
-            <motion.div
-              initial={{ opacity: 0, y: 40, rotateX: 8 }}
-              animate={{ opacity: 1, y: 0, rotateX: 0 }}
-              transition={{ type: "spring", damping: 20, stiffness: 200, delay: 0.15 }}
-              className="rounded-2xl overflow-hidden relative"
+          {/* PRIMARY CTA: Кабинет диспетчера */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.05 }}
+            className="mx-5 mb-3"
+          >
+            <button
+              onClick={onOpenCabinet}
+              className="w-full relative overflow-hidden rounded-3xl p-5 text-left active:scale-[0.98] transition-transform"
               style={{
-                background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%)",
-                boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+                background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(230 70% 48%) 100%)",
+                boxShadow: "0 10px 30px -10px hsl(var(--primary) / 0.5)",
               }}
             >
-              {/* Chip & logo pattern */}
-              <div className="absolute top-0 right-0 w-32 h-32 opacity-[0.06]">
-                <div className="w-full h-full rounded-full border-[16px] border-white translate-x-8 -translate-y-8" />
-              </div>
-              <div className="absolute bottom-0 left-0 w-24 h-24 opacity-[0.04]">
-                <div className="w-full h-full rounded-full border-[12px] border-white -translate-x-6 translate-y-6" />
-              </div>
-
-              <div className="px-5 pt-5 pb-2 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-6 rounded-[3px] bg-gradient-to-br from-amber-300 to-amber-500" />
-                  <span className="text-[10px] font-bold text-white/40 tracking-[0.2em] uppercase">Gruzli Bank</span>
+              <div className="absolute -right-6 -top-6 w-32 h-32 rounded-full bg-primary-foreground/10 blur-2xl" />
+              <div className="absolute -right-2 -bottom-8 w-24 h-24 rounded-full bg-primary-foreground/5 blur-xl" />
+              <div className="relative flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-primary-foreground/15 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                  <Briefcase size={24} className="text-primary-foreground" />
                 </div>
-                <span className="text-[10px] font-medium text-white/30 tracking-wider">VIRTUAL</span>
-              </div>
-
-              <div className="px-5 pt-2 pb-1">
-                <p className="text-white/50 text-[10px] font-medium tracking-wider uppercase mb-1">Баланс счёта</p>
-                <h2 className="text-white text-3xl font-extrabold tracking-tight">{(profile?.balance || 0).toLocaleString("ru-RU")} ₽</h2>
-              </div>
-
-              <div className="px-5 pt-3 pb-2 flex items-center justify-between">
-                <div>
-                  <p className="text-white/30 text-[9px] tracking-wider uppercase">Держатель карты</p>
-                  <p className="text-white/70 text-[11px] font-semibold tracking-wide">{(profile?.full_name || "DISPATCHER").toUpperCase()}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-bold text-primary-foreground/70 uppercase tracking-widest">Рабочее место</p>
+                  <h3 className="text-lg font-extrabold text-primary-foreground mt-0.5">Кабинет диспетчера</h3>
+                  <p className="text-[11px] text-primary-foreground/70 mt-0.5">Заявки · команда · аналитика</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-white/30 text-[9px] tracking-wider uppercase">№ карты</p>
-                  <p className="text-white/70 text-[11px] font-semibold tracking-widest">•••• {(profile?.display_id || "0000").slice(-4)}</p>
+                <ChevronRight size={20} className="text-primary-foreground/80 flex-shrink-0" />
+              </div>
+            </button>
+          </motion.div>
+
+          {/* Bank Card (preserved & polished) */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", damping: 22, stiffness: 200, delay: 0.1 }}
+            className="mx-5 mb-3"
+          >
+            <div
+              className="rounded-3xl overflow-hidden relative"
+              style={{
+                background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%)",
+                boxShadow: "0 12px 40px rgba(0,0,0,0.45)",
+              }}
+            >
+              {/* Decorative rings */}
+              <div className="absolute top-0 right-0 w-40 h-40 opacity-[0.07] pointer-events-none">
+                <div className="w-full h-full rounded-full border-[18px] border-white translate-x-10 -translate-y-10" />
+              </div>
+              <div className="absolute bottom-0 left-0 w-28 h-28 opacity-[0.05] pointer-events-none">
+                <div className="w-full h-full rounded-full border-[14px] border-white -translate-x-7 translate-y-7" />
+              </div>
+
+              <div className="px-5 pt-5 pb-2 flex items-center justify-between relative">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-7 rounded-md bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 shadow-inner relative overflow-hidden">
+                    <div className="absolute inset-0 grid grid-cols-3 grid-rows-2 gap-px p-0.5 opacity-30">
+                      {[...Array(6)].map((_, i) => <div key={i} className="bg-amber-900/60 rounded-[1px]" />)}
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold text-white/50 tracking-[0.25em] uppercase">Gruzli Bank</span>
+                </div>
+                <span className="text-[9px] font-bold text-white/40 tracking-[0.2em] px-2 py-1 rounded-md bg-white/5 border border-white/10">VIRTUAL</span>
+              </div>
+
+              <div className="px-5 pt-3 pb-1 relative">
+                <p className="text-white/50 text-[10px] font-semibold tracking-[0.2em] uppercase mb-1.5">Баланс счёта</p>
+                <h2 className="text-white text-[34px] leading-none font-extrabold tracking-tight">
+                  {(profile?.balance || 0).toLocaleString("ru-RU")}
+                  <span className="text-xl font-bold text-white/60 ml-1.5">₽</span>
+                </h2>
+              </div>
+
+              <div className="px-5 pt-4 pb-2 flex items-end justify-between relative">
+                <div className="min-w-0 flex-1">
+                  <p className="text-white/35 text-[9px] tracking-[0.2em] uppercase">Держатель</p>
+                  <p className="text-white/80 text-xs font-bold tracking-wider truncate">{(profile?.full_name || "DISPATCHER").toUpperCase()}</p>
+                </div>
+                <div className="text-right ml-3">
+                  <p className="text-white/35 text-[9px] tracking-[0.2em] uppercase">№ счёта</p>
+                  <p className="text-white/80 text-xs font-bold tracking-[0.2em]">•••• {(profile?.display_id || "0000").slice(-4)}</p>
                 </div>
               </div>
 
-              <div className="px-5 pb-4 pt-2">
-                <button onClick={() => { setTopUpAmount(""); setShowTopUp(true); }} className="w-full py-3 rounded-xl bg-white/10 backdrop-blur-sm text-white text-sm font-bold tap-scale active:bg-white/20 transition-colors border border-white/10">
-                  💳 Пополнить баланс
+              <div className="px-4 pb-4 pt-3 relative">
+                <button
+                  onClick={() => { setTopUpAmount(""); setShowTopUp(true); }}
+                  className="w-full py-3.5 rounded-2xl bg-white/12 backdrop-blur-md text-white text-sm font-bold active:bg-white/20 active:scale-[0.98] transition-all border border-white/15 flex items-center justify-center gap-2"
+                >
+                  <Plus size={16} strokeWidth={3} />
+                  Пополнить баланс
                 </button>
               </div>
+            </div>
+          </motion.div>
+
+          {/* Quick metrics */}
+          <div className="mx-5 mb-3 grid grid-cols-2 gap-2.5">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card border border-border rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Trophy size={14} className="text-primary" />
+                </div>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">За неделю</span>
+              </div>
+              <p className="text-xl font-extrabold text-foreground">{weekProfit.toLocaleString("ru-RU")} ₽</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{weeklyStats.orders} заказ.</p>
+            </motion.div>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }} className="bg-card border border-border rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Briefcase size={14} className="text-primary" />
+                </div>
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Всего</span>
+              </div>
+              <p className="text-xl font-extrabold text-foreground">{totalProfit.toLocaleString("ru-RU")} ₽</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">за всё время</p>
             </motion.div>
           </div>
 
-          {/* Verification */}
+          {/* Verification CTA */}
           {!profile?.verified && (
-            <div className="mx-5 mb-4">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mx-5 mb-3">
               <div className="bg-card border border-border rounded-2xl p-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0"><Shield size={22} className="text-primary" /></div>
-                  <div className="flex-1">
-                    <h3 className="text-sm font-bold text-foreground">Верификация</h3>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">Подтвердите личность для повышения доверия исполнителей</p>
+                  <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Shield size={20} className="text-primary" />
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-sm font-bold text-foreground">Верификация</h3>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">Поднимите доверие исполнителей</p>
+                  </div>
+                  <button onClick={() => toast.info("Функция верификации скоро будет доступна")} className="px-3.5 py-2 rounded-xl bg-foreground text-primary-foreground text-xs font-bold active:scale-95 transition-transform flex-shrink-0">Пройти</button>
                 </div>
-                <button onClick={() => toast.info("Функция верификации скоро будет доступна")} className="w-full mt-3 py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold tap-scale">Пройти верификацию</button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Rating breakdown */}
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} className="mx-5 mb-3">
+            <div className="bg-card border border-border rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Star size={15} className="text-primary fill-primary" />
+                  <span className="text-sm font-bold text-foreground">Рейтинг</span>
+                </div>
+                <span className="text-2xl font-extrabold text-foreground">{ratingValue.toFixed(1)}</span>
+              </div>
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <div key={s} className="flex-1 h-1.5 rounded-full overflow-hidden bg-muted">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all"
+                      style={{ width: `${reviews.length > 0 ? (reviews.filter((r) => r.rating >= s).length / reviews.length) * 100 : (s <= Math.round(ratingValue) ? 100 : 0)}%` }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2.5">{reviews.length > 0 ? `На основе ${reviews.length} отзывов` : "Пока нет отзывов от исполнителей"}</p>
+            </div>
+          </motion.div>
+
+          {/* Reviews */}
+          {reviews.length > 0 && (
+            <div className="mx-5 mb-4">
+              <div className="flex items-center justify-between mb-2.5">
+                <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+                  <MessageSquare size={14} className="text-primary" />
+                  Отзывы исполнителей
+                </h2>
+                <span className="text-[11px] text-muted-foreground">{reviews.length}</span>
+              </div>
+              <div className="space-y-2">
+                {reviews.slice(0, 3).map((review) => (
+                  <motion.div key={review.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-2xl p-3.5">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-xs font-bold text-foreground">{review.reviewer_name}</span>
+                      <div className="flex items-center gap-0.5">
+                        {[...Array(5)].map((_, i) => (<Star key={i} size={10} className={i < review.rating ? "text-primary fill-primary" : "text-muted"} />))}
+                      </div>
+                    </div>
+                    {review.text && <p className="text-xs text-muted-foreground leading-relaxed">{review.text}</p>}
+                    <p className="text-[10px] text-muted-foreground/60 mt-1.5">{new Date(review.created_at).toLocaleDateString("ru-RU")}</p>
+                  </motion.div>
+                ))}
               </div>
             </div>
           )}
 
-          {/* Rating */}
-          <div className="mx-5 mb-4">
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-bold text-foreground">Рейтинг</span>
-                <div className="flex items-center gap-1">
-                  <Star size={16} className="text-primary fill-primary" />
-                  <span className="text-lg font-extrabold text-foreground">{avgRating || profile?.rating || "5.0"}</span>
-                </div>
-              </div>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <div key={s} className="flex-1 h-2 rounded-full overflow-hidden bg-muted">
-                    <div className="h-full rounded-full bg-primary" style={{ width: `${reviews.length > 0 ? (reviews.filter((r) => r.rating >= s).length / reviews.length) * 100 : (s <= Math.round(profile?.rating || 5) ? 100 : 0)}%` }} />
-                  </div>
-                ))}
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-2">{reviews.length > 0 ? `На основе ${reviews.length} отзывов` : "Пока нет отзывов от исполнителей"}</p>
-            </div>
-          </div>
-
-          {/* Reviews */}
-          <div className="mx-5 mb-4">
-            <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2"><MessageSquare size={14} className="text-primary" />Отзывы исполнителей</h2>
-            {reviews.length === 0 ? (
-              <div className="bg-card border border-border rounded-2xl p-4 text-center"><p className="text-xs text-muted-foreground">Отзывов пока нет.</p></div>
-            ) : (
-              <div className="space-y-2">
-                {reviews.slice(0, 5).map((review) => (
-                  <motion.div key={review.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-2xl p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs font-semibold text-foreground">{review.reviewer_name}</span>
-                      <div className="flex items-center gap-1">
-                        {[...Array(5)].map((_, i) => (<Star key={i} size={10} className={i < review.rating ? "text-primary fill-primary" : "text-muted"} />))}
-                      </div>
-                    </div>
-                    {review.text && <p className="text-xs text-muted-foreground">{review.text}</p>}
-                    <p className="text-[10px] text-muted-foreground/60 mt-1">{new Date(review.created_at).toLocaleDateString("ru-RU")}</p>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Menu */}
+          {/* Secondary actions */}
           <div className="px-5 space-y-2">
-            <button onClick={onOpenCabinet} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-foreground text-primary-foreground tap-scale transition-colors mb-2">
-              <Briefcase size={18} />
-              <span className="text-sm font-bold flex-1 text-left">Кабинет диспетчера</span>
-              <ChevronRight size={16} className="opacity-60" />
-            </button>
-            <button onClick={() => onOpenSupport?.()} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border tap-scale transition-colors">
-              <Headphones size={18} className="text-primary" />
-              <span className="text-sm font-medium text-foreground flex-1 text-left">Тех. поддержка</span>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1 mb-1">Аккаунт</p>
+            <button onClick={() => onOpenSupport?.()} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border active:scale-[0.98] transition-transform">
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Headphones size={16} className="text-primary" />
+              </div>
+              <span className="text-sm font-semibold text-foreground flex-1 text-left">Тех. поддержка</span>
               <ChevronRight size={16} className="text-muted-foreground" />
             </button>
-            <button onClick={onOpenSettings} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border tap-scale transition-colors">
-              <Settings size={18} className="text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground flex-1 text-left">Настройки</span>
+            <button onClick={onOpenSettings} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border active:scale-[0.98] transition-transform">
+              <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                <Settings size={16} className="text-muted-foreground" />
+              </div>
+              <span className="text-sm font-semibold text-foreground flex-1 text-left">Настройки и тема</span>
               <ChevronRight size={16} className="text-muted-foreground" />
             </button>
-            <button onClick={signOut} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border tap-scale transition-colors">
-              <LogOut size={18} className="text-destructive" />
-              <span className="text-sm font-medium text-destructive flex-1 text-left">Выйти</span>
+            <button onClick={signOut} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border active:scale-[0.98] transition-transform">
+              <div className="w-9 h-9 rounded-xl bg-destructive/10 flex items-center justify-center flex-shrink-0">
+                <LogOut size={16} className="text-destructive" />
+              </div>
+              <span className="text-sm font-semibold text-destructive flex-1 text-left">Выйти</span>
               <ChevronRight size={16} className="text-muted-foreground" />
             </button>
           </div>
