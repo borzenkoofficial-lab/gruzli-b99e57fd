@@ -95,6 +95,7 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
     if (msg.sender_id === userIdRef.current) return;
 
     const isCurrentConversationOpen = getActiveConversationId() === msg.conversation_id;
+    const isAppVisible = typeof document !== "undefined" && document.visibilityState === "visible";
 
     playMessageReceived();
     vibrate();
@@ -105,12 +106,15 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
         duration: 5000,
       });
 
-      void showForegroundNotification(
-        "Новое сообщение",
-        msg.text || "Медиа-сообщение",
-        `message-${msg.conversation_id}`,
-        `/?openChat=${msg.conversation_id}`,
-      );
+      // Native push only when app is hidden — avoids duplicate toast + push
+      if (!isAppVisible) {
+        void showForegroundNotification(
+          "Новое сообщение",
+          msg.text || "Медиа-сообщение",
+          `message-${msg.conversation_id}`,
+          `/?openChat=${msg.conversation_id}`,
+        );
+      }
     }
 
     pushNotification({
