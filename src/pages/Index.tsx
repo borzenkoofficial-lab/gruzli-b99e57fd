@@ -46,29 +46,41 @@ const Index = () => {
   const SUPPORT_NAME = "Gruzli Official";
 
   useEffect(() => {
-    // Find admin with email admin@gruzli.app (Gruzli Official)
-    supabase
-      .from("profiles")
-      .select("user_id, full_name")
-      .eq("full_name", "Gruzli Official")
-      .limit(1)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data) {
-          setSupportUserId(data.user_id);
-        } else {
-          // Fallback: pick first admin
-          supabase
-            .from("user_roles")
-            .select("user_id")
-            .eq("role", "admin")
-            .limit(1)
-            .maybeSingle()
-            .then(({ data: roleData }) => {
-              if (roleData) setSupportUserId(roleData.user_id);
-            });
-        }
-      });
+    // Cache support user id in localStorage to avoid repeat lookups
+    const SUPPORT_CACHE_KEY = "gruzli_support_user_id";
+    const cached = localStorage.getItem(SUPPORT_CACHE_KEY);
+    if (cached) {
+      setSupportUserId(cached);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("full_name", "Gruzli Official")
+        .limit(1)
+        .maybeSingle();
+
+      let id = data?.user_id ?? null;
+      if (!id) {
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "admin")
+          .limit(1)
+          .maybeSingle();
+        id = roleData?.user_id ?? null;
+      }
+
+      if (!cancelled && id) {
+        localStorage.setItem(SUPPORT_CACHE_KEY, id);
+        setSupportUserId(id);
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, []);
   const [tab, setTab] = useState("feed");
 
@@ -108,18 +120,20 @@ const Index = () => {
   // Deep-link: open job from /job/:jobId (push notification click)
   useEffect(() => {
     if (!routeJobId) return;
+    let cancelled = false;
     (async () => {
       const { data } = await supabase
         .from("jobs")
         .select("*")
         .eq("id", routeJobId)
-        .single();
-      if (data) {
+        .maybeSingle();
+      if (!cancelled && data) {
         setViewJobDetail(data);
       }
       // Clean URL to root
       window.history.replaceState({}, "", "/");
     })();
+    return () => { cancelled = true; };
   }, [routeJobId]);
 
   const isDispatcher = role === "dispatcher" || role === "admin";
