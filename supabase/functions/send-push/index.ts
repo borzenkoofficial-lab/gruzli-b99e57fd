@@ -172,7 +172,31 @@ Deno.serve(async (req) => {
         .eq("conversation_id", body.conversation_id)
         .neq("user_id", body.sender_id);
 
-      const targetUserIds = (participants || []).map((p: any) => p.user_id);
+      const candidateIds = (participants || []).map((p: any) => p.user_id);
+
+      // Skip users who are currently online (last_seen_at within 120s) — they
+      // get an in-app toast already, no need to send a duplicate native push.
+      const ONLINE_THRESHOLD_MS = 120 * 1000;
+      const targetUserIds: string[] = [];
+      if (candidateIds.length > 0) {
+        const { data: recipientProfiles } = await supabase
+          .from("profiles")
+          .select("user_id, last_seen_at")
+          .in("user_id", candidateIds);
+
+        const lastSeenMap = new Map<string, string | null>(
+          (recipientProfiles || []).map((p: any) => [p.user_id, p.last_seen_at]),
+        );
+        const now = Date.now();
+        for (const uid of candidateIds) {
+          const lastSeen = lastSeenMap.get(uid);
+          if (lastSeen && now - new Date(lastSeen).getTime() < ONLINE_THRESHOLD_MS) {
+            continue;
+          }
+          targetUserIds.push(uid);
+        }
+      }
+
       const tag = `chat-${body.conversation_id}`;
       const result = await sendPushToUsers(supabase, targetUserIds, { title, body: messageBody, url, tag });
       sent += result.sent;
