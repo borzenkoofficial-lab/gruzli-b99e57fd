@@ -21,23 +21,24 @@ export function useUnreadCounts() {
       return;
     }
 
-    let total = 0;
-    // Count messages newer than last_read_at for each conversation
-    for (const conv of myConvs) {
-      const q = supabase
-        .from("messages")
-        .select("*", { count: "exact", head: true })
-        .eq("conversation_id", conv.conversation_id)
-        .neq("sender_id", user.id);
+    // Count messages newer than last_read_at for each conversation in parallel
+    const counts = await Promise.all(
+      myConvs.map((conv) => {
+        const q = supabase
+          .from("messages")
+          .select("*", { count: "exact", head: true })
+          .eq("conversation_id", conv.conversation_id)
+          .neq("sender_id", user.id);
 
-      if (conv.last_read_at) {
-        q.gt("created_at", conv.last_read_at);
-      }
+        if (conv.last_read_at) {
+          q.gt("created_at", conv.last_read_at);
+        }
 
-      const { count } = await q;
-      total += count || 0;
-    }
+        return q.then(({ count }) => count || 0);
+      })
+    );
 
+    const total = counts.reduce((sum, c) => sum + c, 0);
     setUnreadMessages(total);
   }, [user]);
 
