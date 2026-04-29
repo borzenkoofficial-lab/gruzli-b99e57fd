@@ -1102,6 +1102,10 @@ export type Database = {
         Args: { _other_user_id: string; _title?: string }
         Returns: string
       }
+      deduct_balance: {
+        Args: { _amount: number; _user_id: string }
+        Returns: number
+      }
       delete_conversation_fully: {
         Args: { _conversation_id: string }
         Returns: string[]

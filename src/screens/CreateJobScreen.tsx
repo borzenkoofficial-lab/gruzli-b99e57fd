@@ -95,13 +95,18 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
       }
     }
 
-    const { error: feeError } = await supabase
-      .from("profiles")
-      .update({ balance: balance - JOB_POSTING_FEE })
-      .eq("user_id", user.id);
+    const { error: feeError } = await supabase.rpc("deduct_balance", {
+      _user_id: user.id,
+      _amount: JOB_POSTING_FEE,
+    });
 
     if (feeError) {
-      toast.error("Ошибка списания");
+      const msg = (feeError.message || "").toLowerCase();
+      if (msg.includes("insufficient")) {
+        toast.error(`Недостаточно средств. Нужно ${JOB_POSTING_FEE} ₽`);
+      } else {
+        toast.error("Ошибка списания");
+      }
       setLoading(false);
       return;
     }
