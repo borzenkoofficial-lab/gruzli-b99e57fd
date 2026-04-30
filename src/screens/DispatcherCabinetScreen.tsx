@@ -128,6 +128,19 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     }
   };
 
+  const handleCloseJob = async (jobId: string) => {
+    const { error } = await supabase
+      .from("jobs")
+      .update({ status: "closed" })
+      .eq("id", jobId);
+    if (error) {
+      toast.error("Не удалось закрыть заявку");
+      return;
+    }
+    setMyJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status: "closed" } : j)));
+    toast.success("Заявка закрыта · убрана из ленты");
+  };
+
   const handleAdjustRate = async (job: Tables<"jobs"> & { response_count: number }, delta: number) => {
     const newRate = Math.max(0, (job.hourly_rate || 0) + delta);
     if (newRate === job.hourly_rate) return;
