@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Clock, Users, Zap, MessageCircle, User, Wallet, UserPlus, Check, ShieldCheck } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Users, Zap, MessageCircle, User, Wallet, UserPlus, Check, ShieldCheck, X } from "lucide-react";
 import { useRespondToJob } from "@/hooks/useRespondToJob";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 
