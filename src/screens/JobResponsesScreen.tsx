@@ -30,9 +30,13 @@ const WORKER_STATUS_MAP: Record<string, { label: string; icon: typeof CheckCircl
   arrived: { label: "На месте", icon: MapPin, color: "text-primary" },
 };
 
-const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScreenProps) => {
+const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobResponsesScreenProps) => {
+  const [job, setJob] = useState<Tables<"jobs">>(initialJob);
   const [responses, setResponses] = useState<ResponseWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<SortKey>("rating");
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
   const fetchResponses = async () => {
     const { data } = await supabase
@@ -42,88 +46,152 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
       .order("created_at", { ascending: false });
 
     if (data) {
-      const withProfiles = await Promise.all(
-        data.map(async (r) => {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("user_id", r.worker_id)
-            .single();
-          return { ...r, profile } as ResponseWithProfile;
-        })
-      );
-      setResponses(withProfiles);
+      const workerIds = [...new Set(data.map((r) => r.worker_id))];
+      const { data: profiles } = workerIds.length > 0
+        ? await supabase.from("profiles").select("*").in("user_id", workerIds)
+        : { data: [] };
+      const pmap: Record<string, Tables<"profiles">> = {};
+      (profiles || []).forEach((p) => { pmap[p.user_id] = p; });
+      setResponses(data.map((r) => ({ ...r, profile: pmap[r.worker_id] || null })) as ResponseWithProfile[]);
     }
     setLoading(false);
+  };
+
+  const refreshJob = async () => {
+    const { data } = await supabase.from("jobs").select("*").eq("id", job.id).single();
+    if (data) setJob(data);
   };
 
   useEffect(() => {
     fetchResponses();
 
-    // Realtime subscription for worker_status changes
     const channel = supabase
       .channel(`job-responses-${job.id}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "job_responses", filter: `job_id=eq.${job.id}` },
-        (payload) => {
-          const updated = payload.new as any;
-          setResponses((prev) =>
-            prev.map((r) =>
-              r.id === updated.id ? { ...r, status: updated.status, worker_status: updated.worker_status } : r
-            )
-          );
-        }
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "job_responses", filter: `job_id=eq.${job.id}` },
+        () => { fetchResponses(); }
+      )
+      .on("postgres_changes",
+        { event: "UPDATE", schema: "public", table: "jobs", filter: `id=eq.${job.id}` },
+        (p) => { setJob(p.new as any); }
       )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [job.id]);
 
-  const updateStatus = async (responseId: string, status: string) => {
-    // Enforce workers_needed limit when accepting
-    if (status === "accepted") {
-      const acceptedCount = responses.filter((r) => r.status === "accepted").length;
-      const limit = job.workers_needed || 1;
-      if (acceptedCount >= limit) {
-        toast.error(`Уже выбрано ${limit} из ${limit} грузчиков. Чтобы добавить ещё — увеличьте число грузчиков в заявке.`, { duration: 4000 });
-        return;
+  const acceptResponse = async (responseId: string) => {
+    setAcceptingId(responseId);
+    const { data, error } = await supabase.rpc("accept_job_response", { _response_id: responseId });
+    setAcceptingId(null);
+    if (error) {
+      if (error.code === "P0002") {
+        toast.error("Лимит грузчиков уже достигнут");
+      } else {
+        toast.error("Не удалось принять отклик: " + error.message);
       }
+      return;
+    }
+    const result = data as any;
+    const accepted = responses.find((r) => r.id === responseId);
+
+    // Push to accepted worker
+    if (accepted) {
+      supabase.functions.invoke("send-push", {
+        body: { type: "response_accepted", job_id: job.id, worker_id: accepted.worker_id, job_title: job.title },
+      }).catch(() => {});
     }
 
-    const { error } = await supabase
-      .from("job_responses")
-      .update({ status })
-      .eq("id", responseId);
-    if (!error) {
-      setResponses((prev) =>
-        prev.map((r) => (r.id === responseId ? { ...r, status } : r))
-      );
-      toast.success(status === "accepted" ? "Грузчик выбран!" : "Отклик отклонён");
-
-      // Send push to the worker that they've been accepted
-      if (status === "accepted") {
-        const resp = responses.find((r) => r.id === responseId);
-        if (resp) {
-          supabase.functions.invoke("send-push", {
-            body: {
-              type: "response_accepted",
-              job_id: job.id,
-              worker_id: resp.worker_id,
-              job_title: job.title,
-            },
-          }).catch(() => {});
-        }
+    if (result?.filled) {
+      toast.success(`✅ Набор закрыт: ${result.accepted_count}/${result.workers_needed}. Заявка убрана из ленты, остальные отклики автоматически отклонены (${result.auto_rejected}).`, { duration: 5000 });
+      // Notify auto-rejected workers
+      const rejectedWorkers = responses
+        .filter((r) => r.status === "pending" && r.id !== responseId)
+        .map((r) => r.worker_id);
+      if (rejectedWorkers.length > 0) {
+        supabase.functions.invoke("send-push", {
+          body: { type: "response_rejected_bulk", job_title: job.title, worker_ids: rejectedWorkers },
+        }).catch(() => {});
       }
     } else {
-      toast.error("Не удалось обновить статус");
+      toast.success(`Грузчик принят (${result?.accepted_count}/${result?.workers_needed})`);
+    }
+
+    await Promise.all([fetchResponses(), refreshJob()]);
+  };
+
+  const rejectResponse = async (responseId: string) => {
+    const r = responses.find((x) => x.id === responseId);
+    const { error } = await supabase.from("job_responses").update({ status: "rejected" }).eq("id", responseId);
+    if (error) { toast.error("Не удалось отклонить"); return; }
+    setResponses((prev) => prev.map((x) => (x.id === responseId ? { ...x, status: "rejected" } : x)));
+    toast.success("Отклик отклонён");
+    if (r) {
+      supabase.functions.invoke("send-push", {
+        body: { type: "response_rejected", job_title: job.title, worker_id: r.worker_id },
+      }).catch(() => {});
     }
   };
 
-  // Separate accepted and pending
+  const acceptTopMatching = async () => {
+    const limit = job.workers_needed || 1;
+    const acceptedNow = responses.filter((r) => r.status === "accepted").length;
+    const slotsLeft = limit - acceptedNow;
+    if (slotsLeft <= 0) { toast.info("Все места уже заняты"); return; }
+
+    const candidates = [...responses]
+      .filter((r) => r.status === "pending")
+      .sort((a, b) => {
+        const aScore = (a.profile?.is_premium ? 100 : 0) + Number(a.profile?.rating || 0) * 10 + (a.profile?.completed_orders || 0) / 10;
+        const bScore = (b.profile?.is_premium ? 100 : 0) + Number(b.profile?.rating || 0) * 10 + (b.profile?.completed_orders || 0) / 10;
+        return bScore - aScore;
+      })
+      .slice(0, slotsLeft);
+
+    if (candidates.length === 0) { toast.info("Нет ожидающих откликов"); return; }
+
+    for (const c of candidates) {
+      // serially to leverage atomic check
+      // eslint-disable-next-line no-await-in-loop
+      await acceptResponse(c.id);
+    }
+  };
+
+  const filteredResponses = useMemo(() => {
+    let list = responses;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((r) => (r.profile?.full_name || "").toLowerCase().includes(q));
+    }
+    return list;
+  }, [responses, search]);
+
+  const sortedPending = useMemo(() => {
+    const pending = filteredResponses.filter((r) => r.status === "pending");
+    const sorted = [...pending];
+    sorted.sort((a, b) => {
+      switch (sortBy) {
+        case "rating":
+          return Number(b.profile?.rating || 0) - Number(a.profile?.rating || 0);
+        case "experience":
+          return (b.profile?.completed_orders || 0) - (a.profile?.completed_orders || 0);
+        case "premium":
+          return (b.profile?.is_premium ? 1 : 0) - (a.profile?.is_premium ? 1 : 0);
+        default:
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+    return sorted;
+  }, [filteredResponses, sortBy]);
+
+  // Separate accepted and rejected
   const accepted = responses.filter((r) => r.status === "accepted");
-  const pending = responses.filter((r) => r.status === "pending");
-  const rejected = responses.filter((r) => r.status === "rejected");
+  const rejected = filteredResponses.filter((r) => r.status === "rejected");
+  const withdrawn = filteredResponses.filter((r) => r.status === "withdrawn");
+  const limit = job.workers_needed || 1;
+  const slotsLeft = Math.max(0, limit - accepted.length);
+  const isFilled = job.status === "filled" || slotsLeft === 0;
+  const progressPct = Math.min(100, Math.round((accepted.length / limit) * 100));
 
   return (
     <div className="min-h-screen bg-background pb-8">
