@@ -276,6 +276,24 @@ Deno.serve(async (req) => {
       });
       sent += result.sent;
       failed += result.failed;
+    } else if (type === "response_rejected") {
+      const result = await sendPushToUsers(supabase, [body.worker_id], {
+        title: "Отклик не выбран",
+        body: `«${body.job_title}» — диспетчер выбрал другого исполнителя.`,
+        url: APP_URL,
+        tag: `rejected-${body.worker_id}-${Date.now()}`,
+      });
+      sent += result.sent;
+      failed += result.failed;
+    } else if (type === "response_rejected_bulk") {
+      const result = await sendPushToUsers(supabase, body.worker_ids, {
+        title: "Набор закрыт",
+        body: `«${body.job_title}» — все места уже заняты.`,
+        url: APP_URL,
+        tag: `bulk-reject-${Date.now()}`,
+      });
+      sent += result.sent;
+      failed += result.failed;
     }
 
     return new Response(JSON.stringify({ sent, failed }), {
