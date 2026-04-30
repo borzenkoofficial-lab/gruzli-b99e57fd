@@ -243,7 +243,8 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
                     <div className="flex gap-2">
                       <button
                         onClick={() => updateStatus(r.id, "accepted")}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-semibold tap-scale"
+                        disabled={accepted.length >= (job.workers_needed || 1)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-semibold tap-scale disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <Check size={14} /> Выбрать
                       </button>
