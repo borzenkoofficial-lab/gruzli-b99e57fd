@@ -1064,6 +1064,7 @@ export type Database = {
         Args: { _payload: Json }
         Returns: undefined
       }
+      accept_job_response: { Args: { _response_id: string }; Returns: Json }
       admin_get_user_recovery_code: {
         Args: { _target_user_id: string }
         Returns: string
