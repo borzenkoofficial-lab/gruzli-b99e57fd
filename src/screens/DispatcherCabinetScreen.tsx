@@ -705,6 +705,13 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                           <Pencil size={16} className="text-foreground" />
                         </button>
                         <button
+                          onClick={() => handleCloseJob(job.id)}
+                          className="w-12 h-12 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center active:bg-white/10 transition-all"
+                          title="Закрыть заявку (убрать из ленты)"
+                        >
+                          <Lock size={16} className="text-foreground" />
+                        </button>
+                        <button
                           onClick={() => handleDeleteJob(job.id)}
                           className="w-12 h-12 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center active:bg-white/10 transition-all"
                           title="Удалить"
