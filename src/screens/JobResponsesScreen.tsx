@@ -204,7 +204,10 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
           {/* Pending responses */}
           {pending.length > 0 && (
             <div>
-              <h3 className="text-xs font-bold text-muted-foreground mb-2">Ожидают выбора ({pending.length})</h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-bold text-muted-foreground">Ожидают выбора ({pending.length})</h3>
+                <span className="text-[11px] text-muted-foreground">Выбрано {accepted.length}/{job.workers_needed || 1}</span>
+              </div>
               <div className="space-y-3">
                 {pending.map((r, i) => (
                   <motion.div
