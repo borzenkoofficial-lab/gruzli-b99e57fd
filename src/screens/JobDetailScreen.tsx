@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Clock, Users, Zap, MessageCircle, User, Wallet, UserPlus, Check, ShieldCheck } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Users, Zap, MessageCircle, User, Wallet, UserPlus, Check, ShieldCheck, X } from "lucide-react";
 import { useRespondToJob } from "@/hooks/useRespondToJob";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 
@@ -14,9 +16,12 @@ interface JobDetailScreenProps {
 }
 
 const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailScreenProps) => {
+  const { user } = useAuth();
   const { respondAndOpenChat } = useRespondToJob(onOpenChat);
   const [responding, setResponding] = useState(false);
-  const [responded, setResponded] = useState(false);
+  const [responseId, setResponseId] = useState<string | null>(null);
+  const [responseStatus, setResponseStatus] = useState<string | null>(null);
+  const [withdrawing, setWithdrawing] = useState(false);
   const [dispatcherName, setDispatcherName] = useState("Диспетчер");
 
   useEffect(() => {
@@ -31,15 +36,73 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
     fetchName();
   }, [job.dispatcher_id]);
 
+  // Check if current user already responded
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("job_responses")
+        .select("id, status")
+        .eq("job_id", job.id)
+        .eq("worker_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (data) {
+        setResponseId(data.id);
+        setResponseStatus(data.status);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, job.id]);
+
   const totalPay = job.hourly_rate * (Number(job.duration_hours) || 4);
 
   const handleRespond = async () => {
     if (responding) return;
     setResponding(true);
     const success = await respondAndOpenChat(job);
-    if (success) setResponded(true);
+    if (success) {
+      // Refresh response state
+      const { data } = await supabase
+        .from("job_responses")
+        .select("id, status")
+        .eq("job_id", job.id)
+        .eq("worker_id", user!.id)
+        .maybeSingle();
+      if (data) {
+        setResponseId(data.id);
+        setResponseStatus(data.status);
+      }
+    }
     setResponding(false);
   };
+
+  const handleWithdraw = async () => {
+    if (!responseId || withdrawing) return;
+    if (responseStatus === "accepted") {
+      toast.error("Нельзя отозвать — диспетчер уже выбрал вас");
+      return;
+    }
+    setWithdrawing(true);
+    const { error } = await supabase
+      .from("job_responses")
+      .update({ status: "withdrawn" })
+      .eq("id", responseId);
+    setWithdrawing(false);
+    if (error) {
+      toast.error("Не удалось отозвать отклик");
+      return;
+    }
+    setResponseId(null);
+    setResponseStatus(null);
+    if (navigator.vibrate) navigator.vibrate(50);
+    toast.success("Отклик отозван");
+  };
+
+  const hasPending = responseStatus === "pending";
+  const isAccepted = responseStatus === "accepted";
+  const responded = !!responseId && responseStatus !== "withdrawn" && responseStatus !== "rejected";
 
   const isOfficial = job.is_official;
 
@@ -148,15 +211,33 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
             disabled={responding || responded}
             className={`flex-1 py-3.5 rounded-2xl text-sm font-bold active:scale-[0.98] transition-all ${
               responded
-                ? "bg-online/20 text-online"
+                ? isAccepted
+                  ? "bg-online/20 text-online"
+                  : "bg-primary/15 text-primary"
                 : "bg-foreground text-primary-foreground"
             }`}
             style={!responded ? {
               boxShadow: '6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%), 0 4px 20px hsl(230 60% 58% / 0.35)',
             } : {}}
           >
-            {responding ? "Отправка..." : responded ? "✓ Отклик отправлен" : "Откликнуться"}
+            {responding
+              ? "Отправка..."
+              : isAccepted
+                ? "✓ Вы выбраны"
+                : hasPending
+                  ? "✓ Отклик отправлен"
+                  : "Откликнуться"}
           </button>
+          {hasPending && (
+            <button
+              onClick={handleWithdraw}
+              disabled={withdrawing}
+              className="px-4 py-3.5 rounded-2xl bg-card border border-destructive/40 text-destructive text-sm font-bold flex items-center gap-1.5 active:scale-[0.98] transition-all disabled:opacity-50"
+              title="Отозвать отклик"
+            >
+              <X size={14} /> {withdrawing ? "..." : "Отозвать"}
+            </button>
+          )}
         </div>
       </motion.div>
     </div>

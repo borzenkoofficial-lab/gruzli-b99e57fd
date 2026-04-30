@@ -79,6 +79,16 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
   }, [job.id]);
 
   const updateStatus = async (responseId: string, status: string) => {
+    // Enforce workers_needed limit when accepting
+    if (status === "accepted") {
+      const acceptedCount = responses.filter((r) => r.status === "accepted").length;
+      const limit = job.workers_needed || 1;
+      if (acceptedCount >= limit) {
+        toast.error(`Уже выбрано ${limit} из ${limit} грузчиков. Чтобы добавить ещё — увеличьте число грузчиков в заявке.`, { duration: 4000 });
+        return;
+      }
+    }
+
     const { error } = await supabase
       .from("job_responses")
       .update({ status })
@@ -88,6 +98,23 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
         prev.map((r) => (r.id === responseId ? { ...r, status } : r))
       );
       toast.success(status === "accepted" ? "Грузчик выбран!" : "Отклик отклонён");
+
+      // Send push to the worker that they've been accepted
+      if (status === "accepted") {
+        const resp = responses.find((r) => r.id === responseId);
+        if (resp) {
+          supabase.functions.invoke("send-push", {
+            body: {
+              type: "response_accepted",
+              job_id: job.id,
+              worker_id: resp.worker_id,
+              job_title: job.title,
+            },
+          }).catch(() => {});
+        }
+      }
+    } else {
+      toast.error("Не удалось обновить статус");
     }
   };
 
@@ -177,7 +204,10 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
           {/* Pending responses */}
           {pending.length > 0 && (
             <div>
-              <h3 className="text-xs font-bold text-muted-foreground mb-2">Ожидают выбора ({pending.length})</h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-bold text-muted-foreground">Ожидают выбора ({pending.length})</h3>
+                <span className="text-[11px] text-muted-foreground">Выбрано {accepted.length}/{job.workers_needed || 1}</span>
+              </div>
               <div className="space-y-3">
                 {pending.map((r, i) => (
                   <motion.div
@@ -216,7 +246,8 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
                     <div className="flex gap-2">
                       <button
                         onClick={() => updateStatus(r.id, "accepted")}
-                        className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-semibold tap-scale"
+                        disabled={accepted.length >= (job.workers_needed || 1)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-semibold tap-scale disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <Check size={14} /> Выбрать
                       </button>
