@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { ArrowLeft, Check, X, MessageCircle, Star, User, MapPin, Clock, Navigation, AlertTriangle, CheckCircle2, Crown } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Check, X, MessageCircle, Star, User, MapPin, Clock, Navigation, AlertTriangle, CheckCircle2, Crown, Search, Lock, Sparkles, Users, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
+
+type SortKey = "newest" | "rating" | "experience" | "premium";
 
 interface JobResponsesScreenProps {
   job: Tables<"jobs">;
