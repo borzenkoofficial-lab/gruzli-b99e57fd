@@ -211,15 +211,33 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
             disabled={responding || responded}
             className={`flex-1 py-3.5 rounded-2xl text-sm font-bold active:scale-[0.98] transition-all ${
               responded
-                ? "bg-online/20 text-online"
+                ? isAccepted
+                  ? "bg-online/20 text-online"
+                  : "bg-primary/15 text-primary"
                 : "bg-foreground text-primary-foreground"
             }`}
             style={!responded ? {
               boxShadow: '6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%), 0 4px 20px hsl(230 60% 58% / 0.35)',
             } : {}}
           >
-            {responding ? "Отправка..." : responded ? "✓ Отклик отправлен" : "Откликнуться"}
+            {responding
+              ? "Отправка..."
+              : isAccepted
+                ? "✓ Вы выбраны"
+                : hasPending
+                  ? "✓ Отклик отправлен"
+                  : "Откликнуться"}
           </button>
+          {hasPending && (
+            <button
+              onClick={handleWithdraw}
+              disabled={withdrawing}
+              className="px-4 py-3.5 rounded-2xl bg-card border border-destructive/40 text-destructive text-sm font-bold flex items-center gap-1.5 active:scale-[0.98] transition-all disabled:opacity-50"
+              title="Отозвать отклик"
+            >
+              <X size={14} /> {withdrawing ? "..." : "Отозвать"}
+            </button>
+          )}
         </div>
       </motion.div>
     </div>
