@@ -165,12 +165,12 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   const fetchData = async () => {
     if (!user) return;
 
-    // Fetch active/finishing jobs
+    // Fetch active/finishing/filled jobs (with accepted workers)
     const { data: jobs } = await supabase
       .from("jobs")
       .select("*")
       .eq("dispatcher_id", user.id)
-      .in("status", ["active", "finishing"])
+      .in("status", ["active", "finishing", "filled"])
       .order("created_at", { ascending: false });
 
     if (!jobs || jobs.length === 0) {
