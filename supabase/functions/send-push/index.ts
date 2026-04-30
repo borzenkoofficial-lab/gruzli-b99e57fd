@@ -27,6 +27,12 @@ const RequestSchema = z.discriminatedUnion("type", [
     worker_id: z.string().uuid(),
     worker_status: z.string().min(1),
   }),
+  z.object({
+    type: z.literal("response_accepted"),
+    job_id: z.string().uuid(),
+    worker_id: z.string().uuid(),
+    job_title: z.string().min(1),
+  }),
 ]);
 
 const APP_URL = "https://gruzli.lovable.app";
