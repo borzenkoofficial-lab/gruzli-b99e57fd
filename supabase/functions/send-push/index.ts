@@ -174,9 +174,9 @@ Deno.serve(async (req) => {
 
       const candidateIds = (participants || []).map((p: any) => p.user_id);
 
-      // Skip users who are currently online (last_seen_at within 120s) — they
+      // Skip users who are currently online (last_seen_at within 30s) — they
       // get an in-app toast already, no need to send a duplicate native push.
-      const ONLINE_THRESHOLD_MS = 120 * 1000;
+      const ONLINE_THRESHOLD_MS = 30 * 1000;
       const targetUserIds: string[] = [];
       if (candidateIds.length > 0) {
         const { data: recipientProfiles } = await supabase
