@@ -165,12 +165,12 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   const fetchData = async () => {
     if (!user) return;
 
-    // Fetch active/finishing jobs
+    // Fetch active/finishing/filled jobs (with accepted workers)
     const { data: jobs } = await supabase
       .from("jobs")
       .select("*")
       .eq("dispatcher_id", user.id)
-      .in("status", ["active", "finishing"])
+      .in("status", ["active", "finishing", "filled"])
       .order("created_at", { ascending: false });
 
     if (!jobs || jobs.length === 0) {
@@ -758,8 +758,9 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                           {isFinishing ? <Timer size={18} className="text-orange-500" /> : allDone ? <CheckCircle2 size={18} className="text-green-500" /> : <Briefcase size={18} className="text-primary" />}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="text-sm font-bold text-foreground truncate">{aj.job.title}</h3>
+                            {aj.job.status === "filled" && <span className="shrink-0 px-2 py-0.5 rounded-lg bg-primary/15 text-[10px] font-bold text-primary flex items-center gap-1"><Lock size={9} /> Набрано</span>}
                             {isFinishing && <span className="shrink-0 px-2 py-0.5 rounded-lg bg-orange-500/10 text-[10px] font-bold text-orange-500">Завершается</span>}
                             {allDone && !isFinishing && <span className="shrink-0 px-2 py-0.5 rounded-lg bg-green-500/10 text-[10px] font-bold text-green-500">Готово</span>}
                           </div>

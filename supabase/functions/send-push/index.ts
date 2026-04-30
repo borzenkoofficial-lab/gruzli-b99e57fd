@@ -33,6 +33,16 @@ const RequestSchema = z.discriminatedUnion("type", [
     worker_id: z.string().uuid(),
     job_title: z.string().min(1),
   }),
+  z.object({
+    type: z.literal("response_rejected"),
+    job_title: z.string().min(1),
+    worker_id: z.string().uuid(),
+  }),
+  z.object({
+    type: z.literal("response_rejected_bulk"),
+    job_title: z.string().min(1),
+    worker_ids: z.array(z.string().uuid()).min(1),
+  }),
 ]);
 
 const APP_URL = "https://gruzli.lovable.app";
@@ -263,6 +273,24 @@ Deno.serve(async (req) => {
         body: messageBody,
         url,
         tag: `accepted-${body.job_id}-${body.worker_id}`,
+      });
+      sent += result.sent;
+      failed += result.failed;
+    } else if (type === "response_rejected") {
+      const result = await sendPushToUsers(supabase, [body.worker_id], {
+        title: "Отклик не выбран",
+        body: `«${body.job_title}» — диспетчер выбрал другого исполнителя.`,
+        url: APP_URL,
+        tag: `rejected-${body.worker_id}-${Date.now()}`,
+      });
+      sent += result.sent;
+      failed += result.failed;
+    } else if (type === "response_rejected_bulk") {
+      const result = await sendPushToUsers(supabase, body.worker_ids, {
+        title: "Набор закрыт",
+        body: `«${body.job_title}» — все места уже заняты.`,
+        url: APP_URL,
+        tag: `bulk-reject-${Date.now()}`,
       });
       sent += result.sent;
       failed += result.failed;
