@@ -79,6 +79,16 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
   }, [job.id]);
 
   const updateStatus = async (responseId: string, status: string) => {
+    // Enforce workers_needed limit when accepting
+    if (status === "accepted") {
+      const acceptedCount = responses.filter((r) => r.status === "accepted").length;
+      const limit = job.workers_needed || 1;
+      if (acceptedCount >= limit) {
+        toast.error(`Уже выбрано ${limit} из ${limit} грузчиков. Чтобы добавить ещё — увеличьте число грузчиков в заявке.`, { duration: 4000 });
+        return;
+      }
+    }
+
     const { error } = await supabase
       .from("job_responses")
       .update({ status })
@@ -88,6 +98,23 @@ const JobResponsesScreen = ({ job, onBack, onChatWithWorker }: JobResponsesScree
         prev.map((r) => (r.id === responseId ? { ...r, status } : r))
       );
       toast.success(status === "accepted" ? "Грузчик выбран!" : "Отклик отклонён");
+
+      // Send push to the worker that they've been accepted
+      if (status === "accepted") {
+        const resp = responses.find((r) => r.id === responseId);
+        if (resp) {
+          supabase.functions.invoke("send-push", {
+            body: {
+              type: "response_accepted",
+              job_id: job.id,
+              worker_id: resp.worker_id,
+              job_title: job.title,
+            },
+          }).catch(() => {});
+        }
+      }
+    } else {
+      toast.error("Не удалось обновить статус");
     }
   };
 
