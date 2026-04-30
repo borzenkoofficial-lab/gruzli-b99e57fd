@@ -254,6 +254,18 @@ Deno.serve(async (req) => {
           failed += result.failed;
         }
       }
+    } else if (type === "response_accepted") {
+      const title = "🎉 Вас выбрали на заказ!";
+      const messageBody = `${body.job_title} — открой заказ, чтобы подтвердить.`;
+      const url = `${APP_URL}/job/${body.job_id}`;
+      const result = await sendPushToUsers(supabase, [body.worker_id], {
+        title,
+        body: messageBody,
+        url,
+        tag: `accepted-${body.job_id}-${body.worker_id}`,
+      });
+      sent += result.sent;
+      failed += result.failed;
     }
 
     return new Response(JSON.stringify({ sent, failed }), {
