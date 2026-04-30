@@ -16,9 +16,12 @@ interface JobDetailScreenProps {
 }
 
 const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailScreenProps) => {
+  const { user } = useAuth();
   const { respondAndOpenChat } = useRespondToJob(onOpenChat);
   const [responding, setResponding] = useState(false);
-  const [responded, setResponded] = useState(false);
+  const [responseId, setResponseId] = useState<string | null>(null);
+  const [responseStatus, setResponseStatus] = useState<string | null>(null);
+  const [withdrawing, setWithdrawing] = useState(false);
   const [dispatcherName, setDispatcherName] = useState("Диспетчер");
 
   useEffect(() => {
@@ -33,15 +36,73 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
     fetchName();
   }, [job.dispatcher_id]);
 
+  // Check if current user already responded
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("job_responses")
+        .select("id, status")
+        .eq("job_id", job.id)
+        .eq("worker_id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (data) {
+        setResponseId(data.id);
+        setResponseStatus(data.status);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, job.id]);
+
   const totalPay = job.hourly_rate * (Number(job.duration_hours) || 4);
 
   const handleRespond = async () => {
     if (responding) return;
     setResponding(true);
     const success = await respondAndOpenChat(job);
-    if (success) setResponded(true);
+    if (success) {
+      // Refresh response state
+      const { data } = await supabase
+        .from("job_responses")
+        .select("id, status")
+        .eq("job_id", job.id)
+        .eq("worker_id", user!.id)
+        .maybeSingle();
+      if (data) {
+        setResponseId(data.id);
+        setResponseStatus(data.status);
+      }
+    }
     setResponding(false);
   };
+
+  const handleWithdraw = async () => {
+    if (!responseId || withdrawing) return;
+    if (responseStatus === "accepted") {
+      toast.error("Нельзя отозвать — диспетчер уже выбрал вас");
+      return;
+    }
+    setWithdrawing(true);
+    const { error } = await supabase
+      .from("job_responses")
+      .update({ status: "withdrawn" })
+      .eq("id", responseId);
+    setWithdrawing(false);
+    if (error) {
+      toast.error("Не удалось отозвать отклик");
+      return;
+    }
+    setResponseId(null);
+    setResponseStatus(null);
+    if (navigator.vibrate) navigator.vibrate(50);
+    toast.success("Отклик отозван");
+  };
+
+  const hasPending = responseStatus === "pending";
+  const isAccepted = responseStatus === "accepted";
+  const responded = !!responseId && responseStatus !== "withdrawn" && responseStatus !== "rejected";
 
   const isOfficial = job.is_official;
 
