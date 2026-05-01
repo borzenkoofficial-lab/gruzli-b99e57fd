@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import DesktopSidebar from "@/components/DesktopSidebar";
 import DesktopLayout from "@/components/DesktopLayout";
+import DesktopTopBar from "@/components/DesktopTopBar";
 import FAB from "@/components/FAB";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ScreenSkeleton from "@/components/ScreenSkeleton";
@@ -462,14 +463,64 @@ const Index = () => {
       isDispatcher={isDispatcher}
       unreadMessages={unreadMessages}
       newJobsCount={newJobsCount}
+      onCreateJob={() => setShowCreateJob(true)}
+      onOpenNotifications={() => setShowNotifications(true)}
+      onOpenPremium={() => setShowPremium(true)}
+      onOpenSupport={() => handleChatWithUser(supportUserId || '', SUPPORT_NAME)}
+      onOpenSettings={() => setShowSettings(true)}
+      onOpenCommunity={isDispatcher ? () => setShowCommunity(true) : undefined}
+      onOpenProfile={() => handleNavigate("profile")}
+    />
+  );
+
+  const pageTitleMap: Record<string, { title: string; subtitle?: string }> = {
+    feed: isDispatcher
+      ? { title: "Мои заявки", subtitle: "Управляйте набором и активными заказами" }
+      : { title: "Лента заявок", subtitle: "Свежие заказы от диспетчеров" },
+    orders: { title: "Мои заказы", subtitle: "История и активные смены" },
+    chats: { title: "Сообщения", subtitle: "Чаты, каналы и сообщество" },
+    kartoteka: { title: "Картотека", subtitle: "База контактов и компаний" },
+    profile: { title: "Профиль", subtitle: "Личный кабинет и настройки" },
+    dispatchers: { title: "Диспетчеры", subtitle: "Найдите диспетчера и свяжитесь с ним" },
+  };
+  const pageMeta = pageTitleMap[tab] || { title: "Gruzli" };
+
+  const detailPanel = getDetailPanel();
+
+  // Close all overlays/detail at once
+  const closeDetail = () => {
+    setOpenChatId(null);
+    setViewProfileUserId(null);
+    setShowSettings(false);
+    setShowNotifications(false);
+    setShowPremium(false);
+    setShowChannel(false);
+    setShowCreateJob(false);
+    setViewResponsesJob(null);
+    setShowCommunity(false);
+    setShowCabinet(false);
+    setShowSupportChat(false);
+    setViewJobDetail(null);
+  };
+
+  const topBar = (
+    <DesktopTopBar
+      title={pageMeta.title}
+      subtitle={pageMeta.subtitle}
+      unreadNotifications={0}
+      onOpenNotifications={() => setShowNotifications(true)}
+      onCreateJob={() => setShowCreateJob(true)}
+      showCreateJob={isDispatcher}
     />
   );
 
   return (
     <DesktopLayout
       sidebar={sidebar}
+      topBar={topBar}
       main={mainContent}
-      detail={getDetailPanel()}
+      detail={detailPanel}
+      onCloseDetail={detailPanel ? closeDetail : undefined}
     />
   );
 };
