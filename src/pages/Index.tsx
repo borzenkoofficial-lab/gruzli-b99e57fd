@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import DesktopSidebar from "@/components/DesktopSidebar";
 import DesktopLayout from "@/components/DesktopLayout";
+import DesktopTopBar from "@/components/DesktopTopBar";
 import FAB from "@/components/FAB";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ScreenSkeleton from "@/components/ScreenSkeleton";
