@@ -1,5 +1,20 @@
 import { motion } from "framer-motion";
-import { Home, ClipboardList, MessageCircle, User, FolderOpen } from "lucide-react";
+import {
+  Home,
+  ClipboardList,
+  MessageCircle,
+  User,
+  FolderOpen,
+  Plus,
+  Bell,
+  Crown,
+  HelpCircle,
+  Settings,
+  LogOut,
+  Briefcase,
+  Users,
+} from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface DesktopSidebarProps {
   active: string;
@@ -7,61 +22,202 @@ interface DesktopSidebarProps {
   isDispatcher?: boolean;
   unreadMessages?: number;
   newJobsCount?: number;
+  onCreateJob?: () => void;
+  onOpenNotifications?: () => void;
+  onOpenPremium?: () => void;
+  onOpenSupport?: () => void;
+  onOpenSettings?: () => void;
+  onOpenCommunity?: () => void;
+  onOpenProfile?: () => void;
 }
 
 const Badge = ({ count }: { count: number }) => {
   if (count <= 0) return null;
   return (
-    <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-foreground text-background text-[10px] font-bold leading-none">
+    <span className="min-w-[20px] h-5 px-1.5 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold leading-none">
       {count > 99 ? "99+" : count}
     </span>
   );
 };
 
-const DesktopSidebar = ({ active, onNavigate, isDispatcher, unreadMessages = 0, newJobsCount = 0 }: DesktopSidebarProps) => {
+const DesktopSidebar = ({
+  active,
+  onNavigate,
+  isDispatcher,
+  unreadMessages = 0,
+  newJobsCount = 0,
+  onCreateJob,
+  onOpenNotifications,
+  onOpenPremium,
+  onOpenSupport,
+  onOpenSettings,
+  onOpenCommunity,
+  onOpenProfile,
+}: DesktopSidebarProps) => {
+  const { profile, signOut } = useAuth();
+
   const workerTabs = [
-    { id: "feed", label: "Главная", icon: Home, badge: newJobsCount },
-    { id: "orders", label: "Заказы", icon: ClipboardList, badge: 0 },
-    { id: "chats", label: "Чаты", icon: MessageCircle, badge: unreadMessages },
+    { id: "feed", label: "Лента заявок", icon: Home, badge: newJobsCount },
+    { id: "orders", label: "Мои заказы", icon: ClipboardList, badge: 0 },
+    { id: "chats", label: "Сообщения", icon: MessageCircle, badge: unreadMessages },
     { id: "kartoteka", label: "Картотека", icon: FolderOpen, badge: 0 },
-    { id: "profile", label: "Профиль", icon: User, badge: 0 },
   ];
 
   const dispatcherTabs = [
-    { id: "chats", label: "Чаты", icon: MessageCircle, badge: unreadMessages },
+    { id: "feed", label: "Мои заявки", icon: Briefcase, badge: 0 },
+    { id: "chats", label: "Сообщения", icon: MessageCircle, badge: unreadMessages },
     { id: "kartoteka", label: "Картотека", icon: FolderOpen, badge: 0 },
-    { id: "profile", label: "Профиль", icon: User, badge: 0 },
   ];
 
   const tabs = isDispatcher ? dispatcherTabs : workerTabs;
 
+  const fullName = profile?.full_name || (isDispatcher ? "Диспетчер" : "Грузчик");
+  const initials =
+    fullName
+      .split(" ")
+      .map((w: string) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "?";
+
+  const NavItem = ({
+    icon: Icon,
+    label,
+    onClick,
+    isActive,
+    badge,
+  }: {
+    icon: typeof Home;
+    label: string;
+    onClick: () => void;
+    isActive?: boolean;
+    badge?: number;
+  }) => (
+    <motion.button
+      whileTap={{ scale: 0.97 }}
+      onClick={onClick}
+      className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-150 text-sm font-medium w-full text-left group ${
+        isActive
+          ? "bg-primary/15 text-foreground"
+          : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+      }`}
+    >
+      <Icon
+        size={19}
+        strokeWidth={isActive ? 2.2 : 1.7}
+        className={isActive ? "text-primary" : ""}
+      />
+      <span className="flex-1 truncate">{label}</span>
+      {badge ? <Badge count={badge} /> : null}
+    </motion.button>
+  );
+
   return (
     <aside className="desktop-sidebar">
-      <div className="px-5 py-6 mb-2">
-        <h1 className="text-xl font-bold text-foreground tracking-tight">Gruzli</h1>
+      {/* Brand */}
+      <div className="px-5 pt-6 pb-4 flex items-center gap-2">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-md">
+          <span className="text-primary-foreground font-black text-base">G</span>
+        </div>
+        <div className="flex flex-col">
+          <h1 className="text-base font-bold text-foreground tracking-tight leading-none">Gruzli</h1>
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
+            {isDispatcher ? "Диспетчер" : "Грузчик"}
+          </span>
+        </div>
       </div>
-      <nav className="flex flex-col gap-0.5 px-3">
-        {tabs.map((tab) => {
-          const isActive = active === tab.id;
-          const Icon = tab.icon;
-          return (
-            <motion.button
+
+      {/* CTA: dispatcher creates job, worker opens premium */}
+      {isDispatcher ? (
+        <div className="px-3 pb-2">
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={() => onCreateJob?.()}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md hover:opacity-95 transition"
+          >
+            <Plus size={18} strokeWidth={2.4} />
+            Новая заявка
+          </motion.button>
+        </div>
+      ) : null}
+
+      {/* Primary nav */}
+      <div className="px-3 mt-2">
+        <p className="px-3 mb-1.5 text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold">
+          Навигация
+        </p>
+        <nav className="flex flex-col gap-0.5">
+          {tabs.map((tab) => (
+            <NavItem
               key={tab.id}
-              whileTap={{ scale: 0.97 }}
+              icon={tab.icon}
+              label={tab.label}
+              isActive={active === tab.id}
+              badge={tab.badge}
               onClick={() => onNavigate(tab.id)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-150 text-sm font-medium w-full text-left ${
-                isActive
-                  ? "bg-accent text-foreground"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-              }`}
-            >
-              <Icon size={20} strokeWidth={isActive ? 2 : 1.6} />
-              <span className="flex-1">{tab.label}</span>
-              <Badge count={tab.badge} />
-            </motion.button>
-          );
-        })}
-      </nav>
+            />
+          ))}
+        </nav>
+      </div>
+
+      {/* Secondary actions */}
+      <div className="px-3 mt-5">
+        <p className="px-3 mb-1.5 text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold">
+          Сервис
+        </p>
+        <nav className="flex flex-col gap-0.5">
+          {isDispatcher && onOpenCommunity && (
+            <NavItem icon={Users} label="Сообщество" onClick={onOpenCommunity} />
+          )}
+          <NavItem icon={Bell} label="Уведомления" onClick={() => onOpenNotifications?.()} />
+          <NavItem icon={Crown} label="Premium" onClick={() => onOpenPremium?.()} />
+          <NavItem icon={HelpCircle} label="Поддержка" onClick={() => onOpenSupport?.()} />
+          <NavItem icon={Settings} label="Настройки" onClick={() => onOpenSettings?.()} />
+        </nav>
+      </div>
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* User card / profile */}
+      <div className="px-3 pb-3 pt-3 border-t border-border/60">
+        <div
+          onClick={() => onOpenProfile?.()}
+          role="button"
+          tabIndex={0}
+          className="flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-accent/60 cursor-pointer transition"
+        >
+          {profile?.avatar_url ? (
+            <img
+              src={profile.avatar_url}
+              alt=""
+              className="w-9 h-9 rounded-full object-cover ring-1 ring-border"
+            />
+          ) : (
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary/70 to-primary/30 flex items-center justify-center text-primary-foreground text-xs font-bold">
+              {initials}
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground truncate leading-tight">
+              {fullName}
+            </p>
+            <p className="text-[11px] text-muted-foreground truncate">
+              {isDispatcher ? "Кабинет диспетчера" : "Профиль"}
+            </p>
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              signOut();
+            }}
+            title="Выйти"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent/80 transition"
+          >
+            <LogOut size={15} />
+          </button>
+        </div>
+      </div>
     </aside>
   );
 };
