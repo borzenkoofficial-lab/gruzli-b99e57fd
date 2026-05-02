@@ -4,6 +4,7 @@ import { ArrowLeft, Star, Shield, MessageSquare, Hash, Copy, CheckCircle2, Thumb
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import ProfileSkeleton from "@/components/skeletons/ProfileSkeleton";
 
 interface UserProfileScreenProps {
   userId: string;
@@ -87,36 +88,39 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
   };
 
   useEffect(() => {
+    let cancelled = false;
     const fetchData = async () => {
       setLoading(true);
 
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("user_id", userId)
-        .single();
-      setProfile(profileData);
+      // Parallelize the two independent base queries — was sequential, costing ~2x latency.
+      const [profileRes, roleRes] = await Promise.all([
+        supabase.from("profiles").select("*").eq("user_id", userId).single(),
+        supabase.from("user_roles").select("role").eq("user_id", userId).single(),
+      ]);
 
-      const { data: roleData } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId)
-        .single();
-      setUserRole(roleData?.role || null);
+      if (cancelled) return;
 
-      if (roleData?.role === "dispatcher") {
-        const { count } = await supabase
-          .from("jobs")
-          .select("id", { count: "exact", head: true })
-          .eq("dispatcher_id", userId);
-        setPostedJobsCount(count || 0);
+      setProfile(profileRes.data);
+      const detectedRole = roleRes.data?.role || null;
+      setUserRole(detectedRole);
 
-        await fetchReviews();
-      }
-
+      // Show the screen as soon as base data is in — reviews & jobs count
+      // can stream in afterwards without blocking the whole UI.
       setLoading(false);
+
+      if (detectedRole === "dispatcher") {
+        const [{ count }] = await Promise.all([
+          supabase
+            .from("jobs")
+            .select("id", { count: "exact", head: true })
+            .eq("dispatcher_id", userId),
+          fetchReviews(),
+        ]);
+        if (!cancelled) setPostedJobsCount(count || 0);
+      }
     };
     fetchData();
+    return () => { cancelled = true; };
   }, [userId]);
 
   const handleSentimentSelect = (sentiment: ReviewSentiment) => {
@@ -173,11 +177,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-muted-foreground text-sm">Загрузка профиля...</div>
-      </div>
-    );
+    return <ProfileSkeleton onBack={onBack} />;
   }
 
   if (!profile) {
