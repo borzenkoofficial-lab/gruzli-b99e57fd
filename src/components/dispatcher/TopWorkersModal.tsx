@@ -105,7 +105,8 @@ const TopWorkersModal = ({ open, onClose, onChat, onViewProfile }: Props) => {
             animate={{ y: 0 }}
             exit={{ y: 200 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg bg-card rounded-t-3xl border-t border-border max-h-[90vh] overflow-y-auto"
+            className="w-full max-w-lg bg-card rounded-t-3xl border-t border-border overflow-y-auto overscroll-contain pb-[calc(env(safe-area-inset-bottom)+24px)]"
+            style={{ maxHeight: "calc(var(--vh, 1vh) * 90)" }}
           >
             <div className="sticky top-0 bg-card px-5 pt-3 pb-2 border-b border-border z-10">
               <div className="w-10 h-1 bg-muted-foreground/20 rounded-full mx-auto mb-3" />

@@ -63,7 +63,8 @@ const SOSReplacementModal = ({ open, onClose, job, workerId, workerName }: Props
           <motion.div
             initial={{ y: 200 }} animate={{ y: 0 }} exit={{ y: 200 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg bg-card rounded-t-3xl p-5 border-t border-destructive/30"
+            className="w-full max-w-lg bg-card rounded-t-3xl p-5 pb-[calc(env(safe-area-inset-bottom)+24px)] border-t border-destructive/30 overflow-y-auto overscroll-contain"
+            style={{ maxHeight: "calc(var(--vh, 1vh) * 90)" }}
           >
             <div className="w-10 h-1 bg-muted-foreground/20 rounded-full mx-auto mb-3" />
             <div className="flex items-center justify-between mb-1">
