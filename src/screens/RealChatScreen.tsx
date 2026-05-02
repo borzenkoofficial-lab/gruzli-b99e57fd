@@ -13,6 +13,7 @@ import VoiceMessagePlayer from "@/components/chat/VoiceMessagePlayer";
 import SwipeableMessage from "@/components/chat/SwipeableMessage";
 import CallModal, { type CallMode } from "@/components/chat/CallModal";
 import { setActiveConversationId } from "@/lib/chatPresence";
+import ChatSkeleton from "@/components/skeletons/ChatSkeleton";
 
 interface Message {
   id: string;
@@ -721,9 +722,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
         )}
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-          </div>
+          <ChatSkeleton />
         ) : messages.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground text-sm">Начните диалог — напишите сообщение</div>
         ) : (
