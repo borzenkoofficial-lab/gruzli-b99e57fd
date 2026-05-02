@@ -203,7 +203,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
   const negativeCount = reviews.filter(r => r.rating <= 2).length;
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-8 animate-fade-in">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 safe-top pb-4">
         <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
