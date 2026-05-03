@@ -446,7 +446,7 @@
     padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 24px);
   }
 
-  /* Floating pill nav wrapper */
+  /* Bottom nav — flush to bottom edge of screen */
   .bottom-nav-wrapper {
     position: fixed;
     left: 50%;
@@ -455,7 +455,8 @@
     max-width: 32rem;
     bottom: 0;
     z-index: 50;
-    padding: 0 12px 2px;
+    padding: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     pointer-events: none;
   }
 
@@ -465,27 +466,24 @@
     }
   }
 
-  /* The pill itself — liquid glass */
+  /* The pill itself — flush, no rounded bottom, liquid glass */
   .bottom-nav-pill {
     display: flex;
     align-items: center;
     justify-content: space-around;
     width: 100%;
     padding: 6px 8px;
-    border-radius: 28px;
+    border-radius: 20px 20px 0 0;
     background: linear-gradient(
       135deg,
-      hsl(var(--surface-2) / 0.55) 0%,
-      hsl(var(--surface-3) / 0.45) 50%,
-      hsl(var(--surface-2) / 0.55) 100%
+      hsl(var(--surface-2) / 0.85) 0%,
+      hsl(var(--surface-3) / 0.8) 50%,
+      hsl(var(--surface-2) / 0.85) 100%
     );
     backdrop-filter: blur(40px) saturate(1.8) brightness(1.1);
     -webkit-backdrop-filter: blur(40px) saturate(1.8) brightness(1.1);
-    border: 1px solid hsl(0 0% 100% / 0.12);
-    box-shadow:
-      0 8px 32px hsl(0 0% 0% / 0.4),
-      inset 0 1px 0 hsl(0 0% 100% / 0.1),
-      inset 0 -1px 0 hsl(0 0% 0% / 0.15);
+    border-top: 1px solid hsl(0 0% 100% / 0.12);
+    box-shadow: 0 -4px 20px hsl(0 0% 0% / 0.35);
     pointer-events: auto;
   }
 
