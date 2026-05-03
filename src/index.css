@@ -786,12 +786,9 @@
     padding-left: env(safe-area-inset-left, 0px);
     padding-right: env(safe-area-inset-right, 0px);
   }
-  .bottom-nav-wrapper {
-    padding: 0 6px 2px;
-  }
   .bottom-nav-pill {
     padding: 4px 4px;
-    border-radius: 22px;
+    border-radius: 16px 16px 0 0;
   }
 }
 
@@ -802,9 +799,6 @@
   }
   html {
     font-size: 15px;
-  }
-  .bottom-nav-wrapper {
-    padding: 0 8px 2px;
   }
 }
 
