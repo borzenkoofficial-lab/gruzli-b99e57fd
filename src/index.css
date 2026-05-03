@@ -778,3 +778,91 @@
     animation: shimmer 1.6s linear infinite;
   }
 }
+
+/* ===================================================================
+   Universal phone size adaptation — supports 4.0" to 6.9" screens
+   Smallest: iPhone SE 1 / 4" (320×480)
+   Largest:  Samsung Ultra / 6.9" (~430×932)
+   =================================================================== */
+
+/* Tiny phones (4.0" – 4.7") — iPhone SE 1, iPhone 5/5s/SE */
+@media (max-width: 360px) {
+  :root {
+    --bottom-nav-height: 64px;
+  }
+  html {
+    font-size: 14px;
+  }
+  .app-shell {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  .bottom-nav-wrapper {
+    padding: 0 6px 2px;
+  }
+  .bottom-nav-pill {
+    padding: 4px 4px;
+    border-radius: 22px;
+  }
+}
+
+/* Small phones (4.7" – 5.5") — iPhone 6/7/8, SE 2/3 */
+@media (min-width: 361px) and (max-width: 390px) {
+  :root {
+    --bottom-nav-height: 70px;
+  }
+  html {
+    font-size: 15px;
+  }
+  .bottom-nav-wrapper {
+    padding: 0 8px 2px;
+  }
+}
+
+/* Standard phones (5.5" – 6.3") — iPhone 11/12/13/14/15, Pixel, most Android */
+@media (min-width: 391px) and (max-width: 430px) {
+  :root {
+    --bottom-nav-height: 76px;
+  }
+  html {
+    font-size: 16px;
+  }
+}
+
+/* Large phones / Plus / Ultra (6.5" – 6.9") */
+@media (min-width: 431px) and (max-width: 767px) {
+  :root {
+    --bottom-nav-height: 80px;
+  }
+  html {
+    font-size: 16px;
+  }
+  .app-shell {
+    max-width: 430px;
+  }
+  .bottom-nav-wrapper {
+    max-width: 430px;
+  }
+}
+
+/* Short viewport heights (landscape-ish or small phones) — reduce bottom space */
+@media (max-height: 667px) {
+  :root {
+    --bottom-nav-height: 64px;
+  }
+  .safe-top {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
+  }
+}
+
+/* Prevent horizontal overflow on every phone */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Make all images / videos fluid by default to avoid breakouts on narrow screens */
+img, video, canvas, svg {
+  max-width: 100%;
+  height: auto;
+}
