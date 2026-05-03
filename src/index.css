@@ -716,21 +716,15 @@
 /* Safe area for notched phones — browser mode */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .bottom-nav-wrapper {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 
-/* PWA standalone mode — nav flush to bottom, no extra chin */
+/* PWA standalone mode — nav flush to bottom, no padding around */
 @media all and (display-mode: standalone) {
   .bottom-nav-wrapper {
-    padding: 0 12px;
+    padding: 0;
     padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-
-  .bottom-nav-pill {
-    border-radius: 20px 20px 0 0;
-    border-bottom: none;
-    box-shadow: 0 -2px 12px hsl(0 0% 0% / 0.3);
   }
 
   .app-scroll {
