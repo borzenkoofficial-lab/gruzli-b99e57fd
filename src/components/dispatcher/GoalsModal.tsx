@@ -90,7 +90,7 @@ const GoalsModal = ({ open, onClose, todayProfit, weekProfit }: Props) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-end justify-center"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-stretch justify-center"
           onClick={onClose}
         >
           <motion.div
@@ -98,8 +98,8 @@ const GoalsModal = ({ open, onClose, todayProfit, weekProfit }: Props) => {
             animate={{ y: 0 }}
             exit={{ y: 200 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-lg bg-card rounded-t-3xl border-t border-border overflow-y-auto overscroll-contain pb-[calc(env(safe-area-inset-bottom)+24px)]"
-            style={{ maxHeight: "calc(var(--vh, 1vh) * 90)" }}
+            className="w-full max-w-lg bg-card sm:rounded-2xl sm:my-4 border border-border overflow-y-auto overscroll-contain pb-[calc(env(safe-area-inset-bottom)+32px)] flex flex-col"
+            style={{ height: "calc(var(--vh, 1vh) * 100)", maxHeight: "calc(var(--vh, 1vh) * 100)" }}
           >
             <div className="sticky top-0 bg-card px-5 pt-3 pb-2 border-b border-border z-10">
               <div className="w-10 h-1 bg-muted-foreground/20 rounded-full mx-auto mb-3" />
