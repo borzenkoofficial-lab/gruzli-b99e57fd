@@ -1,4 +1,9 @@
+// Gruzli Web Push (own VAPID, no Progressier)
+// Reads subscriptions from `push_subscriptions` table and sends Web Push
+// notifications directly to the browser's push service using web-push.
+
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
+import webpush from "npm:web-push@3.6.7";
 import { z } from "npm:zod@3.25.76";
 
 const corsHeaders = {
@@ -47,84 +52,96 @@ const RequestSchema = z.discriminatedUnion("type", [
 
 const APP_URL = "https://gruzli.lovable.app";
 
-// ---- Progressier Push ----
+// ---- VAPID setup ----
+const VAPID_PUBLIC = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
+const VAPID_PRIVATE = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
+const VAPID_SUBJECT = "mailto:support@gruzli.app";
 
-async function sendProgressierPush(params: {
-  recipientEmail: string;
-  title: string;
-  body: string;
-  url: string;
-  tag?: string;
-}) {
-  const apiKey = Deno.env.get("PROGRESSIER_API_KEY");
-  if (!apiKey) {
-    console.error("PROGRESSIER_API_KEY not set");
-    return { ok: false, error: "missing_api_key" };
-  }
-
+if (VAPID_PUBLIC && VAPID_PRIVATE) {
   try {
-    const res = await fetch("https://progressier.app/jWxTg8Xf6DGKt3JsinXm/send", {
-      method: "POST",
-      headers: {
-        "authorization": `Bearer ${apiKey}`,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        title: params.title,
-        body: params.body,
-        url: params.url,
-        // tag de-duplicates notifications on-device: a newer one with the
-        // same tag replaces the older instead of stacking.
-        tag: params.tag,
-        recipients: { email: params.recipientEmail },
-      }),
-    });
-
-    const text = await res.text();
-    if (!res.ok) {
-      console.error(`Progressier push failed [${res.status}]: ${text}`);
-      return { ok: false, error: text };
-    }
-    return { ok: true };
-  } catch (err) {
-    console.error("Progressier fetch error:", err);
-    return { ok: false, error: String(err) };
+    webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
+  } catch (e) {
+    console.error("Failed to set VAPID details:", e);
   }
+} else {
+  console.error("VAPID keys missing");
+}
+
+interface PushSub {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+}
+
+async function sendToSubscriptions(
+  supabase: any,
+  subs: PushSub[],
+  payload: { title: string; body: string; url: string; tag?: string },
+): Promise<{ sent: number; failed: number }> {
+  let sent = 0;
+  let failed = 0;
+  const payloadStr = JSON.stringify({
+    title: payload.title,
+    body: payload.body,
+    url: payload.url,
+    tag: payload.tag,
+    icon: "/favicon.jpeg",
+    badge: "/favicon.jpeg",
+  });
+
+  await Promise.all(
+    subs.map(async (s) => {
+      try {
+        await webpush.sendNotification(
+          {
+            endpoint: s.endpoint,
+            keys: { p256dh: s.p256dh, auth: s.auth },
+          } as any,
+          payloadStr,
+          { TTL: 60 * 60 * 24 },
+        );
+        sent++;
+      } catch (err: any) {
+        const status = err?.statusCode;
+        // 404/410 = подписка удалена/истекла — чистим из БД
+        if (status === 404 || status === 410) {
+          try {
+            await supabase.from("push_subscriptions").delete().eq("id", s.id);
+          } catch (_e) {}
+        } else {
+          console.error(`Push failed [${status}] ${s.endpoint.slice(0, 60)}…`, err?.body || err);
+        }
+        failed++;
+      }
+    }),
+  );
+
+  return { sent, failed };
 }
 
 async function sendPushToUsers(
   supabase: any,
   userIds: string[],
-  payload: { title: string; body: string; url: string; tag?: string }
+  payload: { title: string; body: string; url: string; tag?: string },
 ): Promise<{ sent: number; failed: number }> {
-  let sent = 0;
-  let failed = 0;
-
   const uniqueUserIds = [...new Set(userIds.filter(Boolean))];
+  if (uniqueUserIds.length === 0) return { sent: 0, failed: 0 };
 
-  for (const userId of uniqueUserIds) {
-    try {
-      const { data: userData } = await supabase.auth.admin.getUserById(userId);
-      const email = userData?.user?.email;
-      if (!email) { failed++; continue; }
+  const { data: subs, error } = await supabase
+    .from("push_subscriptions")
+    .select("id, user_id, endpoint, p256dh, auth")
+    .in("user_id", uniqueUserIds);
 
-      const result = await sendProgressierPush({
-        recipientEmail: email,
-        title: payload.title,
-        body: payload.body,
-        url: payload.url,
-        tag: payload.tag,
-      });
-
-      if (result.ok) sent++;
-      else failed++;
-    } catch (err) {
-      console.error(`Push error for user ${userId}:`, err);
-      failed++;
-    }
+  if (error) {
+    console.error("Failed to fetch subscriptions:", error);
+    return { sent: 0, failed: uniqueUserIds.length };
   }
 
-  return { sent, failed };
+  if (!subs || subs.length === 0) return { sent: 0, failed: 0 };
+
+  return sendToSubscriptions(supabase, subs as PushSub[], payload);
 }
 
 // ---- Main handler ----
@@ -169,7 +186,6 @@ Deno.serve(async (req) => {
       const result = await sendPushToUsers(supabase, workerIds, { title, body: messageBody, url, tag });
       sent += result.sent;
       failed += result.failed;
-
     } else if (type === "new_message") {
       const { data: senderProfile } = await supabase
         .from("profiles")
@@ -190,8 +206,7 @@ Deno.serve(async (req) => {
 
       const candidateIds = (participants || []).map((p: any) => p.user_id);
 
-      // Skip users who are currently online (last_seen_at within 30s) — they
-      // get an in-app toast already, no need to send a duplicate native push.
+      // Skip users currently online (in-app toast covers them)
       const ONLINE_THRESHOLD_MS = 30 * 1000;
       const targetUserIds: string[] = [];
       if (candidateIds.length > 0) {
@@ -206,9 +221,7 @@ Deno.serve(async (req) => {
         const now = Date.now();
         for (const uid of candidateIds) {
           const lastSeen = lastSeenMap.get(uid);
-          if (lastSeen && now - new Date(lastSeen).getTime() < ONLINE_THRESHOLD_MS) {
-            continue;
-          }
+          if (lastSeen && now - new Date(lastSeen).getTime() < ONLINE_THRESHOLD_MS) continue;
           targetUserIds.push(uid);
         }
       }
@@ -217,7 +230,6 @@ Deno.serve(async (req) => {
       const result = await sendPushToUsers(supabase, targetUserIds, { title, body: messageBody, url, tag });
       sent += result.sent;
       failed += result.failed;
-
     } else if (type === "worker_status_change") {
       const STATUS_LABELS: Record<string, string> = {
         confirmed: "✅ Подтвердил заказ",
@@ -249,7 +261,9 @@ Deno.serve(async (req) => {
         if (body.worker_status === "finishing") {
           const messageBody = `Заказ: ${jobData.title}. Завершите работу для подсчёта.`;
           const result = await sendPushToUsers(supabase, [body.worker_id], {
-            title: "⏹ Завершите работу", body: messageBody, url,
+            title: "⏹ Завершите работу",
+            body: messageBody,
+            url,
             tag: `status-${body.job_id}-${body.worker_id}`,
           });
           sent += result.sent;
@@ -257,7 +271,9 @@ Deno.serve(async (req) => {
         } else {
           const messageBody = `${workerName} · ${jobData.title}`;
           const result = await sendPushToUsers(supabase, [jobData.dispatcher_id], {
-            title: statusLabel, body: messageBody, url,
+            title: statusLabel,
+            body: messageBody,
+            url,
             tag: `status-${body.job_id}-${body.worker_id}`,
           });
           sent += result.sent;
@@ -265,13 +281,10 @@ Deno.serve(async (req) => {
         }
       }
     } else if (type === "response_accepted") {
-      const title = "🎉 Вас выбрали на заказ!";
-      const messageBody = `${body.job_title} — открой заказ, чтобы подтвердить.`;
-      const url = `${APP_URL}/job/${body.job_id}`;
       const result = await sendPushToUsers(supabase, [body.worker_id], {
-        title,
-        body: messageBody,
-        url,
+        title: "🎉 Вас выбрали на заказ!",
+        body: `${body.job_title} — открой заказ, чтобы подтвердить.`,
+        url: `${APP_URL}/job/${body.job_id}`,
         tag: `accepted-${body.job_id}-${body.worker_id}`,
       });
       sent += result.sent;
