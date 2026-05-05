@@ -451,6 +451,8 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
         </div>
       </div>
 
+      <EnablePushButton />
+
       {/* Quick Stats Banner */}
       <div className="px-4 pb-3">
         <motion.div

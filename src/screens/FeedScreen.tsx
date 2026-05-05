@@ -10,7 +10,7 @@ import { useRespondToJob } from "@/hooks/useRespondToJob";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
-import PushNotificationBanner from "@/components/PushNotificationBanner";
+import EnablePushButton from "@/components/EnablePushButton";
 import { MaxChannelBanner } from "@/components/MaxChannelBanner";
 
 type FilterKey = "all" | "urgent" | "quick";
@@ -218,7 +218,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
         </div>
       </div>
 
-      <PushNotificationBanner />
+      <EnablePushButton />
 
       <MaxChannelBanner />
 
