@@ -453,10 +453,9 @@
     transform: translateX(-50%);
     width: 100%;
     max-width: 32rem;
-    bottom: 0;
+    bottom: env(safe-area-inset-bottom, 0px);
     z-index: 50;
     padding: 0;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
     pointer-events: none;
   }
 
@@ -713,18 +712,10 @@
   }
 }
 
-/* Safe area for notched phones — browser mode */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-  .bottom-nav-wrapper {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-}
-
 /* PWA standalone mode — nav flush to bottom, no padding around */
 @media all and (display-mode: standalone) {
   .bottom-nav-wrapper {
     padding: 0;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .app-scroll {
