@@ -9,6 +9,61 @@ import { z } from "zod";
 import { LegalModal } from "@/components/LegalDocuments";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
 import { TelegramChannelsCard } from "@/components/TelegramChannelsCard";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+
+const PushControl = () => {
+  const { supported, permission, subscribed, busy, subscribe, unsubscribe } = usePushNotifications();
+
+  if (!supported) {
+    return <p className="text-[11px] text-muted-foreground">Этот браузер не поддерживает push-уведомления.</p>;
+  }
+
+  const handleEnable = async () => {
+    const ok = await subscribe();
+    if (ok) {
+      toast.success("Push-уведомления включены");
+    } else if (Notification.permission === "denied") {
+      toast.error("Доступ к уведомлениям заблокирован. Откройте настройки сайта в браузере → Уведомления → Разрешить.");
+    } else {
+      toast.error("Не удалось включить уведомления. Попробуйте ещё раз.");
+    }
+  };
+
+  const handleDisable = async () => {
+    await unsubscribe();
+    toast.success("Push-уведомления отключены");
+  };
+
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <p className="text-[11px] text-muted-foreground">
+        {subscribed
+          ? "✅ Включены — вы получаете push"
+          : permission === "denied"
+            ? "❌ Заблокированы в браузере"
+            : "Не включены"}
+      </p>
+      {subscribed ? (
+        <button
+          onClick={handleDisable}
+          disabled={busy}
+          className="px-4 py-2 rounded-xl bg-destructive/10 text-destructive text-xs font-bold disabled:opacity-50"
+        >
+          {busy ? <Loader2 size={14} className="animate-spin" /> : "Отключить"}
+        </button>
+      ) : (
+        <button
+          onClick={handleEnable}
+          disabled={busy}
+          className="px-4 py-2 rounded-xl bg-foreground text-primary-foreground text-xs font-bold disabled:opacity-50 inline-flex items-center gap-1.5"
+        >
+          {busy ? <Loader2 size={14} className="animate-spin" /> : <Bell size={14} />}
+          {permission === "denied" ? "Я разрешил" : "Включить"}
+        </button>
+      )}
+    </div>
+  );
+};
 
 const profileSchema = z.object({
   full_name: z.string().trim().min(2, "Минимум 2 символа").max(100, "Максимум 100 символов"),
@@ -32,8 +87,6 @@ type Section = "main" | "profile" | "notifications" | "security" | "appearance" 
 
 const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   const { user, profile, signOut, role } = useAuth();
-  const [pushPermission, setPushPermission] = useState<NotificationPermission | "unsupported">("default");
-  const [pushLoading, setPushLoading] = useState(false);
   const { settings: notifSettings, update: updateNotif } = useNotificationSettings();
   const [section, setSection] = useState<Section>("main");
 
@@ -307,74 +360,16 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
 
   // Notifications section
   if (section === "notifications") {
-    const handleEnablePush = async () => {
-      setPushLoading(true);
-      try {
-        const permission = await Notification.requestPermission();
-        setPushPermission(permission);
-        if (permission === "granted") {
-          // Progressier handles subscription automatically
-          if (window.progressier && user?.email) {
-            window.progressier.add({ email: user.email, id: user.id });
-          }
-          toast.success("Push-уведомления включены");
-        } else if (permission === "denied") {
-          toast.error("Уведомления заблокированы в настройках браузера");
-        }
-      } catch (err) {
-        console.error("Push setup failed:", err);
-        toast.error("Не удалось включить уведомления");
-      } finally {
-        setPushLoading(false);
-      }
-    };
-
-    const handleDisablePush = async () => {
-      setPushLoading(true);
-      try {
-        if (window.progressier) {
-          await window.progressier.unsubscribe();
-        }
-        toast.success("Push-уведомления отключены");
-        setPushPermission("default");
-      } catch (err) {
-        console.error("Unsubscribe failed:", err);
-      } finally {
-        setPushLoading(false);
-      }
-    };
-
-    const currentPermission = typeof Notification !== "undefined" ? Notification.permission : "unsupported";
-
     return (
       <ScrollWrapper title="Уведомления" goBack={() => setSection("main")}>
         <div className="px-5 space-y-4">
           <div className="bg-card border border-border rounded-2xl p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Push-уведомления</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {currentPermission === "granted" ? "✅ Включены" : currentPermission === "denied" ? "❌ Заблокированы" : "Не включены"}
-                </p>
-              </div>
-              {currentPermission === "default" && (
-                <button onClick={handleEnablePush} disabled={pushLoading} className="px-4 py-2 rounded-xl bg-foreground text-primary-foreground text-xs font-bold disabled:opacity-50">
-                  {pushLoading ? <Loader2 size={14} className="animate-spin" /> : "Включить"}
-                </button>
-              )}
-              {currentPermission === "granted" && (
-                <button onClick={handleDisablePush} disabled={pushLoading} className="px-4 py-2 rounded-xl bg-destructive/10 text-destructive text-xs font-bold disabled:opacity-50">
-                  {pushLoading ? <Loader2 size={14} className="animate-spin" /> : "Отключить"}
-                </button>
-              )}
-            </div>
+            <p className="text-sm font-semibold text-foreground mb-1">Push-уведомления</p>
+            <p className="text-[11px] text-muted-foreground mb-3">
+              Получайте мгновенные уведомления о новых заявках и сообщениях, даже когда приложение закрыто.
+            </p>
+            <PushControl />
           </div>
-
-          {currentPermission === "denied" && (
-            <div className="bg-card border border-border rounded-2xl p-4">
-              <p className="text-xs text-muted-foreground">Push-уведомления заблокированы в настройках браузера. Разрешите их в настройках сайта.</p>
-            </div>
-          )}
 
           <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">В приложении</p>
