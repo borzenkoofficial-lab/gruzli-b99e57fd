@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 // Публичный VAPID-ключ — безопасно хранить в коде (это публичная часть пары).
 const VAPID_PUBLIC_KEY =
-  "BABPacxr1ePNOM01u_i9iMtDbq6NopIUckdMfLB6IuqIEOykUNU-zP9aJIdtkg5Vm3PzSLw3u9imP3_a7vXAfaw";
+  "BAFIgs6_EbZXaym4QUAl-10E5i4yh6gkoJh8VZ9jfgeS-6nkAYAs1AcN3W-Py081bsDHAbDAq9nCUKRWmPGz3MY";
 
 const SW_PATH = "/push-sw.js";
 
