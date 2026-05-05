@@ -17,6 +17,7 @@ import TopWorkersModal from "@/components/dispatcher/TopWorkersModal";
 import GoalsModal from "@/components/dispatcher/GoalsModal";
 import SOSReplacementModal from "@/components/dispatcher/SOSReplacementModal";
 import EditJobModal from "@/components/EditJobModal";
+import EnablePushButton from "@/components/EnablePushButton";
 
 interface DispatcherCabinetScreenProps {
   onBack: () => void;
