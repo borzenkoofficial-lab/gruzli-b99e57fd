@@ -436,7 +436,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   ];
 
   return (
-    <div className="h-full w-full overflow-y-auto overflow-x-hidden bg-background overscroll-contain" style={{ WebkitOverflowScrolling: "touch", paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 7rem)" }}>
+    <div className="h-full w-full overflow-y-auto overflow-x-hidden bg-background overscroll-contain" style={{ WebkitOverflowScrolling: "touch", paddingBottom: "calc(var(--bottom-nav-height, 76px) + env(safe-area-inset-bottom, 0px) + 16px)" }}>
       {/* Header */}
       <div className="px-4 safe-top pb-2">
         <div className="flex items-center gap-3">
