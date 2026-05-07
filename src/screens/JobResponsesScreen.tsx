@@ -95,12 +95,8 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
     const result = data as any;
     const accepted = responses.find((r) => r.id === responseId);
 
-    // Push to accepted worker
-    if (accepted) {
-      supabase.functions.invoke("send-push", {
-        body: { type: "response_accepted", job_id: job.id, worker_id: accepted.worker_id, job_title: job.title },
-      }).catch(() => {});
-    }
+    // Push notifications now handled by push4site (server-side via webhooks)
+
 
     if (result?.filled) {
       toast.success(`✅ Набор закрыт: ${result.accepted_count}/${result.workers_needed}. Заявка убрана из ленты, остальные отклики автоматически отклонены (${result.auto_rejected}).`, { duration: 5000 });
