@@ -95,24 +95,13 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
     const result = data as any;
     const accepted = responses.find((r) => r.id === responseId);
 
-    // Push to accepted worker
-    if (accepted) {
-      supabase.functions.invoke("send-push", {
-        body: { type: "response_accepted", job_id: job.id, worker_id: accepted.worker_id, job_title: job.title },
-      }).catch(() => {});
-    }
+    // Push notifications now handled by push4site (server-side via webhooks)
+
 
     if (result?.filled) {
       toast.success(`✅ Набор закрыт: ${result.accepted_count}/${result.workers_needed}. Заявка убрана из ленты, остальные отклики автоматически отклонены (${result.auto_rejected}).`, { duration: 5000 });
-      // Notify auto-rejected workers
-      const rejectedWorkers = responses
-        .filter((r) => r.status === "pending" && r.id !== responseId)
-        .map((r) => r.worker_id);
-      if (rejectedWorkers.length > 0) {
-        supabase.functions.invoke("send-push", {
-          body: { type: "response_rejected_bulk", job_title: job.title, worker_ids: rejectedWorkers },
-        }).catch(() => {});
-      }
+      // Auto-rejected workers will be notified server-side
+
     } else {
       toast.success(`Грузчик принят (${result?.accepted_count}/${result?.workers_needed})`);
     }
@@ -126,11 +115,8 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
     if (error) { toast.error("Не удалось отклонить"); return; }
     setResponses((prev) => prev.map((x) => (x.id === responseId ? { ...x, status: "rejected" } : x)));
     toast.success("Отклик отклонён");
-    if (r) {
-      supabase.functions.invoke("send-push", {
-        body: { type: "response_rejected", job_title: job.title, worker_id: r.worker_id },
-      }).catch(() => {});
-    }
+    void r;
+
   };
 
   const acceptTopMatching = async () => {

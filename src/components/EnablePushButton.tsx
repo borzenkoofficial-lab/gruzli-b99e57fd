@@ -1,6 +1,5 @@
 import { Bell, BellOff, Check, Loader2, X } from "lucide-react";
-import { useEffect, useState } from "react";
-import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 
 const FIRST_PROMPT_KEY = "push-first-prompt-shown";
@@ -12,20 +11,79 @@ interface EnablePushButtonProps {
 }
 
 /**
- * Единая кнопка/баннер для запроса разрешения на push-уведомления (VAPID).
- * — Автоматически предлагает включить при первом запуске (один раз).
- * — Понятные русские сообщения при отказе.
- * — Если уже подписан или окончательно отказано — не показывается.
+ * Кнопка/баннер запроса разрешений на push-уведомления через push4site.com SDK.
+ * Использует window.pushsender (загружается из https://lovable.push4site.com/sdk).
  */
 const EnablePushButton = ({ variant = "banner", className = "" }: EnablePushButtonProps) => {
-  const { supported, permission, subscribed, busy, subscribe } = usePushNotifications();
+  const [busy, setBusy] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">(
+    typeof Notification !== "undefined" ? Notification.permission : "unsupported",
+  );
   const [dismissed, setDismissed] = useState(
     () => typeof window !== "undefined" && localStorage.getItem(DISMISSED_KEY) === "true",
   );
+  const [sdkReady, setSdkReady] = useState(false);
 
-  // Автозапрос при первом запуске (только если разрешение ещё не запрошено)
+  const supported =
+    typeof window !== "undefined" &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    "Notification" in window;
+
+  // Ждём загрузки push4site SDK
   useEffect(() => {
-    if (!supported || subscribed || busy) return;
+    if (!supported) return;
+    let tries = 0;
+    const id = window.setInterval(() => {
+      const ps = (window as any).pushsender;
+      if (ps && typeof ps.initSubscription === "function") {
+        setSdkReady(true);
+        try {
+          setSubscribed(!!ps.isSubscribed?.());
+        } catch {
+          /* noop */
+        }
+        window.clearInterval(id);
+      } else if (++tries > 100) {
+        window.clearInterval(id);
+      }
+    }, 200);
+    return () => window.clearInterval(id);
+  }, [supported]);
+
+  const refreshState = useCallback(() => {
+    try {
+      setPermission(Notification.permission);
+      const ps = (window as any).pushsender;
+      setSubscribed(!!ps?.isSubscribed?.());
+    } catch {
+      /* noop */
+    }
+  }, []);
+
+  const subscribe = useCallback(async () => {
+    if (!supported) return false;
+    const ps = (window as any).pushsender;
+    if (!ps || typeof ps.initSubscription !== "function") {
+      toast.error("Сервис уведомлений ещё загружается, попробуйте через секунду.");
+      return false;
+    }
+    setBusy(true);
+    try {
+      ps.initSubscription();
+      // Permission ответ приходит асинхронно — подождём и проверим
+      await new Promise((r) => setTimeout(r, 1500));
+      refreshState();
+      return Notification.permission === "granted";
+    } finally {
+      setBusy(false);
+    }
+  }, [supported, refreshState]);
+
+  // Автозапрос при первом запуске (один раз)
+  useEffect(() => {
+    if (!supported || !sdkReady || subscribed || busy) return;
     if (permission !== "default") return;
     if (localStorage.getItem(FIRST_PROMPT_KEY) === "true") return;
 
@@ -38,13 +96,14 @@ const EnablePushButton = ({ variant = "banner", className = "" }: EnablePushButt
         });
       } else if (Notification.permission === "denied") {
         toast.error("Уведомления отклонены", {
-          description: "Чтобы получать заявки в фоне, разрешите уведомления в настройках браузера для этого сайта.",
+          description:
+            "Чтобы получать заявки в фоне, разрешите уведомления в настройках браузера для этого сайта.",
           duration: 8000,
         });
       }
     }, 1500);
     return () => clearTimeout(timer);
-  }, [supported, permission, subscribed, busy, subscribe]);
+  }, [supported, sdkReady, permission, subscribed, busy, subscribe]);
 
   const handleEnable = async () => {
     const ok = await subscribe();
@@ -70,7 +129,6 @@ const EnablePushButton = ({ variant = "banner", className = "" }: EnablePushButt
     localStorage.setItem(DISMISSED_KEY, "true");
   };
 
-  // Скрываем, если: не поддерживается, уже подписан, окончательно отказано, или пользователь закрыл баннер
   if (!supported || subscribed || dismissed) return null;
 
   if (variant === "compact") {
