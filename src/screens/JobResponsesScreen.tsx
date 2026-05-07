@@ -100,15 +100,8 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
 
     if (result?.filled) {
       toast.success(`✅ Набор закрыт: ${result.accepted_count}/${result.workers_needed}. Заявка убрана из ленты, остальные отклики автоматически отклонены (${result.auto_rejected}).`, { duration: 5000 });
-      // Notify auto-rejected workers
-      const rejectedWorkers = responses
-        .filter((r) => r.status === "pending" && r.id !== responseId)
-        .map((r) => r.worker_id);
-      if (rejectedWorkers.length > 0) {
-        supabase.functions.invoke("send-push", {
-          body: { type: "response_rejected_bulk", job_title: job.title, worker_ids: rejectedWorkers },
-        }).catch(() => {});
-      }
+      // Auto-rejected workers will be notified server-side
+
     } else {
       toast.success(`Грузчик принят (${result?.accepted_count}/${result?.workers_needed})`);
     }
