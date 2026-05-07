@@ -9,58 +9,25 @@ import { z } from "zod";
 import { LegalModal } from "@/components/LegalDocuments";
 import { TelegramLinkCard } from "@/components/TelegramLinkCard";
 import { TelegramChannelsCard } from "@/components/TelegramChannelsCard";
-import { usePushNotifications } from "@/hooks/usePushNotifications";
+import EnablePushButton from "@/components/EnablePushButton";
 
 const PushControl = () => {
-  const { supported, permission, subscribed, busy, subscribe, unsubscribe } = usePushNotifications();
+  const supported =
+    typeof window !== "undefined" &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    "Notification" in window;
 
   if (!supported) {
     return <p className="text-[11px] text-muted-foreground">Этот браузер не поддерживает push-уведомления.</p>;
   }
 
-  const handleEnable = async () => {
-    const ok = await subscribe();
-    if (ok) {
-      toast.success("Push-уведомления включены");
-    } else if (Notification.permission === "denied") {
-      toast.error("Доступ к уведомлениям заблокирован. Откройте настройки сайта в браузере → Уведомления → Разрешить.");
-    } else {
-      toast.error("Не удалось включить уведомления. Попробуйте ещё раз.");
-    }
-  };
-
-  const handleDisable = async () => {
-    await unsubscribe();
-    toast.success("Push-уведомления отключены");
-  };
-
   return (
     <div className="flex items-center justify-between gap-3">
       <p className="text-[11px] text-muted-foreground">
-        {subscribed
-          ? "✅ Включены — вы получаете push"
-          : permission === "denied"
-            ? "❌ Заблокированы в браузере"
-            : "Не включены"}
+        Включите, чтобы получать пуш о новых заявках и сообщениях.
       </p>
-      {subscribed ? (
-        <button
-          onClick={handleDisable}
-          disabled={busy}
-          className="px-4 py-2 rounded-xl bg-destructive/10 text-destructive text-xs font-bold disabled:opacity-50"
-        >
-          {busy ? <Loader2 size={14} className="animate-spin" /> : "Отключить"}
-        </button>
-      ) : (
-        <button
-          onClick={handleEnable}
-          disabled={busy}
-          className="px-4 py-2 rounded-xl bg-foreground text-primary-foreground text-xs font-bold disabled:opacity-50 inline-flex items-center gap-1.5"
-        >
-          {busy ? <Loader2 size={14} className="animate-spin" /> : <Bell size={14} />}
-          {permission === "denied" ? "Я разрешил" : "Включить"}
-        </button>
-      )}
+      <EnablePushButton variant="compact" />
     </div>
   );
 };
