@@ -115,11 +115,8 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
     if (error) { toast.error("Не удалось отклонить"); return; }
     setResponses((prev) => prev.map((x) => (x.id === responseId ? { ...x, status: "rejected" } : x)));
     toast.success("Отклик отклонён");
-    if (r) {
-      supabase.functions.invoke("send-push", {
-        body: { type: "response_rejected", job_title: job.title, worker_id: r.worker_id },
-      }).catch(() => {});
-    }
+    void r;
+
   };
 
   const acceptTopMatching = async () => {
