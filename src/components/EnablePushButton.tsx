@@ -117,22 +117,54 @@ const EnablePushButton = ({ variant = "banner", className = "" }: EnablePushButt
     return () => clearTimeout(timer);
   }, [supported, sdkReady, permission, subscribed, busy, subscribe]);
 
+  // Дождаться загрузки SDK push4site (до timeoutMs мс)
+  const waitForSdk = (timeoutMs = 8000): Promise<any> => {
+    return new Promise((resolve, reject) => {
+      const start = Date.now();
+      const tick = () => {
+        const ps = (window as any).pushsender;
+        if (ps && typeof ps.initSubscription === "function") return resolve(ps);
+        if (Date.now() - start > timeoutMs) return reject(new Error("SDK timeout"));
+        setTimeout(tick, 100);
+      };
+      tick();
+    });
+  };
+
   const handleEnable = async () => {
     if (!supported) return;
-    const ps = (window as any).pushsender;
+    setBusy(true);
+
+    // Сразу пробуем взять SDK; если ещё не подгрузился — ждём
+    let ps = (window as any).pushsender;
     if (!ps || typeof ps.initSubscription !== "function") {
-      toast.error("Сервис уведомлений ещё загружается, попробуйте через секунду.");
-      return;
+      try {
+        ps = await waitForSdk(8000);
+      } catch {
+        setBusy(false);
+        // Fallback: запросим разрешение нативно, push4site подхватит при следующей загрузке
+        try {
+          const perm = await Notification.requestPermission();
+          if (perm === "granted") {
+            toast.success("Разрешение получено. Перезагрузите страницу для завершения подписки.");
+          } else {
+            toast.error("Сервис уведомлений не загрузился. Проверьте интернет/блокировщики и обновите страницу.");
+          }
+        } catch (e) {
+          console.error("[push4site] fallback permission failed:", e);
+          toast.error("Не удалось запросить разрешение. Обновите страницу и попробуйте снова.");
+        }
+        return;
+      }
     }
-    // ВАЖНО: вызываем синхронно внутри клика (требование Safari)
+
     try {
       ps.initSubscription();
     } catch (err) {
       console.error("[push4site] initSubscription error:", err);
     }
 
-    // Поллим состояние ~15 сек, пока пользователь принимает решение
-    setBusy(true);
+    // Поллим состояние ~20 сек, пока пользователь принимает решение
     const start = Date.now();
     const poll = window.setInterval(() => {
       const perm = typeof Notification !== "undefined" ? Notification.permission : "default";
@@ -150,7 +182,7 @@ const EnablePushButton = ({ variant = "banner", className = "" }: EnablePushButt
           description: "Откройте настройки сайта в браузере → Уведомления → Разрешить.",
           duration: 10000,
         });
-      } else if (Date.now() - start > 15000) {
+      } else if (Date.now() - start > 20000) {
         window.clearInterval(poll);
         setBusy(false);
         refreshState();
