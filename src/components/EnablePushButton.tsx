@@ -118,22 +118,44 @@ const EnablePushButton = ({ variant = "banner", className = "" }: EnablePushButt
   }, [supported, sdkReady, permission, subscribed, busy, subscribe]);
 
   const handleEnable = async () => {
-    const ok = await subscribe();
-    if (ok) {
-      toast.success("Уведомления включены ✓", {
-        description: "Вы будете получать push о новых заявках и сообщениях.",
-      });
-    } else if (Notification.permission === "denied") {
-      toast.error("Доступ к уведомлениям заблокирован", {
-        description:
-          "Откройте настройки сайта в браузере → Уведомления → Разрешить, и нажмите кнопку снова.",
-        duration: 10000,
-      });
-    } else {
-      toast("Не удалось включить уведомления", {
-        description: "Попробуйте ещё раз через несколько секунд.",
-      });
+    if (!supported) return;
+    const ps = (window as any).pushsender;
+    if (!ps || typeof ps.initSubscription !== "function") {
+      toast.error("Сервис уведомлений ещё загружается, попробуйте через секунду.");
+      return;
     }
+    // ВАЖНО: вызываем синхронно внутри клика (требование Safari)
+    try {
+      ps.initSubscription();
+    } catch (err) {
+      console.error("[push4site] initSubscription error:", err);
+    }
+
+    // Поллим состояние ~15 сек, пока пользователь принимает решение
+    setBusy(true);
+    const start = Date.now();
+    const poll = window.setInterval(() => {
+      const perm = typeof Notification !== "undefined" ? Notification.permission : "default";
+      const subbed = !!(window as any).pushsender?.isSubscribed?.();
+      if (perm === "granted" || subbed) {
+        window.clearInterval(poll);
+        setBusy(false);
+        refreshState();
+        toast.success("Уведомления включены ✓");
+      } else if (perm === "denied") {
+        window.clearInterval(poll);
+        setBusy(false);
+        refreshState();
+        toast.error("Доступ к уведомлениям заблокирован", {
+          description: "Откройте настройки сайта в браузере → Уведомления → Разрешить.",
+          duration: 10000,
+        });
+      } else if (Date.now() - start > 15000) {
+        window.clearInterval(poll);
+        setBusy(false);
+        refreshState();
+      }
+    }, 500);
   };
 
   const handleDismiss = () => {
