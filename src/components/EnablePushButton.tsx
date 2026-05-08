@@ -71,11 +71,23 @@ const EnablePushButton = ({ variant = "banner", className = "" }: EnablePushButt
     }
     setBusy(true);
     try {
-      ps.initSubscription();
-      // Permission ответ приходит асинхронно — подождём и проверим
-      await new Promise((r) => setTimeout(r, 1500));
+      // ВАЖНО: initSubscription должен вызываться синхронно внутри user gesture.
+      // Любой await ДО этого вызова сломает permission prompt в Safari.
+      try {
+        ps.initSubscription();
+      } catch (err) {
+        console.error("[push4site] initSubscription error:", err);
+        // fallback: native API
+        try {
+          await Notification.requestPermission();
+        } catch (e2) {
+          console.error("[push4site] Notification.requestPermission failed:", e2);
+        }
+      }
+      // Дадим SDK время отработать
+      await new Promise((r) => setTimeout(r, 2000));
       refreshState();
-      return Notification.permission === "granted";
+      return typeof Notification !== "undefined" && Notification.permission === "granted";
     } finally {
       setBusy(false);
     }
