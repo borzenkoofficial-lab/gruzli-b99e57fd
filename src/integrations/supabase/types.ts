@@ -463,6 +463,45 @@ export type Database = {
         }
         Relationships: []
       }
+      fraud_reports: {
+        Row: {
+          created_at: string
+          details: string
+          dispatcher_id: string | null
+          id: string
+          job_id: string | null
+          reason: string
+          reporter_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          details?: string
+          dispatcher_id?: string | null
+          id?: string
+          job_id?: string | null
+          reason: string
+          reporter_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          details?: string
+          dispatcher_id?: string | null
+          id?: string
+          job_id?: string | null
+          reason?: string
+          reporter_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       job_contracts: {
         Row: {
           body: string
