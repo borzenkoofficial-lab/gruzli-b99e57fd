@@ -6,7 +6,7 @@ import {
   ChevronDown, ChevronUp, Phone, Square, Timer, Wallet,
   TrendingUp, TrendingDown, BarChart3, DollarSign, FileText,
   Calendar, Award, Zap, Target, Activity, Sparkles, Loader2,
-  Download, Trophy, Eye, Pencil, Trash2, Plus, Minus, Lock,
+  Download, Trophy, Eye, Pencil, Trash2, Plus, Minus, Lock, Unlock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -140,6 +140,19 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     }
     setMyJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status: "closed" } : j)));
     toast.success("Заявка закрыта · убрана из ленты");
+  };
+
+  const handleRepublishJob = async (jobId: string) => {
+    const { error } = await supabase
+      .from("jobs")
+      .update({ status: "active" })
+      .eq("id", jobId);
+    if (error) {
+      toast.error("Не удалось опубликовать заявку");
+      return;
+    }
+    setMyJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status: "active" } : j)));
+    toast.success("Заявка снова опубликована");
   };
 
   const handleAdjustRate = async (job: Tables<"jobs"> & { response_count: number }, delta: number) => {
@@ -563,8 +576,8 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
           {/* ACTIVE JOBS TAB */}
           {currentTab === "active" && (() => {
             const inProgressJobIds = new Set(activeJobs.map((aj) => aj.job.id));
-            const openJobs = myJobs.filter((j) => j.status === "active" && !inProgressJobIds.has(j.id));
-            const completedMyJobs = myJobs.filter((j) => j.status === "completed" || j.status === "closed");
+            const openJobs = myJobs.filter((j) => (j.status === "active" || j.status === "closed") && !inProgressJobIds.has(j.id));
+            const completedMyJobs = myJobs.filter((j) => j.status === "completed");
             const categories: { id: MyJobsCategory; label: string; count: number }[] = [
               { id: "open", label: "Активные", count: openJobs.length },
               { id: "in_progress", label: "В работе", count: activeJobs.length },
@@ -708,11 +721,13 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                           <Pencil size={16} className="text-foreground" />
                         </button>
                         <button
-                          onClick={() => handleCloseJob(job.id)}
+                          onClick={() => job.status === "closed" ? handleRepublishJob(job.id) : handleCloseJob(job.id)}
                           className="w-12 h-12 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md flex items-center justify-center active:bg-white/10 transition-all"
-                          title="Закрыть заявку (убрать из ленты)"
+                          title={job.status === "closed" ? "Опубликовать вновь" : "Закрыть заявку (убрать из ленты)"}
                         >
-                          <Lock size={16} className="text-foreground" />
+                          {job.status === "closed"
+                            ? <Unlock size={16} className="text-online" />
+                            : <Lock size={16} className="text-foreground" />}
                         </button>
                         <button
                           onClick={() => handleDeleteJob(job.id)}
