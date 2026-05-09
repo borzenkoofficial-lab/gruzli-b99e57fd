@@ -442,18 +442,18 @@
     overflow-x: hidden;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    /* Bottom nav (floating pill) + safe area + breathing room */
-    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 32px);
+    /* Bottom nav sits low like messengers; content only keeps a compact reserve */
+    padding-bottom: calc(var(--bottom-nav-height) + 10px);
   }
 
-  /* Bottom nav — floating pill above safe area */
+  /* Bottom nav — floating pill pinned close to the screen bottom */
   .bottom-nav-wrapper {
     position: fixed;
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
     max-width: 32rem;
-    bottom: max(env(safe-area-inset-bottom, 0px), 6px);
+    bottom: max(0px, calc(env(safe-area-inset-bottom, 0px) - 32px));
     z-index: 50;
     padding: 0 16px;
     pointer-events: none;
@@ -712,14 +712,14 @@
   }
 }
 
-/* PWA standalone mode — floating pill respects safe area but doesn't merge with it */
+/* PWA standalone mode — keep the pill low instead of lifting it by the full iOS safe area */
 @media all and (display-mode: standalone) {
   .bottom-nav-wrapper {
-    bottom: max(env(safe-area-inset-bottom, 0px), 4px);
+    bottom: max(0px, calc(env(safe-area-inset-bottom, 0px) - 32px));
   }
 
   .app-scroll {
-    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 24px);
+    padding-bottom: calc(var(--bottom-nav-height) + 10px);
   }
 }
 
