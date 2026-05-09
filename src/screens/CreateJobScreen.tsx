@@ -120,7 +120,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
       return;
     }
 
-    const { error } = await supabase.from("jobs").insert({
+    const { data: createdJob, error } = await supabase.from("jobs").insert({
       dispatcher_id: user.id,
       title: title.trim(),
       description: description.trim(),
@@ -132,14 +132,32 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
       workers_needed: parseInt(workersNeeded) || 2,
       urgent,
       quick_minimum: quickMinimum,
-    });
+      requires_contract: requiresContract,
+    }).select().single();
 
     if (error) {
       toast.error("Ошибка создания заявки");
-    } else {
-      toast.success("Заявка создана!");
-      onCreated();
+      setLoading(false);
+      return;
     }
+
+    if (requiresContract && createdJob) {
+      const { error: contractErr } = await supabase.from("job_contracts").insert({
+        job_id: createdJob.id,
+        dispatcher_id: user.id,
+        title: contractTitle.trim() || "Договор подряда",
+        body: contractBody.trim(),
+        status: "issued",
+        dispatcher_signed_at: new Date().toISOString(),
+      });
+      if (contractErr) {
+        console.error(contractErr);
+        toast.warning("Заявка создана, но договор не сохранён");
+      }
+    }
+
+    toast.success("Заявка создана!");
+    onCreated();
     setLoading(false);
   };
 
