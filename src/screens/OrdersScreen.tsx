@@ -4,6 +4,7 @@ import { Clock, CheckCircle2, MapPin, Navigation, AlertTriangle, Loader2, PartyP
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import ContractStatusBadge from "@/components/ContractStatusBadge";
 
 interface AcceptedJob {
   responseId: string;
