@@ -1,0 +1,1 @@
+DELETE FROM public.jobs WHERE id = '7aedc32e-289e-4108-ad8f-fbc88d7dfa5a';
