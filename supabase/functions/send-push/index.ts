@@ -30,7 +30,7 @@ async function sendPushToUsers(supabase: any, userIds: string[], payload: { titl
     try {
       await webpush.sendNotification(
         { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } } as any,
-        JSON.stringify({ title: payload.title, body: payload.body, url: payload.url, tag: payload.tag, icon: "/favicon.jpeg" }),
+        JSON.stringify({ title: payload.title, body: payload.body, url: payload.url, tag: payload.tag, icon: "/pwa-192x192.png", badge: "/badge-96x96.png" }),
         { TTL: 86400 }
       );
       sent++;
