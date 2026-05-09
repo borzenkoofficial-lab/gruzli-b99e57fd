@@ -102,6 +102,9 @@ const AdminPage = () => {
           <TabsContent value="jobs">
             <AdminJobsTab />
           </TabsContent>
+          <TabsContent value="fraud">
+            <AdminFraudReportsTab />
+          </TabsContent>
           <TabsContent value="settings">
             <AdminSettingsTab />
           </TabsContent>
