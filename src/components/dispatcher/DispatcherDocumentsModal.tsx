@@ -253,8 +253,8 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
       if (error) throw error;
       if (data?.signed_url) {
         const prefix = type === "act" ? "akt" : "chek";
-        await triggerDownload(data.signed_url, `${prefix}-${data.number || Date.now()}.pdf`);
-        toast.success(type === "act" ? "Акт сформирован и скачан" : "Чек сформирован и скачан");
+        setPreview({ url: data.signed_url, name: `${prefix}-${data.number || Date.now()}.pdf` });
+        toast.success(type === "act" ? "Акт сформирован" : "Чек сформирован");
         fetchAll();
       } else throw new Error("Нет ссылки");
     } catch (e: any) { toast.error(e?.message || "Ошибка"); }
