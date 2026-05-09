@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import JobTemplatesModal from "@/components/dispatcher/JobTemplatesModal";
+import DispatcherContractsModal from "@/components/dispatcher/DispatcherContractsModal";
 import TopWorkersModal from "@/components/dispatcher/TopWorkersModal";
 import GoalsModal from "@/components/dispatcher/GoalsModal";
 import SOSReplacementModal from "@/components/dispatcher/SOSReplacementModal";
@@ -89,6 +90,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   const [showTemplates, setShowTemplates] = useState(false);
   const [showTopWorkers, setShowTopWorkers] = useState(false);
   const [showGoals, setShowGoals] = useState(false);
+  const [showContracts, setShowContracts] = useState(false);
   const [sosModal, setSosModal] = useState<{ job: any; workerId: string; workerName: string } | null>(null);
 
   // My jobs (full list of dispatcher's jobs — merged from former DispatcherFeedScreen)
@@ -517,11 +519,12 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
 
       {/* Quick actions: Templates, Top workers, Goals, Export */}
       <div className="px-4 pb-3">
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-5 gap-2">
           {[
             { icon: FileText, label: "Шаблоны", color: "text-blue-400", bg: "bg-blue-500/10", onClick: () => setShowTemplates(true) },
             { icon: Trophy, label: "Топ", color: "text-yellow-500", bg: "bg-yellow-500/10", onClick: () => setShowTopWorkers(true) },
             { icon: Target, label: "Цели", color: "text-primary", bg: "bg-primary/10", onClick: () => setShowGoals(true) },
+            { icon: Pencil, label: "Договоры", color: "text-purple-400", bg: "bg-purple-500/10", onClick: () => setShowContracts(true) },
             { icon: Download, label: "Отчёт", color: "text-green-500", bg: "bg-green-500/10", onClick: exportCSV },
           ].map((a, i) => {
             const Ic = a.icon;
