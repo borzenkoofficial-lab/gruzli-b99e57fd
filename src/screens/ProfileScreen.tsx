@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { leaderboard } from "@/data/mockData";
 import { toast } from "sonner";
+import BankCard from "@/components/BankCard";
 
 const defaultSkills = ["Переезды", "Такелаж", "Сборка мебели", "Погрузка", "Межэтаж"];
 
