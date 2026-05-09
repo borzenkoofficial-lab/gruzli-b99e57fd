@@ -508,7 +508,8 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
           </div>
         </motion.div>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 
