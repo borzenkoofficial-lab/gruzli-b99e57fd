@@ -36,6 +36,7 @@ const PremiumScreen = lazy(() => import("@/screens/PremiumScreen"));
 const DispatcherCabinetScreen = lazy(() => import("@/screens/DispatcherCabinetScreen"));
 const DispatcherCommunityScreen = lazy(() => import("@/screens/DispatcherCommunityScreen"));
 const SupportChatScreen = lazy(() => import("@/screens/SupportChatScreen"));
+const ContractScreen = lazy(() => import("@/screens/ContractScreen"));
 const PullToRefresh = lazy(() => import("@/components/PullToRefresh"));
 
 const Index = () => {
@@ -117,6 +118,17 @@ const Index = () => {
   const [showCabinet, setShowCabinet] = useState(false);
   const [showSupportChat, setShowSupportChat] = useState(false);
   const [viewJobDetail, setViewJobDetail] = useState<Tables<"jobs"> | null>(null);
+  const [viewContractId, setViewContractId] = useState<string | null>(null);
+
+  // Listen for global open-contract event from any screen
+  useEffect(() => {
+    const handler = (e: any) => {
+      const id = e?.detail?.contractId;
+      if (id) setViewContractId(id);
+    };
+    window.addEventListener("open-contract" as any, handler);
+    return () => window.removeEventListener("open-contract" as any, handler);
+  }, []);
 
   // Deep-link: open job from /job/:jobId (push notification click)
   useEffect(() => {
@@ -276,6 +288,9 @@ const Index = () => {
           />
         );
       }
+      if (viewContractId) {
+        return <ContractScreen contractId={viewContractId} onBack={() => setViewContractId(null)} />;
+      }
       return null;
     })();
     if (!panel) return null;
@@ -367,6 +382,9 @@ const Index = () => {
           onOpenProfile={(userId) => { setViewJobDetail(null); setViewProfileUserId(userId); }}
         />
       );
+    }
+    if (viewContractId) {
+      return wrapSuspense(<ContractScreen contractId={viewContractId} onBack={() => setViewContractId(null)} />);
     }
 
     return (
@@ -501,6 +519,7 @@ const Index = () => {
     setShowCabinet(false);
     setShowSupportChat(false);
     setViewJobDetail(null);
+    setViewContractId(null);
   };
 
   const topBar = (

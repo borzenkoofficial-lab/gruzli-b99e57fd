@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Zap, Clock, MapPin, Train, Users, FileText, Loader2, DollarSign, Info, ChevronDown, Sparkles, AlertCircle, Eye, Wallet, ArrowRight } from "lucide-react";
+import { ArrowLeft, Zap, Clock, MapPin, Train, Users, FileText, Loader2, DollarSign, Info, ChevronDown, Sparkles, AlertCircle, Eye, Wallet, ArrowRight, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -55,6 +55,11 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [requiresContract, setRequiresContract] = useState(false);
+  const [contractTitle, setContractTitle] = useState("Договор подряда");
+  const [contractBody, setContractBody] = useState(
+    "1. Исполнитель обязуется выполнить грузо-погрузочные работы по адресу и в срок, указанные выше.\n2. Заказчик обязуется оплатить работы по согласованной ставке за фактически отработанное время.\n3. Исполнитель несёт ответственность за сохранность перемещаемого имущества в пределах своей вины.\n4. Стороны обязуются соблюдать технику безопасности и нормы общения."
+  );
 
   const balance = profile?.balance || 0;
   const canAfford = balance >= JOB_POSTING_FEE;
@@ -115,7 +120,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
       return;
     }
 
-    const { error } = await supabase.from("jobs").insert({
+    const { data: createdJob, error } = await supabase.from("jobs").insert({
       dispatcher_id: user.id,
       title: title.trim(),
       description: description.trim(),
@@ -127,14 +132,32 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
       workers_needed: parseInt(workersNeeded) || 2,
       urgent,
       quick_minimum: quickMinimum,
-    });
+      requires_contract: requiresContract,
+    }).select().single();
 
     if (error) {
       toast.error("Ошибка создания заявки");
-    } else {
-      toast.success("Заявка создана!");
-      onCreated();
+      setLoading(false);
+      return;
     }
+
+    if (requiresContract && createdJob) {
+      const { error: contractErr } = await supabase.from("job_contracts").insert({
+        job_id: createdJob.id,
+        dispatcher_id: user.id,
+        title: contractTitle.trim() || "Договор подряда",
+        body: contractBody.trim(),
+        status: "issued",
+        dispatcher_signed_at: new Date().toISOString(),
+      });
+      if (contractErr) {
+        console.error(contractErr);
+        toast.warning("Заявка создана, но договор не сохранён");
+      }
+    }
+
+    toast.success("Заявка создана!");
+    onCreated();
     setLoading(false);
   };
 
@@ -389,6 +412,71 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Contract section */}
+          <Section title="Договор" icon={ShieldCheck} hint="Для особых заказов">
+            <button
+              type="button"
+              onClick={() => setRequiresContract(!requiresContract)}
+              className={`w-full flex items-center justify-between rounded-2xl px-4 py-3 transition-all ${
+                requiresContract
+                  ? "bg-primary/10 border border-primary/30"
+                  : "bg-card border border-border"
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck size={16} className={requiresContract ? "text-primary" : "text-muted-foreground"} />
+                <div className="text-left">
+                  <div className={`text-sm font-semibold ${requiresContract ? "text-primary" : "text-foreground"}`}>
+                    Требуется подписание договора
+                  </div>
+                  <div className="text-[11px] text-muted-foreground -mt-0.5">
+                    Грузчик подпишет онлайн перед началом
+                  </div>
+                </div>
+              </div>
+              <div className={`w-10 h-6 rounded-full p-0.5 transition-all ${requiresContract ? "bg-primary" : "bg-border"}`}>
+                <motion.div
+                  animate={{ x: requiresContract ? 16 : 0 }}
+                  className="w-5 h-5 rounded-full bg-background shadow"
+                />
+              </div>
+            </button>
+
+            <AnimatePresence>
+              {requiresContract && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="overflow-hidden space-y-2 mt-2"
+                >
+                  <InputBox focused={focusedField === "ctitle"}>
+                    <input
+                      value={contractTitle}
+                      onChange={(e) => setContractTitle(e.target.value)}
+                      onFocus={() => setFocusedField("ctitle")}
+                      onBlur={() => setFocusedField(null)}
+                      placeholder="Название договора"
+                      className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none"
+                    />
+                  </InputBox>
+                  <InputBox focused={focusedField === "cbody"}>
+                    <textarea
+                      value={contractBody}
+                      onChange={(e) => setContractBody(e.target.value)}
+                      onFocus={() => setFocusedField("cbody")}
+                      onBlur={() => setFocusedField(null)}
+                      rows={6}
+                      placeholder="Условия договора..."
+                      className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none resize-none leading-relaxed"
+                    />
+                  </InputBox>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </Section>
 
           {/* Summary card */}
           <motion.div

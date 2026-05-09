@@ -4,6 +4,7 @@ import { Clock, CheckCircle2, MapPin, Navigation, AlertTriangle, Loader2, PartyP
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import ContractStatusBadge from "@/components/ContractStatusBadge";
 
 interface AcceptedJob {
   responseId: string;
@@ -403,6 +404,8 @@ const OrdersScreen = () => {
                     )}
                   </div>
 
+                  <ContractStatusBadge jobId={job.jobId} />
+
                   {job.startTime && new Date(job.startTime) > new Date() && (
                     <CountdownToJob startTime={job.startTime} />
                   )}
@@ -460,6 +463,8 @@ const OrdersScreen = () => {
               {job.startTime && new Date(job.startTime) > new Date() && (
                 <CountdownToJob startTime={job.startTime} />
               )}
+
+              <ContractStatusBadge jobId={job.jobId} />
 
               {/* Work timer when arrived */}
               {job.workStartedAt && job.workerStatus === "arrived" && (
