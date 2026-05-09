@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
+import ReportFraudModal from "@/components/ReportFraudModal";
 
 interface JobDetailScreenProps {
   job: Tables<"jobs"> & { is_official?: boolean };
