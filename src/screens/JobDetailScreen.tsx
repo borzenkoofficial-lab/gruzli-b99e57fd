@@ -24,6 +24,7 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
   const [responseStatus, setResponseStatus] = useState<string | null>(null);
   const [safetyOpen, setSafetyOpen] = useState(false);
   const [safetyDismissed, setSafetyDismissed] = useState(() => localStorage.getItem("job_safety_tip_dismissed") === "1");
+  const [reportOpen, setReportOpen] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
   const [dispatcherName, setDispatcherName] = useState("Диспетчер");
 
