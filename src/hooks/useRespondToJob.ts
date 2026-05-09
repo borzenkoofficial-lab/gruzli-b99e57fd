@@ -46,14 +46,14 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
 
       // 2. Find or create conversation with this dispatcher
       const { data: dispProfile } = await supabase
-        .from("profiles")
+        .from("profiles_public" as any)
         .select("full_name")
         .eq("user_id", job.dispatcher_id)
         .single();
 
       const { data: conversationId, error: convError } = await supabase.rpc("create_direct_conversation", {
         _other_user_id: job.dispatcher_id,
-        _title: dispProfile?.full_name || job.title,
+        _title: (dispProfile as any)?.full_name || job.title,
       });
 
       if (convError || !conversationId) {

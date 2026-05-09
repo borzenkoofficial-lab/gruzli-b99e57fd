@@ -23,12 +23,12 @@ const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => 
 
       if (roles && roles.length > 0) {
         const { data: profiles } = await supabase
-          .from("profiles")
+          .from("profiles_public" as any)
           .select("*")
           .in("user_id", roles.map((r) => r.user_id));
 
         if (profiles) {
-          setDispatchers(profiles.map((p) => ({ ...p, isOnline: true })));
+          setDispatchers((profiles as any[]).map((p) => ({ ...p, isOnline: true })));
         }
       }
       setLoading(false);

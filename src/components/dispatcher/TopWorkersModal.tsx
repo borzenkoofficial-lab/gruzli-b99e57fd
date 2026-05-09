@@ -60,11 +60,11 @@ const TopWorkersModal = ({ open, onClose, onChat, onViewProfile }: Props) => {
       if (ids.length === 0) { setWorkers([]); setLoading(false); return; }
 
       const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, avatar_url, is_premium, rating, phone")
+        .from("profiles_public" as any)
+        .select("user_id, full_name, avatar_url, is_premium, rating")
         .in("user_id", ids);
 
-      const list: TopWorker[] = (profiles || []).map((p) => {
+      const list: TopWorker[] = ((profiles as any[]) || []).map((p) => {
         const m = map[p.user_id];
         const avg = m.ratings.length ? m.ratings.reduce((a, b) => a + b, 0) / m.ratings.length : null;
         return {
@@ -76,7 +76,7 @@ const TopWorkersModal = ({ open, onClose, onChat, onViewProfile }: Props) => {
           jobsWithMe: m.count,
           totalEarned: m.earned,
           avgReview: avg,
-          phone: p.phone,
+          phone: undefined,
         };
       });
       list.sort((a, b) => {

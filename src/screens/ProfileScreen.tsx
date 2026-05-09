@@ -253,9 +253,9 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         .order("created_at", { ascending: false });
       if (data && data.length > 0) {
         const reviewerIds = [...new Set(data.map((r: any) => r.reviewer_id))];
-        const { data: profiles } = await supabase.from("profiles").select("user_id, full_name").in("user_id", reviewerIds);
+        const { data: profiles } = await supabase.from("profiles_public" as any).select("user_id, full_name").in("user_id", reviewerIds);
         const nameMap: Record<string, string> = {};
-        profiles?.forEach((p) => { nameMap[p.user_id] = p.full_name; });
+        (profiles as any[])?.forEach((p) => { nameMap[p.user_id] = p.full_name; });
         const withNames = data.map((r: any) => ({ ...r, reviewer_name: nameMap[r.reviewer_id] || "Исполнитель" }));
         setReviews(withNames);
         setAvgRating(Math.round(data.reduce((s: number, r: any) => s + r.rating, 0) / data.length * 10) / 10);

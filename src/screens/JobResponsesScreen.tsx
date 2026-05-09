@@ -48,10 +48,10 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
     if (data) {
       const workerIds = [...new Set(data.map((r) => r.worker_id))];
       const { data: profiles } = workerIds.length > 0
-        ? await supabase.from("profiles").select("*").in("user_id", workerIds)
+        ? await supabase.from("profiles_public" as any).select("*").in("user_id", workerIds)
         : { data: [] };
-      const pmap: Record<string, Tables<"profiles">> = {};
-      (profiles || []).forEach((p) => { pmap[p.user_id] = p; });
+      const pmap: Record<string, any> = {};
+      ((profiles as any[]) || []).forEach((p) => { pmap[p.user_id] = p; });
       setResponses(data.map((r) => ({ ...r, profile: pmap[r.worker_id] || null })) as ResponseWithProfile[]);
     }
     setLoading(false);

@@ -65,11 +65,11 @@ const OrdersScreen = () => {
 
     const dispatcherIds = [...new Set(jobsData.map((j) => j.dispatcher_id))];
     const { data: profiles } = await supabase
-      .from("profiles")
+      .from("profiles_public" as any)
       .select("user_id, full_name")
       .in("user_id", dispatcherIds);
     const nameMap: Record<string, string> = {};
-    profiles?.forEach((p) => { nameMap[p.user_id] = p.full_name; });
+    (profiles as any[])?.forEach((p) => { nameMap[p.user_id] = p.full_name; });
 
     const mapped: AcceptedJob[] = jobsData.map((j) => {
       const resp = responses.find((r) => r.job_id === j.id)!;
@@ -130,9 +130,9 @@ const OrdersScreen = () => {
       if (!jobsData) return;
 
       const dispatcherIds = [...new Set(jobsData.map((j) => j.dispatcher_id))];
-      const { data: profiles } = await supabase.from("profiles").select("user_id, full_name").in("user_id", dispatcherIds);
+      const { data: profiles } = await supabase.from("profiles_public" as any).select("user_id, full_name").in("user_id", dispatcherIds);
       const nameMap: Record<string, string> = {};
-      profiles?.forEach((p) => { nameMap[p.user_id] = p.full_name; });
+      (profiles as any[])?.forEach((p) => { nameMap[p.user_id] = p.full_name; });
 
       const mapped: AcceptedJob[] = jobsData.map((j) => {
         const resp = responses.find((r) => r.job_id === j.id)!;

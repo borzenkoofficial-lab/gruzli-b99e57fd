@@ -226,9 +226,10 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       const otherId = parts?.[0]?.user_id;
       if (otherId) {
         setOtherUserId(otherId);
-        const { data: profile } = await supabase.from("profiles").select("full_name, last_seen_at, avatar_url").eq("user_id", otherId).single();
+        const { data: profileRaw } = await supabase.from("profiles_public" as any).select("full_name, last_seen_at, avatar_url").eq("user_id", otherId).single();
+        const profile = profileRaw as any;
         if (profile) {
-          setOtherLastSeen((profile as any).last_seen_at);
+          setOtherLastSeen(profile.last_seen_at);
           if (profile.full_name) setResolvedTitle(profile.full_name);
           setOtherAvatarUrl(profile.avatar_url || null);
         }
@@ -288,7 +289,8 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       const senderIds = [...new Set(msgsRes.data.map((m) => m.sender_id))];
       const unknownIds = senderIds.filter((id) => !senderNamesRef.current[id]);
       if (unknownIds.length > 0) {
-        const { data: profiles } = await supabase.from("profiles").select("user_id, full_name").in("user_id", unknownIds);
+        const { data: profilesRaw } = await supabase.from("profiles_public" as any).select("user_id, full_name").in("user_id", unknownIds);
+        const profiles = profilesRaw as any[] | null;
         if (profiles) {
           setSenderNames((prev) => {
             const next = { ...prev };
@@ -322,7 +324,8 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
           const wasNearBottom = isNearBottom();
           appendMessage(newMsg);
           if (!senderNamesRef.current[newMsg.sender_id]) {
-            const { data: profile } = await supabase.from("profiles").select("user_id, full_name").eq("user_id", newMsg.sender_id).single();
+            const { data: profileRaw } = await supabase.from("profiles_public" as any).select("user_id, full_name").eq("user_id", newMsg.sender_id).single();
+            const profile = profileRaw as any;
             if (profile) setSenderNames((prev) => ({ ...prev, [profile.user_id]: profile.full_name }));
           }
           if (newMsg.sender_id !== user?.id) markAsRead();

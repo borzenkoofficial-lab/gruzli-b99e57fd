@@ -59,21 +59,16 @@ const Index = () => {
     let cancelled = false;
     (async () => {
       const { data } = await supabase
-        .from("profiles")
+        .from("profiles_public" as any)
         .select("user_id")
         .eq("full_name", "Gruzli Official")
         .limit(1)
         .maybeSingle();
 
-      let id = data?.user_id ?? null;
+      let id = (data as any)?.user_id ?? null;
       if (!id) {
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("user_id")
-          .eq("role", "admin")
-          .limit(1)
-          .maybeSingle();
-        id = roleData?.user_id ?? null;
+        const { data: rpcId } = await supabase.rpc("get_support_user_id");
+        id = (rpcId as string) ?? null;
       }
 
       if (!cancelled && id) {

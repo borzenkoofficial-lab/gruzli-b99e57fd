@@ -223,7 +223,8 @@ const DispatcherCommunityScreen = ({ onBack, onOpenProfile }: DispatcherCommunit
         const senderIds = [...new Set(msgsData.map(m => m.sender_id))];
         const unknownIds = senderIds.filter(id => !profilesRef.current[id]);
         if (unknownIds.length > 0) {
-          const { data: profiles } = await supabase.from("profiles").select("user_id, full_name, avatar_url").in("user_id", unknownIds);
+          const { data: profilesRaw } = await supabase.from("profiles_public" as any).select("user_id, full_name, avatar_url").in("user_id", unknownIds);
+          const profiles = profilesRaw as any[] | null;
           if (profiles) {
             setSenderProfiles(prev => {
               const next = { ...prev };
@@ -252,7 +253,8 @@ const DispatcherCommunityScreen = ({ onBack, onOpenProfile }: DispatcherCommunit
             return [...filtered, newMsg];
           });
           if (!profilesRef.current[newMsg.sender_id]) {
-            const { data: profile } = await supabase.from("profiles").select("user_id, full_name, avatar_url").eq("user_id", newMsg.sender_id).single();
+            const { data: profileRaw } = await supabase.from("profiles_public" as any).select("user_id, full_name, avatar_url").eq("user_id", newMsg.sender_id).single();
+            const profile = profileRaw as any;
             if (profile) setSenderProfiles(prev => ({ ...prev, [profile.user_id]: { name: profile.full_name, avatar_url: profile.avatar_url } }));
           }
           if (wasNearBottom) setTimeout(() => scrollToBottom(), 50);

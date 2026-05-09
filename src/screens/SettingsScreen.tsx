@@ -93,8 +93,8 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   const [supportUserId, setSupportUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.from("user_roles").select("user_id").eq("role", "admin").limit(1).single()
-      .then(({ data }) => { if (data) setSupportUserId(data.user_id); });
+    supabase.rpc("get_support_user_id")
+      .then(({ data }) => { if (data) setSupportUserId(data as string); });
   }, []);
   useEffect(() => {
     if (profile) {
@@ -180,9 +180,9 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
     const { data: blocks } = await supabase.from("blocked_users").select("id, blocked_id").eq("blocker_id", user.id);
     if (blocks && blocks.length > 0) {
       const ids = blocks.map((b) => b.blocked_id);
-      const { data: profiles } = await supabase.from("profiles").select("user_id, full_name").in("user_id", ids);
+      const { data: profiles } = await supabase.from("profiles_public" as any).select("user_id, full_name").in("user_id", ids);
       const nameMap: Record<string, string> = {};
-      profiles?.forEach((p) => { nameMap[p.user_id] = p.full_name; });
+      (profiles as any[])?.forEach((p) => { nameMap[p.user_id] = p.full_name; });
       setBlockedUsers(blocks.map((b) => ({ id: b.id, blocked_id: b.blocked_id, full_name: nameMap[b.blocked_id] || "Пользователь" })));
     } else {
       setBlockedUsers([]);
