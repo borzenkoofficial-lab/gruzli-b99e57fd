@@ -155,7 +155,7 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
     const authorIds = [...new Set(postsData.map((p) => p.author_id))];
 
     const [profilesRes, likesRes, commentsCountRes, userLikesRes] = await Promise.all([
-      supabase.from("profiles").select("user_id, full_name").in("user_id", authorIds),
+      supabase.from("profiles_public" as any).select("user_id, full_name").in("user_id", authorIds),
       supabase.from("channel_post_likes").select("post_id").in("post_id", postIds),
       supabase.from("channel_post_comments").select("post_id").in("post_id", postIds),
       supabase.from("channel_post_likes").select("post_id").in("post_id", postIds).eq("user_id", user.id),
@@ -215,9 +215,9 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
     const { data } = await supabase.from("channel_post_comments").select("*").eq("post_id", postId).order("created_at", { ascending: true });
     if (data) {
       const userIds = [...new Set(data.map((c) => c.user_id))];
-      const { data: profiles } = await supabase.from("profiles").select("user_id, full_name").in("user_id", userIds);
+      const { data: profiles } = await supabase.from("profiles_public" as any).select("user_id, full_name").in("user_id", userIds);
       const nameMap: Record<string, string> = {};
-      (profiles || []).forEach((p) => { nameMap[p.user_id] = p.full_name; });
+      ((profiles as any[]) || []).forEach((p) => { nameMap[p.user_id] = p.full_name; });
       setComments(data.map((c) => ({ id: c.id, user_id: c.user_id, text: c.text, created_at: c.created_at, userName: nameMap[c.user_id] || "Пользователь" })));
     }
     setLoadingComments(false);

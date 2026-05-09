@@ -52,7 +52,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
       const dispatcherIds = [...new Set(data.map((j) => j.dispatcher_id))];
       if (dispatcherIds.length > 0) {
         const { data: profiles } = await supabase
-          .from("profiles")
+          .from("profiles_public" as any)
           .select("user_id, full_name")
           .in("user_id", dispatcherIds);
         if (profiles) {

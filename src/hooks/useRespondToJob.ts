@@ -46,7 +46,7 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
 
       // 2. Find or create conversation with this dispatcher
       const { data: dispProfile } = await supabase
-        .from("profiles")
+        .from("profiles_public" as any)
         .select("full_name")
         .eq("user_id", job.dispatcher_id)
         .single();

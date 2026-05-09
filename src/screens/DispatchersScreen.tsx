@@ -23,7 +23,7 @@ const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => 
 
       if (roles && roles.length > 0) {
         const { data: profiles } = await supabase
-          .from("profiles")
+          .from("profiles_public" as any)
           .select("*")
           .in("user_id", roles.map((r) => r.user_id));
 

@@ -201,7 +201,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
 
       const workerIds = [...new Set((responses || []).map((r) => r.worker_id))];
       const { data: profiles } = workerIds.length > 0
-        ? await supabase.from("profiles").select("*").in("user_id", workerIds)
+        ? await supabase.from("profiles_public" as any).select("*").in("user_id", workerIds)
         : { data: [] };
 
       const profileMap: Record<string, Tables<"profiles">> = {};

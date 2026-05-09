@@ -31,7 +31,7 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
   useEffect(() => {
     const fetchName = async () => {
       const { data } = await supabase
-        .from("profiles")
+        .from("profiles_public" as any)
         .select("full_name")
         .eq("user_id", job.dispatcher_id)
         .single();
