@@ -519,6 +519,7 @@ const Index = () => {
     setShowCabinet(false);
     setShowSupportChat(false);
     setViewJobDetail(null);
+    setViewContractId(null);
   };
 
   const topBar = (
