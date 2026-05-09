@@ -1,0 +1,12 @@
+CREATE INDEX IF NOT EXISTS idx_jobs_status_created ON public.jobs (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_jobs_dispatcher ON public.jobs (dispatcher_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_job_responses_job ON public.job_responses (job_id);
+CREATE INDEX IF NOT EXISTS idx_job_responses_worker ON public.job_responses (worker_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_messages_conv_created ON public.messages (conversation_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_conv_participants_user ON public.conversation_participants (user_id);
+CREATE INDEX IF NOT EXISTS idx_conv_participants_conv ON public.conversation_participants (conversation_id);
+CREATE INDEX IF NOT EXISTS idx_fraud_reports_status_created ON public.fraud_reports (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_channel_post_likes_post ON public.channel_post_likes (post_id);
+CREATE INDEX IF NOT EXISTS idx_channel_post_comments_post ON public.channel_post_comments (post_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_roles_user ON public.user_roles (user_id);
+CREATE INDEX IF NOT EXISTS idx_telegram_subscribers_user ON public.telegram_subscribers (user_id) WHERE is_active = true;
