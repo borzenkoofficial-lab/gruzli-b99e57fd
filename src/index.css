@@ -441,13 +441,11 @@
 
   .app-scroll {
     flex: 1;
-    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    /* Reserve exactly the pill footprint — no extra random padding */
-    padding-bottom: var(--bottom-nav-total);
+    overscroll-behavior: contain;
+    padding-bottom: calc(var(--bottom-nav-height) + 16px);
   }
 
   /* Bottom nav — floating pill pinned close to the screen bottom */
@@ -457,9 +455,9 @@
     transform: translateX(-50%);
     width: 100%;
     max-width: 32rem;
-    bottom: var(--bottom-nav-gap);
+    bottom: 0;
     z-index: 50;
-    padding: 0 16px;
+    padding: 0 0 env(safe-area-inset-bottom, 0px) 0;
     pointer-events: none;
   }
 
