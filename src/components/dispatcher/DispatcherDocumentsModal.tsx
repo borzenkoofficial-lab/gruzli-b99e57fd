@@ -180,6 +180,24 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
     if (open) fetchAll();
   }, [open, user]);
 
+  const triggerDownload = async (url: string, filename: string) => {
+    try {
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+    } catch {
+      // fallback — open in new tab
+      window.open(url, "_blank");
+    }
+  };
+
   const downloadContractPdf = async (contractId: string, workerId?: string) => {
     setBusyId(`cpdf:${contractId}:${workerId || "blank"}`);
     try {
@@ -187,16 +205,20 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
         body: { contract_id: contractId, worker_id: workerId || null },
       });
       if (error) throw error;
-      if (data?.signed_url) window.open(data.signed_url, "_blank");
-      else throw new Error("Нет ссылки");
+      if (data?.signed_url) {
+        await triggerDownload(data.signed_url, `dogovor-${contractId.slice(0, 8)}${workerId ? "-" + workerId.slice(0, 6) : ""}.pdf`);
+        toast.success("Файл скачан");
+      } else throw new Error("Нет ссылки");
     } catch (e: any) { toast.error(e?.message || "Ошибка"); }
     finally { setBusyId(null); }
   };
 
-  const downloadStored = async (bucket: "contracts" | "documents", path: string) => {
-    const { data } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60);
-    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
-    else toast.error("Файл не найден");
+  const downloadStored = async (bucket: "contracts" | "documents", path: string, filename?: string) => {
+    const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60);
+    if (error || !data?.signedUrl) { toast.error("Файл не найден"); return; }
+    const fname = filename || path.split("/").pop() || "document.pdf";
+    await triggerDownload(data.signedUrl, fname);
+    toast.success("Файл скачан");
   };
 
   const sendToChat = async (workerId: string, workerName: string, text: string) => {
@@ -226,8 +248,9 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
       });
       if (error) throw error;
       if (data?.signed_url) {
-        window.open(data.signed_url, "_blank");
-        toast.success(type === "act" ? "Акт сформирован" : "Чек сформирован");
+        const prefix = type === "act" ? "akt" : "chek";
+        await triggerDownload(data.signed_url, `${prefix}-${data.number || Date.now()}.pdf`);
+        toast.success(type === "act" ? "Акт сформирован и скачан" : "Чек сформирован и скачан");
         fetchAll();
       } else throw new Error("Нет ссылки");
     } catch (e: any) { toast.error(e?.message || "Ошибка"); }
