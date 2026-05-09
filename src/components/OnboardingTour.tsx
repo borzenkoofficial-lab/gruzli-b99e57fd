@@ -492,7 +492,7 @@ const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[60] bg-background flex flex-col"
-      style={{ height: "100dvh" }}
+      style={{ height: "calc(var(--vh, 1vh) * 100)" }}
     >
       <div className="flex items-center justify-between px-5 pt-4 pb-2 shrink-0" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 16px)" }}>
         <ProgressBar current={step} total={TOTAL_STEPS} />
@@ -528,8 +528,8 @@ const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="px-5 pb-6 shrink-0 flex gap-3"
-          style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)" }}
+          className="px-5 pb-2 shrink-0 flex gap-3"
+          style={{ paddingBottom: "max(6px, calc(env(safe-area-inset-bottom, 0px) - 28px))" }}
         >
           {step > 0 && (
             <button
