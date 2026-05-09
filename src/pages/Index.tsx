@@ -36,6 +36,7 @@ const PremiumScreen = lazy(() => import("@/screens/PremiumScreen"));
 const DispatcherCabinetScreen = lazy(() => import("@/screens/DispatcherCabinetScreen"));
 const DispatcherCommunityScreen = lazy(() => import("@/screens/DispatcherCommunityScreen"));
 const SupportChatScreen = lazy(() => import("@/screens/SupportChatScreen"));
+const ContractScreen = lazy(() => import("@/screens/ContractScreen"));
 const PullToRefresh = lazy(() => import("@/components/PullToRefresh"));
 
 const Index = () => {
