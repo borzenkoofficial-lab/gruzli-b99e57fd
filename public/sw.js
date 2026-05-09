@@ -9,7 +9,7 @@ self.addEventListener('push', (event) => {
   const options = {
     body: data.body || '',
     icon: data.icon || '/pwa-192x192.png',
-    badge: '/pwa-192x192.png',
+    badge: '/badge-96x96.png',
     tag: data.tag,
     data: { url: data.url || '/' },
   };
