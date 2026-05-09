@@ -61,8 +61,12 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
   const totalCost = parseInt(hourlyRate || "0") * parseFloat(durationHours || "0") * parseInt(workersNeeded || "0");
 
   const handleShowPreview = () => {
-    if (!title.trim() || !hourlyRate) {
-      toast.error("Заполните название и оплату");
+    if (!title.trim()) {
+      toast.error("Укажите название заявки");
+      return;
+    }
+    if (!hourlyRate || parseInt(hourlyRate) <= 0) {
+      toast.error("Укажите оплату за час");
       return;
     }
     if (!canAfford) {
