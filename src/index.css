@@ -712,14 +712,14 @@
   }
 }
 
-/* PWA standalone mode — nav flush to bottom, no padding around */
+/* PWA standalone mode — floating pill respects safe area but doesn't merge with it */
 @media all and (display-mode: standalone) {
   .bottom-nav-wrapper {
-    padding: 0 0 env(safe-area-inset-bottom, 0px) 0;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
   }
 
   .app-scroll {
-    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 16px);
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 24px);
   }
 }
 
