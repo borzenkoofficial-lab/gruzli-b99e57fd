@@ -383,6 +383,9 @@ const Index = () => {
         />
       );
     }
+    if (viewContractId) {
+      return wrapSuspense(<ContractScreen contractId={viewContractId} onBack={() => setViewContractId(null)} />);
+    }
 
     return (
       <div className="app-shell">
