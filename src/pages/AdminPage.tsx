@@ -48,7 +48,7 @@ const AdminPage = () => {
         {/* Tabs */}
         <Tabs defaultValue="dashboard">
           <div className="overflow-x-auto -mx-1 px-1">
-            <TabsList className="w-full min-w-[640px] grid grid-cols-7">
+            <TabsList className="w-full min-w-[720px] grid grid-cols-8">
               <TabsTrigger value="dashboard" className="gap-1 text-xs px-1">
                 <LayoutDashboard className="h-4 w-4" />
                 <span className="hidden sm:inline">Дашборд</span>
@@ -72,6 +72,10 @@ const AdminPage = () => {
               <TabsTrigger value="jobs" className="gap-1 text-xs px-1">
                 <Briefcase className="h-4 w-4" />
                 <span className="hidden sm:inline">Заказы</span>
+              </TabsTrigger>
+              <TabsTrigger value="fraud" className="gap-1 text-xs px-1">
+                <ShieldAlert className="h-4 w-4" />
+                <span className="hidden sm:inline">Жалобы</span>
               </TabsTrigger>
               <TabsTrigger value="settings" className="gap-1 text-xs px-1">
                 <Settings className="h-4 w-4" />
