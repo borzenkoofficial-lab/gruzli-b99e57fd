@@ -464,6 +464,8 @@ const OrdersScreen = () => {
                 <CountdownToJob startTime={job.startTime} />
               )}
 
+              <ContractStatusBadge jobId={job.jobId} />
+
               {/* Work timer when arrived */}
               {job.workStartedAt && job.workerStatus === "arrived" && (
                 <WorkTimer startedAt={job.workStartedAt} hourlyRate={job.hourlyRate} />
