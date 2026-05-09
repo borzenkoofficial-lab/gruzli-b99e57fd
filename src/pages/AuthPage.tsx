@@ -242,8 +242,8 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
 
     return (
       <div
-        className="bg-background overflow-hidden flex flex-col h-screen relative"
-        style={{ height: "100dvh" }}
+        className="bg-background overflow-hidden flex flex-col relative"
+        style={{ height: "calc(var(--vh, 1vh) * 100)" }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
