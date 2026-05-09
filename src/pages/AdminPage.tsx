@@ -82,6 +82,9 @@ const AdminPage = () => {
           <TabsContent value="dashboard">
             <AdminDashboardTab />
           </TabsContent>
+          <TabsContent value="push">
+            <AdminPushBroadcastsTab />
+          </TabsContent>
           <TabsContent value="broadcasts">
             <AdminBroadcastsTab />
           </TabsContent>
