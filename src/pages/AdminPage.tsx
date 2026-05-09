@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Users, MessageSquare, Briefcase, ShieldCheck, Settings, LayoutDashboard, Megaphone, Bell } from "lucide-react";
+import { ArrowLeft, Users, MessageSquare, Briefcase, ShieldCheck, Settings, LayoutDashboard, Megaphone, Bell, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AdminDashboardTab from "@/components/admin/AdminDashboardTab";
 import AdminUsersTab from "@/components/admin/AdminUsersTab";
@@ -11,6 +11,7 @@ import AdminJobsTab from "@/components/admin/AdminJobsTab";
 import AdminSettingsTab from "@/components/admin/AdminSettingsTab";
 import AdminBroadcastsTab from "@/components/admin/AdminBroadcastsTab";
 import AdminPushBroadcastsTab from "@/components/admin/AdminPushBroadcastsTab";
+import AdminFraudReportsTab from "@/components/admin/AdminFraudReportsTab";
 
 const AdminPage = () => {
   const { role, loading } = useAuth();
@@ -47,7 +48,7 @@ const AdminPage = () => {
         {/* Tabs */}
         <Tabs defaultValue="dashboard">
           <div className="overflow-x-auto -mx-1 px-1">
-            <TabsList className="w-full min-w-[640px] grid grid-cols-7">
+            <TabsList className="w-full min-w-[720px] grid grid-cols-8">
               <TabsTrigger value="dashboard" className="gap-1 text-xs px-1">
                 <LayoutDashboard className="h-4 w-4" />
                 <span className="hidden sm:inline">Дашборд</span>
@@ -71,6 +72,10 @@ const AdminPage = () => {
               <TabsTrigger value="jobs" className="gap-1 text-xs px-1">
                 <Briefcase className="h-4 w-4" />
                 <span className="hidden sm:inline">Заказы</span>
+              </TabsTrigger>
+              <TabsTrigger value="fraud" className="gap-1 text-xs px-1">
+                <ShieldAlert className="h-4 w-4" />
+                <span className="hidden sm:inline">Жалобы</span>
               </TabsTrigger>
               <TabsTrigger value="settings" className="gap-1 text-xs px-1">
                 <Settings className="h-4 w-4" />
@@ -96,6 +101,9 @@ const AdminPage = () => {
           </TabsContent>
           <TabsContent value="jobs">
             <AdminJobsTab />
+          </TabsContent>
+          <TabsContent value="fraud">
+            <AdminFraudReportsTab />
           </TabsContent>
           <TabsContent value="settings">
             <AdminSettingsTab />

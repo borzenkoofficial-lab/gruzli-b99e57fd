@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
+import ReportFraudModal from "@/components/ReportFraudModal";
 
 interface JobDetailScreenProps {
   job: Tables<"jobs"> & { is_official?: boolean };
@@ -23,6 +24,7 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
   const [responseStatus, setResponseStatus] = useState<string | null>(null);
   const [safetyOpen, setSafetyOpen] = useState(false);
   const [safetyDismissed, setSafetyDismissed] = useState(() => localStorage.getItem("job_safety_tip_dismissed") === "1");
+  const [reportOpen, setReportOpen] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
   const [dispatcherName, setDispatcherName] = useState("Диспетчер");
 
@@ -296,7 +298,23 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
             </button>
           )}
         </div>
+
+        {!isOfficial && (
+          <button
+            onClick={() => setReportOpen(true)}
+            className="mt-4 w-full py-3 rounded-2xl bg-card border border-destructive/30 text-destructive text-[13px] font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+          >
+            <ShieldAlert size={14} /> Пожаловаться на мошенников
+          </button>
+        )}
       </motion.div>
+
+      <ReportFraudModal
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        jobId={job.id}
+        dispatcherId={job.dispatcher_id}
+      />
     </div>
   );
 };
