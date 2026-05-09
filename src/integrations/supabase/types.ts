@@ -1228,7 +1228,63 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_public: {
+        Row: {
+          availability: boolean[] | null
+          avatar_url: string | null
+          blocked: boolean | null
+          completed_orders: number | null
+          created_at: string | null
+          display_id: string | null
+          full_name: string | null
+          is_premium: boolean | null
+          is_self_employed: boolean | null
+          last_seen_at: string | null
+          premium_until: string | null
+          rating: number | null
+          skills: string[] | null
+          updated_at: string | null
+          user_id: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          availability?: boolean[] | null
+          avatar_url?: string | null
+          blocked?: boolean | null
+          completed_orders?: number | null
+          created_at?: string | null
+          display_id?: string | null
+          full_name?: string | null
+          is_premium?: boolean | null
+          is_self_employed?: boolean | null
+          last_seen_at?: string | null
+          premium_until?: string | null
+          rating?: number | null
+          skills?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          availability?: boolean[] | null
+          avatar_url?: string | null
+          blocked?: boolean | null
+          completed_orders?: number | null
+          created_at?: string | null
+          display_id?: string | null
+          full_name?: string | null
+          is_premium?: boolean | null
+          is_self_employed?: boolean | null
+          last_seen_at?: string | null
+          premium_until?: string | null
+          rating?: number | null
+          skills?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _notify_telegram_personal: {
@@ -1291,6 +1347,7 @@ export type Database = {
         Returns: number
       }
       generate_recovery_code: { Args: never; Returns: string }
+      get_support_user_id: { Args: never; Returns: string }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
