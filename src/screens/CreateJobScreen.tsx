@@ -413,6 +413,71 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
             )}
           </AnimatePresence>
 
+          {/* Contract section */}
+          <Section title="Договор" icon={ShieldCheck} hint="Для особых заказов">
+            <button
+              type="button"
+              onClick={() => setRequiresContract(!requiresContract)}
+              className={`w-full flex items-center justify-between rounded-2xl px-4 py-3 transition-all ${
+                requiresContract
+                  ? "bg-primary/10 border border-primary/30"
+                  : "bg-card border border-border"
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck size={16} className={requiresContract ? "text-primary" : "text-muted-foreground"} />
+                <div className="text-left">
+                  <div className={`text-sm font-semibold ${requiresContract ? "text-primary" : "text-foreground"}`}>
+                    Требуется подписание договора
+                  </div>
+                  <div className="text-[11px] text-muted-foreground -mt-0.5">
+                    Грузчик подпишет онлайн перед началом
+                  </div>
+                </div>
+              </div>
+              <div className={`w-10 h-6 rounded-full p-0.5 transition-all ${requiresContract ? "bg-primary" : "bg-border"}`}>
+                <motion.div
+                  animate={{ x: requiresContract ? 16 : 0 }}
+                  className="w-5 h-5 rounded-full bg-background shadow"
+                />
+              </div>
+            </button>
+
+            <AnimatePresence>
+              {requiresContract && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="overflow-hidden space-y-2 mt-2"
+                >
+                  <InputBox focused={focusedField === "ctitle"}>
+                    <input
+                      value={contractTitle}
+                      onChange={(e) => setContractTitle(e.target.value)}
+                      onFocus={() => setFocusedField("ctitle")}
+                      onBlur={() => setFocusedField(null)}
+                      placeholder="Название договора"
+                      className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none"
+                    />
+                  </InputBox>
+                  <InputBox focused={focusedField === "cbody"}>
+                    <textarea
+                      value={contractBody}
+                      onChange={(e) => setContractBody(e.target.value)}
+                      onFocus={() => setFocusedField("cbody")}
+                      onBlur={() => setFocusedField(null)}
+                      rows={6}
+                      placeholder="Условия договора..."
+                      className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none resize-none leading-relaxed"
+                    />
+                  </InputBox>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </Section>
+
           {/* Summary card */}
           <motion.div
             initial={{ opacity: 0 }}
