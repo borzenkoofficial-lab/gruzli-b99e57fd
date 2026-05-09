@@ -453,7 +453,7 @@
     transform: translateX(-50%);
     width: 100%;
     max-width: 32rem;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+    bottom: max(env(safe-area-inset-bottom, 0px), 6px);
     z-index: 50;
     padding: 0 16px;
     pointer-events: none;
@@ -715,7 +715,7 @@
 /* PWA standalone mode — floating pill respects safe area but doesn't merge with it */
 @media all and (display-mode: standalone) {
   .bottom-nav-wrapper {
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
+    bottom: max(env(safe-area-inset-bottom, 0px), 4px);
   }
 
   .app-scroll {
