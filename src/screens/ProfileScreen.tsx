@@ -439,24 +439,18 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           >
             <button
               onClick={onOpenCabinet}
-              className="w-full relative overflow-hidden rounded-3xl p-5 text-left active:scale-[0.98] transition-transform"
-              style={{
-                background: "linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(230 70% 48%) 100%)",
-                boxShadow: "0 10px 30px -10px hsl(var(--primary) / 0.5)",
-              }}
+              className="w-full relative overflow-hidden rounded-3xl p-5 text-left active:scale-[0.98] transition-transform bg-card border border-border"
             >
-              <div className="absolute -right-6 -top-6 w-32 h-32 rounded-full bg-primary-foreground/10 blur-2xl" />
-              <div className="absolute -right-2 -bottom-8 w-24 h-24 rounded-full bg-primary-foreground/5 blur-xl" />
               <div className="relative flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-primary-foreground/15 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
-                  <Briefcase size={24} className="text-primary-foreground" />
+                <div className="w-14 h-14 rounded-2xl bg-surface-1 border border-border flex items-center justify-center flex-shrink-0">
+                  <Briefcase size={24} className="text-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[10px] font-bold text-primary-foreground/70 uppercase tracking-widest">Рабочее место</p>
-                  <h3 className="text-lg font-extrabold text-primary-foreground mt-0.5">Кабинет диспетчера</h3>
-                  <p className="text-[11px] text-primary-foreground/70 mt-0.5">Заявки · команда · аналитика</p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Рабочее место</p>
+                  <h3 className="text-lg font-extrabold text-foreground mt-0.5">Кабинет диспетчера</h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Заявки · команда · аналитика</p>
                 </div>
-                <ChevronRight size={20} className="text-primary-foreground/80 flex-shrink-0" />
+                <ChevronRight size={20} className="text-muted-foreground flex-shrink-0" />
               </div>
             </button>
           </motion.div>
