@@ -96,8 +96,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (!cachedFont) cachedFont = await loadFont("https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxKKTU1Kg.ttf");
-    if (!cachedBoldFont) cachedBoldFont = await loadFont("https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmWUlfBBc4.ttf");
+    if (!cachedFont) cachedFont = await loadFont("https://cdn.jsdelivr.net/npm/@fontsource/pt-sans/files/pt-sans-cyrillic-400-normal.woff");
+    if (!cachedBoldFont) cachedBoldFont = await loadFont("https://cdn.jsdelivr.net/npm/@fontsource/pt-sans/files/pt-sans-cyrillic-700-normal.woff");
 
     const pdf = await PDFDocument.create();
     pdf.registerFontkit(fontkit);

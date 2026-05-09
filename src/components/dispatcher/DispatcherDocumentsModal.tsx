@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X, FileText, Download, Send, CheckCircle2, Loader2, Plus, Receipt, FileCheck2, Settings2,
@@ -265,11 +266,11 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
 
   const docsByType = (t: "act" | "receipt") => documents.filter((d) => d.type === t);
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] bg-background"
+        className="fixed inset-0 z-[200] bg-background"
       >
         <motion.div
           initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 30, opacity: 0 }}
@@ -507,7 +508,8 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
           </div>
         </motion.div>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 
