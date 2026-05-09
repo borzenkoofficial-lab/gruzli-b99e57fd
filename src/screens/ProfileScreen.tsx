@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { leaderboard } from "@/data/mockData";
 import { toast } from "sonner";
+import BankCard from "@/components/BankCard";
 
 const defaultSkills = ["Переезды", "Такелаж", "Сборка мебели", "Погрузка", "Межэтаж"];
 
@@ -460,69 +461,19 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             </button>
           </motion.div>
 
-          {/* Bank Card (preserved & polished) */}
+          {/* Bank Card */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: "spring", damping: 22, stiffness: 200, delay: 0.1 }}
             className="mx-5 mb-3"
           >
-            <div
-              className="rounded-3xl overflow-hidden relative"
-              style={{
-                background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%)",
-                boxShadow: "0 12px 40px rgba(0,0,0,0.45)",
-              }}
-            >
-              {/* Decorative rings */}
-              <div className="absolute top-0 right-0 w-40 h-40 opacity-[0.07] pointer-events-none">
-                <div className="w-full h-full rounded-full border-[18px] border-white translate-x-10 -translate-y-10" />
-              </div>
-              <div className="absolute bottom-0 left-0 w-28 h-28 opacity-[0.05] pointer-events-none">
-                <div className="w-full h-full rounded-full border-[14px] border-white -translate-x-7 translate-y-7" />
-              </div>
-
-              <div className="px-5 pt-5 pb-2 flex items-center justify-between relative">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-7 rounded-md bg-gradient-to-br from-amber-300 via-amber-400 to-amber-600 shadow-inner relative overflow-hidden">
-                    <div className="absolute inset-0 grid grid-cols-3 grid-rows-2 gap-px p-0.5 opacity-30">
-                      {[...Array(6)].map((_, i) => <div key={i} className="bg-amber-900/60 rounded-[1px]" />)}
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-bold text-white/50 tracking-[0.25em] uppercase">Gruzli Bank</span>
-                </div>
-                <span className="text-[9px] font-bold text-white/40 tracking-[0.2em] px-2 py-1 rounded-md bg-white/5 border border-white/10">VIRTUAL</span>
-              </div>
-
-              <div className="px-5 pt-3 pb-1 relative">
-                <p className="text-white/50 text-[10px] font-semibold tracking-[0.2em] uppercase mb-1.5">Баланс счёта</p>
-                <h2 className="text-white text-[34px] leading-none font-extrabold tracking-tight">
-                  {(profile?.balance || 0).toLocaleString("ru-RU")}
-                  <span className="text-xl font-bold text-white/60 ml-1.5">₽</span>
-                </h2>
-              </div>
-
-              <div className="px-5 pt-4 pb-2 flex items-end justify-between relative">
-                <div className="min-w-0 flex-1">
-                  <p className="text-white/35 text-[9px] tracking-[0.2em] uppercase">Держатель</p>
-                  <p className="text-white/80 text-xs font-bold tracking-wider truncate">{(profile?.full_name || "DISPATCHER").toUpperCase()}</p>
-                </div>
-                <div className="text-right ml-3">
-                  <p className="text-white/35 text-[9px] tracking-[0.2em] uppercase">№ счёта</p>
-                  <p className="text-white/80 text-xs font-bold tracking-[0.2em]">•••• {(profile?.display_id || "0000").slice(-4)}</p>
-                </div>
-              </div>
-
-              <div className="px-4 pb-4 pt-3 relative">
-                <button
-                  onClick={() => { setTopUpAmount(""); setShowTopUp(true); }}
-                  className="w-full py-3.5 rounded-2xl bg-white/12 backdrop-blur-md text-white text-sm font-bold active:bg-white/20 active:scale-[0.98] transition-all border border-white/15 flex items-center justify-center gap-2"
-                >
-                  <Plus size={16} strokeWidth={3} />
-                  Пополнить баланс
-                </button>
-              </div>
-            </div>
+            <BankCard
+              balance={profile?.balance || 0}
+              holderName={profile?.full_name || "DISPATCHER"}
+              cardLast4={(profile?.display_id || "0000").slice(-4)}
+              onTopUp={() => { setTopUpAmount(""); setShowTopUp(true); }}
+            />
           </motion.div>
 
           {/* Quick metrics */}
@@ -803,58 +754,17 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         </div>
       )}
 
-      {/* Gruzli Bank Card — Worker */}
+      {/* Bank Card — Worker */}
       <div className="px-5 pb-5">
-        <motion.div
-          initial={{ opacity: 0, y: 40, rotateX: 8 }}
-          animate={{ opacity: 1, y: 0, rotateX: 0 }}
-          transition={{ type: "spring", damping: 20, stiffness: 200, delay: 0.2 }}
-          className="rounded-2xl overflow-hidden relative"
-          style={{
-            background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
-          }}
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 opacity-[0.06]">
-            <div className="w-full h-full rounded-full border-[16px] border-white translate-x-8 -translate-y-8" />
-          </div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 opacity-[0.04]">
-            <div className="w-full h-full rounded-full border-[12px] border-white -translate-x-6 translate-y-6" />
-          </div>
-
-          <div className="px-5 pt-5 pb-2 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-6 rounded-[3px] bg-gradient-to-br from-amber-300 to-amber-500" />
-              <span className="text-[10px] font-bold text-white/40 tracking-[0.2em] uppercase">Gruzli Bank</span>
-            </div>
-            <span className="text-[10px] font-medium text-white/30 tracking-wider">VIRTUAL</span>
-          </div>
-
-          <div className="px-5 pt-2 pb-1">
-            <p className="text-white/50 text-[10px] font-medium tracking-wider uppercase mb-1">Баланс</p>
-            <h2 className="text-white text-3xl font-extrabold tracking-tight">{(profile?.balance || 0).toLocaleString("ru-RU")} ₽</h2>
-          </div>
-
-          <div className="px-5 pt-3 pb-2 flex items-center justify-between">
-            <div>
-              <p className="text-white/30 text-[9px] tracking-wider uppercase">Держатель карты</p>
-              <p className="text-white/70 text-[11px] font-semibold tracking-wide">{(profile?.full_name || "WORKER").toUpperCase()}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-white/30 text-[9px] tracking-wider uppercase">№ карты</p>
-              <p className="text-white/70 text-[11px] font-semibold tracking-widest">•••• {(profile?.display_id || "0000").slice(-4)}</p>
-            </div>
-          </div>
-
-          <div className="px-5 pb-4 pt-2 flex gap-2">
-            <button onClick={() => { setTopUpAmount(""); setShowTopUp(true); }} className="flex-1 py-3 rounded-xl bg-white/10 backdrop-blur-sm text-white text-sm font-bold tap-scale active:bg-white/20 transition-colors border border-white/10">
-              💳 Пополнить
-            </button>
-            <button onClick={() => setShowTransactions(!showTransactions)} className="py-3 px-4 rounded-xl bg-white/5 text-white/60 text-sm font-semibold tap-scale active:bg-white/10 transition-colors border border-white/5">
-              📋
-            </button>
-          </div>
-        </motion.div>
+        <BankCard
+          balance={profile?.balance || 0}
+          holderName={profile?.full_name || "WORKER"}
+          cardLast4={(profile?.display_id || "0000").slice(-4)}
+          onTopUp={() => { setTopUpAmount(""); setShowTopUp(true); }}
+          onSecondary={() => setShowTransactions(!showTransactions)}
+          secondaryLabel="История"
+          secondaryIcon={<span>📋</span>}
+        />
 
         {/* Transaction History */}
         {showTransactions && (
