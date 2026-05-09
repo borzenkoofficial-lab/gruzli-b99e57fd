@@ -576,8 +576,8 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
           {/* ACTIVE JOBS TAB */}
           {currentTab === "active" && (() => {
             const inProgressJobIds = new Set(activeJobs.map((aj) => aj.job.id));
-            const openJobs = myJobs.filter((j) => j.status === "active" && !inProgressJobIds.has(j.id));
-            const completedMyJobs = myJobs.filter((j) => j.status === "completed" || j.status === "closed");
+            const openJobs = myJobs.filter((j) => (j.status === "active" || j.status === "closed") && !inProgressJobIds.has(j.id));
+            const completedMyJobs = myJobs.filter((j) => j.status === "completed");
             const categories: { id: MyJobsCategory; label: string; count: number }[] = [
               { id: "open", label: "Активные", count: openJobs.length },
               { id: "in_progress", label: "В работе", count: activeJobs.length },
