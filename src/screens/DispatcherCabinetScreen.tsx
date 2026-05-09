@@ -1256,6 +1256,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
 
       {/* New cabinet features */}
       <JobTemplatesModal open={showTemplates} onClose={() => setShowTemplates(false)} />
+      <DispatcherContractsModal open={showContracts} onClose={() => setShowContracts(false)} />
       <TopWorkersModal
         open={showTopWorkers}
         onClose={() => setShowTopWorkers(false)}
