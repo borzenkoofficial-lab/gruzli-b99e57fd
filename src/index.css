@@ -716,14 +716,10 @@
   }
 }
 
-/* PWA standalone mode — keep the pill low instead of lifting it by the full iOS safe area */
+/* PWA standalone mode — honour iOS home-indicator safe area via the shared gap variable */
 @media all and (display-mode: standalone) {
-  .bottom-nav-wrapper {
-    bottom: max(0px, calc(env(safe-area-inset-bottom, 0px) - 32px));
-  }
-
-  .app-scroll {
-    padding-bottom: calc(var(--bottom-nav-height) + 10px);
+  :root {
+    --bottom-nav-gap: max(6px, env(safe-area-inset-bottom, 0px));
   }
 }
 
