@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Users, MessageSquare, Briefcase, ShieldCheck, Settings, LayoutDashboard, Megaphone } from "lucide-react";
+import { ArrowLeft, Users, MessageSquare, Briefcase, ShieldCheck, Settings, LayoutDashboard, Megaphone, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AdminDashboardTab from "@/components/admin/AdminDashboardTab";
 import AdminUsersTab from "@/components/admin/AdminUsersTab";
