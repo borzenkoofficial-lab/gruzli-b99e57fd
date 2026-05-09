@@ -6,7 +6,7 @@ import {
   ChevronDown, ChevronUp, Phone, Square, Timer, Wallet,
   TrendingUp, TrendingDown, BarChart3, DollarSign, FileText,
   Calendar, Award, Zap, Target, Activity, Sparkles, Loader2,
-  Download, Trophy, Eye, Pencil, Trash2, Plus, Minus, Lock,
+  Download, Trophy, Eye, Pencil, Trash2, Plus, Minus, Lock, Unlock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
