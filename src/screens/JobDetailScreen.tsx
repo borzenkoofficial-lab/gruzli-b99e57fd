@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Clock, Users, Zap, MessageCircle, User, Wallet, UserPlus, Check, ShieldCheck, X } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Users, Zap, MessageCircle, User, Wallet, UserPlus, Check, ShieldCheck, X, ShieldAlert, ChevronDown } from "lucide-react";
 import { useRespondToJob } from "@/hooks/useRespondToJob";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,6 +21,8 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
   const [responding, setResponding] = useState(false);
   const [responseId, setResponseId] = useState<string | null>(null);
   const [responseStatus, setResponseStatus] = useState<string | null>(null);
+  const [safetyOpen, setSafetyOpen] = useState(false);
+  const [safetyDismissed, setSafetyDismissed] = useState(() => localStorage.getItem("job_safety_tip_dismissed") === "1");
   const [withdrawing, setWithdrawing] = useState(false);
   const [dispatcherName, setDispatcherName] = useState("Диспетчер");
 
@@ -184,6 +186,61 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
         {job.description && (
           <p className="text-sm text-muted-foreground mb-5 leading-relaxed">{job.description}</p>
         )}
+
+        {/* Safety / anti-fraud tip for workers */}
+        {!isOfficial && !safetyDismissed && (
+          <div
+            className="mb-5 rounded-2xl border border-amber-500/30 overflow-hidden"
+            style={{
+              background:
+                "linear-gradient(135deg, hsl(38 95% 55% / 0.12), hsl(20 90% 50% / 0.04))",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setSafetyOpen((v) => !v)}
+              className="w-full flex items-center gap-3 p-3.5 text-left active:opacity-80"
+            >
+              <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center flex-shrink-0">
+                <ShieldAlert size={16} className="text-amber-500" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-bold text-foreground">Как не нарваться на мошенников</p>
+                <p className="text-[11px] text-muted-foreground">3 простых правила безопасности</p>
+              </div>
+              <ChevronDown
+                size={16}
+                className={`text-muted-foreground transition-transform ${safetyOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            {safetyOpen && (
+              <div className="px-4 pb-4 pt-1 space-y-2.5">
+                {[
+                  "Проверяйте рейтинг и отзывы диспетчера перед откликом.",
+                  "Если не уверены — попросите аванс до начала работы.",
+                  "Договоритесь с диспетчером, чтобы клиент перевёл оплату напрямую вам.",
+                ].map((tip, i) => (
+                  <div key={i} className="flex gap-2.5">
+                    <div className="w-5 h-5 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <span className="text-[10px] font-bold text-amber-500">{i + 1}</span>
+                    </div>
+                    <p className="text-[12.5px] text-foreground/90 leading-snug flex-1">{tip}</p>
+                  </div>
+                ))}
+                <button
+                  onClick={() => {
+                    localStorage.setItem("job_safety_tip_dismissed", "1");
+                    setSafetyDismissed(true);
+                  }}
+                  className="text-[11px] text-muted-foreground hover:text-foreground active:opacity-70 mt-1"
+                >
+                  Больше не показывать
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
 
         {/* Details */}
         <div className="space-y-3 mb-6">
