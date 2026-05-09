@@ -715,7 +715,7 @@
 /* PWA standalone mode — floating pill respects safe area but doesn't merge with it */
 @media all and (display-mode: standalone) {
   .bottom-nav-wrapper {
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
+    bottom: max(env(safe-area-inset-bottom, 0px), 4px);
   }
 
   .app-scroll {
