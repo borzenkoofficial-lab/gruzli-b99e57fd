@@ -191,18 +191,17 @@ const DispatcherContractsModal = ({ open, onClose }: DispatcherContractsModalPro
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm flex items-end sm:items-center justify-center"
-        onClick={onClose}
+        className="fixed inset-0 z-[100] bg-background"
       >
         <motion.div
-          initial={{ y: "100%" }}
-          animate={{ y: 0 }}
-          exit={{ y: "100%" }}
+          initial={{ y: 30, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 30, opacity: 0 }}
           transition={{ type: "spring", damping: 30, stiffness: 300 }}
-          onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-md bg-card border-t sm:border border-border sm:rounded-3xl rounded-t-3xl max-h-[90vh] flex flex-col"
+          className="w-full mx-auto max-w-lg bg-background flex flex-col"
+          style={{ height: "var(--vh, 100vh)" }}
         >
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10" style={{ paddingTop: "calc(env(safe-area-inset-top) + 1rem)" }}>
             <div className="flex items-center gap-2">
               <FileText size={20} className="text-primary" />
               <h2 className="font-bold text-foreground">Договоры</h2>
@@ -212,7 +211,7 @@ const DispatcherContractsModal = ({ open, onClose }: DispatcherContractsModalPro
             </button>
           </div>
 
-          <div className="overflow-y-auto px-4 py-4 space-y-3">
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 5rem)" }}>
             {loading ? (
               <div className="flex justify-center py-10">
                 <Loader2 className="animate-spin text-primary" />
