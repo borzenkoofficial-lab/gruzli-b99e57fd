@@ -99,7 +99,7 @@ export const AdminBannerEditor = () => {
     const { error } = await supabase
       .from("app_settings")
       .upsert(
-        { id: "feed_banner", value, updated_at: new Date().toISOString() },
+        [{ id: "feed_banner", value: value as any, updated_at: new Date().toISOString() }],
         { onConflict: "id" }
       );
     setSaving(false);
