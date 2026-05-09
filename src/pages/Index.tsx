@@ -288,6 +288,9 @@ const Index = () => {
           />
         );
       }
+      if (viewContractId) {
+        return <ContractScreen contractId={viewContractId} onBack={() => setViewContractId(null)} />;
+      }
       return null;
     })();
     if (!panel) return null;
