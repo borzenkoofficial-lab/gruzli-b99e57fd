@@ -75,6 +75,9 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
   const [isSelfEmployed, setIsSelfEmployed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
+  // Fullscreen preview
+  const [preview, setPreview] = useState<{ url: string; name: string } | null>(null);
+
   const fetchAll = async () => {
     if (!user) return;
     setLoading(true);
@@ -206,8 +209,10 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
       });
       if (error) throw error;
       if (data?.signed_url) {
-        await triggerDownload(data.signed_url, `dogovor-${contractId.slice(0, 8)}${workerId ? "-" + workerId.slice(0, 6) : ""}.pdf`);
-        toast.success("Файл скачан");
+        setPreview({
+          url: data.signed_url,
+          name: `dogovor-${contractId.slice(0, 8)}${workerId ? "-" + workerId.slice(0, 6) : ""}.pdf`,
+        });
       } else throw new Error("Нет ссылки");
     } catch (e: any) { toast.error(e?.message || "Ошибка"); }
     finally { setBusyId(null); }
@@ -217,8 +222,7 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
     const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60);
     if (error || !data?.signedUrl) { toast.error("Файл не найден"); return; }
     const fname = filename || path.split("/").pop() || "document.pdf";
-    await triggerDownload(data.signedUrl, fname);
-    toast.success("Файл скачан");
+    setPreview({ url: data.signedUrl, name: fname });
   };
 
   const sendToChat = async (workerId: string, workerName: string, text: string) => {
@@ -249,8 +253,8 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
       if (error) throw error;
       if (data?.signed_url) {
         const prefix = type === "act" ? "akt" : "chek";
-        await triggerDownload(data.signed_url, `${prefix}-${data.number || Date.now()}.pdf`);
-        toast.success(type === "act" ? "Акт сформирован и скачан" : "Чек сформирован и скачан");
+        setPreview({ url: data.signed_url, name: `${prefix}-${data.number || Date.now()}.pdf` });
+        toast.success(type === "act" ? "Акт сформирован" : "Чек сформирован");
         fetchAll();
       } else throw new Error("Нет ссылки");
     } catch (e: any) { toast.error(e?.message || "Ошибка"); }
@@ -298,8 +302,8 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
         <motion.div
           initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 30, opacity: 0 }}
           transition={{ type: "spring", damping: 30, stiffness: 300 }}
-          className="w-full mx-auto max-w-lg bg-background flex flex-col"
-          style={{ height: "var(--vh, 100vh)" }}
+          className="w-full h-full bg-background flex flex-col"
+          style={{ height: "var(--vh, 100vh)", minHeight: "100vh" }}
         >
           {/* Header */}
           <div
@@ -531,6 +535,37 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
           </div>
         </motion.div>
       </motion.div>
+
+      {/* Fullscreen PDF preview */}
+      {preview && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[300] bg-background flex flex-col"
+          style={{ height: "var(--vh, 100vh)" }}
+        >
+          <div
+            className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/80 backdrop-blur-sm"
+            style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
+          >
+            <button onClick={() => setPreview(null)} className="p-2 rounded-xl hover:bg-surface-1 text-foreground font-semibold text-sm flex items-center gap-1">
+              <X size={18} /> Закрыть
+            </button>
+            <div className="text-xs text-muted-foreground truncate flex-1 text-center px-2">{preview.name}</div>
+            <button
+              onClick={() => triggerDownload(preview.url, preview.name)}
+              className="px-3 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center gap-1"
+            >
+              <Download size={14} /> Скачать
+            </button>
+          </div>
+          <iframe
+            src={preview.url}
+            title={preview.name}
+            className="flex-1 w-full bg-white"
+            style={{ border: 0 }}
+          />
+        </motion.div>
+      )}
     </AnimatePresence>,
     document.body
   );
