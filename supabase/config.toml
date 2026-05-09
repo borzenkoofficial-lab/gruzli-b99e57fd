@@ -15,3 +15,5 @@ project_id = "iudtdfznyzpqkfhprbad"
     verify_jwt = true
   [functions.send-push4site]
     verify_jwt = false
+  [functions.send-push]
+    verify_jwt = false
