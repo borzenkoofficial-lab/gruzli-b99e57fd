@@ -266,11 +266,11 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
 
   const docsByType = (t: "act" | "receipt") => documents.filter((d) => d.type === t);
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] bg-background"
+        className="fixed inset-0 z-[200] bg-background"
       >
         <motion.div
           initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 30, opacity: 0 }}
