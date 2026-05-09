@@ -94,7 +94,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
 
       // Parallelize the two independent base queries — was sequential, costing ~2x latency.
       const [profileRes, roleRes] = await Promise.all([
-        supabase.from("profiles").select("*").eq("user_id", userId).single(),
+        supabase.from("profiles_public" as any).select("*").eq("user_id", userId).single(),
         supabase.from("user_roles").select("role").eq("user_id", userId).single(),
       ]);
 
