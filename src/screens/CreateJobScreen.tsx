@@ -43,7 +43,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [hourlyRate, setHourlyRate] = useState("");
+  const [hourlyRate, setHourlyRate] = useState("300");
   const [startTime, setStartTime] = useState("");
   const [durationHours, setDurationHours] = useState("4");
   const [address, setAddress] = useState("");
@@ -61,8 +61,12 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
   const totalCost = parseInt(hourlyRate || "0") * parseFloat(durationHours || "0") * parseInt(workersNeeded || "0");
 
   const handleShowPreview = () => {
-    if (!title.trim() || !hourlyRate) {
-      toast.error("Заполните название и оплату");
+    if (!title.trim()) {
+      toast.error("Укажите название заявки");
+      return;
+    }
+    if (!hourlyRate || parseInt(hourlyRate) <= 0) {
+      toast.error("Укажите оплату за час");
       return;
     }
     if (!canAfford) {
