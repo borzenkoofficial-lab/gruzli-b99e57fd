@@ -250,89 +250,89 @@ export const BankCard = ({
   const theme = THEMES[themeId];
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       <motion.div
         key={themeId}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
-        className="rounded-3xl overflow-hidden relative"
-        style={{ background: theme.background, boxShadow: theme.shadow }}
+        className="rounded-2xl overflow-hidden relative w-full flex flex-col"
+        style={{
+          background: theme.background,
+          boxShadow: theme.shadow,
+          aspectRatio: "1.586 / 1",
+        }}
       >
         <Pattern theme={theme} />
 
-        {/* Top row: brand + virtual badge */}
-        <div className="relative px-5 pt-5 pb-2 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: theme.secondaryBg, border: `1px solid ${theme.ring}` }}>
+        {/* Top row: brand + palette */}
+        <div className="relative px-4 pt-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: theme.secondaryBg, border: `1px solid ${theme.ring}` }}>
               <BrandMark theme={theme} />
             </div>
-            <span className="text-[11px] font-bold tracking-[0.2em] uppercase" style={{ color: theme.textSoft }}>{theme.bank}</span>
+            <span className="text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: theme.textSoft }}>{theme.bank}</span>
           </div>
           <button
             onClick={() => setShowPicker((v) => !v)}
-            className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
+            className="w-7 h-7 rounded-full flex items-center justify-center active:scale-95 transition-transform"
             style={{ background: theme.secondaryBg, border: `1px solid ${theme.ring}`, color: theme.textSoft }}
             aria-label="Сменить дизайн карты"
           >
-            <Palette size={14} />
+            <Palette size={12} />
           </button>
         </div>
 
-        {/* Chip + balance */}
-        <div className="relative px-5 pt-3 pb-1 flex items-center gap-3">
-          <div className="w-10 h-7 rounded-md shadow-inner relative overflow-hidden" style={{ background: theme.chip }}>
-            <div className="absolute inset-0 grid grid-cols-3 grid-rows-2 gap-px p-0.5 opacity-30">
-              {[...Array(6)].map((_, i) => <div key={i} className="rounded-[1px]" style={{ background: "rgba(120,60,0,0.6)" }} />)}
+        {/* Middle: chip + balance */}
+        <div className="relative px-4 mt-auto">
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="w-8 h-6 rounded-[4px] shadow-inner relative overflow-hidden" style={{ background: theme.chip }}>
+              <div className="absolute inset-0 grid grid-cols-3 grid-rows-2 gap-px p-0.5 opacity-30">
+                {[...Array(6)].map((_, i) => <div key={i} className="rounded-[1px]" style={{ background: "rgba(120,60,0,0.6)" }} />)}
+              </div>
             </div>
+            <span className="text-[9px] font-bold tracking-[0.2em] uppercase" style={{ color: theme.textMuted }}>Виртуальная</span>
           </div>
-          <span className="text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: theme.textMuted }}>Виртуальная</span>
-        </div>
-
-        <div className="relative px-5 pt-3 pb-1">
-          <p className="text-[10px] font-semibold tracking-[0.2em] uppercase mb-1.5" style={{ color: theme.textMuted }}>Баланс</p>
-          <h2 className="text-[34px] leading-none font-extrabold tracking-tight" style={{ color: theme.text }}>
+          <h2 className="text-[26px] leading-none font-extrabold tracking-tight" style={{ color: theme.text }}>
             {balance.toLocaleString("ru-RU")}
-            <span className="text-xl font-bold ml-1.5" style={{ color: theme.textSoft }}>₽</span>
+            <span className="text-base font-bold ml-1" style={{ color: theme.textSoft }}>₽</span>
           </h2>
         </div>
 
-        {/* Holder + number */}
-        <div className="relative px-5 pt-4 pb-3 flex items-end justify-between gap-3">
+        {/* Bottom: holder + number */}
+        <div className="relative px-4 pt-2 pb-3.5 flex items-end justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[9px] tracking-[0.2em] uppercase" style={{ color: theme.textMuted }}>Держатель</p>
-            <p className="text-xs font-bold tracking-wider truncate" style={{ color: theme.textSoft }}>
+            <p className="text-[8px] tracking-[0.2em] uppercase" style={{ color: theme.textMuted }}>Держатель</p>
+            <p className="text-[11px] font-bold tracking-wider truncate" style={{ color: theme.textSoft }}>
               {(holderName || "USER").toUpperCase()}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[9px] tracking-[0.2em] uppercase" style={{ color: theme.textMuted }}>№ карты</p>
-            <p className="text-xs font-bold tracking-[0.2em]" style={{ color: theme.textSoft }}>•••• {cardLast4}</p>
+            <p className="text-[8px] tracking-[0.2em] uppercase" style={{ color: theme.textMuted }}>№ карты</p>
+            <p className="text-[11px] font-bold tracking-[0.2em]" style={{ color: theme.textSoft }}>•••• {cardLast4}</p>
           </div>
         </div>
-
-        {/* Actions */}
-        <div className="relative px-4 pb-4 pt-1 flex gap-2">
-          <button
-            onClick={onTopUp}
-            className="flex-1 py-3.5 rounded-2xl text-sm font-bold active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-            style={{ background: theme.buttonBg, color: theme.buttonText, border: `1px solid ${theme.buttonBorder}` }}
-          >
-            <Plus size={16} strokeWidth={3} />
-            Пополнить
-          </button>
-          {onSecondary && (
-            <button
-              onClick={onSecondary}
-              className="py-3.5 px-4 rounded-2xl text-sm font-semibold active:scale-[0.98] transition-all"
-              style={{ background: theme.secondaryBg, color: theme.secondaryText, border: `1px solid ${theme.ring}` }}
-              aria-label={secondaryLabel}
-            >
-              {secondaryIcon || secondaryLabel}
-            </button>
-          )}
-        </div>
       </motion.div>
+
+      {/* Actions outside card */}
+      <div className="flex gap-2">
+        <button
+          onClick={onTopUp}
+          className="flex-1 py-3 rounded-2xl text-sm font-bold active:scale-[0.98] transition-all flex items-center justify-center gap-2 bg-card border border-border text-foreground"
+        >
+          <Plus size={16} strokeWidth={3} />
+          Пополнить
+        </button>
+        {onSecondary && (
+          <button
+            onClick={onSecondary}
+            className="py-3 px-4 rounded-2xl text-sm font-semibold active:scale-[0.98] transition-all bg-card border border-border text-muted-foreground"
+            aria-label={secondaryLabel}
+          >
+            {secondaryIcon || secondaryLabel}
+          </button>
+        )}
+      </div>
 
       {/* Theme picker */}
       {showPicker && (
