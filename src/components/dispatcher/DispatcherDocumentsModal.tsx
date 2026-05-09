@@ -183,22 +183,17 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
     if (open) fetchAll();
   }, [open, user]);
 
-  const triggerDownload = async (url: string, filename: string) => {
-    try {
-      const res = await fetch(url);
-      const blob = await res.blob();
-      const blobUrl = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
-    } catch {
-      // fallback — open in new tab
-      window.open(url, "_blank");
-    }
+  const triggerDownload = (url: string, filename: string) => {
+    const safeName = filename || "document.pdf";
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = safeName;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    toast.success("Файл открыт для скачивания");
   };
 
   const downloadContractPdf = async (contractId: string, workerId?: string) => {
