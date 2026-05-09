@@ -182,7 +182,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
       const ids = blocks.map((b) => b.blocked_id);
       const { data: profiles } = await supabase.from("profiles_public" as any).select("user_id, full_name").in("user_id", ids);
       const nameMap: Record<string, string> = {};
-      profiles?.forEach((p) => { nameMap[p.user_id] = p.full_name; });
+      (profiles as any[])?.forEach((p) => { nameMap[p.user_id] = p.full_name; });
       setBlockedUsers(blocks.map((b) => ({ id: b.id, blocked_id: b.blocked_id, full_name: nameMap[b.blocked_id] || "Пользователь" })));
     } else {
       setBlockedUsers([]);
