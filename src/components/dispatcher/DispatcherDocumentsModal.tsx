@@ -535,6 +535,37 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
           </div>
         </motion.div>
       </motion.div>
+
+      {/* Fullscreen PDF preview */}
+      {preview && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[300] bg-background flex flex-col"
+          style={{ height: "var(--vh, 100vh)" }}
+        >
+          <div
+            className="flex items-center justify-between px-4 py-3 border-b border-border bg-card/80 backdrop-blur-sm"
+            style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
+          >
+            <button onClick={() => setPreview(null)} className="p-2 rounded-xl hover:bg-surface-1 text-foreground font-semibold text-sm flex items-center gap-1">
+              <X size={18} /> Закрыть
+            </button>
+            <div className="text-xs text-muted-foreground truncate flex-1 text-center px-2">{preview.name}</div>
+            <button
+              onClick={() => triggerDownload(preview.url, preview.name)}
+              className="px-3 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold flex items-center gap-1"
+            >
+              <Download size={14} /> Скачать
+            </button>
+          </div>
+          <iframe
+            src={preview.url}
+            title={preview.name}
+            className="flex-1 w-full bg-white"
+            style={{ border: 0 }}
+          />
+        </motion.div>
+      )}
     </AnimatePresence>,
     document.body
   );
