@@ -343,8 +343,8 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
 
           {/* Body */}
           <div
-            className="flex-1 overflow-y-auto px-4 py-4 space-y-3"
-            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 5rem)" }}
+            className="flex-1 overflow-y-auto overscroll-contain px-4 py-4 space-y-3"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10rem)" }}
           >
             {loading ? (
               <div className="flex justify-center py-10"><Loader2 className="animate-spin text-primary" /></div>
