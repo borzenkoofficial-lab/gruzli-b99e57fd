@@ -453,7 +453,7 @@
     transform: translateX(-50%);
     width: 100%;
     max-width: 32rem;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+    bottom: max(env(safe-area-inset-bottom, 0px), 6px);
     z-index: 50;
     padding: 0 16px;
     pointer-events: none;
