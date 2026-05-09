@@ -219,6 +219,39 @@ export type Database = {
         }
         Relationships: []
       }
+      contract_signatures: {
+        Row: {
+          contract_id: string
+          id: string
+          ip_address: string | null
+          signature_url: string
+          signed_at: string
+          signed_pdf_url: string | null
+          user_agent: string | null
+          worker_id: string
+        }
+        Insert: {
+          contract_id: string
+          id?: string
+          ip_address?: string | null
+          signature_url: string
+          signed_at?: string
+          signed_pdf_url?: string | null
+          user_agent?: string | null
+          worker_id: string
+        }
+        Update: {
+          contract_id?: string
+          id?: string
+          ip_address?: string | null
+          signature_url?: string
+          signed_at?: string
+          signed_pdf_url?: string | null
+          user_agent?: string | null
+          worker_id?: string
+        }
+        Relationships: []
+      }
       conversation_participants: {
         Row: {
           conversation_id: string
@@ -430,6 +463,48 @@ export type Database = {
         }
         Relationships: []
       }
+      job_contracts: {
+        Row: {
+          body: string
+          created_at: string
+          dispatcher_id: string
+          dispatcher_signature_url: string | null
+          dispatcher_signed_at: string | null
+          id: string
+          job_id: string
+          status: string
+          terms: Json
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          dispatcher_id: string
+          dispatcher_signature_url?: string | null
+          dispatcher_signed_at?: string | null
+          id?: string
+          job_id: string
+          status?: string
+          terms?: Json
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          dispatcher_id?: string
+          dispatcher_signature_url?: string | null
+          dispatcher_signed_at?: string | null
+          id?: string
+          job_id?: string
+          status?: string
+          terms?: Json
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       job_responses: {
         Row: {
           created_at: string
@@ -564,6 +639,7 @@ export type Database = {
           recurring_rule: string | null
           replacement_for_job_id: string | null
           replacement_for_worker_id: string | null
+          requires_contract: boolean
           start_time: string | null
           status: string | null
           template_id: string | null
@@ -589,6 +665,7 @@ export type Database = {
           recurring_rule?: string | null
           replacement_for_job_id?: string | null
           replacement_for_worker_id?: string | null
+          requires_contract?: boolean
           start_time?: string | null
           status?: string | null
           template_id?: string | null
@@ -614,6 +691,7 @@ export type Database = {
           recurring_rule?: string | null
           replacement_for_job_id?: string | null
           replacement_for_worker_id?: string | null
+          requires_contract?: boolean
           start_time?: string | null
           status?: string | null
           template_id?: string | null
