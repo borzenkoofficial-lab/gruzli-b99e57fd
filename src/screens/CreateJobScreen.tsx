@@ -266,7 +266,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
 
           {/* Workers selector */}
           <Section title="Количество грузчиков" icon={Users}>
-            <div className="flex gap-2">
+            <div className="flex gap-2 mb-2">
               {[1, 2, 3, 4, 5, 6].map((n) => (
                 <motion.button
                   key={n}
@@ -282,6 +282,20 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
                   {n}
                 </motion.button>
               ))}
+            </div>
+            <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-card border border-border">
+              <span className="text-xs text-muted-foreground shrink-0">Своё число:</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={99}
+                value={workersNeeded}
+                onChange={(e) => setWorkersNeeded(e.target.value.replace(/[^\d]/g, "").slice(0, 2))}
+                className="flex-1 bg-transparent text-sm font-bold text-foreground outline-none text-right"
+                placeholder="2"
+              />
+              <span className="text-xs text-muted-foreground shrink-0">чел.</span>
             </div>
           </Section>
 
