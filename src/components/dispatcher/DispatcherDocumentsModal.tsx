@@ -298,7 +298,7 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
           initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 30, opacity: 0 }}
           transition={{ type: "spring", damping: 30, stiffness: 300 }}
           className="w-full h-full bg-background flex flex-col"
-          style={{ height: "var(--vh, 100vh)", minHeight: "100vh" }}
+          style={{ height: "var(--vh, 100vh)", minHeight: "var(--vh, 100vh)" }}
         >
           {/* Header */}
           <div
