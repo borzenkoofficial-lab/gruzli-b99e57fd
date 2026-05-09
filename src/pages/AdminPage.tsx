@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Users, MessageSquare, Briefcase, ShieldCheck, Settings, LayoutDashboard, Megaphone } from "lucide-react";
+import { ArrowLeft, Users, MessageSquare, Briefcase, ShieldCheck, Settings, LayoutDashboard, Megaphone, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AdminDashboardTab from "@/components/admin/AdminDashboardTab";
 import AdminUsersTab from "@/components/admin/AdminUsersTab";
@@ -10,6 +10,7 @@ import AdminChatsTab from "@/components/admin/AdminChatsTab";
 import AdminJobsTab from "@/components/admin/AdminJobsTab";
 import AdminSettingsTab from "@/components/admin/AdminSettingsTab";
 import AdminBroadcastsTab from "@/components/admin/AdminBroadcastsTab";
+import AdminPushBroadcastsTab from "@/components/admin/AdminPushBroadcastsTab";
 
 const AdminPage = () => {
   const { role, loading } = useAuth();
@@ -46,14 +47,18 @@ const AdminPage = () => {
         {/* Tabs */}
         <Tabs defaultValue="dashboard">
           <div className="overflow-x-auto -mx-1 px-1">
-            <TabsList className="w-full min-w-[560px] grid grid-cols-6">
+            <TabsList className="w-full min-w-[640px] grid grid-cols-7">
               <TabsTrigger value="dashboard" className="gap-1 text-xs px-1">
                 <LayoutDashboard className="h-4 w-4" />
                 <span className="hidden sm:inline">Дашборд</span>
               </TabsTrigger>
+              <TabsTrigger value="push" className="gap-1 text-xs px-1">
+                <Bell className="h-4 w-4" />
+                <span className="hidden sm:inline">Пуши</span>
+              </TabsTrigger>
               <TabsTrigger value="broadcasts" className="gap-1 text-xs px-1">
                 <Megaphone className="h-4 w-4" />
-                <span className="hidden sm:inline">Рассылки</span>
+                <span className="hidden sm:inline">Telegram</span>
               </TabsTrigger>
               <TabsTrigger value="users" className="gap-1 text-xs px-1">
                 <Users className="h-4 w-4" />
@@ -76,6 +81,9 @@ const AdminPage = () => {
 
           <TabsContent value="dashboard">
             <AdminDashboardTab />
+          </TabsContent>
+          <TabsContent value="push">
+            <AdminPushBroadcastsTab />
           </TabsContent>
           <TabsContent value="broadcasts">
             <AdminBroadcastsTab />
