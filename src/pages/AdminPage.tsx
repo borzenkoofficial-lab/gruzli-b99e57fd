@@ -47,14 +47,18 @@ const AdminPage = () => {
         {/* Tabs */}
         <Tabs defaultValue="dashboard">
           <div className="overflow-x-auto -mx-1 px-1">
-            <TabsList className="w-full min-w-[560px] grid grid-cols-6">
+            <TabsList className="w-full min-w-[640px] grid grid-cols-7">
               <TabsTrigger value="dashboard" className="gap-1 text-xs px-1">
                 <LayoutDashboard className="h-4 w-4" />
                 <span className="hidden sm:inline">Дашборд</span>
               </TabsTrigger>
+              <TabsTrigger value="push" className="gap-1 text-xs px-1">
+                <Bell className="h-4 w-4" />
+                <span className="hidden sm:inline">Пуши</span>
+              </TabsTrigger>
               <TabsTrigger value="broadcasts" className="gap-1 text-xs px-1">
                 <Megaphone className="h-4 w-4" />
-                <span className="hidden sm:inline">Рассылки</span>
+                <span className="hidden sm:inline">Telegram</span>
               </TabsTrigger>
               <TabsTrigger value="users" className="gap-1 text-xs px-1">
                 <Users className="h-4 w-4" />
