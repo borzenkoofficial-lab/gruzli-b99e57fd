@@ -1,6 +1,7 @@
 import { Bell, BellOff, Check, Loader2, X } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const FIRST_PROMPT_KEY = "push-first-prompt-shown";
 const DISMISSED_KEY = "push-banner-dismissed";
@@ -10,10 +11,23 @@ interface EnablePushButtonProps {
   className?: string;
 }
 
-/**
- * Кнопка/баннер запроса разрешений на push-уведомления через push4site.com SDK.
- * Использует window.pushsender (загружается из https://lovable.push4site.com/sdk).
- */
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = atob(base64);
+  const out = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; ++i) out[i] = raw.charCodeAt(i);
+  return out;
+}
+
+function abToB64Url(buf: ArrayBuffer | null) {
+  if (!buf) return "";
+  const bytes = new Uint8Array(buf);
+  let bin = "";
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
 const EnablePushButton = ({ variant = "banner", className = "" }: EnablePushButtonProps) => {
   const [busy, setBusy] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
@@ -23,7 +37,6 @@ const EnablePushButton = ({ variant = "banner", className = "" }: EnablePushButt
   const [dismissed, setDismissed] = useState(
     () => typeof window !== "undefined" && localStorage.getItem(DISMISSED_KEY) === "true",
   );
-  const [sdkReady, setSdkReady] = useState(false);
 
   const supported =
     typeof window !== "undefined" &&
@@ -31,164 +44,101 @@ const EnablePushButton = ({ variant = "banner", className = "" }: EnablePushButt
     "PushManager" in window &&
     "Notification" in window;
 
-  // Ждём загрузки push4site SDK
-  useEffect(() => {
+  const checkSubscribed = useCallback(async () => {
     if (!supported) return;
-    let tries = 0;
-    const id = window.setInterval(() => {
-      const ps = (window as any).pushsender;
-      if (ps && typeof ps.initSubscription === "function") {
-        setSdkReady(true);
-        try {
-          setSubscribed(!!ps.isSubscribed?.());
-        } catch {
-          /* noop */
-        }
-        window.clearInterval(id);
-      } else if (++tries > 100) {
-        window.clearInterval(id);
-      }
-    }, 200);
-    return () => window.clearInterval(id);
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const sub = await reg?.pushManager.getSubscription();
+      setSubscribed(!!sub);
+      setPermission(Notification.permission);
+    } catch {/* noop */}
   }, [supported]);
 
-  const refreshState = useCallback(() => {
-    try {
-      setPermission(Notification.permission);
-      const ps = (window as any).pushsender;
-      setSubscribed(!!ps?.isSubscribed?.());
-    } catch {
-      /* noop */
-    }
-  }, []);
+  useEffect(() => { checkSubscribed(); }, [checkSubscribed]);
 
-  const subscribe = useCallback(async () => {
+  const subscribe = useCallback(async (): Promise<boolean> => {
     if (!supported) return false;
-    const ps = (window as any).pushsender;
-    if (!ps || typeof ps.initSubscription !== "function") {
-      toast.error("Сервис уведомлений ещё загружается, попробуйте через секунду.");
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) {
+      toast.error("Войдите в аккаунт, чтобы получать уведомления");
       return false;
     }
-    setBusy(true);
-    try {
-      // ВАЖНО: initSubscription должен вызываться синхронно внутри user gesture.
-      // Любой await ДО этого вызова сломает permission prompt в Safari.
-      try {
-        ps.initSubscription();
-      } catch (err) {
-        console.error("[push4site] initSubscription error:", err);
-        // fallback: native API
-        try {
-          await Notification.requestPermission();
-        } catch (e2) {
-          console.error("[push4site] Notification.requestPermission failed:", e2);
-        }
-      }
-      // Дадим SDK время отработать
-      await new Promise((r) => setTimeout(r, 2000));
-      refreshState();
-      return typeof Notification !== "undefined" && Notification.permission === "granted";
-    } finally {
-      setBusy(false);
+
+    // Register SW
+    const reg = await navigator.serviceWorker.register("/sw.js");
+    await navigator.serviceWorker.ready;
+
+    // Get VAPID public key
+    const { data: keyData, error: keyErr } = await supabase.functions.invoke("vapid-public-key");
+    if (keyErr || !keyData?.key) {
+      toast.error("Не удалось получить ключ уведомлений");
+      return false;
     }
-  }, [supported, refreshState]);
 
-  // Автозапрос при первом запуске (один раз)
-  useEffect(() => {
-    if (!supported || !sdkReady || subscribed || busy) return;
-    if (permission !== "default") return;
-    if (localStorage.getItem(FIRST_PROMPT_KEY) === "true") return;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(keyData.key),
+      });
+    }
 
-    localStorage.setItem(FIRST_PROMPT_KEY, "true");
-    const timer = setTimeout(async () => {
-      const ok = await subscribe();
-      if (ok) {
-        toast.success("Уведомления включены ✓", {
-          description: "Вы будете получать push о новых заявках и сообщениях.",
-        });
-      } else if (Notification.permission === "denied") {
-        toast.error("Уведомления отклонены", {
-          description:
-            "Чтобы получать заявки в фоне, разрешите уведомления в настройках браузера для этого сайта.",
-          duration: 8000,
-        });
-      }
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, [supported, sdkReady, permission, subscribed, busy, subscribe]);
+    const json: any = sub.toJSON();
+    const endpoint = json.endpoint || sub.endpoint;
+    const p256dh = json.keys?.p256dh || abToB64Url(sub.getKey?.("p256dh") ?? null);
+    const authKey = json.keys?.auth || abToB64Url(sub.getKey?.("auth") ?? null);
 
-  // Дождаться загрузки SDK push4site (до timeoutMs мс)
-  const waitForSdk = (timeoutMs = 8000): Promise<any> => {
-    return new Promise((resolve, reject) => {
-      const start = Date.now();
-      const tick = () => {
-        const ps = (window as any).pushsender;
-        if (ps && typeof ps.initSubscription === "function") return resolve(ps);
-        if (Date.now() - start > timeoutMs) return reject(new Error("SDK timeout"));
-        setTimeout(tick, 100);
-      };
-      tick();
-    });
-  };
+    const { error: insErr } = await supabase
+      .from("push_subscriptions")
+      .upsert(
+        { user_id: auth.user.id, endpoint, p256dh, auth: authKey, user_agent: navigator.userAgent },
+        { onConflict: "endpoint" },
+      );
+    if (insErr) {
+      console.error("[push] save subscription failed:", insErr);
+      toast.error("Не удалось сохранить подписку");
+      return false;
+    }
+    return true;
+  }, [supported]);
 
   const handleEnable = async () => {
     if (!supported) return;
     setBusy(true);
-
-    // Сразу пробуем взять SDK; если ещё не подгрузился — ждём
-    let ps = (window as any).pushsender;
-    if (!ps || typeof ps.initSubscription !== "function") {
-      try {
-        ps = await waitForSdk(8000);
-      } catch {
-        setBusy(false);
-        // Fallback: запросим разрешение нативно, push4site подхватит при следующей загрузке
-        try {
-          const perm = await Notification.requestPermission();
-          if (perm === "granted") {
-            toast.success("Разрешение получено. Перезагрузите страницу для завершения подписки.");
-          } else {
-            toast.error("Сервис уведомлений не загрузился. Проверьте интернет/блокировщики и обновите страницу.");
-          }
-        } catch (e) {
-          console.error("[push4site] fallback permission failed:", e);
-          toast.error("Не удалось запросить разрешение. Обновите страницу и попробуйте снова.");
-        }
-        return;
-      }
-    }
-
     try {
-      ps.initSubscription();
-    } catch (err) {
-      console.error("[push4site] initSubscription error:", err);
-    }
-
-    // Поллим состояние ~20 сек, пока пользователь принимает решение
-    const start = Date.now();
-    const poll = window.setInterval(() => {
-      const perm = typeof Notification !== "undefined" ? Notification.permission : "default";
-      const subbed = !!(window as any).pushsender?.isSubscribed?.();
-      if (perm === "granted" || subbed) {
-        window.clearInterval(poll);
-        setBusy(false);
-        refreshState();
-        toast.success("Уведомления включены ✓");
-      } else if (perm === "denied") {
-        window.clearInterval(poll);
-        setBusy(false);
-        refreshState();
+      // Запрашиваем разрешение синхронно (для Safari)
+      const perm = await Notification.requestPermission();
+      setPermission(perm);
+      if (perm !== "granted") {
         toast.error("Доступ к уведомлениям заблокирован", {
           description: "Откройте настройки сайта в браузере → Уведомления → Разрешить.",
-          duration: 10000,
+          duration: 8000,
         });
-      } else if (Date.now() - start > 20000) {
-        window.clearInterval(poll);
-        setBusy(false);
-        refreshState();
+        return;
       }
-    }, 500);
+      const ok = await subscribe();
+      if (ok) {
+        setSubscribed(true);
+        toast.success("Уведомления включены ✓");
+      }
+    } catch (err: any) {
+      console.error("[push] enable failed:", err);
+      toast.error("Не удалось включить уведомления", { description: err?.message });
+    } finally {
+      setBusy(false);
+    }
   };
+
+  // Автозапрос при первом запуске
+  useEffect(() => {
+    if (!supported || subscribed || busy) return;
+    if (permission !== "default") return;
+    if (localStorage.getItem(FIRST_PROMPT_KEY) === "true") return;
+    localStorage.setItem(FIRST_PROMPT_KEY, "true");
+    const t = setTimeout(() => { handleEnable(); }, 1500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supported, permission, subscribed, busy]);
 
   const handleDismiss = () => {
     setDismissed(true);
@@ -205,11 +155,7 @@ const EnablePushButton = ({ variant = "banner", className = "" }: EnablePushButt
         className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-foreground text-primary-foreground text-xs font-bold tap-scale disabled:opacity-60 ${className}`}
       >
         {busy ? <Loader2 size={14} className="animate-spin" /> : permission === "denied" ? <BellOff size={14} /> : <Bell size={14} />}
-        {busy
-          ? "Подождите..."
-          : permission === "denied"
-            ? "Разблокировать уведомления"
-            : "Включить уведомления"}
+        {busy ? "Подождите..." : permission === "denied" ? "Разблокировать уведомления" : "Включить уведомления"}
       </button>
     );
   }
