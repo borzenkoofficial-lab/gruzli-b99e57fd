@@ -10,6 +10,7 @@ import AdminChatsTab from "@/components/admin/AdminChatsTab";
 import AdminJobsTab from "@/components/admin/AdminJobsTab";
 import AdminSettingsTab from "@/components/admin/AdminSettingsTab";
 import AdminBroadcastsTab from "@/components/admin/AdminBroadcastsTab";
+import AdminPushBroadcastsTab from "@/components/admin/AdminPushBroadcastsTab";
 
 const AdminPage = () => {
   const { role, loading } = useAuth();
