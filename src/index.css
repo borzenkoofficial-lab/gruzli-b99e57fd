@@ -442,20 +442,20 @@
     overflow-x: hidden;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    /* Bottom nav (80px) + safe area + breathing room so content fully clears the floating pill */
-    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 24px);
+    /* Bottom nav (floating pill) + safe area + breathing room */
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 32px);
   }
 
-  /* Bottom nav — flush to bottom edge of screen */
+  /* Bottom nav — floating pill above safe area */
   .bottom-nav-wrapper {
     position: fixed;
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
     max-width: 32rem;
-    bottom: 0;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
     z-index: 50;
-    padding: 0 0 env(safe-area-inset-bottom, 0px) 0;
+    padding: 0 16px;
     pointer-events: none;
   }
 
@@ -465,14 +465,14 @@
     }
   }
 
-  /* The pill itself — flush, no rounded bottom, liquid glass */
+  /* The pill itself — fully rounded floating capsule */
   .bottom-nav-pill {
     display: flex;
     align-items: center;
     justify-content: space-around;
     width: 100%;
-    padding: 6px 8px;
-    border-radius: 20px 20px 0 0;
+    padding: 8px 10px;
+    border-radius: 28px;
     background: linear-gradient(
       135deg,
       hsl(var(--surface-2) / 0.85) 0%,
@@ -481,8 +481,8 @@
     );
     backdrop-filter: blur(40px) saturate(1.8) brightness(1.1);
     -webkit-backdrop-filter: blur(40px) saturate(1.8) brightness(1.1);
-    border-top: 1px solid hsl(0 0% 100% / 0.12);
-    box-shadow: 0 -4px 20px hsl(0 0% 0% / 0.35);
+    border: 1px solid hsl(0 0% 100% / 0.1);
+    box-shadow: 0 8px 32px hsl(0 0% 0% / 0.5), 0 2px 8px hsl(0 0% 0% / 0.3);
     pointer-events: auto;
   }
 
@@ -493,13 +493,13 @@
       hsl(var(--surface-3) / 0.88) 50%,
       hsl(var(--surface-2) / 0.92) 100%
     );
-    border-top: 1px solid hsl(0 0% 0% / 0.08);
-    box-shadow: 0 -2px 12px hsl(0 0% 0% / 0.08);
+    border: 1px solid hsl(0 0% 0% / 0.06);
+    box-shadow: 0 8px 28px hsl(0 0% 0% / 0.12), 0 2px 6px hsl(0 0% 0% / 0.06);
   }
 
   .bottom-nav-active {
     background: hsl(0 0% 100% / 0.1);
-    border-radius: 20px;
+    border-radius: 18px;
   }
 
   .light .bottom-nav-active {
@@ -509,7 +509,7 @@
   .fab-docked {
     position: fixed;
     right: calc(50% - 16rem + 1rem);
-    bottom: calc(var(--bottom-nav-height) + 0.25rem);
+    bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 20px);
     z-index: 40;
   }
 
