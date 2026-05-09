@@ -75,6 +75,9 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
   const [isSelfEmployed, setIsSelfEmployed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
+  // Fullscreen preview
+  const [preview, setPreview] = useState<{ url: string; name: string } | null>(null);
+
   const fetchAll = async () => {
     if (!user) return;
     setLoading(true);
