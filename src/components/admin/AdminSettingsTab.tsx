@@ -82,6 +82,7 @@ const AdminSettingsTab = () => {
 
   return (
     <div className="space-y-4 mt-4">
+      <AdminBannerEditor />
       {/* Bot Jobs */}
       <Card>
         <CardHeader className="pb-3">
