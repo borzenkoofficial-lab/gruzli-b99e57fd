@@ -8,13 +8,10 @@ const corsHeaders = {
 
 const VAPID_PUBLIC = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
 const VAPID_PRIVATE = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
-const VAPID_SUBJECT = "mailto:support@gruzli.app";
-const VAPID_PUBLIC_REPAIRED = VAPID_PUBLIC === "BAFIgs6_EbZXaym4QUAl-10E5i4yh6gkoJh8VZ9jfgeS-6nkAYAs1AcN3WPy081bsDHAbDAq9nCUKRWmPGz3MY"
-  ? "BAFIgs6_EbZXaym4QUAl-10E5i4yh6gkoJh8VZ9jfgeS-6nkAYAs1AcN3W-Py081bsDHAbDAq9nCUKRWmPGz3MY"
-  : VAPID_PUBLIC;
+const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") ?? "mailto:support@gruzli.app";
 
-if (VAPID_PUBLIC_REPAIRED && VAPID_PRIVATE) {
-  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_REPAIRED, VAPID_PRIVATE);
+if (VAPID_PUBLIC && VAPID_PRIVATE) {
+  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
 }
 
 async function sendPushToUsers(supabase: any, userIds: string[], payload: { title: string; body: string; url: string; tag?: string }) {
