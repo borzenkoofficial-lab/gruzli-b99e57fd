@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Clock, Users, Zap, MessageCircle, User, Wallet, UserPlus, Check, ShieldCheck, X } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, Users, Zap, MessageCircle, User, Wallet, UserPlus, Check, ShieldCheck, X, ShieldAlert, ChevronDown } from "lucide-react";
 import { useRespondToJob } from "@/hooks/useRespondToJob";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
