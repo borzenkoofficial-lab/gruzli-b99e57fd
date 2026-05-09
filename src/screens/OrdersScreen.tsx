@@ -404,6 +404,8 @@ const OrdersScreen = () => {
                     )}
                   </div>
 
+                  <ContractStatusBadge jobId={job.jobId} />
+
                   {job.startTime && new Date(job.startTime) > new Date() && (
                     <CountdownToJob startTime={job.startTime} />
                   )}
