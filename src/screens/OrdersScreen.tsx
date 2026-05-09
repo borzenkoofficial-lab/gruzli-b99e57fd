@@ -69,7 +69,7 @@ const OrdersScreen = () => {
       .select("user_id, full_name")
       .in("user_id", dispatcherIds);
     const nameMap: Record<string, string> = {};
-    profiles?.forEach((p) => { nameMap[p.user_id] = p.full_name; });
+    (profiles as any[])?.forEach((p) => { nameMap[p.user_id] = p.full_name; });
 
     const mapped: AcceptedJob[] = jobsData.map((j) => {
       const resp = responses.find((r) => r.job_id === j.id)!;

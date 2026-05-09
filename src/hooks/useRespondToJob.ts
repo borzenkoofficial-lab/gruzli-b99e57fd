@@ -53,7 +53,7 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
 
       const { data: conversationId, error: convError } = await supabase.rpc("create_direct_conversation", {
         _other_user_id: job.dispatcher_id,
-        _title: dispProfile?.full_name || job.title,
+        _title: (dispProfile as any)?.full_name || job.title,
       });
 
       if (convError || !conversationId) {

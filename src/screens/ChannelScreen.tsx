@@ -162,7 +162,7 @@ const ChannelScreen = ({ onBack }: ChannelScreenProps) => {
     ]);
 
     const profileMap: Record<string, string> = {};
-    (profilesRes.data || []).forEach((p) => { profileMap[p.user_id] = p.full_name; });
+    ((profilesRes.data as any[]) || []).forEach((p) => { profileMap[p.user_id] = p.full_name; });
     const likeCounts: Record<string, number> = {};
     (likesRes.data || []).forEach((l) => { likeCounts[l.post_id] = (likeCounts[l.post_id] || 0) + 1; });
     const commentCounts: Record<string, number> = {};

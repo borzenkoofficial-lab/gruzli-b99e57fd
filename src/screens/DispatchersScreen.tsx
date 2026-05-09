@@ -28,7 +28,7 @@ const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => 
           .in("user_id", roles.map((r) => r.user_id));
 
         if (profiles) {
-          setDispatchers(profiles.map((p) => ({ ...p, isOnline: true })));
+          setDispatchers((profiles as any[]).map((p) => ({ ...p, isOnline: true })));
         }
       }
       setLoading(false);

@@ -35,7 +35,7 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
         .select("full_name")
         .eq("user_id", job.dispatcher_id)
         .single();
-      if (data) setDispatcherName(data.full_name || "Диспетчер");
+      if (data) setDispatcherName((data as any).full_name || "Диспетчер");
     };
     fetchName();
   }, [job.dispatcher_id]);
