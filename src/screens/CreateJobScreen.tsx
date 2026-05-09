@@ -55,6 +55,11 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [requiresContract, setRequiresContract] = useState(false);
+  const [contractTitle, setContractTitle] = useState("Договор подряда");
+  const [contractBody, setContractBody] = useState(
+    "1. Исполнитель обязуется выполнить грузо-погрузочные работы по адресу и в срок, указанные выше.\n2. Заказчик обязуется оплатить работы по согласованной ставке за фактически отработанное время.\n3. Исполнитель несёт ответственность за сохранность перемещаемого имущества в пределах своей вины.\n4. Стороны обязуются соблюдать технику безопасности и нормы общения."
+  );
 
   const balance = profile?.balance || 0;
   const canAfford = balance >= JOB_POSTING_FEE;
