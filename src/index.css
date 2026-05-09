@@ -37,6 +37,10 @@
 
     --radius: 0.75rem;
     --bottom-nav-height: 76px;
+    /* Single source of truth for the gap between the pill and the screen bottom */
+    --bottom-nav-gap: 6px;
+    /* Total vertical space reserved by the floating pill (height + gap) */
+    --bottom-nav-total: calc(var(--bottom-nav-height) + var(--bottom-nav-gap));
 
     /* Surfaces — subtle elevation */
     --surface-1: 0 0% 7%;
