@@ -716,8 +716,11 @@
 
 /* PWA standalone mode — honour iOS home-indicator safe area via the shared gap variable */
 @media all and (display-mode: standalone) {
-  :root {
-    --bottom-nav-gap: max(6px, env(safe-area-inset-bottom, 0px));
+  .bottom-nav-wrapper {
+    padding: 0 0 env(safe-area-inset-bottom, 0px) 0;
+  }
+  .app-scroll {
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 16px);
   }
 }
 
