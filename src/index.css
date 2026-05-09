@@ -777,9 +777,12 @@
     padding-left: env(safe-area-inset-left, 0px);
     padding-right: env(safe-area-inset-right, 0px);
   }
+  .bottom-nav-wrapper {
+    padding: 0 12px;
+  }
   .bottom-nav-pill {
-    padding: 4px 4px;
-    border-radius: 16px 16px 0 0;
+    padding: 6px 6px;
+    border-radius: 24px;
   }
 }
 
