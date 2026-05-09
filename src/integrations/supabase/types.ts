@@ -505,6 +505,51 @@ export type Database = {
         }
         Relationships: []
       }
+      job_documents: {
+        Row: {
+          amount: number
+          created_at: string
+          dispatcher_id: string
+          hours: number | null
+          id: string
+          job_id: string
+          metadata: Json
+          number: string | null
+          pdf_path: string | null
+          title: string
+          type: string
+          worker_id: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          dispatcher_id: string
+          hours?: number | null
+          id?: string
+          job_id: string
+          metadata?: Json
+          number?: string | null
+          pdf_path?: string | null
+          title?: string
+          type: string
+          worker_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          dispatcher_id?: string
+          hours?: number | null
+          id?: string
+          job_id?: string
+          metadata?: Json
+          number?: string | null
+          pdf_path?: string | null
+          title?: string
+          type?: string
+          worker_id?: string | null
+        }
+        Relationships: []
+      }
       job_responses: {
         Row: {
           created_at: string
@@ -855,7 +900,9 @@ export type Database = {
           display_id: string | null
           full_name: string
           id: string
+          inn: string | null
           is_premium: boolean
+          is_self_employed: boolean
           last_seen_at: string | null
           phone: string | null
           premium_until: string | null
@@ -878,7 +925,9 @@ export type Database = {
           display_id?: string | null
           full_name?: string
           id?: string
+          inn?: string | null
           is_premium?: boolean
+          is_self_employed?: boolean
           last_seen_at?: string | null
           phone?: string | null
           premium_until?: string | null
@@ -901,7 +950,9 @@ export type Database = {
           display_id?: string | null
           full_name?: string
           id?: string
+          inn?: string | null
           is_premium?: boolean
+          is_self_employed?: boolean
           last_seen_at?: string | null
           phone?: string | null
           premium_until?: string | null
