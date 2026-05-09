@@ -209,8 +209,10 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
       });
       if (error) throw error;
       if (data?.signed_url) {
-        await triggerDownload(data.signed_url, `dogovor-${contractId.slice(0, 8)}${workerId ? "-" + workerId.slice(0, 6) : ""}.pdf`);
-        toast.success("Файл скачан");
+        setPreview({
+          url: data.signed_url,
+          name: `dogovor-${contractId.slice(0, 8)}${workerId ? "-" + workerId.slice(0, 6) : ""}.pdf`,
+        });
       } else throw new Error("Нет ссылки");
     } catch (e: any) { toast.error(e?.message || "Ошибка"); }
     finally { setBusyId(null); }
@@ -220,8 +222,7 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
     const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60);
     if (error || !data?.signedUrl) { toast.error("Файл не найден"); return; }
     const fname = filename || path.split("/").pop() || "document.pdf";
-    await triggerDownload(data.signedUrl, fname);
-    toast.success("Файл скачан");
+    setPreview({ url: data.signedUrl, name: fname });
   };
 
   const sendToChat = async (workerId: string, workerName: string, text: string) => {
