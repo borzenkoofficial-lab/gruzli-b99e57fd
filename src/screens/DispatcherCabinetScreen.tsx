@@ -142,6 +142,19 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     toast.success("Заявка закрыта · убрана из ленты");
   };
 
+  const handleRepublishJob = async (jobId: string) => {
+    const { error } = await supabase
+      .from("jobs")
+      .update({ status: "active" })
+      .eq("id", jobId);
+    if (error) {
+      toast.error("Не удалось опубликовать заявку");
+      return;
+    }
+    setMyJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status: "active" } : j)));
+    toast.success("Заявка снова опубликована");
+  };
+
   const handleAdjustRate = async (job: Tables<"jobs"> & { response_count: number }, delta: number) => {
     const newRate = Math.max(0, (job.hourly_rate || 0) + delta);
     if (newRate === job.hourly_rate) return;
