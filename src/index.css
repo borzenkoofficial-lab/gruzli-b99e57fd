@@ -37,6 +37,10 @@
 
     --radius: 0.75rem;
     --bottom-nav-height: 76px;
+    /* Single source of truth for the gap between the pill and the screen bottom */
+    --bottom-nav-gap: 6px;
+    /* Total vertical space reserved by the floating pill (height + gap) */
+    --bottom-nav-total: calc(var(--bottom-nav-height) + var(--bottom-nav-gap));
 
     /* Surfaces — subtle elevation */
     --surface-1: 0 0% 7%;
@@ -442,8 +446,8 @@
     overflow-x: hidden;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    /* Bottom nav sits low like messengers; content only keeps a compact reserve */
-    padding-bottom: calc(var(--bottom-nav-height) + 10px);
+    /* Reserve exactly the pill footprint — no extra random padding */
+    padding-bottom: var(--bottom-nav-total);
   }
 
   /* Bottom nav — floating pill pinned close to the screen bottom */
@@ -453,7 +457,7 @@
     transform: translateX(-50%);
     width: 100%;
     max-width: 32rem;
-    bottom: max(0px, calc(env(safe-area-inset-bottom, 0px) - 32px));
+    bottom: var(--bottom-nav-gap);
     z-index: 50;
     padding: 0 16px;
     pointer-events: none;
@@ -509,7 +513,7 @@
   .fab-docked {
     position: fixed;
     right: calc(50% - 16rem + 1rem);
-    bottom: calc(var(--bottom-nav-height) + 12px);
+    bottom: calc(var(--bottom-nav-total) + 8px);
     z-index: 40;
   }
 
@@ -712,14 +716,10 @@
   }
 }
 
-/* PWA standalone mode — keep the pill low instead of lifting it by the full iOS safe area */
+/* PWA standalone mode — honour iOS home-indicator safe area via the shared gap variable */
 @media all and (display-mode: standalone) {
-  .bottom-nav-wrapper {
-    bottom: max(0px, calc(env(safe-area-inset-bottom, 0px) - 32px));
-  }
-
-  .app-scroll {
-    padding-bottom: calc(var(--bottom-nav-height) + 10px);
+  :root {
+    --bottom-nav-gap: max(6px, env(safe-area-inset-bottom, 0px));
   }
 }
 
