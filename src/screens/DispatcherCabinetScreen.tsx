@@ -13,7 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import JobTemplatesModal from "@/components/dispatcher/JobTemplatesModal";
-import DispatcherContractsModal from "@/components/dispatcher/DispatcherContractsModal";
+import DispatcherDocumentsModal from "@/components/dispatcher/DispatcherDocumentsModal";
 import TopWorkersModal from "@/components/dispatcher/TopWorkersModal";
 import GoalsModal from "@/components/dispatcher/GoalsModal";
 import SOSReplacementModal from "@/components/dispatcher/SOSReplacementModal";
@@ -524,7 +524,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
             { icon: FileText, label: "Шаблоны", color: "text-blue-400", bg: "bg-blue-500/10", onClick: () => setShowTemplates(true) },
             { icon: Trophy, label: "Топ", color: "text-yellow-500", bg: "bg-yellow-500/10", onClick: () => setShowTopWorkers(true) },
             { icon: Target, label: "Цели", color: "text-primary", bg: "bg-primary/10", onClick: () => setShowGoals(true) },
-            { icon: Pencil, label: "Договоры", color: "text-purple-400", bg: "bg-purple-500/10", onClick: () => setShowContracts(true) },
+            { icon: Pencil, label: "Доки", color: "text-purple-400", bg: "bg-purple-500/10", onClick: () => setShowContracts(true) },
             { icon: Download, label: "Отчёт", color: "text-green-500", bg: "bg-green-500/10", onClick: exportCSV },
           ].map((a, i) => {
             const Ic = a.icon;
@@ -1256,7 +1256,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
 
       {/* New cabinet features */}
       <JobTemplatesModal open={showTemplates} onClose={() => setShowTemplates(false)} />
-      <DispatcherContractsModal open={showContracts} onClose={() => setShowContracts(false)} />
+      <DispatcherDocumentsModal open={showContracts} onClose={() => setShowContracts(false)} />
       <TopWorkersModal
         open={showTopWorkers}
         onClose={() => setShowTopWorkers(false)}
