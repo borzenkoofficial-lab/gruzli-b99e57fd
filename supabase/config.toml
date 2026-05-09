@@ -17,3 +17,5 @@ project_id = "iudtdfznyzpqkfhprbad"
     verify_jwt = false
   [functions.send-push]
     verify_jwt = false
+  [functions.vapid-public-key]
+    verify_jwt = false
