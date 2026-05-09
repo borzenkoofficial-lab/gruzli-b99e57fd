@@ -118,6 +118,17 @@ const Index = () => {
   const [showCabinet, setShowCabinet] = useState(false);
   const [showSupportChat, setShowSupportChat] = useState(false);
   const [viewJobDetail, setViewJobDetail] = useState<Tables<"jobs"> | null>(null);
+  const [viewContractId, setViewContractId] = useState<string | null>(null);
+
+  // Listen for global open-contract event from any screen
+  useEffect(() => {
+    const handler = (e: any) => {
+      const id = e?.detail?.contractId;
+      if (id) setViewContractId(id);
+    };
+    window.addEventListener("open-contract" as any, handler);
+    return () => window.removeEventListener("open-contract" as any, handler);
+  }, []);
 
   // Deep-link: open job from /job/:jobId (push notification click)
   useEffect(() => {
