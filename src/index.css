@@ -433,8 +433,11 @@
     max-width: 32rem;
     margin: 0 auto;
     overflow: hidden;
-    background: hsl(var(--background));
+    background: transparent;
+    /* Используем largest viewport height — НЕ зависит от того, показан ли URL-бар браузера.
+       Layout не «прыгает» при появлении/скрытии нижних панелей Safari/Chrome. */
     height: calc(var(--vh, 1vh) * 100);
+    height: 100lvh;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: 0;
   }
@@ -445,10 +448,12 @@
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    padding-bottom: calc(var(--bottom-nav-height) + 16px);
+    /* Резервируем место под плавающую навигацию + safe-area, чтобы последний элемент не обрезался */
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 24px);
   }
 
-  /* Bottom nav — floating pill pinned close to the screen bottom */
+  /* Bottom nav — floating pill pinned close to the screen bottom.
+     Полностью прозрачная обёртка — за ней просвечивает контент/фон. */
   .bottom-nav-wrapper {
     position: fixed;
     left: 50%;
@@ -457,8 +462,10 @@
     max-width: 32rem;
     bottom: 0;
     z-index: 50;
-    /* Прижимаем к низу как в мессенджерах: только половина safe-area, минимум 6px */
-    padding: 0 16px max(6px, calc(env(safe-area-inset-bottom, 0px) / 2)) 16px;
+    background: transparent;
+    /* Прижимаем к самому низу окна, игнорируя URL-бары браузера.
+       На iOS учитываем только home-indicator (env), в браузере env=0. */
+    padding: 0 16px max(8px, env(safe-area-inset-bottom, 0px)) 16px;
     pointer-events: none;
   }
 
@@ -715,13 +722,13 @@
   }
 }
 
-/* PWA standalone mode — honour iOS home-indicator safe area via the shared gap variable */
+/* PWA standalone mode — honour iOS home-indicator safe area */
 @media all and (display-mode: standalone) {
   .bottom-nav-wrapper {
-    padding: 0 16px max(6px, calc(env(safe-area-inset-bottom, 0px) / 2)) 16px;
+    padding: 0 16px env(safe-area-inset-bottom, 0px) 16px;
   }
   .app-scroll {
-    padding-bottom: calc(var(--bottom-nav-height) + max(6px, calc(env(safe-area-inset-bottom, 0px) / 2)) + 16px);
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 24px);
   }
 }
 
@@ -844,4 +851,10 @@ html, body {
 img, video, canvas, svg {
   max-width: 100%;
   height: auto;
+}
+
+/* Чтобы за браузерными URL-барами Safari/Chrome просвечивал тот же фон,
+   что и в приложении — без видимых полос и обрезаний при скролле. */
+html, body {
+  background: hsl(var(--background));
 }
