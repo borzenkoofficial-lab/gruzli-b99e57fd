@@ -852,3 +852,9 @@ img, video, canvas, svg {
   max-width: 100%;
   height: auto;
 }
+
+/* Чтобы за браузерными URL-барами Safari/Chrome просвечивал тот же фон,
+   что и в приложении — без видимых полос и обрезаний при скролле. */
+html, body {
+  background: hsl(var(--background));
+}
