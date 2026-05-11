@@ -722,13 +722,13 @@
   }
 }
 
-/* PWA standalone mode — honour iOS home-indicator safe area via the shared gap variable */
+/* PWA standalone mode — honour iOS home-indicator safe area */
 @media all and (display-mode: standalone) {
   .bottom-nav-wrapper {
-    padding: 0 16px max(6px, calc(env(safe-area-inset-bottom, 0px) / 2)) 16px;
+    padding: 0 16px env(safe-area-inset-bottom, 0px) 16px;
   }
   .app-scroll {
-    padding-bottom: calc(var(--bottom-nav-height) + max(6px, calc(env(safe-area-inset-bottom, 0px) / 2)) + 16px);
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 24px);
   }
 }
 
