@@ -1,4 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { getTgCtx, tg } from '../_shared/telegram/api.ts';
+import { mainMenu, MENU_LABELS, WEB_APP_URL, type Role } from '../_shared/telegram/keyboards.ts';
+import { clearFsm, getFsm, setFsm } from '../_shared/telegram/fsm.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,312 +11,360 @@ const corsHeaders = {
 const GATEWAY_URL = 'https://connector-gateway.lovable.dev/telegram';
 const MAX_RUNTIME_MS = 55_000;
 const MIN_REMAINING_MS = 5_000;
-
-const WEB_APP_URL = 'https://gruzli.lovable.app/';
-const WELCOME_TEXT =
-  '👋 <b>Привет!</b> Вы подписались на уведомления Грузли.\n\n' +
-  'Здесь будут приходить новые заявки на грузчиков. Чтобы откликнуться — нажимайте кнопку под заявкой.\n\n' +
-  '👇 Откройте приложение, чтобы посмотреть все заявки и свой профиль.';
-
-// Match a code anywhere in the text (8 chars from the allowed alphabet)
 const CODE_RE = /\b([ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{8})\b/;
 
-async function sendTelegram(
-  apiKey: string,
-  connectionKey: string,
-  chatId: number,
-  text: string,
-  extra: Record<string, unknown> = {},
-) {
-  try {
-    await fetch(`${GATEWAY_URL}/sendMessage`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'X-Connection-Api-Key': connectionKey,
-        'Content-Type': 'application/json',
+const WELCOME_TEXT =
+  '👋 <b>Привет!</b> Это бот Грузли — заявки и уведомления для грузчиков и диспетчеров.\n\n' +
+  'Чтобы пользоваться кабинетом прямо здесь, привяжите аккаунт из приложения. Команда /menu всегда открывает меню.';
+
+const HOWTO_LINK =
+  '🔗 <b>Как привязать аккаунт</b>\n\n' +
+  '1. Откройте приложение Грузли\n' +
+  '2. Профиль → «Telegram»\n' +
+  '3. Нажмите «Сгенерировать код»\n' +
+  '4. Отправьте мне команду:\n<code>/start КОД</code>';
+
+// ===== Role detection =====
+async function getUserRole(sb: any, chatId: number): Promise<{ userId: string | null; role: Role }> {
+  const { data: sub } = await sb
+    .from('telegram_subscribers')
+    .select('user_id')
+    .eq('chat_id', chatId)
+    .maybeSingle();
+  if (!sub?.user_id) return { userId: null, role: null };
+  const { data: roleRow } = await sb
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', sub.user_id)
+    .maybeSingle();
+  return { userId: sub.user_id, role: (roleRow?.role as Role) ?? 'worker' };
+}
+
+// ===== Show main menu =====
+async function showMenu(ctx: any, sb: any, chatId: number, greeting?: string) {
+  const { role } = await getUserRole(sb, chatId);
+  const text = greeting
+    ?? (role
+      ? `📱 <b>Меню Грузли</b>\nРоль: <b>${role === 'dispatcher' ? 'Диспетчер' : role === 'admin' ? 'Админ' : 'Грузчик'}</b>`
+      : WELCOME_TEXT);
+  await tg.send(ctx, chatId, text, mainMenu(role));
+}
+
+// ===== Handlers =====
+async function handleStart(ctx: any, sb: any, chatId: number, text: string, msgFrom: any) {
+  const parts = text.split(/\s+/);
+  const linkCode = parts.length > 1 ? parts[1].trim() : null;
+  let linkedUserId: string | null = null;
+
+  if (linkCode) {
+    const { data: codeRow } = await sb
+      .from('telegram_link_codes')
+      .select('user_id, expires_at, used_at, purpose')
+      .eq('code', linkCode)
+      .maybeSingle();
+
+    if (
+      codeRow && !codeRow.used_at &&
+      new Date(codeRow.expires_at) > new Date() &&
+      codeRow.purpose !== 'channel'
+    ) {
+      linkedUserId = codeRow.user_id;
+      await sb.from('telegram_link_codes').update({ used_at: new Date().toISOString() }).eq('code', linkCode);
+    }
+  }
+
+  const subRow: Record<string, unknown> = {
+    chat_id: chatId,
+    username: msgFrom?.username ?? null,
+    first_name: msgFrom?.first_name ?? null,
+    last_name: msgFrom?.last_name ?? null,
+    is_active: true,
+  };
+  if (linkedUserId) subRow.user_id = linkedUserId;
+  await sb.from('telegram_subscribers').upsert(subRow, { onConflict: 'chat_id' });
+
+  const greeting = linkedUserId
+    ? '✅ <b>Аккаунт привязан!</b> Личные уведомления будут приходить сюда.\n\nВыберите действие в меню ниже.'
+    : WELCOME_TEXT;
+  await showMenu(ctx, sb, chatId, greeting);
+}
+
+async function handleSupport(ctx: any, chatId: number) {
+  await tg.send(
+    ctx,
+    chatId,
+    '🆘 <b>Поддержка</b>\n\nНапишите ваш вопрос в чат поддержки в приложении — мы ответим максимально быстро.',
+    {
+      reply_markup: {
+        inline_keyboard: [[{ text: '💬 Открыть чат поддержки', web_app: { url: WEB_APP_URL + 'support' } }]],
       },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text,
-        parse_mode: 'HTML',
-        disable_web_page_preview: true,
-        ...extra,
-      }),
-    });
-  } catch (e) {
-    console.error('[telegram-poll] sendMessage failed:', e);
+    },
+  );
+}
+
+async function handleNotLinked(ctx: any, chatId: number) {
+  await tg.send(ctx, chatId, '⚠️ Сначала привяжите аккаунт, чтобы пользоваться кабинетом.', {
+    reply_markup: { inline_keyboard: [[{ text: '🔗 Как привязать', callback_data: 'auth:howto' }]] },
+  });
+}
+
+async function handleStub(ctx: any, chatId: number, label: string) {
+  await tg.send(
+    ctx,
+    chatId,
+    `🧱 <b>${label}</b>\n\nЭтот раздел появится в боте на следующих этапах. Пока используйте приложение:`,
+    { reply_markup: { inline_keyboard: [[{ text: MENU_LABELS.app, web_app: { url: WEB_APP_URL } }]] } },
+  );
+}
+
+// ===== Tryto link channel/group =====
+async function tryLinkChat(ctx: any, sb: any, chat: any, text: string): Promise<boolean> {
+  const codeMatch = text.match(CODE_RE);
+  if (!codeMatch) return false;
+  const code = codeMatch[1];
+
+  const { data: codeRow } = await sb
+    .from('telegram_link_codes')
+    .select('user_id, expires_at, used_at, purpose')
+    .eq('code', code)
+    .maybeSingle();
+
+  if (
+    codeRow && !codeRow.used_at &&
+    new Date(codeRow.expires_at) > new Date() &&
+    (codeRow.purpose === 'channel' || codeRow.purpose === 'personal')
+  ) {
+    await sb.from('telegram_user_channels').upsert(
+      {
+        user_id: codeRow.user_id,
+        chat_id: chat.id,
+        title: chat.title ?? null,
+        username: chat.username ?? null,
+        is_active: true,
+      },
+      { onConflict: 'user_id,chat_id' },
+    );
+    await sb.from('telegram_link_codes').update({ used_at: new Date().toISOString() }).eq('code', code);
+    const label = chat.type === 'channel' ? 'Канал' : 'Группа';
+    await tg.send(ctx, chat.id, `✅ <b>${label} привязан${chat.type === 'channel' ? '' : 'а'} к Грузли!</b>\n\nЗаявки будут публиковаться сюда автоматически.`);
+    return true;
+  }
+
+  await tg.send(ctx, chat.id, '⚠️ Код недействителен или просрочен. Сгенерируйте новый код в приложении Грузли.');
+  return false;
+}
+
+// ===== Main router =====
+async function routeMessage(ctx: any, sb: any, msg: any) {
+  const chatId: number = msg.chat.id;
+  const text: string = (msg.text ?? '').trim();
+
+  // groups / supergroups / channels — only linking
+  if (msg.chat.type === 'group' || msg.chat.type === 'supergroup') {
+    if (text) await tryLinkChat(ctx, sb, msg.chat, text);
+    return;
+  }
+
+  // /start
+  if (text.toLowerCase().startsWith('/start')) {
+    await clearFsm(sb, chatId);
+    await handleStart(ctx, sb, chatId, text, msg.from);
+    return;
+  }
+
+  // /menu, /cancel
+  if (text === '/menu' || text === MENU_LABELS.cancel || text.toLowerCase() === '/cancel') {
+    await clearFsm(sb, chatId);
+    await showMenu(ctx, sb, chatId);
+    return;
+  }
+
+  // FSM state takes precedence (для будущих этапов: создание заявки и т.п.)
+  const fsm = await getFsm(sb, chatId);
+  if (fsm) {
+    // Этап 1: пока сценариев нет — просто чистим и показываем меню
+    await clearFsm(sb, chatId);
+    await showMenu(ctx, sb, chatId, '↩️ Сценарий сброшен.');
+    return;
+  }
+
+  // Reply-keyboard buttons
+  const { userId, role } = await getUserRole(sb, chatId);
+
+  switch (text) {
+    case MENU_LABELS.support:
+      return handleSupport(ctx, chatId);
+    case MENU_LABELS.settings:
+      return handleStub(ctx, chatId, 'Настройки');
+  }
+
+  if (!userId) {
+    // Unlinked user wrote anything — show menu
+    if (text) await showMenu(ctx, sb, chatId);
+    return;
+  }
+
+  // Worker buttons
+  if (role === 'worker') {
+    switch (text) {
+      case MENU_LABELS.workerJobs: return handleStub(ctx, chatId, 'Доступные заявки');
+      case MENU_LABELS.workerMyJobs: return handleStub(ctx, chatId, 'Мои работы');
+      case MENU_LABELS.workerBalance: {
+        const { data: p } = await sb.from('profiles').select('balance, total_earned').eq('user_id', userId).maybeSingle();
+        return tg.send(ctx, chatId, `💰 <b>Баланс</b>\n\nТекущий: <b>${p?.balance ?? 0} ₽</b>\nВсего заработано: <b>${p?.total_earned ?? 0} ₽</b>`);
+      }
+      case MENU_LABELS.workerRating: {
+        const { data: p } = await sb.from('profiles').select('rating, completed_orders').eq('user_id', userId).maybeSingle();
+        return tg.send(ctx, chatId, `⭐️ <b>Рейтинг</b>\n\nОценка: <b>${Number(p?.rating ?? 5).toFixed(2)}</b>\nВыполнено заказов: <b>${p?.completed_orders ?? 0}</b>`);
+      }
+    }
+  }
+
+  // Dispatcher / admin buttons
+  if (role === 'dispatcher' || role === 'admin') {
+    switch (text) {
+      case MENU_LABELS.dispatcherCreate: return handleStub(ctx, chatId, 'Создать заявку');
+      case MENU_LABELS.dispatcherJobs: return handleStub(ctx, chatId, 'Мои заявки');
+      case MENU_LABELS.dispatcherStats: {
+        const { count: jobsCount } = await sb.from('jobs').select('*', { count: 'exact', head: true }).eq('dispatcher_id', userId);
+        const { count: activeCount } = await sb.from('jobs').select('*', { count: 'exact', head: true }).eq('dispatcher_id', userId).eq('status', 'active');
+        return tg.send(ctx, chatId, `📊 <b>Статистика</b>\n\nВсего заявок: <b>${jobsCount ?? 0}</b>\nАктивных: <b>${activeCount ?? 0}</b>\n\nПодробная аналитика — в кабинете приложения.`);
+      }
+      case MENU_LABELS.dispatcherBroadcast: return handleStub(ctx, chatId, 'Рассылка');
+    }
+  }
+
+  // Anything else — show menu hint
+  if (text && !text.startsWith('/')) {
+    await showMenu(ctx, sb, chatId, '👇 Используйте меню ниже:');
   }
 }
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+async function routeCallback(ctx: any, sb: any, cb: any) {
+  const chatId: number = cb.message?.chat?.id;
+  const data: string = cb.data ?? '';
+  if (!chatId) return;
+
+  await tg.answerCb(ctx, cb.id);
+
+  if (data === 'auth:howto') {
+    await tg.send(ctx, chatId, HOWTO_LINK, {
+      reply_markup: { inline_keyboard: [[{ text: '🚀 Открыть приложение', web_app: { url: WEB_APP_URL } }]] },
+    });
+    return;
   }
+}
+
+// ============= Polling loop =============
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
 
   const startTime = Date.now();
-
-  const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-  const TELEGRAM_API_KEY = Deno.env.get('TELEGRAM_API_KEY');
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-  if (!LOVABLE_API_KEY || !TELEGRAM_API_KEY || !supabaseUrl || !supabaseServiceKey) {
-    return new Response(
-      JSON.stringify({ error: 'Missing configuration' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-    );
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return new Response(JSON.stringify({ error: 'Missing configuration' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  let ctx;
+  try { ctx = getTgCtx(); } catch (e) {
+    return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
 
-  const { data: state, error: stateErr } = await supabase
-    .from('telegram_bot_state')
-    .select('update_offset')
-    .eq('id', 1)
-    .single();
+  const sb = createClient(supabaseUrl, supabaseServiceKey);
 
+  const { data: state, error: stateErr } = await sb.from('telegram_bot_state').select('update_offset').eq('id', 1).single();
   if (stateErr) {
     console.error('[telegram-poll] state read error:', stateErr.message);
-    return new Response(JSON.stringify({ error: stateErr.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(JSON.stringify({ error: stateErr.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
   let currentOffset: number = state.update_offset;
   let totalProcessed = 0;
-  let newSubscribers = 0;
-  let newChannels = 0;
 
   while (true) {
-    const elapsed = Date.now() - startTime;
-    const remainingMs = MAX_RUNTIME_MS - elapsed;
+    const remainingMs = MAX_RUNTIME_MS - (Date.now() - startTime);
     if (remainingMs < MIN_REMAINING_MS) break;
-
     const timeout = Math.min(50, Math.floor(remainingMs / 1000) - 5);
     if (timeout < 1) break;
 
     const response = await fetch(`${GATEWAY_URL}/getUpdates`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'X-Connection-Api-Key': TELEGRAM_API_KEY,
+        Authorization: `Bearer ${ctx.apiKey}`,
+        'X-Connection-Api-Key': ctx.connectionKey,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         offset: currentOffset,
         timeout,
-        allowed_updates: ['message', 'channel_post', 'my_chat_member'],
+        allowed_updates: ['message', 'channel_post', 'callback_query', 'my_chat_member'],
       }),
     });
 
     const data = await response.json();
     if (!response.ok) {
       console.error('[telegram-poll] getUpdates failed:', data);
-      return new Response(JSON.stringify({ error: data }), {
-        status: 502,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return new Response(JSON.stringify({ error: data }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     const updates = data.result ?? [];
     if (updates.length === 0) continue;
 
     for (const u of updates) {
-      // ============ Handle bot being added/removed from chat ============
-      if (u.my_chat_member) {
-        const m = u.my_chat_member;
-        const chat = m.chat;
-        const newStatus: string = m.new_chat_member?.status ?? '';
-        const isBroadcast = chat?.type === 'channel' || chat?.type === 'group' || chat?.type === 'supergroup';
-        const removed = newStatus === 'left' || newStatus === 'kicked';
-
-        if (isBroadcast && removed) {
-          await supabase
-            .from('telegram_user_channels')
-            .update({ is_active: false })
-            .eq('chat_id', chat.id);
-          console.log(`[telegram-poll] Bot removed from ${chat.type} ${chat.id}, deactivated`);
-        }
-
-        if (isBroadcast && (newStatus === 'administrator' || newStatus === 'member')) {
-          console.log(`[telegram-poll] Bot added to ${chat.type} ${chat.id} (${chat.title ?? ''})`);
-        }
-        totalProcessed++;
-        continue;
-      }
-
-      // Helper for linking a chat (channel or group) via code
-      const tryLinkChat = async (chat: any, text: string): Promise<boolean> => {
-        const codeMatch = text.match(CODE_RE);
-        if (!codeMatch) return false;
-        const code = codeMatch[1];
-
-        const { data: codeRow } = await supabase
-          .from('telegram_link_codes')
-          .select('user_id, expires_at, used_at, purpose')
-          .eq('code', code)
-          .maybeSingle();
-
-        if (
-          codeRow &&
-          !codeRow.used_at &&
-          new Date(codeRow.expires_at) > new Date() &&
-          (codeRow.purpose === 'channel' || codeRow.purpose === 'personal')
-        ) {
-          const { error: chErr } = await supabase
-            .from('telegram_user_channels')
-            .upsert(
-              {
-                user_id: codeRow.user_id,
-                chat_id: chat.id,
-                title: chat.title ?? null,
-                username: chat.username ?? null,
-                is_active: true,
-              },
-              { onConflict: 'user_id,chat_id' },
-            );
-
-          if (chErr) {
-            console.error('[telegram-poll] chat upsert error:', chErr.message);
-            return false;
+      try {
+        if (u.my_chat_member) {
+          const chat = u.my_chat_member.chat;
+          const newStatus: string = u.my_chat_member.new_chat_member?.status ?? '';
+          const isBroadcast = chat?.type === 'channel' || chat?.type === 'group' || chat?.type === 'supergroup';
+          const removed = newStatus === 'left' || newStatus === 'kicked';
+          if (isBroadcast && removed) {
+            await sb.from('telegram_user_channels').update({ is_active: false }).eq('chat_id', chat.id);
           }
-
-          newChannels++;
-          await supabase
-            .from('telegram_link_codes')
-            .update({ used_at: new Date().toISOString() })
-            .eq('code', code);
-
-          const label = chat.type === 'channel' ? 'Канал' : 'Группа';
-          await sendTelegram(
-            LOVABLE_API_KEY,
-            TELEGRAM_API_KEY,
-            chat.id,
-            `✅ <b>${label} привязан${chat.type === 'channel' ? '' : 'а'} к Грузли!</b>\n\nТеперь все новые заявки будут публиковаться сюда автоматически.`,
-          );
-          return true;
+          totalProcessed++;
+          continue;
         }
 
-        await sendTelegram(
-          LOVABLE_API_KEY,
-          TELEGRAM_API_KEY,
-          chat.id,
-          '⚠️ Код недействителен или просрочен. Сгенерируйте новый код в приложении Грузли.',
-        );
-        return false;
-      };
-
-      // ============ Handle channel posts (for linking a channel) ============
-      if (u.channel_post) {
-        const post = u.channel_post;
-        const chat = post.chat;
-        if (!chat?.id || chat.type !== 'channel') continue;
-        const text: string = (post.text ?? post.caption ?? '').trim();
-        if (text) await tryLinkChat(chat, text);
-        totalProcessed++;
-        continue;
-      }
-
-      // ============ Handle messages (private + groups + supergroups) ============
-      const msg = u.message;
-      if (!msg?.chat?.id) continue;
-
-      // Group / supergroup — only used for linking via code
-      if (msg.chat.type === 'group' || msg.chat.type === 'supergroup') {
-        const text: string = (msg.text ?? msg.caption ?? '').trim();
-        if (text) await tryLinkChat(msg.chat, text);
-        totalProcessed++;
-        continue;
-      }
-
-      const text: string = (msg.text ?? '').trim();
-      const chatId: number = msg.chat.id;
-      const isStart = text.toLowerCase().startsWith('/start');
-
-      if (isStart) {
-        const parts = text.split(/\s+/);
-        const linkCode = parts.length > 1 ? parts[1].trim() : null;
-        let linkedUserId: string | null = null;
-        let linkSuccess = false;
-
-        if (linkCode) {
-          const { data: codeRow } = await supabase
-            .from('telegram_link_codes')
-            .select('user_id, expires_at, used_at, purpose')
-            .eq('code', linkCode)
-            .maybeSingle();
-
-          if (
-            codeRow &&
-            !codeRow.used_at &&
-            new Date(codeRow.expires_at) > new Date() &&
-            codeRow.purpose !== 'channel'
-          ) {
-            linkedUserId = codeRow.user_id;
-            linkSuccess = true;
-            await supabase
-              .from('telegram_link_codes')
-              .update({ used_at: new Date().toISOString() })
-              .eq('code', linkCode);
+        if (u.channel_post) {
+          const post = u.channel_post;
+          const chat = post.chat;
+          if (chat?.id && chat.type === 'channel') {
+            const text: string = (post.text ?? post.caption ?? '').trim();
+            if (text) await tryLinkChat(ctx, sb, chat, text);
           }
+          totalProcessed++;
+          continue;
         }
 
-        const subRow: Record<string, unknown> = {
-          chat_id: chatId,
-          username: msg.from?.username ?? null,
-          first_name: msg.from?.first_name ?? null,
-          last_name: msg.from?.last_name ?? null,
-          is_active: true,
-        };
-        if (linkedUserId) subRow.user_id = linkedUserId;
-
-        const { error: upsertErr } = await supabase
-          .from('telegram_subscribers')
-          .upsert(subRow, { onConflict: 'chat_id' });
-
-        if (upsertErr) {
-          console.error('[telegram-poll] subscriber upsert error:', upsertErr.message);
-        } else {
-          newSubscribers++;
+        if (u.callback_query) {
+          await routeCallback(ctx, sb, u.callback_query);
+          totalProcessed++;
+          continue;
         }
 
-        const greetingText = linkSuccess
-          ? '✅ <b>Аккаунт привязан!</b>\n\nТеперь личные уведомления (новые сообщения, отклики, статусы заявок) будут приходить вам в Telegram.\n\n👇 Откройте приложение, чтобы продолжить работу.'
-          : WELCOME_TEXT;
-
-        await sendTelegram(LOVABLE_API_KEY, TELEGRAM_API_KEY, chatId, greetingText, {
-          reply_markup: {
-            inline_keyboard: [[
-              { text: '🚀 Открыть приложение', web_app: { url: WEB_APP_URL } },
-            ]],
-          },
-        });
+        if (u.message?.chat?.id) {
+          await routeMessage(ctx, sb, u.message);
+          totalProcessed++;
+        }
+      } catch (e) {
+        console.error('[telegram-poll] update handler error:', e, 'update:', JSON.stringify(u).slice(0, 500));
       }
-
-      totalProcessed++;
     }
 
     const newOffset = Math.max(...updates.map((u: any) => u.update_id)) + 1;
-    const { error: offsetErr } = await supabase
+    const { error: offsetErr } = await sb
       .from('telegram_bot_state')
       .update({ update_offset: newOffset, updated_at: new Date().toISOString() })
       .eq('id', 1);
-
     if (offsetErr) {
       console.error('[telegram-poll] offset update error:', offsetErr.message);
-      return new Response(JSON.stringify({ error: offsetErr.message }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      return new Response(JSON.stringify({ error: offsetErr.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
-
     currentOffset = newOffset;
   }
 
   return new Response(
-    JSON.stringify({ ok: true, processed: totalProcessed, newSubscribers, newChannels, finalOffset: currentOffset }),
+    JSON.stringify({ ok: true, processed: totalProcessed, finalOffset: currentOffset }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
   );
 });
