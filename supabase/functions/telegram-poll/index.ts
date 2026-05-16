@@ -276,6 +276,13 @@ async function routeCallback(ctx: any, sb: any, cb: any) {
     if (action === 'list') return showMyJobs(ctx, sb, chatId, userId);
     if (action === 'st' && arg && arg2) return setWorkerStatus(ctx, sb, chatId, userId, arg, arg2);
   }
+
+  // Dispatcher: create / list / close
+  if (data.startsWith('dc:') && (role === 'dispatcher' || role === 'admin')) {
+    const [, action, arg] = data.split(':');
+    await handleDispatcherCallback(ctx, sb, chatId, userId, action, arg);
+    return;
+  }
 }
 
 // ============= Polling loop =============
