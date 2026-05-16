@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getTgCtx, tg } from '../_shared/telegram/api.ts';
 import { mainMenu, MENU_LABELS, WEB_APP_URL, type Role } from '../_shared/telegram/keyboards.ts';
 import { clearFsm, getFsm, setFsm } from '../_shared/telegram/fsm.ts';
+import { showAvailableJobs, respondToJob, showMyJobs, setWorkerStatus } from '../_shared/telegram/worker.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -207,8 +208,8 @@ async function routeMessage(ctx: any, sb: any, msg: any) {
   // Worker buttons
   if (role === 'worker') {
     switch (text) {
-      case MENU_LABELS.workerJobs: return handleStub(ctx, chatId, 'Доступные заявки');
-      case MENU_LABELS.workerMyJobs: return handleStub(ctx, chatId, 'Мои работы');
+      case MENU_LABELS.workerJobs: return showAvailableJobs(ctx, sb, chatId, userId, 0);
+      case MENU_LABELS.workerMyJobs: return showMyJobs(ctx, sb, chatId, userId);
       case MENU_LABELS.workerBalance: {
         const { data: p } = await sb.from('profiles').select('balance, total_earned').eq('user_id', userId).maybeSingle();
         return tg.send(ctx, chatId, `💰 <b>Баланс</b>\n\nТекущий: <b>${p?.balance ?? 0} ₽</b>\nВсего заработано: <b>${p?.total_earned ?? 0} ₽</b>`);
@@ -252,6 +253,23 @@ async function routeCallback(ctx: any, sb: any, cb: any) {
       reply_markup: { inline_keyboard: [[{ text: '🚀 Открыть приложение', web_app: { url: WEB_APP_URL } }]] },
     });
     return;
+  }
+
+  const { userId, role } = await getUserRole(sb, chatId);
+  if (!userId) return handleNotLinked(ctx, chatId);
+
+  // Worker: available jobs
+  if (data.startsWith('wj:')) {
+    const [, action, arg] = data.split(':');
+    if (action === 'list') return showAvailableJobs(ctx, sb, chatId, userId, Math.max(0, parseInt(arg ?? '0', 10) || 0));
+    if (action === 'resp' && arg) return respondToJob(ctx, sb, chatId, userId, arg);
+  }
+
+  // Worker: my jobs status
+  if (data.startsWith('wm:')) {
+    const [, action, arg, arg2] = data.split(':');
+    if (action === 'list') return showMyJobs(ctx, sb, chatId, userId);
+    if (action === 'st' && arg && arg2) return setWorkerStatus(ctx, sb, chatId, userId, arg, arg2);
   }
 }
 
