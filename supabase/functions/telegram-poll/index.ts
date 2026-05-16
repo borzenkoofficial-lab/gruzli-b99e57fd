@@ -254,6 +254,23 @@ async function routeCallback(ctx: any, sb: any, cb: any) {
     });
     return;
   }
+
+  const { userId, role } = await getUserRole(sb, chatId);
+  if (!userId) return handleNotLinked(ctx, chatId);
+
+  // Worker: available jobs
+  if (data.startsWith('wj:')) {
+    const [, action, arg] = data.split(':');
+    if (action === 'list') return showAvailableJobs(ctx, sb, chatId, userId, Math.max(0, parseInt(arg ?? '0', 10) || 0));
+    if (action === 'resp' && arg) return respondToJob(ctx, sb, chatId, userId, arg);
+  }
+
+  // Worker: my jobs status
+  if (data.startsWith('wm:')) {
+    const [, action, arg, arg2] = data.split(':');
+    if (action === 'list') return showMyJobs(ctx, sb, chatId, userId);
+    if (action === 'st' && arg && arg2) return setWorkerStatus(ctx, sb, chatId, userId, arg, arg2);
+  }
 }
 
 // ============= Polling loop =============
