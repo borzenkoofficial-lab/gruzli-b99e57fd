@@ -3,6 +3,7 @@ import { getTgCtx, tg } from '../_shared/telegram/api.ts';
 import { mainMenu, MENU_LABELS, WEB_APP_URL, type Role } from '../_shared/telegram/keyboards.ts';
 import { clearFsm, getFsm, setFsm } from '../_shared/telegram/fsm.ts';
 import { showAvailableJobs, respondToJob, showMyJobs, setWorkerStatus } from '../_shared/telegram/worker.ts';
+import { startCreateJob, handleDispatcherFsm, handleDispatcherCallback, showDispatcherJobs } from '../_shared/telegram/dispatcher.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
