@@ -181,10 +181,15 @@ async function routeMessage(ctx: any, sb: any, msg: any) {
     return;
   }
 
-  // FSM state takes precedence (для будущих этапов: создание заявки и т.п.)
+  // FSM state takes precedence
   const fsm = await getFsm(sb, chatId);
   if (fsm) {
-    // Этап 1: пока сценариев нет — просто чистим и показываем меню
+    const { userId: fsmUser, role: fsmRole } = await getUserRole(sb, chatId);
+    if (fsm.state.startsWith('dc:') && fsmUser && (fsmRole === 'dispatcher' || fsmRole === 'admin')) {
+      const handled = await handleDispatcherFsm(ctx, sb, chatId, fsmUser, fsm, text);
+      if (handled) return;
+    }
+    // unknown / stale state
     await clearFsm(sb, chatId);
     await showMenu(ctx, sb, chatId, '↩️ Сценарий сброшен.');
     return;
@@ -201,7 +206,6 @@ async function routeMessage(ctx: any, sb: any, msg: any) {
   }
 
   if (!userId) {
-    // Unlinked user wrote anything — show menu
     if (text) await showMenu(ctx, sb, chatId);
     return;
   }
@@ -225,8 +229,8 @@ async function routeMessage(ctx: any, sb: any, msg: any) {
   // Dispatcher / admin buttons
   if (role === 'dispatcher' || role === 'admin') {
     switch (text) {
-      case MENU_LABELS.dispatcherCreate: return handleStub(ctx, chatId, 'Создать заявку');
-      case MENU_LABELS.dispatcherJobs: return handleStub(ctx, chatId, 'Мои заявки');
+      case MENU_LABELS.dispatcherCreate: return startCreateJob(ctx, sb, chatId, userId);
+      case MENU_LABELS.dispatcherJobs: return showDispatcherJobs(ctx, sb, chatId, userId);
       case MENU_LABELS.dispatcherStats: {
         const { count: jobsCount } = await sb.from('jobs').select('*', { count: 'exact', head: true }).eq('dispatcher_id', userId);
         const { count: activeCount } = await sb.from('jobs').select('*', { count: 'exact', head: true }).eq('dispatcher_id', userId).eq('status', 'active');
