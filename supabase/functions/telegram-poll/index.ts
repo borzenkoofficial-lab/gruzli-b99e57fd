@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getTgCtx, tg } from '../_shared/telegram/api.ts';
 import { mainMenu, MENU_LABELS, WEB_APP_URL, type Role } from '../_shared/telegram/keyboards.ts';
 import { clearFsm, getFsm, setFsm } from '../_shared/telegram/fsm.ts';
+import { showAvailableJobs, respondToJob, showMyJobs, setWorkerStatus } from '../_shared/telegram/worker.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
