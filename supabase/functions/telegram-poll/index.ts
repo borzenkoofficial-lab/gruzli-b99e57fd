@@ -208,8 +208,8 @@ async function routeMessage(ctx: any, sb: any, msg: any) {
   // Worker buttons
   if (role === 'worker') {
     switch (text) {
-      case MENU_LABELS.workerJobs: return handleStub(ctx, chatId, 'Доступные заявки');
-      case MENU_LABELS.workerMyJobs: return handleStub(ctx, chatId, 'Мои работы');
+      case MENU_LABELS.workerJobs: return showAvailableJobs(ctx, sb, chatId, userId, 0);
+      case MENU_LABELS.workerMyJobs: return showMyJobs(ctx, sb, chatId, userId);
       case MENU_LABELS.workerBalance: {
         const { data: p } = await sb.from('profiles').select('balance, total_earned').eq('user_id', userId).maybeSingle();
         return tg.send(ctx, chatId, `💰 <b>Баланс</b>\n\nТекущий: <b>${p?.balance ?? 0} ₽</b>\nВсего заработано: <b>${p?.total_earned ?? 0} ₽</b>`);
