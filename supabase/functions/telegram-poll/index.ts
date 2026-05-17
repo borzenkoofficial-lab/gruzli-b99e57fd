@@ -326,6 +326,43 @@ async function routeCallback(ctx: any, sb: any, cb: any) {
     await handleDispatcherCallback(ctx, sb, chatId, userId, action, arg);
     return;
   }
+
+  // Settings actions
+  if (data.startsWith('settings:')) {
+    const [, action] = data.split(':');
+    if (action === 'notif_off') {
+      await sb.from('telegram_subscribers').update({ is_active: false }).eq('chat_id', chatId);
+      await tg.send(ctx, chatId, '🔕 Уведомления отключены. Включить обратно можно в «⚙️ Настройки».');
+      return handleSettings(ctx, sb, chatId);
+    }
+    if (action === 'notif_on') {
+      await sb.from('telegram_subscribers').update({ is_active: true }).eq('chat_id', chatId);
+      await tg.send(ctx, chatId, '🔔 Уведомления включены.');
+      return handleSettings(ctx, sb, chatId);
+    }
+    if (action === 'unlink_confirm') {
+      await tg.send(ctx, chatId, '⚠️ Точно отвязать аккаунт? Личные уведомления перестанут приходить в этот чат.', {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '✅ Да, отвязать', callback_data: 'settings:unlink_do' }],
+            [{ text: '↩️ Отмена', callback_data: 'settings:cancel' }],
+          ],
+        },
+      });
+      return;
+    }
+    if (action === 'unlink_do') {
+      await sb.from('telegram_subscribers').update({ user_id: null, is_active: false }).eq('chat_id', chatId);
+      await tg.send(ctx, chatId, '✅ Аккаунт отвязан. Чтобы снова пользоваться кабинетом — привяжите его заново через приложение.', {
+        reply_markup: { inline_keyboard: [[{ text: '🔗 Как привязать', callback_data: 'auth:howto' }]] },
+      });
+      return;
+    }
+    if (action === 'cancel') {
+      await tg.send(ctx, chatId, 'Отменено.');
+      return;
+    }
+  }
 }
 
 // ============= Polling loop =============
