@@ -243,9 +243,9 @@ async function routeMessage(ctx: any, sb: any, msg: any) {
 
   switch (text) {
     case MENU_LABELS.support:
-      return handleSupport(ctx, chatId);
+      return handleSupport(ctx, sb, chatId);
     case MENU_LABELS.settings:
-      return handleStub(ctx, chatId, 'Настройки');
+      return handleSettings(ctx, sb, chatId);
   }
 
   if (!userId) {
