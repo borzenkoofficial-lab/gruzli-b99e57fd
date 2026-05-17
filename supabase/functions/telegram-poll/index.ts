@@ -91,14 +91,57 @@ async function handleStart(ctx: any, sb: any, chatId: number, text: string, msgF
   await showMenu(ctx, sb, chatId, greeting);
 }
 
-async function handleSupport(ctx: any, chatId: number) {
+async function handleSupport(ctx: any, sb: any, chatId: number) {
+  const { userId } = await getUserRole(sb, chatId);
+  if (!userId) return handleNotLinked(ctx, chatId);
   await tg.send(
     ctx,
     chatId,
-    '🆘 <b>Поддержка</b>\n\nНапишите ваш вопрос в чат поддержки в приложении — мы ответим максимально быстро.',
+    '🆘 <b>Поддержка Грузли</b>\n\nНажмите кнопку ниже — откроется чат с администрацией прямо в приложении. Ответим максимально быстро.',
     {
       reply_markup: {
-        inline_keyboard: [[{ text: '💬 Открыть чат поддержки', web_app: { url: WEB_APP_URL + 'support' } }]],
+        inline_keyboard: [[{ text: '💬 Открыть чат с поддержкой', web_app: { url: WEB_APP_URL + '?action=support' } }]],
+      },
+    },
+  );
+}
+
+async function handleSettings(ctx: any, sb: any, chatId: number) {
+  const { userId, role } = await getUserRole(sb, chatId);
+  if (!userId) return handleNotLinked(ctx, chatId);
+
+  const { data: sub } = await sb
+    .from('telegram_subscribers')
+    .select('username, first_name, last_name, is_active, created_at')
+    .eq('chat_id', chatId)
+    .maybeSingle();
+
+  const roleLabel = role === 'dispatcher' ? 'Диспетчер' : role === 'admin' ? 'Админ' : 'Грузчик';
+  const name = [sub?.first_name, sub?.last_name].filter(Boolean).join(' ') || sub?.username || '—';
+  const linkedSince = sub?.created_at ? new Date(sub.created_at).toLocaleDateString('ru-RU') : '—';
+  const notifStatus = sub?.is_active ? '🔔 Включены' : '🔕 Отключены';
+
+  await tg.send(
+    ctx,
+    chatId,
+    `⚙️ <b>Настройки</b>\n\n` +
+      `👤 Аккаунт: <b>${name}</b>\n` +
+      `🎭 Роль: <b>${roleLabel}</b>\n` +
+      `🔗 Привязан с: <b>${linkedSince}</b>\n` +
+      `Уведомления: <b>${notifStatus}</b>\n\n` +
+      'Расширенные настройки профиля, навыков и приватности доступны в приложении.',
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: sub?.is_active ? '🔕 Отключить уведомления' : '🔔 Включить уведомления',
+              callback_data: sub?.is_active ? 'settings:notif_off' : 'settings:notif_on',
+            },
+          ],
+          [{ text: '⚙️ Открыть настройки в приложении', web_app: { url: WEB_APP_URL + '?action=settings' } }],
+          [{ text: '🚪 Отвязать аккаунт', callback_data: 'settings:unlink_confirm' }],
+        ],
       },
     },
   );
@@ -200,9 +243,9 @@ async function routeMessage(ctx: any, sb: any, msg: any) {
 
   switch (text) {
     case MENU_LABELS.support:
-      return handleSupport(ctx, chatId);
+      return handleSupport(ctx, sb, chatId);
     case MENU_LABELS.settings:
-      return handleStub(ctx, chatId, 'Настройки');
+      return handleSettings(ctx, sb, chatId);
   }
 
   if (!userId) {
@@ -282,6 +325,43 @@ async function routeCallback(ctx: any, sb: any, cb: any) {
     const [, action, arg] = data.split(':');
     await handleDispatcherCallback(ctx, sb, chatId, userId, action, arg);
     return;
+  }
+
+  // Settings actions
+  if (data.startsWith('settings:')) {
+    const [, action] = data.split(':');
+    if (action === 'notif_off') {
+      await sb.from('telegram_subscribers').update({ is_active: false }).eq('chat_id', chatId);
+      await tg.send(ctx, chatId, '🔕 Уведомления отключены. Включить обратно можно в «⚙️ Настройки».');
+      return handleSettings(ctx, sb, chatId);
+    }
+    if (action === 'notif_on') {
+      await sb.from('telegram_subscribers').update({ is_active: true }).eq('chat_id', chatId);
+      await tg.send(ctx, chatId, '🔔 Уведомления включены.');
+      return handleSettings(ctx, sb, chatId);
+    }
+    if (action === 'unlink_confirm') {
+      await tg.send(ctx, chatId, '⚠️ Точно отвязать аккаунт? Личные уведомления перестанут приходить в этот чат.', {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '✅ Да, отвязать', callback_data: 'settings:unlink_do' }],
+            [{ text: '↩️ Отмена', callback_data: 'settings:cancel' }],
+          ],
+        },
+      });
+      return;
+    }
+    if (action === 'unlink_do') {
+      await sb.from('telegram_subscribers').update({ user_id: null, is_active: false }).eq('chat_id', chatId);
+      await tg.send(ctx, chatId, '✅ Аккаунт отвязан. Чтобы снова пользоваться кабинетом — привяжите его заново через приложение.', {
+        reply_markup: { inline_keyboard: [[{ text: '🔗 Как привязать', callback_data: 'auth:howto' }]] },
+      });
+      return;
+    }
+    if (action === 'cancel') {
+      await tg.send(ctx, chatId, 'Отменено.');
+      return;
+    }
   }
 }
 
