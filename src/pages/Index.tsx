@@ -87,18 +87,33 @@ const Index = () => {
     return () => window.removeEventListener("navigate-to-feed", handler);
   }, []);
 
-  // Handle deep link from push notification: /?openChat={conversationId}
+  // Handle deep links: /?openChat=..., /?action=support, /?action=settings
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const chatId = params.get("openChat");
+    const action = params.get("action");
     if (chatId) {
       setTab("chats");
       setOpenChatId(chatId);
       setOpenChatTitle("");
-      // Clean up URL
+    }
+    if (action === "settings") {
+      setShowSettings(true);
+    }
+    if (chatId || action) {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
+
+  // Support deep link runs after supportUserId resolves
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("action") === "support" && supportUserId && user) {
+      handleChatWithUser(supportUserId, SUPPORT_NAME);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supportUserId, user]);
 
   const [openChatId, setOpenChatId] = useState<string | null>(null);
   const [openChatTitle, setOpenChatTitle] = useState("");
