@@ -91,14 +91,57 @@ async function handleStart(ctx: any, sb: any, chatId: number, text: string, msgF
   await showMenu(ctx, sb, chatId, greeting);
 }
 
-async function handleSupport(ctx: any, chatId: number) {
+async function handleSupport(ctx: any, sb: any, chatId: number) {
+  const { userId } = await getUserRole(sb, chatId);
+  if (!userId) return handleNotLinked(ctx, chatId);
   await tg.send(
     ctx,
     chatId,
-    '🆘 <b>Поддержка</b>\n\nНапишите ваш вопрос в чат поддержки в приложении — мы ответим максимально быстро.',
+    '🆘 <b>Поддержка Грузли</b>\n\nНажмите кнопку ниже — откроется чат с администрацией прямо в приложении. Ответим максимально быстро.',
     {
       reply_markup: {
-        inline_keyboard: [[{ text: '💬 Открыть чат поддержки', web_app: { url: WEB_APP_URL + 'support' } }]],
+        inline_keyboard: [[{ text: '💬 Открыть чат с поддержкой', web_app: { url: WEB_APP_URL + '?action=support' } }]],
+      },
+    },
+  );
+}
+
+async function handleSettings(ctx: any, sb: any, chatId: number) {
+  const { userId, role } = await getUserRole(sb, chatId);
+  if (!userId) return handleNotLinked(ctx, chatId);
+
+  const { data: sub } = await sb
+    .from('telegram_subscribers')
+    .select('username, first_name, last_name, is_active, created_at')
+    .eq('chat_id', chatId)
+    .maybeSingle();
+
+  const roleLabel = role === 'dispatcher' ? 'Диспетчер' : role === 'admin' ? 'Админ' : 'Грузчик';
+  const name = [sub?.first_name, sub?.last_name].filter(Boolean).join(' ') || sub?.username || '—';
+  const linkedSince = sub?.created_at ? new Date(sub.created_at).toLocaleDateString('ru-RU') : '—';
+  const notifStatus = sub?.is_active ? '🔔 Включены' : '🔕 Отключены';
+
+  await tg.send(
+    ctx,
+    chatId,
+    `⚙️ <b>Настройки</b>\n\n` +
+      `👤 Аккаунт: <b>${name}</b>\n` +
+      `🎭 Роль: <b>${roleLabel}</b>\n` +
+      `🔗 Привязан с: <b>${linkedSince}</b>\n` +
+      `Уведомления: <b>${notifStatus}</b>\n\n` +
+      'Расширенные настройки профиля, навыков и приватности доступны в приложении.',
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: sub?.is_active ? '🔕 Отключить уведомления' : '🔔 Включить уведомления',
+              callback_data: sub?.is_active ? 'settings:notif_off' : 'settings:notif_on',
+            },
+          ],
+          [{ text: '⚙️ Открыть настройки в приложении', web_app: { url: WEB_APP_URL + '?action=settings' } }],
+          [{ text: '🚪 Отвязать аккаунт', callback_data: 'settings:unlink_confirm' }],
+        ],
       },
     },
   );
