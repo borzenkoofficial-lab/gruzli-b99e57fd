@@ -444,6 +444,7 @@ const Index = () => {
         </ErrorBoundary>
         
         <BottomNav active={tab} onNavigate={handleNavigate} isDispatcher={isDispatcher} unreadMessages={unreadMessages} newJobsCount={newJobsCount} />
+        <AnnouncementModal />
       </div>
     );
   }

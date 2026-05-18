@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bot, Users, Loader2, Zap } from "lucide-react";
 import AdminBannerEditor from "./AdminBannerEditor";
+import AdminAnnouncementEditor from "./AdminAnnouncementEditor";
 import { toast } from "sonner";
 
 const AdminSettingsTab = () => {
@@ -82,6 +83,7 @@ const AdminSettingsTab = () => {
 
   return (
     <div className="space-y-4 mt-4">
+      <AdminAnnouncementEditor />
       <AdminBannerEditor />
       {/* Bot Jobs */}
       <Card>
