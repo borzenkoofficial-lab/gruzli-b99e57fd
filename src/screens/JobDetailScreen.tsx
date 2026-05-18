@@ -186,7 +186,16 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
         </div>
 
         {job.description && (
-          <p className="text-sm text-muted-foreground mb-5 leading-relaxed">{job.description}</p>
+          <div className="relative mb-5 rounded-2xl border border-border bg-card/60 p-4 pl-5 overflow-hidden">
+            <span aria-hidden className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-2xl" />
+            <div className="flex items-center gap-1.5 mb-2">
+              <AlignLeft size={13} className="text-primary" />
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Описание</span>
+            </div>
+            <p className="text-[15px] text-foreground leading-relaxed whitespace-pre-wrap break-words">
+              {job.description}
+            </p>
+          </div>
         )}
 
         {/* Safety / anti-fraud tip for workers */}
