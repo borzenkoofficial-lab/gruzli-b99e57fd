@@ -9,6 +9,7 @@ import DesktopTopBar from "@/components/DesktopTopBar";
 import FAB from "@/components/FAB";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import ScreenSkeleton from "@/components/ScreenSkeleton";
+import AnnouncementModal from "@/components/AnnouncementModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUnreadCounts } from "@/hooks/useUnreadCounts";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -443,6 +444,7 @@ const Index = () => {
         </ErrorBoundary>
         
         <BottomNav active={tab} onNavigate={handleNavigate} isDispatcher={isDispatcher} unreadMessages={unreadMessages} newJobsCount={newJobsCount} />
+        <AnnouncementModal />
       </div>
     );
   }
@@ -544,13 +546,16 @@ const Index = () => {
   );
 
   return (
-    <DesktopLayout
-      sidebar={sidebar}
-      topBar={topBar}
-      main={mainContent}
-      detail={detailPanel}
-      onCloseDetail={detailPanel ? closeDetail : undefined}
-    />
+    <>
+      <DesktopLayout
+        sidebar={sidebar}
+        topBar={topBar}
+        main={mainContent}
+        detail={detailPanel}
+        onCloseDetail={detailPanel ? closeDetail : undefined}
+      />
+      <AnnouncementModal />
+    </>
   );
 };
 
