@@ -327,6 +327,7 @@ const Index = () => {
 
     if (showNotifications) return wrapSuspense(<NotificationsScreen onBack={() => setShowNotifications(false)} />);
     if (showPremium) return wrapSuspense(<PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(supportUserId || '', SUPPORT_NAME, msg); }} />);
+    if (showCompany) return wrapSuspense(<CompanyScreen onBack={() => setShowCompany(false)} onOpenSupport={(msg) => { setShowCompany(false); handleChatWithUser(supportUserId || '', SUPPORT_NAME, msg); }} />);
     if (showChannel) return wrapSuspense(<ChannelScreen onBack={() => setShowChannel(false)} />);
     if (showSettings) return wrapSuspense(<SettingsScreen onBack={() => setShowSettings(false)} onOpenPremium={() => { setShowSettings(false); setShowPremium(true); }} />);
     if (showCommunity) {
