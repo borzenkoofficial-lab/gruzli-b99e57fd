@@ -239,6 +239,9 @@ const Index = () => {
       if (showPremium) {
         return <PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(supportUserId || '', SUPPORT_NAME, msg); }} />;
       }
+      if (showCompany) {
+        return <CompanyScreen onBack={() => setShowCompany(false)} onOpenSupport={(msg) => { setShowCompany(false); handleChatWithUser(supportUserId || '', SUPPORT_NAME, msg); }} />;
+      }
       if (showChannel) {
         return <ChannelScreen onBack={() => setShowChannel(false)} />;
       }
