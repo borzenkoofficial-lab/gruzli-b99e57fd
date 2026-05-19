@@ -934,12 +934,16 @@ export type Database = {
           balance: number | null
           birth_date: string | null
           blocked: boolean
+          company_name: string | null
+          company_plan: string | null
+          company_until: string | null
           completed_orders: number | null
           created_at: string
           display_id: string | null
           full_name: string
           id: string
           inn: string | null
+          is_company: boolean
           is_premium: boolean
           is_self_employed: boolean
           last_seen_at: string | null
@@ -959,12 +963,16 @@ export type Database = {
           balance?: number | null
           birth_date?: string | null
           blocked?: boolean
+          company_name?: string | null
+          company_plan?: string | null
+          company_until?: string | null
           completed_orders?: number | null
           created_at?: string
           display_id?: string | null
           full_name?: string
           id?: string
           inn?: string | null
+          is_company?: boolean
           is_premium?: boolean
           is_self_employed?: boolean
           last_seen_at?: string | null
@@ -984,12 +992,16 @@ export type Database = {
           balance?: number | null
           birth_date?: string | null
           blocked?: boolean
+          company_name?: string | null
+          company_plan?: string | null
+          company_until?: string | null
           completed_orders?: number | null
           created_at?: string
           display_id?: string | null
           full_name?: string
           id?: string
           inn?: string | null
+          is_company?: boolean
           is_premium?: boolean
           is_self_employed?: boolean
           last_seen_at?: string | null
