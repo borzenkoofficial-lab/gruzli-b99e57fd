@@ -34,6 +34,7 @@ const SettingsScreen = lazy(() => import("@/screens/SettingsScreen"));
 const UserProfileScreen = lazy(() => import("@/screens/UserProfileScreen"));
 const NotificationsScreen = lazy(() => import("@/screens/NotificationsScreen"));
 const PremiumScreen = lazy(() => import("@/screens/PremiumScreen"));
+const CompanyScreen = lazy(() => import("@/screens/CompanyScreen"));
 const DispatcherCabinetScreen = lazy(() => import("@/screens/DispatcherCabinetScreen"));
 const DispatcherCommunityScreen = lazy(() => import("@/screens/DispatcherCommunityScreen"));
 const SupportChatScreen = lazy(() => import("@/screens/SupportChatScreen"));
@@ -125,6 +126,7 @@ const Index = () => {
   const [showChannel, setShowChannel] = useState(false);
   const [viewProfileUserId, setViewProfileUserId] = useState<string | null>(null);
   const [showPremium, setShowPremium] = useState(false);
+  const [showCompany, setShowCompany] = useState(false);
   const [showCommunity, setShowCommunity] = useState(false);
   const [showCabinet, setShowCabinet] = useState(false);
   const [showSupportChat, setShowSupportChat] = useState(false);
@@ -237,6 +239,9 @@ const Index = () => {
       if (showPremium) {
         return <PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(supportUserId || '', SUPPORT_NAME, msg); }} />;
       }
+      if (showCompany) {
+        return <CompanyScreen onBack={() => setShowCompany(false)} onOpenSupport={(msg) => { setShowCompany(false); handleChatWithUser(supportUserId || '', SUPPORT_NAME, msg); }} />;
+      }
       if (showChannel) {
         return <ChannelScreen onBack={() => setShowChannel(false)} />;
       }
@@ -322,6 +327,7 @@ const Index = () => {
 
     if (showNotifications) return wrapSuspense(<NotificationsScreen onBack={() => setShowNotifications(false)} />);
     if (showPremium) return wrapSuspense(<PremiumScreen onBack={() => setShowPremium(false)} onOpenSupport={(msg) => { setShowPremium(false); handleChatWithUser(supportUserId || '', SUPPORT_NAME, msg); }} />);
+    if (showCompany) return wrapSuspense(<CompanyScreen onBack={() => setShowCompany(false)} onOpenSupport={(msg) => { setShowCompany(false); handleChatWithUser(supportUserId || '', SUPPORT_NAME, msg); }} />);
     if (showChannel) return wrapSuspense(<ChannelScreen onBack={() => setShowChannel(false)} />);
     if (showSettings) return wrapSuspense(<SettingsScreen onBack={() => setShowSettings(false)} onOpenPremium={() => { setShowSettings(false); setShowPremium(true); }} />);
     if (showCommunity) {
@@ -434,6 +440,7 @@ const Index = () => {
                         onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage)}
                         onOpenPremium={() => setShowPremium(true)}
                         onOpenCabinet={() => { setShowCabinet(false); handleNavigate("feed"); }}
+                        onOpenCompany={() => setShowCompany(true)}
                       />
                     )}
                   </motion.div>
@@ -480,6 +487,7 @@ const Index = () => {
             onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage)}
             onOpenPremium={() => setShowPremium(true)}
             onOpenCabinet={() => { setShowCabinet(false); handleNavigate("feed"); }}
+            onOpenCompany={() => setShowCompany(true)}
           />
         )}
       </Suspense>
@@ -524,6 +532,7 @@ const Index = () => {
     setShowSettings(false);
     setShowNotifications(false);
     setShowPremium(false);
+    setShowCompany(false);
     setShowChannel(false);
     setShowCreateJob(false);
     setViewResponsesJob(null);

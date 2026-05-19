@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Star, Briefcase, Wallet, Calendar, ChevronRight, Settings, LogOut, Shield, Bell, CreditCard, Trophy, Copy, CheckCircle2, MessageSquare, Hash, ShieldCheck, Headphones, BadgeCheck, Banknote, Crown, Camera, Plus, X } from "lucide-react";
+import { Star, Briefcase, Wallet, Calendar, ChevronRight, Settings, LogOut, Shield, Bell, CreditCard, Trophy, Copy, CheckCircle2, MessageSquare, Hash, ShieldCheck, Headphones, BadgeCheck, Banknote, Crown, Camera, Plus, X, Building2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,6 +16,7 @@ interface ProfileScreenProps {
   onOpenSupport?: (prefillMessage?: string) => void;
   onOpenPremium?: () => void;
   onOpenCabinet?: () => void;
+  onOpenCompany?: () => void;
 }
 
 interface Review {
@@ -116,7 +117,7 @@ const AvatarWithUpload = ({ profile, user, editable = false }: { profile: any; u
   );
 };
 
-const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onOpenPremium, onOpenCabinet }: ProfileScreenProps) => {
+const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onOpenPremium, onOpenCabinet, onOpenCompany }: ProfileScreenProps) => {
   const { user, profile, role, signOut } = useAuth();
   const [availability, setAvailability] = useState<boolean[]>([true, true, true, false, true, true, false]);
   const [statsPeriod, setStatsPeriod] = useState<"today" | "week" | "month">("today");
@@ -454,6 +455,42 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
               </div>
             </button>
           </motion.div>
+
+          {/* "We are a company" CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.07 }}
+            className="mx-5 mb-3"
+          >
+            <button
+              onClick={onOpenCompany}
+              className="w-full relative overflow-hidden rounded-3xl p-5 text-left active:scale-[0.98] transition-transform"
+              style={{
+                background: "linear-gradient(135deg, hsl(220 70% 50%), hsl(260 55% 40%))",
+                boxShadow: "0 8px 24px hsl(230 60% 45% / 0.35)",
+              }}
+            >
+              <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10 blur-2xl" />
+              <div className="relative flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                  <Building2 size={24} className="text-white" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest">Бизнес</p>
+                  <h3 className="text-lg font-extrabold text-white mt-0.5 flex items-center gap-2">
+                    Мы — компания
+                    {(profile as any)?.is_company && (
+                      <span className="px-2 py-0.5 rounded-full bg-white/25 text-[10px] font-bold">Активно</span>
+                    )}
+                  </h3>
+                  <p className="text-[11px] text-white/80 mt-0.5">Налоги · выплаты · −50% на заявки</p>
+                </div>
+                <ChevronRight size={20} className="text-white/90 flex-shrink-0" />
+              </div>
+            </button>
+          </motion.div>
+
 
           {/* Bank Card */}
           <motion.div
