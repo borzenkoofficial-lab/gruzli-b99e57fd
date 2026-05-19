@@ -34,6 +34,7 @@ const SettingsScreen = lazy(() => import("@/screens/SettingsScreen"));
 const UserProfileScreen = lazy(() => import("@/screens/UserProfileScreen"));
 const NotificationsScreen = lazy(() => import("@/screens/NotificationsScreen"));
 const PremiumScreen = lazy(() => import("@/screens/PremiumScreen"));
+const CompanyScreen = lazy(() => import("@/screens/CompanyScreen"));
 const DispatcherCabinetScreen = lazy(() => import("@/screens/DispatcherCabinetScreen"));
 const DispatcherCommunityScreen = lazy(() => import("@/screens/DispatcherCommunityScreen"));
 const SupportChatScreen = lazy(() => import("@/screens/SupportChatScreen"));
