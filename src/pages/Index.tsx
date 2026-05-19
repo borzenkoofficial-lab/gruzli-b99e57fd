@@ -532,6 +532,7 @@ const Index = () => {
     setShowSettings(false);
     setShowNotifications(false);
     setShowPremium(false);
+    setShowCompany(false);
     setShowChannel(false);
     setShowCreateJob(false);
     setViewResponsesJob(null);
