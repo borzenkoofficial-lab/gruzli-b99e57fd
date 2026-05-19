@@ -16,6 +16,7 @@ interface ProfileScreenProps {
   onOpenSupport?: (prefillMessage?: string) => void;
   onOpenPremium?: () => void;
   onOpenCabinet?: () => void;
+  onOpenCompany?: () => void;
 }
 
 interface Review {
