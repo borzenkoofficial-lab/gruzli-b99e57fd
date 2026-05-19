@@ -440,6 +440,7 @@ const Index = () => {
                         onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage)}
                         onOpenPremium={() => setShowPremium(true)}
                         onOpenCabinet={() => { setShowCabinet(false); handleNavigate("feed"); }}
+                        onOpenCompany={() => setShowCompany(true)}
                       />
                     )}
                   </motion.div>
