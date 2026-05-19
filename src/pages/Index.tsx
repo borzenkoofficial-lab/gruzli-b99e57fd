@@ -126,6 +126,7 @@ const Index = () => {
   const [showChannel, setShowChannel] = useState(false);
   const [viewProfileUserId, setViewProfileUserId] = useState<string | null>(null);
   const [showPremium, setShowPremium] = useState(false);
+  const [showCompany, setShowCompany] = useState(false);
   const [showCommunity, setShowCommunity] = useState(false);
   const [showCabinet, setShowCabinet] = useState(false);
   const [showSupportChat, setShowSupportChat] = useState(false);
