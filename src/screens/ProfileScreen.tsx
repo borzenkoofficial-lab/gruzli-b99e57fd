@@ -519,6 +519,36 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             </button>
           </motion.div>
 
+          {/* Тарифы CTA */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: 0.09 }}
+            className="mx-5 mb-3"
+          >
+            <button
+              onClick={onOpenPremium}
+              className="w-full relative overflow-hidden rounded-3xl p-5 text-left active:scale-[0.98] transition-transform bg-card border border-border"
+            >
+              <div className="relative flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Crown size={24} className="text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Подписка</p>
+                  <h3 className="text-lg font-extrabold text-foreground mt-0.5 flex items-center gap-2">
+                    Тарифы
+                    {profile?.is_premium && (
+                      <span className="px-2 py-0.5 rounded-full bg-primary/15 text-[10px] font-bold text-primary">Активно</span>
+                    )}
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Pro · аналитика · AI · от 299 ₽/мес</p>
+                </div>
+                <ChevronRight size={20} className="text-muted-foreground flex-shrink-0" />
+              </div>
+            </button>
+          </motion.div>
+
 
           {/* Bank Card */}
           <motion.div
