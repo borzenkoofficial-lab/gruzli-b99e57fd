@@ -464,14 +464,42 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             className="mx-5 mb-3"
           >
             <button
-              onClick={onOpenCompany}
-              className="w-full relative overflow-hidden rounded-3xl p-5 text-left active:scale-[0.98] transition-transform"
+              disabled
+              className="w-full relative overflow-hidden rounded-3xl p-5 text-left opacity-70 cursor-not-allowed"
               style={{
                 background: "linear-gradient(135deg, hsl(220 70% 50%), hsl(260 55% 40%))",
                 boxShadow: "0 8px 24px hsl(230 60% 45% / 0.35)",
               }}
             >
               <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-white/10 blur-2xl" />
+              {/* Diagonal yellow-black ribbon */}
+              <div
+                className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none"
+                style={{ overflow: "hidden" }}
+              >
+                <div
+                  className="absolute flex items-center justify-center"
+                  style={{
+                    top: "50%",
+                    left: "50%",
+                    width: "140%",
+                    height: "36px",
+                    transform: "translate(-50%, -50%) rotate(-35deg)",
+                    background: "repeating-linear-gradient(45deg, #facc15, #facc15 10px, #171717 10px, #171717 20px)",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+                  }}
+                >
+                  <span
+                    className="text-xs font-black uppercase tracking-[0.15em]"
+                    style={{
+                      color: "#facc15",
+                      textShadow: "0 1px 2px rgba(0,0,0,0.9), 0 0 4px rgba(0,0,0,0.8)",
+                    }}
+                  >
+                    В РАЗРАБОТЕ!
+                  </span>
+                </div>
+              </div>
               <div className="relative flex items-center gap-4">
                 <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
                   <Building2 size={24} className="text-white" />
