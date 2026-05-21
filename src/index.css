@@ -314,6 +314,9 @@
     touch-action: manipulation;
     background: hsl(var(--background));
     overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   body {
@@ -331,6 +334,8 @@
     user-select: none;
     -webkit-user-select: none;
     padding: 0;
+    letter-spacing: -0.011em;
+    line-height: 1.5;
   }
 
   #root {
@@ -344,6 +349,57 @@
     user-select: text;
     -webkit-user-select: text;
   }
+
+  /* Unified typographic hierarchy */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  h1 { letter-spacing: -0.025em; }
+
+  button, input, select, textarea {
+    font-family: inherit;
+    letter-spacing: inherit;
+  }
+
+  /* Smooth default transitions for interactive surfaces */
+  button, a, [role="button"], summary {
+    transition:
+      background-color 0.18s ease,
+      color 0.18s ease,
+      border-color 0.18s ease,
+      box-shadow 0.18s ease,
+      transform 0.12s ease,
+      opacity 0.18s ease;
+  }
+
+  button:active:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]):active,
+  a:active {
+    transform: scale(0.98);
+  }
+
+  /* Consistent thin scrollbars across the app */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.25);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.4); }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.25) transparent;
+  }
+
+  ::selection {
+    background: hsl(var(--foreground) / 0.18);
+    color: hsl(var(--foreground));
+  }
+
+  /* Image placeholders during load look intentional */
+  img { background-color: hsl(var(--muted) / 0.3); }
 }
 
 @layer utilities {
