@@ -2,28 +2,18 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 import { PDFDocument, rgb } from "npm:pdf-lib@1.17.1";
 import fontkit from "npm:@pdf-lib/fontkit@1.1.1";
+import {
+  FONT_REGULAR_URL, FONT_BOLD_URL, loadFontBuf,
+  fmtMoney, rublesToWords, fmtDate, fmtDateLong, buildLegalContractBody,
+} from "../_shared/pdf-utils.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 let cachedFont: ArrayBuffer | null = null;
 let cachedBoldFont: ArrayBuffer | null = null;
-
-async function loadFont(url: string) {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error("Failed to fetch font");
-  return await r.arrayBuffer();
-}
-
-function fmtDate(d: Date) {
-  return d.toLocaleString("ru-RU", {
-    day: "2-digit", month: "2-digit", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -75,20 +65,22 @@ Deno.serve(async (req) => {
     }
 
     const { data: job } = await admin.from("jobs").select("*").eq("id", contract.job_id).maybeSingle();
-    const { data: dispatcher } = await admin.from("profiles").select("full_name, phone").eq("user_id", contract.dispatcher_id).maybeSingle();
+    const { data: dispatcher } = await admin.from("profiles")
+      .select("full_name, phone, inn").eq("user_id", contract.dispatcher_id).maybeSingle();
 
     let workerProfile: any = null;
     let signatureBytes: Uint8Array | null = null;
     let signedAt: string | null = null;
+    let workerResp: any = null;
     if (worker_id) {
-      const { data: wp } = await admin.from("profiles").select("full_name, phone").eq("user_id", worker_id).maybeSingle();
+      const { data: wp } = await admin.from("profiles")
+        .select("full_name, phone, inn, is_self_employed").eq("user_id", worker_id).maybeSingle();
       workerProfile = wp;
-      const { data: sig } = await admin
-        .from("contract_signatures")
-        .select("*")
-        .eq("contract_id", contract_id)
-        .eq("worker_id", worker_id)
-        .maybeSingle();
+      const { data: wr } = await admin.from("job_responses")
+        .select("hours_worked, earned").eq("job_id", contract.job_id).eq("worker_id", worker_id).maybeSingle();
+      workerResp = wr;
+      const { data: sig } = await admin.from("contract_signatures").select("*")
+        .eq("contract_id", contract_id).eq("worker_id", worker_id).maybeSingle();
       if (sig?.signature_url) {
         const dl = await admin.storage.from("contracts").download(sig.signature_url);
         if (dl.data) signatureBytes = new Uint8Array(await dl.data.arrayBuffer());
@@ -96,8 +88,11 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (!cachedFont) cachedFont = await loadFont("https://cdn.jsdelivr.net/npm/@fontsource/pt-sans/files/pt-sans-cyrillic-400-normal.woff");
-    if (!cachedBoldFont) cachedBoldFont = await loadFont("https://cdn.jsdelivr.net/npm/@fontsource/pt-sans/files/pt-sans-cyrillic-700-normal.woff");
+    const hours = Number(workerResp?.hours_worked || job?.duration_hours || 0);
+    const amount = Number(workerResp?.earned || (hours * (job?.hourly_rate || 0)) || 0);
+
+    if (!cachedFont) cachedFont = await loadFontBuf(FONT_REGULAR_URL);
+    if (!cachedBoldFont) cachedBoldFont = await loadFontBuf(FONT_BOLD_URL);
 
     const pdf = await PDFDocument.create();
     pdf.registerFontkit(fontkit);
@@ -105,77 +100,103 @@ Deno.serve(async (req) => {
     const fontBold = await pdf.embedFont(cachedBoldFont!);
     const sigImage = signatureBytes ? await pdf.embedPng(signatureBytes) : null;
 
-    const page = pdf.addPage([595, 842]);
-    const { width, height } = page.getSize();
+    let page = pdf.addPage([595, 842]);
+    const { width } = page.getSize();
     const margin = 50;
-    let y = height - margin;
+    let y = 842 - margin;
+
+    const ensureSpace = (need: number) => {
+      if (y - need < margin) { page = pdf.addPage([595, 842]); y = 842 - margin; }
+    };
 
     const drawText = (text: string, opts: any = {}) => {
-      const size = opts.size ?? 11;
+      const size = opts.size ?? 10.5;
       const usedFont = opts.bold ? fontBold : font;
-      const lineHeight = opts.lineHeight ?? size * 1.4;
+      const lineHeight = opts.lineHeight ?? size * 1.45;
       const maxWidth = opts.maxWidth ?? width - margin * 2;
       const color = opts.color ?? rgb(0.1, 0.1, 0.1);
+      const align = opts.align ?? "left";
       const paragraphs = String(text).split("\n");
       for (const para of paragraphs) {
+        if (!para.trim()) { y -= lineHeight * 0.5; continue; }
         const words = para.split(" ");
         let line = "";
+        const flush = () => {
+          if (!line) return;
+          ensureSpace(lineHeight);
+          const w = usedFont.widthOfTextAtSize(line, size);
+          const x = align === "center" ? (width - w) / 2 : margin;
+          page.drawText(line, { x, y, size, font: usedFont, color });
+          y -= lineHeight;
+        };
         for (const w of words) {
           const test = line ? line + " " + w : w;
           if (usedFont.widthOfTextAtSize(test, size) > maxWidth && line) {
-            page.drawText(line, { x: margin, y, size, font: usedFont, color });
-            y -= lineHeight; line = w;
+            flush(); line = w;
           } else line = test;
         }
-        if (line) {
-          page.drawText(line, { x: margin, y, size, font: usedFont, color });
-          y -= lineHeight;
-        }
+        flush();
       }
     };
 
-    drawText(contract.title || "Договор подряда", { size: 18, bold: true });
-    y -= 6;
-    drawText(`№ ${contract.id.slice(0, 8).toUpperCase()} от ${fmtDate(new Date(contract.created_at))}`, {
-      size: 9, color: rgb(0.4, 0.4, 0.4),
+    drawText("ДОГОВОР ВОЗМЕЗДНОГО ОКАЗАНИЯ УСЛУГ", { size: 15, bold: true, align: "center" });
+    drawText(`№ ${contract.id.slice(0, 8).toUpperCase()}`, { size: 11, bold: true, align: "center" });
+    drawText(fmtDateLong(new Date(contract.created_at)), {
+      size: 10, align: "center", color: rgb(0.35, 0.35, 0.35),
     });
+    y -= 10;
+
+    drawText(
+      `Гражданин(ка) ${dispatcher?.full_name || "—"}${dispatcher?.phone ? `, контактный телефон ${dispatcher.phone}` : ""}${dispatcher?.inn ? `, ИНН ${dispatcher.inn}` : ""}, именуемый(ая) в дальнейшем «Заказчик», с одной стороны, и ${workerProfile?.full_name ? `гражданин(ка) ${workerProfile.full_name}${workerProfile?.phone ? `, контактный телефон ${workerProfile.phone}` : ""}${workerProfile?.inn ? `, ИНН ${workerProfile.inn}` : ""}${workerProfile?.is_self_employed ? ", применяющий(ая) специальный налоговый режим «Налог на профессиональный доход»" : ""}` : "Исполнитель (будет указан при подписании)"}, именуемый(ая) в дальнейшем «Исполнитель», с другой стороны, заключили настоящий договор о нижеследующем:`
+    );
+    y -= 10;
+
+    const legalBody = buildLegalContractBody({
+      jobTitle: job?.title || contract.title || "Услуги",
+      jobAddress: job?.address || undefined,
+      startTime: job?.start_time || undefined,
+      durationHours: job?.duration_hours || undefined,
+      hourlyRate: job?.hourly_rate || undefined,
+      amount, hours,
+      dispatcherName: dispatcher?.full_name || "",
+      workerName: workerProfile?.full_name || "",
+      customBody: contract.body || undefined,
+    });
+
+    for (const ln of legalBody.split("\n")) {
+      if (/^\d+\.\s+[А-ЯЁ]/.test(ln)) { y -= 4; drawText(ln, { size: 11, bold: true }); }
+      else drawText(ln);
+    }
     y -= 14;
 
-    drawText("СТОРОНЫ", { size: 11, bold: true });
-    drawText(`Заказчик: ${dispatcher?.full_name || "—"}${dispatcher?.phone ? `, тел. ${dispatcher.phone}` : ""}`);
-    drawText(`Исполнитель: ${workerProfile?.full_name || "(не указан)"}${workerProfile?.phone ? `, тел. ${workerProfile.phone}` : ""}`);
-    y -= 8;
-
-    drawText("ПРЕДМЕТ ДОГОВОРА", { size: 11, bold: true });
-    drawText(`Объект работ: ${job?.title || "—"}`);
-    if (job?.address) drawText(`Адрес: ${job.address}`);
-    if (job?.start_time) drawText(`Дата и время: ${fmtDate(new Date(job.start_time))}`);
-    if (job?.duration_hours) drawText(`Длительность: ${job.duration_hours} ч`);
-    if (job?.hourly_rate) drawText(`Ставка: ${job.hourly_rate} ₽/час`);
-    y -= 8;
-
-    if (contract.body) {
-      drawText("УСЛОВИЯ", { size: 11, bold: true });
-      drawText(contract.body);
-      y -= 8;
-    }
-
+    ensureSpace(160);
     drawText("ПОДПИСИ СТОРОН", { size: 11, bold: true });
     y -= 6;
+    const colY = y;
+
+    page.drawText("Заказчик:", { x: margin, y: colY, size: 10, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+    page.drawText(`${dispatcher?.full_name || "—"}`, { x: margin, y: colY - 16, size: 10, font, color: rgb(0.1, 0.1, 0.1) });
+    page.drawLine({ start: { x: margin, y: colY - 56 }, end: { x: margin + 200, y: colY - 56 }, thickness: 0.5, color: rgb(0.5, 0.5, 0.5) });
+    page.drawText("(подпись)", { x: margin, y: colY - 70, size: 8, font, color: rgb(0.4, 0.4, 0.4) });
+
+    const rightX = width / 2 + 10;
+    page.drawText("Исполнитель:", { x: rightX, y: colY, size: 10, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+    page.drawText(`${workerProfile?.full_name || "(не указан)"}`, { x: rightX, y: colY - 16, size: 10, font, color: rgb(0.1, 0.1, 0.1) });
     if (sigImage) {
-      const sigDims = sigImage.scale(0.35);
-      const scale = Math.min(1, 180 / sigDims.width);
-      const sw = sigDims.width * scale; const sh = sigDims.height * scale;
-      page.drawImage(sigImage, { x: margin, y: y - sh, width: sw, height: sh });
-      y -= sh + 6;
-      drawText(`Исполнитель: ${workerProfile?.full_name || "—"}`, { size: 10 });
-      if (signedAt) drawText(`Подписано: ${fmtDate(new Date(signedAt))}`, { size: 9, color: rgb(0.4, 0.4, 0.4) });
-    } else {
-      drawText("Исполнитель: ___________________________  (подпись)", { size: 10 });
-      y -= 4;
+      const sd = sigImage.scale(0.35);
+      const s = Math.min(1, 200 / sd.width);
+      const sw = sd.width * s; const sh = Math.min(60, sd.height * s);
+      page.drawImage(sigImage, { x: rightX, y: colY - 56 - sh + 14, width: sw, height: sh });
+      if (signedAt) page.drawText(`Подписано: ${fmtDate(new Date(signedAt))}`, { x: rightX, y: colY - 32, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
     }
+    page.drawLine({ start: { x: rightX, y: colY - 56 }, end: { x: rightX + 200, y: colY - 56 }, thickness: 0.5, color: rgb(0.5, 0.5, 0.5) });
+    page.drawText("(подпись)", { x: rightX, y: colY - 70, size: 8, font, color: rgb(0.4, 0.4, 0.4) });
+
+    y = colY - 90;
     y -= 10;
-    drawText(`Заказчик: ${dispatcher?.full_name || "—"} (подтверждено выпуском договора)`, { size: 10 });
+    drawText(`Итоговая сумма по договору: ${fmtMoney(amount)} ₽ (${rublesToWords(amount)})`, {
+      size: 10, bold: true,
+    });
 
     const pdfBytes = await pdf.save();
     const path = `${contract_id}/preview-${worker_id || "blank"}-${Date.now()}.pdf`;
