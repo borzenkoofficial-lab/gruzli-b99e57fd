@@ -2,31 +2,18 @@
 import { createClient } from "npm:@supabase/supabase-js@2.49.4";
 import { PDFDocument, rgb } from "npm:pdf-lib@1.17.1";
 import fontkit from "npm:@pdf-lib/fontkit@1.1.1";
+import {
+  FONT_REGULAR_URL, FONT_BOLD_URL, loadFontBuf,
+  fmtMoney, rublesToWords, fmtDate, fmtDateLong, buildLegalContractBody,
+} from "../_shared/pdf-utils.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 let cachedFont: ArrayBuffer | null = null;
 let cachedBoldFont: ArrayBuffer | null = null;
-
-async function loadFont(url: string) {
-  const r = await fetch(url);
-  if (!r.ok) throw new Error("Failed to fetch font");
-  return await r.arrayBuffer();
-}
-
-function fmtDate(d: Date) {
-  return d.toLocaleString("ru-RU", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -35,8 +22,7 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -44,7 +30,6 @@ Deno.serve(async (req) => {
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const ANON = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // user-scoped client to verify identity
     const userClient = createClient(SUPABASE_URL, ANON, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -52,8 +37,7 @@ Deno.serve(async (req) => {
     const user = userData?.user;
     if (!user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -62,231 +46,209 @@ Deno.serve(async (req) => {
     const signature_path = String(body?.signature_path || "");
     if (!contract_id || !signature_path) {
       return new Response(JSON.stringify({ error: "contract_id and signature_path required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-    // Load contract + job + profiles
     const { data: contract, error: cErr } = await admin
-      .from("job_contracts")
-      .select("*")
-      .eq("id", contract_id)
-      .maybeSingle();
+      .from("job_contracts").select("*").eq("id", contract_id).maybeSingle();
     if (cErr || !contract) {
       return new Response(JSON.stringify({ error: "Contract not found" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Verify this user is an accepted worker on the job
     const { data: resp } = await admin
       .from("job_responses")
-      .select("id, status")
-      .eq("job_id", contract.job_id)
-      .eq("worker_id", user.id)
-      .maybeSingle();
+      .select("id, status, hours_worked, earned")
+      .eq("job_id", contract.job_id).eq("worker_id", user.id).maybeSingle();
     if (!resp || resp.status !== "accepted") {
       return new Response(JSON.stringify({ error: "Not an accepted worker for this job" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const { data: job } = await admin.from("jobs").select("*").eq("id", contract.job_id).maybeSingle();
-    const { data: dispatcher } = await admin
-      .from("profiles")
-      .select("full_name, phone")
-      .eq("user_id", contract.dispatcher_id)
-      .maybeSingle();
-    const { data: workerProfile } = await admin
-      .from("profiles")
-      .select("full_name, phone")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const { data: dispatcher } = await admin.from("profiles")
+      .select("full_name, phone, inn").eq("user_id", contract.dispatcher_id).maybeSingle();
+    const { data: workerProfile } = await admin.from("profiles")
+      .select("full_name, phone, inn, is_self_employed").eq("user_id", user.id).maybeSingle();
 
-    // Download signature
     const sigDl = await admin.storage.from("contracts").download(signature_path);
     if (sigDl.error || !sigDl.data) {
       return new Response(JSON.stringify({ error: "Signature file not found" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const sigBytes = new Uint8Array(await sigDl.data.arrayBuffer());
 
-    // Load fonts (cached)
-    if (!cachedFont) {
-      cachedFont = await loadFont(
-        "https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxKKTU1Kg.ttf"
-      );
-    }
-    if (!cachedBoldFont) {
-      cachedBoldFont = await loadFont(
-        "https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmWUlfBBc4.ttf"
-      );
-    }
+    // Calculate total amount
+    const hours = Number(resp?.hours_worked || job?.duration_hours || 0);
+    const amount = Number(resp?.earned || (hours * (job?.hourly_rate || 0)) || 0);
 
-    // Build PDF
+    if (!cachedFont) cachedFont = await loadFontBuf(FONT_REGULAR_URL);
+    if (!cachedBoldFont) cachedBoldFont = await loadFontBuf(FONT_BOLD_URL);
+
     const pdf = await PDFDocument.create();
     pdf.registerFontkit(fontkit);
     const font = await pdf.embedFont(cachedFont!);
     const fontBold = await pdf.embedFont(cachedBoldFont!);
     const sigImage = await pdf.embedPng(sigBytes);
 
-    const page = pdf.addPage([595, 842]); // A4
-    const { width, height } = page.getSize();
+    let page = pdf.addPage([595, 842]);
+    const { width } = page.getSize();
     const margin = 50;
-    let y = height - margin;
+    let y = 842 - margin;
 
-    const drawText = (text: string, opts: { size?: number; bold?: boolean; color?: any; lineHeight?: number; maxWidth?: number } = {}) => {
-      const size = opts.size ?? 11;
-      const usedFont = opts.bold ? fontBold : font;
-      const lineHeight = opts.lineHeight ?? size * 1.4;
-      const maxWidth = opts.maxWidth ?? width - margin * 2;
-      const color = opts.color ?? rgb(0.1, 0.1, 0.1);
-
-      // Word wrap
-      const paragraphs = String(text).split("\n");
-      for (const para of paragraphs) {
-        const words = para.split(" ");
-        let line = "";
-        for (const w of words) {
-          const test = line ? line + " " + w : w;
-          const wWidth = usedFont.widthOfTextAtSize(test, size);
-          if (wWidth > maxWidth && line) {
-            page.drawText(line, { x: margin, y, size, font: usedFont, color });
-            y -= lineHeight;
-            line = w;
-          } else {
-            line = test;
-          }
-        }
-        if (line) {
-          page.drawText(line, { x: margin, y, size, font: usedFont, color });
-          y -= lineHeight;
-        }
+    const ensureSpace = (need: number) => {
+      if (y - need < margin) {
+        page = pdf.addPage([595, 842]);
+        y = 842 - margin;
       }
     };
 
-    // Header
-    drawText(contract.title || "Договор подряда", { size: 18, bold: true });
-    y -= 6;
-    drawText(`№ ${contract.id.slice(0, 8).toUpperCase()} от ${fmtDate(new Date(contract.created_at))}`, {
-      size: 9,
-      color: rgb(0.4, 0.4, 0.4),
+    const drawText = (text: string, opts: any = {}) => {
+      const size = opts.size ?? 10.5;
+      const usedFont = opts.bold ? fontBold : font;
+      const lineHeight = opts.lineHeight ?? size * 1.45;
+      const maxWidth = opts.maxWidth ?? width - margin * 2;
+      const color = opts.color ?? rgb(0.1, 0.1, 0.1);
+      const align = opts.align ?? "left";
+      const paragraphs = String(text).split("\n");
+      for (const para of paragraphs) {
+        if (!para.trim()) { y -= lineHeight * 0.5; continue; }
+        const words = para.split(" ");
+        let line = "";
+        const flush = () => {
+          if (!line) return;
+          ensureSpace(lineHeight);
+          const w = usedFont.widthOfTextAtSize(line, size);
+          const x = align === "center" ? (width - w) / 2 : margin;
+          page.drawText(line, { x, y, size, font: usedFont, color });
+          y -= lineHeight;
+        };
+        for (const w of words) {
+          const test = line ? line + " " + w : w;
+          if (usedFont.widthOfTextAtSize(test, size) > maxWidth && line) {
+            flush(); line = w;
+          } else line = test;
+        }
+        flush();
+      }
+    };
+
+    // === HEADER ===
+    drawText("ДОГОВОР ВОЗМЕЗДНОГО ОКАЗАНИЯ УСЛУГ", { size: 15, bold: true, align: "center" });
+    drawText(`№ ${contract.id.slice(0, 8).toUpperCase()}`, { size: 11, bold: true, align: "center" });
+    drawText(fmtDateLong(new Date(contract.created_at)), {
+      size: 10, align: "center", color: rgb(0.35, 0.35, 0.35),
     });
+    y -= 10;
+
+    // Preamble
+    drawText(
+      `Гражданин(ка) ${dispatcher?.full_name || "—"}${dispatcher?.phone ? `, контактный телефон ${dispatcher.phone}` : ""}${dispatcher?.inn ? `, ИНН ${dispatcher.inn}` : ""}, именуемый(ая) в дальнейшем «Заказчик», с одной стороны, и гражданин(ка) ${workerProfile?.full_name || "—"}${workerProfile?.phone ? `, контактный телефон ${workerProfile.phone}` : ""}${workerProfile?.inn ? `, ИНН ${workerProfile.inn}` : ""}${workerProfile?.is_self_employed ? ", применяющий(ая) специальный налоговый режим «Налог на профессиональный доход»" : ""}, именуемый(ая) в дальнейшем «Исполнитель», с другой стороны, совместно именуемые «Стороны», заключили настоящий договор о нижеследующем:`
+    );
+    y -= 10;
+
+    // Legal body
+    const legalBody = buildLegalContractBody({
+      jobTitle: job?.title || contract.title || "Услуги",
+      jobAddress: job?.address || undefined,
+      startTime: job?.start_time || undefined,
+      durationHours: job?.duration_hours || undefined,
+      hourlyRate: job?.hourly_rate || undefined,
+      amount,
+      hours,
+      dispatcherName: dispatcher?.full_name || "",
+      workerName: workerProfile?.full_name || "",
+      customBody: contract.body || undefined,
+    });
+
+    // Render with bolded headings (lines like "1. ...")
+    const lines = legalBody.split("\n");
+    for (const ln of lines) {
+      if (/^\d+\.\s+[А-ЯЁ]/.test(ln)) {
+        y -= 4;
+        drawText(ln, { size: 11, bold: true });
+      } else {
+        drawText(ln);
+      }
+    }
     y -= 14;
 
-    // Parties
-    drawText("СТОРОНЫ", { size: 11, bold: true });
-    drawText(`Заказчик: ${dispatcher?.full_name || "—"}${dispatcher?.phone ? `, тел. ${dispatcher.phone}` : ""}`);
-    drawText(`Исполнитель: ${workerProfile?.full_name || "—"}${workerProfile?.phone ? `, тел. ${workerProfile.phone}` : ""}`);
-    y -= 8;
+    // === Signatures ===
+    ensureSpace(160);
+    drawText("ПОДПИСИ СТОРОН", { size: 11, bold: true });
+    y -= 6;
 
-    // Job details
-    drawText("ПРЕДМЕТ ДОГОВОРА", { size: 11, bold: true });
-    drawText(`Объект работ: ${job?.title || "—"}`);
-    if (job?.address) drawText(`Адрес: ${job.address}`);
-    if (job?.start_time) drawText(`Дата и время: ${fmtDate(new Date(job.start_time))}`);
-    if (job?.duration_hours) drawText(`Длительность: ${job.duration_hours} ч`);
-    if (job?.hourly_rate) drawText(`Ставка: ${job.hourly_rate} ₽/час`);
-    y -= 8;
+    const colY = y;
+    // Left — Заказчик
+    page.drawText("Заказчик:", { x: margin, y: colY, size: 10, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+    page.drawText(`${dispatcher?.full_name || "—"}`, { x: margin, y: colY - 16, size: 10, font, color: rgb(0.1, 0.1, 0.1) });
+    page.drawText("Подтверждено выпуском договора", { x: margin, y: colY - 32, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
+    page.drawLine({ start: { x: margin, y: colY - 56 }, end: { x: margin + 200, y: colY - 56 }, thickness: 0.5, color: rgb(0.5, 0.5, 0.5) });
+    page.drawText("(подпись)", { x: margin, y: colY - 70, size: 8, font, color: rgb(0.4, 0.4, 0.4) });
 
-    // Body
-    if (contract.body) {
-      drawText("УСЛОВИЯ", { size: 11, bold: true });
-      drawText(contract.body);
-      y -= 8;
-    }
+    // Right — Исполнитель
+    const rightX = width / 2 + 10;
+    page.drawText("Исполнитель:", { x: rightX, y: colY, size: 10, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
+    page.drawText(`${workerProfile?.full_name || "—"}`, { x: rightX, y: colY - 16, size: 10, font, color: rgb(0.1, 0.1, 0.1) });
+    page.drawText(`Подписано: ${fmtDate(new Date())}`, { x: rightX, y: colY - 32, size: 9, font, color: rgb(0.4, 0.4, 0.4) });
 
-    // Signatures section
-    if (y < 220) {
-      // new page if no room
-      const np = pdf.addPage([595, 842]);
-      page.drawText("", { x: 0, y: 0 });
-      // continue on new page handled crudely: redraw signatures on np
-      const ny = np.getHeight() - margin;
-      np.drawText("ПОДПИСИ СТОРОН", { x: margin, y: ny, size: 11, font: fontBold, color: rgb(0.1, 0.1, 0.1) });
-      // Worker sig image
-      const sigDims = sigImage.scale(0.35);
-      const maxW = 180;
-      const scale = Math.min(1, maxW / sigDims.width);
-      const sw = sigDims.width * scale;
-      const sh = sigDims.height * scale;
-      np.drawImage(sigImage, { x: margin, y: ny - 80, width: sw, height: sh });
-      np.drawText(`Исполнитель: ${workerProfile?.full_name || "—"}`, {
-        x: margin, y: ny - 100, size: 10, font, color: rgb(0.1, 0.1, 0.1),
-      });
-      np.drawText(`Подписано: ${fmtDate(new Date())}`, {
-        x: margin, y: ny - 115, size: 9, font, color: rgb(0.4, 0.4, 0.4),
-      });
-      np.drawText(`Заказчик: ${dispatcher?.full_name || "—"} (подтверждено выпуском договора)`, {
-        x: margin, y: ny - 145, size: 10, font, color: rgb(0.1, 0.1, 0.1),
-      });
-    } else {
-      drawText("ПОДПИСИ СТОРОН", { size: 11, bold: true });
-      y -= 6;
-      const sigDims = sigImage.scale(0.35);
-      const maxW = 180;
-      const scale = Math.min(1, maxW / sigDims.width);
-      const sw = sigDims.width * scale;
-      const sh = sigDims.height * scale;
-      page.drawImage(sigImage, { x: margin, y: y - sh, width: sw, height: sh });
-      y -= sh + 6;
-      drawText(`Исполнитель: ${workerProfile?.full_name || "—"}`, { size: 10 });
-      drawText(`Подписано: ${fmtDate(new Date())}`, { size: 9, color: rgb(0.4, 0.4, 0.4) });
-      y -= 10;
-      drawText(`Заказчик: ${dispatcher?.full_name || "—"} (подтверждено выпуском договора)`, { size: 10 });
-    }
+    const sigDims = sigImage.scale(0.35);
+    const maxW = 200;
+    const sScale = Math.min(1, maxW / sigDims.width);
+    const sw = sigDims.width * sScale;
+    const sh = Math.min(60, sigDims.height * sScale);
+    page.drawImage(sigImage, { x: rightX, y: colY - 56 - sh + 14, width: sw, height: sh });
+    page.drawLine({ start: { x: rightX, y: colY - 56 }, end: { x: rightX + 200, y: colY - 56 }, thickness: 0.5, color: rgb(0.5, 0.5, 0.5) });
+    page.drawText("(подпись)", { x: rightX, y: colY - 70, size: 8, font, color: rgb(0.4, 0.4, 0.4) });
+
+    y = colY - 90;
+
+    // Total amount banner
+    y -= 10;
+    drawText(`Итоговая сумма по договору: ${fmtMoney(amount)} ₽ (${rublesToWords(amount)})`, {
+      size: 10, bold: true,
+    });
 
     const pdfBytes = await pdf.save();
 
     const pdfPath = `${contract_id}/signed-${user.id}-${Date.now()}.pdf`;
     const up = await admin.storage.from("contracts").upload(pdfPath, pdfBytes, {
-      contentType: "application/pdf",
-      upsert: true,
+      contentType: "application/pdf", upsert: true,
     });
     if (up.error) {
       return new Response(JSON.stringify({ error: up.error.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Audit
     const ip = req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || null;
     const ua = req.headers.get("user-agent") || null;
 
     await admin.from("contract_signatures").upsert(
       {
-        contract_id,
-        worker_id: user.id,
-        signature_url: signature_path,
-        signed_pdf_url: pdfPath,
+        contract_id, worker_id: user.id,
+        signature_url: signature_path, signed_pdf_url: pdfPath,
         signed_at: new Date().toISOString(),
-        ip_address: ip,
-        user_agent: ua,
+        ip_address: ip, user_agent: ua,
       },
       { onConflict: "contract_id,worker_id" }
     );
 
-    // Return signed URL
-    const { data: signedUrl } = await admin.storage
-      .from("contracts")
-      .createSignedUrl(pdfPath, 60 * 60);
+    const { data: signedUrl } = await admin.storage.from("contracts").createSignedUrl(pdfPath, 60 * 60);
 
     return new Response(
       JSON.stringify({ ok: true, pdf_path: pdfPath, signed_url: signedUrl?.signedUrl }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {
-    return new Response(JSON.stringify({ error: String(e?.message || e) }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(JSON.stringify({ error: String((e as any)?.message || e) }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
