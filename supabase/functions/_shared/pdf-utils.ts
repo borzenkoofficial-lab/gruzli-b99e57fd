@@ -109,7 +109,7 @@ export function buildLegalContractBody(opts: {
   } = opts;
 
   const startStr = startTime ? fmtDateTime(new Date(startTime)) : "по согласованию сторон";
-  const dur = durationHours ? `${durationHours} (${rublesToWords(durationHours).replace(/руб.*/, "").trim()}) ч` : "по факту";
+  const dur = durationHours ? `${durationHours} ч` : "по факту";
   const rate = hourlyRate ? `${fmtMoney(hourlyRate)} ₽/час` : "по договорённости";
   const total = `${fmtMoney(amount)} (${rublesToWords(amount)}) ₽`;
 
