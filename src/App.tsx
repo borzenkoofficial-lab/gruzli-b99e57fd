@@ -22,6 +22,7 @@ import NotFound from "./pages/NotFound";
 
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
 const queryClient = new QueryClient();
 
