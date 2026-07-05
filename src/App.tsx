@@ -79,6 +79,7 @@ const AppRoutes = () => {
           <Route path="/job/:jobId" element={<Index />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/unsubscribe" element={<UnsubscribePage />} />
+          <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
