@@ -1,6 +1,6 @@
-import { useState, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +22,7 @@ import NotFound from "./pages/NotFound";
 
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
+const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
 const queryClient = new QueryClient();
 
@@ -45,11 +46,24 @@ const AppRoutes = () => {
 
   const dismissFirst = useCallback(() => setAlertQueue((q) => q.slice(1)), []);
 
-  if (loading || !splashDone) {
+  const location = useLocation();
+  const isConsentRoute = location.pathname === "/.lovable/oauth/consent";
+
+  // After a successful sign-in, resume a pending OAuth consent flow if one was preserved.
+  useEffect(() => {
+    if (!user) return;
+    const next = sessionStorage.getItem("oauth_consent_next");
+    if (next && next.startsWith("/") && !next.startsWith("//")) {
+      sessionStorage.removeItem("oauth_consent_next");
+      window.location.replace(next);
+    }
+  }, [user]);
+
+  if (loading || (!splashDone && !isConsentRoute)) {
     return <SplashScreen onFinished={handleSplashFinished} />;
   }
 
-  if (!user) {
+  if (!user && !isConsentRoute) {
     return <AuthPage />;
   }
 
@@ -65,6 +79,7 @@ const AppRoutes = () => {
           <Route path="/job/:jobId" element={<Index />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/unsubscribe" element={<UnsubscribePage />} />
+          <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
