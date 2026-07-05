@@ -46,11 +46,24 @@ const AppRoutes = () => {
 
   const dismissFirst = useCallback(() => setAlertQueue((q) => q.slice(1)), []);
 
-  if (loading || !splashDone) {
+  const location = useLocation();
+  const isConsentRoute = location.pathname === "/.lovable/oauth/consent";
+
+  // After a successful sign-in, resume a pending OAuth consent flow if one was preserved.
+  useEffect(() => {
+    if (!user) return;
+    const next = sessionStorage.getItem("oauth_consent_next");
+    if (next && next.startsWith("/") && !next.startsWith("//")) {
+      sessionStorage.removeItem("oauth_consent_next");
+      window.location.replace(next);
+    }
+  }, [user]);
+
+  if (loading || (!splashDone && !isConsentRoute)) {
     return <SplashScreen onFinished={handleSplashFinished} />;
   }
 
-  if (!user) {
+  if (!user && !isConsentRoute) {
     return <AuthPage />;
   }
 
