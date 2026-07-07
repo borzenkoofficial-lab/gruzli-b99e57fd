@@ -120,7 +120,7 @@ const DesktopSidebar = ({
           <span className="text-primary-foreground font-black text-base">G</span>
         </div>
         <div className="flex flex-col">
-          <h1 className="text-base font-bold text-foreground tracking-tight leading-none">Gruzli</h1>
+          <h1 className="font-display text-xl text-foreground tracking-[0.04em] leading-none">GRUZLI</h1>
           <span className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
             {isDispatcher ? "Диспетчер" : "Грузчик"}
           </span>
