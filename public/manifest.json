@@ -5,8 +5,8 @@
   "display": "standalone",
   "orientation": "portrait",
   "display_override": ["standalone"],
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#0a1520",
+  "theme_color": "#2dd4a8",
   "icons": [
     {
       "src": "/pwa-192x192.png",
