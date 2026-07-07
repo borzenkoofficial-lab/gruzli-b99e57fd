@@ -6,125 +6,126 @@
 
 @layer base {
   :root {
-    /* Neon Mint dark — deep navy base with fresh mint accent */
-    --background: 210 45% 7%;
-    --foreground: 150 20% 94%;
+    --background: 0 0% 7%;
+    --foreground: 0 0% 93%;
 
-    --card: 210 38% 10%;
-    --card-foreground: 150 20% 94%;
-    --card-hover: 210 32% 13%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 93%;
+    --card-hover: 0 0% 13%;
 
-    --popover: 210 38% 10%;
-    --popover-foreground: 150 20% 94%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 93%;
 
-    --primary: 165 70% 48%;
-    --primary-foreground: 210 50% 8%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 7%;
 
-    --secondary: 210 30% 14%;
-    --secondary-foreground: 150 15% 78%;
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 75%;
 
-    --muted: 210 25% 16%;
-    --muted-foreground: 200 10% 55%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 50%;
 
-    --accent: 165 40% 16%;
-    --accent-foreground: 150 20% 94%;
-
-    --destructive: 0 72% 55%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 210 25% 15%;
-    --input: 210 25% 15%;
-    --ring: 165 70% 48%;
-
-    --radius: 0.75rem;
-    --bottom-nav-height: 76px;
-    --bottom-nav-gap: 6px;
-    --bottom-nav-total: calc(var(--bottom-nav-height) + var(--bottom-nav-gap));
-
-    /* Surfaces — subtle elevation */
-    --surface-1: 210 45% 7%;
-    --surface-2: 210 38% 10%;
-    --surface-3: 210 32% 13%;
-    --surface-4: 210 28% 17%;
-
-    /* Shadows — very subtle */
-    --neu-shadow-light: 210 25% 16%;
-    --neu-shadow-dark: 210 60% 3%;
-
-    --cyan-glow: 165 70% 48%;
-    --cyan-light: 146 90% 72%;
-
-    --online: 165 70% 48%;
-    --badge: 165 70% 48%;
-
-    --bubble-own: 165 40% 16%;
-    --bubble-other: 210 32% 12%;
-
-    --sidebar-background: 210 45% 7%;
-    --sidebar-foreground: 150 20% 94%;
-    --sidebar-primary: 165 70% 48%;
-    --sidebar-primary-foreground: 210 50% 8%;
-    --sidebar-accent: 210 32% 13%;
-    --sidebar-accent-foreground: 150 20% 94%;
-    --sidebar-border: 210 25% 15%;
-    --sidebar-ring: 165 70% 48%;
-  }
-
-  .light {
-    --background: 150 30% 97%;
-    --foreground: 210 45% 9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 210 45% 9%;
-    --card-hover: 150 20% 96%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 210 45% 9%;
-
-    --primary: 165 75% 38%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 150 20% 93%;
-    --secondary-foreground: 210 30% 25%;
-
-    --muted: 150 15% 93%;
-    --muted-foreground: 210 12% 42%;
-
-    --accent: 165 55% 92%;
-    --accent-foreground: 210 45% 9%;
+    --accent: 0 0% 20%;
+    --accent-foreground: 0 0% 93%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 150 15% 88%;
-    --input: 150 15% 88%;
-    --ring: 165 75% 38%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 0 0% 40%;
 
-    --surface-1: 150 30% 97%;
+    --radius: 0.75rem;
+    --bottom-nav-height: 76px;
+    /* Single source of truth for the gap between the pill and the screen bottom */
+    --bottom-nav-gap: 6px;
+    /* Total vertical space reserved by the floating pill (height + gap) */
+    --bottom-nav-total: calc(var(--bottom-nav-height) + var(--bottom-nav-gap));
+
+    /* Surfaces — subtle elevation */
+    --surface-1: 0 0% 7%;
+    --surface-2: 0 0% 10%;
+    --surface-3: 0 0% 13%;
+    --surface-4: 0 0% 17%;
+
+    /* Shadows — very subtle */
+    --neu-shadow-light: 0 0% 16%;
+    --neu-shadow-dark: 0 0% 3%;
+
+    --cyan-glow: 0 0% 100%;
+    --cyan-light: 0 0% 85%;
+
+    --online: 145 65% 50%;
+    --badge: 0 0% 100%;
+
+    --bubble-own: 0 0% 14%;
+    --bubble-other: 0 0% 11%;
+
+    --sidebar-background: 0 0% 7%;
+    --sidebar-foreground: 0 0% 93%;
+    --sidebar-primary: 0 0% 100%;
+    --sidebar-primary-foreground: 0 0% 7%;
+    --sidebar-accent: 0 0% 13%;
+    --sidebar-accent-foreground: 0 0% 93%;
+    --sidebar-border: 0 0% 15%;
+    --sidebar-ring: 0 0% 40%;
+  }
+
+  .light {
+    --background: 0 0% 97%;
+    --foreground: 0 0% 9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+    --card-hover: 0 0% 96%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 93%;
+    --secondary-foreground: 0 0% 30%;
+
+    --muted: 0 0% 93%;
+    --muted-foreground: 0 0% 46%;
+
+    --accent: 0 0% 95%;
+    --accent-foreground: 0 0% 9%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 60%;
+
+    --surface-1: 0 0% 97%;
     --surface-2: 0 0% 100%;
-    --surface-3: 150 20% 95%;
-    --surface-4: 150 15% 90%;
+    --surface-3: 0 0% 95%;
+    --surface-4: 0 0% 90%;
 
     --neu-shadow-light: 0 0% 100%;
-    --neu-shadow-dark: 210 30% 82%;
+    --neu-shadow-dark: 0 0% 85%;
 
-    --cyan-glow: 165 75% 38%;
-    --cyan-light: 165 55% 55%;
+    --cyan-glow: 0 0% 9%;
+    --cyan-light: 0 0% 30%;
 
-    --online: 165 75% 38%;
-    --badge: 165 75% 38%;
+    --online: 145 65% 42%;
+    --badge: 0 0% 9%;
 
-    --bubble-own: 165 55% 90%;
-    --bubble-other: 150 15% 94%;
+    --bubble-own: 0 0% 93%;
+    --bubble-other: 0 0% 96%;
 
-    --sidebar-background: 150 30% 97%;
-    --sidebar-foreground: 210 45% 9%;
-    --sidebar-primary: 165 75% 38%;
+    --sidebar-background: 0 0% 97%;
+    --sidebar-foreground: 0 0% 9%;
+    --sidebar-primary: 0 0% 9%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 150 20% 93%;
-    --sidebar-accent-foreground: 210 45% 9%;
-    --sidebar-border: 150 15% 88%;
-    --sidebar-ring: 165 75% 38%;
+    --sidebar-accent: 0 0% 95%;
+    --sidebar-accent-foreground: 0 0% 9%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 0 0% 60%;
   }
 
   /* Designer dark themes */
@@ -320,7 +321,7 @@
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Barlow', 'Inter', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
     width: 100%;
     margin: 0;
     position: relative;
@@ -333,9 +334,8 @@
     user-select: none;
     -webkit-user-select: none;
     padding: 0;
-    letter-spacing: -0.005em;
+    letter-spacing: -0.011em;
     line-height: 1.5;
-    font-weight: 400;
   }
 
   #root {
@@ -350,15 +350,13 @@
     -webkit-user-select: text;
   }
 
-  /* Unified typographic hierarchy — Bebas Neue display for headings */
+  /* Unified typographic hierarchy */
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Bebas Neue', 'Barlow', system-ui, sans-serif;
-    font-weight: 400;
-    letter-spacing: 0.01em;
-    line-height: 1.05;
-    text-transform: none;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
   }
-  h1 { letter-spacing: 0.015em; }
+  h1 { letter-spacing: -0.025em; }
 
   button, input, select, textarea {
     font-family: inherit;

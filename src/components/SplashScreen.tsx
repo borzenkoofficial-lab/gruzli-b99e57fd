@@ -47,16 +47,16 @@ const SplashScreen = ({ onFinished, minDuration = 2000 }: SplashScreenProps) => 
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="font-display text-[56px] leading-none tracking-[0.04em] text-foreground"
+              className="text-[40px] leading-none font-light tracking-[-0.03em] text-foreground"
             >
-              GRUZLI
+              Gruzli
             </motion.h1>
 
             <motion.p
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.45, duration: 0.5, ease: "easeOut" }}
-              className="mt-3 text-[12px] tracking-[0.35em] uppercase text-primary/80 font-medium"
+              className="mt-3 text-[13px] tracking-[0.02em] text-muted-foreground font-normal"
             >
               приветствует
             </motion.p>
