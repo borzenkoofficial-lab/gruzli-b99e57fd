@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import {
   MapPin, Clock, Users, Zap, Wallet, ArrowRight, Ban, UserPlus, Train,
-  Search, X, Sparkles, Loader2, TrendingUp, Check, ArrowLeft, Hourglass,
+  Search, X, Sparkles, Loader2, TrendingUp, Check, ArrowLeft, Hourglass, SlidersHorizontal,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +12,14 @@ import type { Tables } from "@/integrations/supabase/types";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 import EnablePushButton from "@/components/EnablePushButton";
 import { MaxChannelBanner } from "@/components/MaxChannelBanner";
+import CategorySubscriptionModal from "@/components/CategorySubscriptionModal";
+import {
+  CATEGORIES,
+  classifyJob,
+  getCategory,
+  loadSubscribedCategories,
+  type CategoryKey,
+} from "@/lib/jobCategories";
 
 type FilterKey = "all" | "urgent" | "quick";
 const filters: { key: FilterKey; label: string; icon: typeof Sparkles }[] = [
@@ -39,6 +47,25 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
   const [searchQuery, setSearchQuery] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchResultIds, setSearchResultIds] = useState<string[] | null>(null);
+
+  // ─── Category subscription ───
+  const [subscribed, setSubscribed] = useState<CategoryKey[] | null>(() => loadSubscribedCategories());
+  const [categoryFilter, setCategoryFilter] = useState<CategoryKey | "all">("all");
+  const [subModalOpen, setSubModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (subscribed === null) {
+      const t = setTimeout(() => setSubModalOpen(true), 500);
+      return () => clearTimeout(t);
+    }
+  }, [subscribed]);
+
+  const jobCategory = useMemo(() => {
+    const m = new Map<string, CategoryKey>();
+    jobs.forEach((j) => m.set(j.id, classifyJob(j)));
+    return m;
+  }, [jobs]);
+
 
   const fetchJobs = async () => {
     setLoading(true);
@@ -151,6 +178,16 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
       if (activeFilter === "urgent") return j.urgent;
       if (activeFilter === "quick") return j.quick_minimum;
       return true;
+    })
+    .filter((j) => {
+      // Подписка на категории: если пользователь ещё не выбрал — показываем всё
+      if (!subscribed) return true;
+      const cat = jobCategory.get(j.id) || "other";
+      return subscribed.includes(cat);
+    })
+    .filter((j) => {
+      if (categoryFilter === "all") return true;
+      return (jobCategory.get(j.id) || "other") === categoryFilter;
     })
     .filter((j) => {
       if (searchResultIds !== null) return searchResultIds.includes(j.id);
@@ -270,6 +307,80 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
         />
       </div>
 
+      {/* Category chips (subscription-aware) */}
+      <div className="px-5 pb-2">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
+              Ваши категории
+            </span>
+            {subscribed && subscribed.length < CATEGORIES.length && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-online/15 text-online font-semibold">
+                {subscribed.length}/{CATEGORIES.length}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => setSubModalOpen(true)}
+            className="flex items-center gap-1 text-[11.5px] font-semibold text-foreground/80 hover:text-foreground transition-colors tap-scale"
+          >
+            <SlidersHorizontal size={12} />
+            Настроить
+          </button>
+        </div>
+        <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
+          <div className="flex gap-2">
+            {(() => {
+              const visible = jobs.filter(
+                (j) => !skippedJobs.has(j.id) &&
+                  (!subscribed || subscribed.includes(jobCategory.get(j.id) || "other"))
+              );
+              const chips: { key: CategoryKey | "all"; label: string; count: number; def?: typeof CATEGORIES[number] }[] = [
+                { key: "all", label: "Все", count: visible.length },
+                ...CATEGORIES
+                  .filter((c) => !subscribed || subscribed.includes(c.key))
+                  .map((c) => ({
+                    key: c.key,
+                    label: c.label,
+                    count: visible.filter((j) => (jobCategory.get(j.id) || "other") === c.key).length,
+                    def: c,
+                  })),
+              ];
+              return chips.map((chip) => {
+                const isActive = categoryFilter === chip.key;
+                const def = chip.def;
+                return (
+                  <motion.button
+                    key={chip.key}
+                    layout
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setCategoryFilter(chip.key as any)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12.5px] font-medium whitespace-nowrap transition-all duration-200 border ${
+                      isActive
+                        ? "text-background border-transparent shadow-[0_4px_16px_-4px_hsl(var(--foreground)/0.3)]"
+                        : "bg-card border-border text-muted-foreground hover:text-foreground hover:border-foreground/20"
+                    }`}
+                    style={
+                      isActive
+                        ? def
+                          ? { background: `linear-gradient(135deg, ${def.ring.replace("0.35", "0.95")}, ${def.ring.replace("0.35", "0.75")})` }
+                          : { background: "hsl(var(--foreground))" }
+                        : undefined
+                    }
+                  >
+                    {def ? <span className="text-[13px] leading-none">{def.emoji}</span> : <Sparkles size={12} />}
+                    <span>{chip.label}</span>
+                    <span className={`text-[10.5px] font-semibold ${isActive ? "opacity-80" : "opacity-60"}`}>
+                      · {chip.count}
+                    </span>
+                  </motion.button>
+                );
+              });
+            })()}
+          </div>
+        </div>
+      </div>
+
       {/* Filters */}
       <div className="px-5 pb-4 overflow-x-auto scrollbar-hide">
         <div className="flex gap-2">
@@ -326,6 +437,13 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
           </AnimatePresence>
         )}
       </div>
+
+      <CategorySubscriptionModal
+        open={subModalOpen}
+        onClose={() => setSubModalOpen(false)}
+        onSaved={(cats) => setSubscribed(cats)}
+        firstRun={subscribed === null}
+      />
     </div>
   );
 };
@@ -527,6 +645,22 @@ const SwipeableJobCard = ({
 
         {/* Tags */}
         <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+          {(() => {
+            const cat = getCategory(classifyJob(job));
+            return (
+              <span
+                className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-semibold border"
+                style={{
+                  background: cat.tint,
+                  borderColor: cat.ring,
+                  color: "hsl(var(--foreground))",
+                }}
+              >
+                <span className="text-[11px] leading-none">{cat.emoji}</span>
+                {cat.short}
+              </span>
+            );
+          })()}
           {isOfficial && (
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-yellow-400/25 to-amber-400/15 text-yellow-600 dark:text-yellow-400 text-[10.5px] font-bold border border-yellow-400/40">
               <img src={gruzliLogo} alt="Gruzli" className="w-3 h-3 rounded-sm object-cover" />
