@@ -180,6 +180,16 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
       return true;
     })
     .filter((j) => {
+      // Подписка на категории: если пользователь ещё не выбрал — показываем всё
+      if (!subscribed) return true;
+      const cat = jobCategory.get(j.id) || "other";
+      return subscribed.includes(cat);
+    })
+    .filter((j) => {
+      if (categoryFilter === "all") return true;
+      return (jobCategory.get(j.id) || "other") === categoryFilter;
+    })
+    .filter((j) => {
       if (searchResultIds !== null) return searchResultIds.includes(j.id);
       return true;
     })
