@@ -307,6 +307,80 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
         />
       </div>
 
+      {/* Category chips (subscription-aware) */}
+      <div className="px-5 pb-2">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
+              Ваши категории
+            </span>
+            {subscribed && subscribed.length < CATEGORIES.length && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-online/15 text-online font-semibold">
+                {subscribed.length}/{CATEGORIES.length}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => setSubModalOpen(true)}
+            className="flex items-center gap-1 text-[11.5px] font-semibold text-foreground/80 hover:text-foreground transition-colors tap-scale"
+          >
+            <SlidersHorizontal size={12} />
+            Настроить
+          </button>
+        </div>
+        <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
+          <div className="flex gap-2">
+            {(() => {
+              const visible = jobs.filter(
+                (j) => !skippedJobs.has(j.id) &&
+                  (!subscribed || subscribed.includes(jobCategory.get(j.id) || "other"))
+              );
+              const chips: { key: CategoryKey | "all"; label: string; count: number; def?: typeof CATEGORIES[number] }[] = [
+                { key: "all", label: "Все", count: visible.length },
+                ...CATEGORIES
+                  .filter((c) => !subscribed || subscribed.includes(c.key))
+                  .map((c) => ({
+                    key: c.key,
+                    label: c.label,
+                    count: visible.filter((j) => (jobCategory.get(j.id) || "other") === c.key).length,
+                    def: c,
+                  })),
+              ];
+              return chips.map((chip) => {
+                const isActive = categoryFilter === chip.key;
+                const def = chip.def;
+                return (
+                  <motion.button
+                    key={chip.key}
+                    layout
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setCategoryFilter(chip.key as any)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12.5px] font-medium whitespace-nowrap transition-all duration-200 border ${
+                      isActive
+                        ? "text-background border-transparent shadow-[0_4px_16px_-4px_hsl(var(--foreground)/0.3)]"
+                        : "bg-card border-border text-muted-foreground hover:text-foreground hover:border-foreground/20"
+                    }`}
+                    style={
+                      isActive
+                        ? def
+                          ? { background: `linear-gradient(135deg, ${def.ring.replace("0.35", "0.95")}, ${def.ring.replace("0.35", "0.75")})` }
+                          : { background: "hsl(var(--foreground))" }
+                        : undefined
+                    }
+                  >
+                    {def ? <span className="text-[13px] leading-none">{def.emoji}</span> : <Sparkles size={12} />}
+                    <span>{chip.label}</span>
+                    <span className={`text-[10.5px] font-semibold ${isActive ? "opacity-80" : "opacity-60"}`}>
+                      · {chip.count}
+                    </span>
+                  </motion.button>
+                );
+              });
+            })()}
+          </div>
+        </div>
+      </div>
+
       {/* Filters */}
       <div className="px-5 pb-4 overflow-x-auto scrollbar-hide">
         <div className="flex gap-2">
