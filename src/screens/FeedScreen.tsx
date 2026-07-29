@@ -48,6 +48,25 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchResultIds, setSearchResultIds] = useState<string[] | null>(null);
 
+  // ─── Category subscription ───
+  const [subscribed, setSubscribed] = useState<CategoryKey[] | null>(() => loadSubscribedCategories());
+  const [categoryFilter, setCategoryFilter] = useState<CategoryKey | "all">("all");
+  const [subModalOpen, setSubModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (subscribed === null) {
+      const t = setTimeout(() => setSubModalOpen(true), 500);
+      return () => clearTimeout(t);
+    }
+  }, [subscribed]);
+
+  const jobCategory = useMemo(() => {
+    const m = new Map<string, CategoryKey>();
+    jobs.forEach((j) => m.set(j.id, classifyJob(j)));
+    return m;
+  }, [jobs]);
+
+
   const fetchJobs = async () => {
     setLoading(true);
     const { data } = await supabase
