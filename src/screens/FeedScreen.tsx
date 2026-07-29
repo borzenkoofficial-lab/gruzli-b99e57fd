@@ -645,6 +645,22 @@ const SwipeableJobCard = ({
 
         {/* Tags */}
         <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+          {(() => {
+            const cat = getCategory(classifyJob(job));
+            return (
+              <span
+                className="flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-semibold border"
+                style={{
+                  background: cat.tint,
+                  borderColor: cat.ring,
+                  color: "hsl(var(--foreground))",
+                }}
+              >
+                <span className="text-[11px] leading-none">{cat.emoji}</span>
+                {cat.short}
+              </span>
+            );
+          })()}
           {isOfficial && (
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-yellow-400/25 to-amber-400/15 text-yellow-600 dark:text-yellow-400 text-[10.5px] font-bold border border-yellow-400/40">
               <img src={gruzliLogo} alt="Gruzli" className="w-3 h-3 rounded-sm object-cover" />
