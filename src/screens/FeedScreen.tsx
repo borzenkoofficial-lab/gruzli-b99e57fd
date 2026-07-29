@@ -437,6 +437,13 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
           </AnimatePresence>
         )}
       </div>
+
+      <CategorySubscriptionModal
+        open={subModalOpen}
+        onClose={() => setSubModalOpen(false)}
+        onSaved={(cats) => setSubscribed(cats)}
+        firstRun={subscribed === null}
+      />
     </div>
   );
 };
