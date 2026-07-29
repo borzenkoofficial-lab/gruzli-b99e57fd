@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import {
   MapPin, Clock, Users, Zap, Wallet, ArrowRight, Ban, UserPlus, Train,
-  Search, X, Sparkles, Loader2, TrendingUp, Check, ArrowLeft, Hourglass,
+  Search, X, Sparkles, Loader2, TrendingUp, Check, ArrowLeft, Hourglass, SlidersHorizontal,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,6 +12,14 @@ import type { Tables } from "@/integrations/supabase/types";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 import EnablePushButton from "@/components/EnablePushButton";
 import { MaxChannelBanner } from "@/components/MaxChannelBanner";
+import CategorySubscriptionModal from "@/components/CategorySubscriptionModal";
+import {
+  CATEGORIES,
+  classifyJob,
+  getCategory,
+  loadSubscribedCategories,
+  type CategoryKey,
+} from "@/lib/jobCategories";
 
 type FilterKey = "all" | "urgent" | "quick";
 const filters: { key: FilterKey; label: string; icon: typeof Sparkles }[] = [
