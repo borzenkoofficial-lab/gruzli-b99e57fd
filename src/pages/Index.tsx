@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import DesktopSidebar from "@/components/DesktopSidebar";
 import DesktopLayout from "@/components/DesktopLayout";
@@ -82,6 +81,8 @@ const Index = () => {
     return () => { cancelled = true; };
   }, []);
   const [tab, setTab] = useState("feed");
+  // Keep visited main screens mounted so local state, queries and realtime subscriptions survive tab switches.
+  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(() => new Set(["feed"]));
 
   useEffect(() => {
     const handler = () => setTab("feed");
@@ -209,6 +210,12 @@ const Index = () => {
   const handleNavigate = (t: string) => {
     if (t === "chats") resetMessages();
     if (t === "feed" && !isDispatcher) resetJobs();
+    setVisitedTabs((visited) => {
+      if (visited.has(t)) return visited;
+      const next = new Set(visited);
+      next.add(t);
+      return next;
+    });
     setTab(t);
   };
 
@@ -427,24 +434,38 @@ const Index = () => {
               </PullToRefresh>
             ) : (
               <div className="app-scroll">
-                <AnimatePresence mode="wait">
-                  <motion.div key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-                    {tab === "orders" && <OrdersScreen />}
-                    {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} onOpenCommunity={() => setShowCommunity(true)} />}
-                    {tab === "kartoteka" && <KartotekaScreen />}
-                    {tab === "dispatchers" && !isDispatcher && <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />}
-                    {tab === "profile" && (
-                      <ProfileScreen
-                        onOpenSettings={() => setShowSettings(true)}
-                        onOpenNotifications={() => setShowNotifications(true)}
-                        onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage)}
-                        onOpenPremium={() => setShowPremium(true)}
-                        onOpenCabinet={() => { setShowCabinet(false); handleNavigate("feed"); }}
-                        onOpenCompany={() => setShowCompany(true)}
-                      />
-                    )}
-                  </motion.div>
-                </AnimatePresence>
+                {visitedTabs.has("orders") && (
+                  <div style={{ display: tab === "orders" ? "block" : "none" }}>
+                    <OrdersScreen />
+                  </div>
+                )}
+                {visitedTabs.has("chats") && (
+                  <div style={{ display: tab === "chats" ? "block" : "none" }}>
+                    <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} onOpenCommunity={() => setShowCommunity(true)} />
+                  </div>
+                )}
+                {visitedTabs.has("kartoteka") && (
+                  <div style={{ display: tab === "kartoteka" ? "block" : "none" }}>
+                    <KartotekaScreen />
+                  </div>
+                )}
+                {visitedTabs.has("dispatchers") && !isDispatcher && (
+                  <div style={{ display: tab === "dispatchers" ? "block" : "none" }}>
+                    <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />
+                  </div>
+                )}
+                {visitedTabs.has("profile") && (
+                  <div style={{ display: tab === "profile" ? "block" : "none" }}>
+                    <ProfileScreen
+                      onOpenSettings={() => setShowSettings(true)}
+                      onOpenNotifications={() => setShowNotifications(true)}
+                      onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage)}
+                      onOpenPremium={() => setShowPremium(true)}
+                      onOpenCabinet={() => { setShowCabinet(false); handleNavigate("feed"); }}
+                      onOpenCompany={() => setShowCompany(true)}
+                    />
+                  </div>
+                )}
               </div>
             )}
           </Suspense>
@@ -460,35 +481,39 @@ const Index = () => {
   const mainContent = (
     <ErrorBoundary>
       <Suspense fallback={<ScreenSkeleton />}>
-        {tab === "feed" && (
-          isDispatcher ? (
-            <DispatcherCabinetScreen
-              embedded
-              onBack={() => {}}
-              onChatWithWorker={async (workerId, workerName) => { await handleChatWithUser(workerId, workerName); }}
-              onViewProfile={setViewProfileUserId}
-              onOpenCommunity={() => setShowCommunity(true)}
-              onViewResponses={setViewResponsesJob}
-              onRefreshRef={feedRefreshRef}
-              onCreateJob={() => setShowCreateJob(true)}
-            />
-          ) : (
-            <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
-          )
+        {visitedTabs.has("feed") && (
+          <div style={{ display: tab === "feed" ? "block" : "none" }}>
+            {isDispatcher ? (
+              <DispatcherCabinetScreen
+                embedded
+                onBack={() => {}}
+                onChatWithWorker={async (workerId, workerName) => { await handleChatWithUser(workerId, workerName); }}
+                onViewProfile={setViewProfileUserId}
+                onOpenCommunity={() => setShowCommunity(true)}
+                onViewResponses={setViewResponsesJob}
+                onRefreshRef={feedRefreshRef}
+                onCreateJob={() => setShowCreateJob(true)}
+              />
+            ) : (
+              <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
+            )}
+          </div>
         )}
-        {tab === "orders" && <OrdersScreen />}
-        {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} onOpenCommunity={() => setShowCommunity(true)} />}
-        {tab === "kartoteka" && <KartotekaScreen />}
-        {tab === "dispatchers" && !isDispatcher && <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />}
-        {tab === "profile" && (
-          <ProfileScreen
-            onOpenSettings={() => setShowSettings(true)}
-            onOpenNotifications={() => setShowNotifications(true)}
-            onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage)}
-            onOpenPremium={() => setShowPremium(true)}
-            onOpenCabinet={() => { setShowCabinet(false); handleNavigate("feed"); }}
-            onOpenCompany={() => setShowCompany(true)}
-          />
+        {visitedTabs.has("orders") && <div style={{ display: tab === "orders" ? "block" : "none" }}><OrdersScreen /></div>}
+        {visitedTabs.has("chats") && <div style={{ display: tab === "chats" ? "block" : "none" }}><RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} onOpenCommunity={() => setShowCommunity(true)} /></div>}
+        {visitedTabs.has("kartoteka") && <div style={{ display: tab === "kartoteka" ? "block" : "none" }}><KartotekaScreen /></div>}
+        {visitedTabs.has("dispatchers") && !isDispatcher && <div style={{ display: tab === "dispatchers" ? "block" : "none" }}><DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} /></div>}
+        {visitedTabs.has("profile") && (
+          <div style={{ display: tab === "profile" ? "block" : "none" }}>
+            <ProfileScreen
+              onOpenSettings={() => setShowSettings(true)}
+              onOpenNotifications={() => setShowNotifications(true)}
+              onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage)}
+              onOpenPremium={() => setShowPremium(true)}
+              onOpenCabinet={() => { setShowCabinet(false); handleNavigate("feed"); }}
+              onOpenCompany={() => setShowCompany(true)}
+            />
+          </div>
         )}
       </Suspense>
     </ErrorBoundary>
