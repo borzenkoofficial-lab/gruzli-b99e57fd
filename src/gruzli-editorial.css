@@ -321,6 +321,24 @@ button,input,textarea,select{font-family:inherit;}
 
 
 
+/* Mobile editorial composition — Nexum-inspired hierarchy without changing business logic. */
+.gruzli-mobile-feed{padding-bottom:8px;}
+.gruzli-mobile-hero{
+  min-height:82px;
+  background:linear-gradient(180deg,rgba(255,255,255,.92),rgba(255,255,255,.45));
+  border-bottom:1px solid rgba(231,231,234,.72);
+}
+.gruzli-mobile-hero h1{font-size:28px!important;line-height:1.02!important;letter-spacing:-.045em!important;font-weight:760!important;}
+.gruzli-mobile-hint{background:rgba(255,255,255,.8)!important;box-shadow:0 4px 16px rgba(18,20,25,.035);}
+.gruzli-mobile-feed .rounded-2xl,
+.gruzli-mobile-feed .rounded-xl{border-color:var(--gruzli-line);}
+.gruzli-mobile-feed .bg-card{box-shadow:var(--gruzli-shadow);}
+.gruzli-mobile-feed button{transition:transform .18s ease,box-shadow .18s ease,background .18s ease;}
+.gruzli-mobile-feed button:active{transform:scale(.985);}
+@media(min-width:768px){
+  .gruzli-mobile-feed{max-width:430px;margin:0 auto;}
+}
+
 /* ===== Forced mobile product shell ===== */
 /* The Gruzli experience is intentionally rendered as the mobile product on every viewport. */
 .app-shell{
