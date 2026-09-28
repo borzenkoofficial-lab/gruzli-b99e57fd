@@ -697,7 +697,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
   const stats = statsData[statsPeriod];
 
   return (
-    <div>
+    <div className="gruzli-mobile-screen gruzli-profile-screen">
       <div className="px-5 safe-top pb-2 flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground">Профиль</h1>
         <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center">
