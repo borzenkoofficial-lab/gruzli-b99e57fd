@@ -526,3 +526,104 @@ button{ -webkit-tap-highlight-color:transparent; }
     radial-gradient(280px 120px at 75% 0%,rgba(255,255,255,.96),transparent 72%),
     #f7f7f8;
 }
+
+
+/* ===== Nexum Digital-inspired motion + mockup layer ===== */
+.gruzli-preview-frame{
+  position:relative;
+  margin:14px;
+  border:1px solid #e5e5e8;
+  border-radius:22px;
+  overflow:hidden;
+  background:#fff;
+  box-shadow:0 24px 70px rgba(18,20,25,.10),0 4px 18px rgba(18,20,25,.05);
+  animation:gruzli-frame-in .45s cubic-bezier(.22,1,.36,1) both;
+}
+.gruzli-preview-chrome{
+  height:38px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  padding:0 12px;
+  border-bottom:1px solid #ededf0;
+  background:rgba(250,250,251,.94);
+  backdrop-filter:blur(16px);
+}
+.gruzli-window-dot{
+  width:7px;height:7px;border-radius:50%;background:#d8d8dc;
+}
+.gruzli-preview-address{
+  margin-left:8px;
+  flex:1;
+  max-width:260px;
+  height:22px;
+  display:flex;
+  align-items:center;
+  padding:0 10px;
+  border:1px solid #e8e8eb;
+  border-radius:8px;
+  background:#fff;
+  color:#9a9ca3;
+  font-size:9px;
+  letter-spacing:.01em;
+}
+.gruzli-preview-content{
+  min-height:320px;
+  background:
+    radial-gradient(440px 180px at 80% 0%,rgba(255,255,255,.98),transparent 72%),
+    #f8f8f9;
+}
+@keyframes gruzli-frame-in{
+  from{opacity:0;transform:translateY(12px) scale(.985)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+
+.gruzli-editorial-reveal{
+  animation:gruzli-reveal .55s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes gruzli-reveal{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.app-scroll > div > div{
+  animation:gruzli-reveal .38s cubic-bezier(.22,1,.36,1) both;
+}
+.app-scroll .bg-card{
+  transition:transform .28s cubic-bezier(.22,1,.36,1),box-shadow .28s ease,border-color .2s ease;
+}
+.app-scroll .bg-card:hover{
+  transform:translateY(-2px);
+}
+.desktop-main-inner > div{
+  animation:gruzli-reveal .42s cubic-bezier(.22,1,.36,1) both;
+}
+.desktop-sidebar,
+.desktop-topbar,
+.desktop-detail{
+  animation:gruzli-chrome-in .48s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes gruzli-chrome-in{
+  from{opacity:0;transform:translateY(-5px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.gruzli-cloud{
+  position:relative;
+  isolation:isolate;
+}
+.gruzli-cloud::before{
+  content:"";
+  position:absolute;
+  width:420px;height:180px;
+  top:-80px;right:-80px;
+  border-radius:50%;
+  background:radial-gradient(ellipse,rgba(255,255,255,.95),rgba(255,255,255,0));
+  filter:blur(10px);
+  pointer-events:none;
+  z-index:-1;
+}
+@media(prefers-reduced-motion:reduce){
+  .gruzli-preview-frame,.gruzli-editorial-reveal,.app-scroll > div > div,.desktop-main-inner > div,.desktop-sidebar,.desktop-topbar,.desktop-detail{
+    animation:none!important;
+  }
+  .app-scroll .bg-card{transition:none!important;}
+}
