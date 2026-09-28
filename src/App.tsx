@@ -31,7 +31,7 @@ const AppRoutes = () => {
   const [splashDone, setSplashDone] = useState(false);
   // Temporary demo mode: lets us inspect the worker cabinet without Supabase authentication.
   // Remove this flag/flow before production release.
-  const [demoWorkerMode, setDemoWorkerMode] = useState(false);
+  const [demoWorkerMode, setDemoWorkerMode] = useState(() => localStorage.getItem("gruzli_demo_worker") === "1");
   const [alertQueue, setAlertQueue] = useState<Tables<"jobs">[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return !localStorage.getItem("onboarding_completed");
@@ -67,7 +67,7 @@ const AppRoutes = () => {
   }
 
   if (!user && !isConsentRoute && !demoWorkerMode) {
-    return <AuthPage onDemoLogin={() => setDemoWorkerMode(true)} />;
+    return <AuthPage onDemoLogin={() => { localStorage.setItem("gruzli_demo_worker", "1"); setDemoWorkerMode(true); window.dispatchEvent(new Event("gruzli-demo-change")); }} />;
   }
 
   return (
