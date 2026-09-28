@@ -111,7 +111,7 @@ const onboardingSlides = [
   },
 ];
 
-const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
+const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props, _ref) => {
   const [mode, setMode] = useState<Mode>("welcome");
   const [role, setRole] = useState<Role>("worker");
   const [password, setPassword] = useState("");
@@ -272,7 +272,7 @@ const AuthPage = forwardRef<HTMLDivElement>((_props, _ref) => {
               <span className="text-base font-extrabold text-foreground tracking-tight">Gruzli</span>
             </div>
             <button
-              onClick={() => setMode("login")}
+              onClick={() => props.onDemoLogin ? props.onDemoLogin() : setMode("login")}
               className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-full border border-border"
             >
               Войти
