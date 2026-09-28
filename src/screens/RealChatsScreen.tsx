@@ -318,7 +318,7 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
   );
 
   return (
-    <div className="gruzli-mobile-screen gruzli-chats-screen pb-4">
+    <div className="pb-4">
       {/* Header */}
       <div className="px-5 safe-top pb-2 flex items-center justify-between">
         <h1 className="text-[22px] font-bold text-foreground tracking-tight">Чаты</h1>
