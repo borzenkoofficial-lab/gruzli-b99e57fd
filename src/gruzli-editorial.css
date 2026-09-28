@@ -1261,3 +1261,17 @@ button{ -webkit-tap-highlight-color:transparent; }
 .bottom-nav-pill{
   pointer-events:auto;
 }
+
+@media(max-width:767px){
+  .gruzli-job-card{
+    border-radius:22px!important;
+  }
+  .gruzli-job-card .btn-shimmer{
+    min-height:44px;
+    border-radius:14px!important;
+    letter-spacing:-.01em;
+  }
+  .gruzli-job-card .gruzli-job-card-pay{
+    border-radius:16px;
+  }
+}
