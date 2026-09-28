@@ -292,8 +292,8 @@ const OrdersScreen = () => {
 
   if (loading) {
     return (
-      <div>
-        <div className="px-5 safe-top pb-4">
+    <div className="gruzli-mobile-screen gruzli-orders-screen">
+      <div className="gruzli-screen-hero px-5 safe-top pb-4">
           <h1 className="text-lg font-bold text-foreground">Мои заказы</h1>
         </div>
         <div className="flex items-center justify-center py-16">
