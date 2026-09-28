@@ -1,4 +1,4 @@
-import { Search, Bell, Plus, Sun, Moon } from "lucide-react";
+import { Search, Bell, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
@@ -32,18 +32,6 @@ const DesktopTopBar = ({
   showCreateJob,
   searchPlaceholder = "Поиск по заявкам, людям, чатам...",
 }: DesktopTopBarProps) => {
-  const [theme, setTheme] = useState<"light" | "dark">(
-    () => (localStorage.getItem("gruzli_theme") === "dark" ? "dark" : "light"),
-  );
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("light", theme === "light");
-    document.documentElement.classList.toggle("gruzli-dark", theme === "dark");
-    try {
-      localStorage.setItem("gruzli_theme", theme);
-    } catch {}
-  }, [theme]);
-
   return (
     <div className="flex items-center gap-4 h-full px-6">
       {/* Page title */}
@@ -83,13 +71,6 @@ const DesktopTopBar = ({
             Создать
           </motion.button>
         )}
-        <button
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition"
-          title={theme === "dark" ? "Светлая тема" : "Тёмная тема"}
-        >
-          {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
-        </button>
         <button
           onClick={onOpenNotifications}
           className="relative w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition"
