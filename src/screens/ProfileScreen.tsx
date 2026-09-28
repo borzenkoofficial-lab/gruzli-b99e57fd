@@ -705,40 +705,47 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         </button>
       </div>
 
-      {/* Hero earnings banner */}
-      <div className="mx-5 mt-2 mb-4 rounded-2xl overflow-hidden" style={{ background: 'linear-gradient(135deg, hsl(var(--primary)), hsl(220 65% 58%), hsl(195 100% 50%))' }}>
-        <div className="px-5 py-5">
-          <p className="text-primary-foreground/70 text-xs font-medium mb-1">Заработано за всё время</p>
-          <h2 className="text-primary-foreground text-4xl font-extrabold mb-1">{((profile as any)?.total_earned || 0).toLocaleString("ru-RU")} ₽</h2>
-          <p className="text-primary-foreground/60 text-xs">За неделю: {weeklyStats.earned.toLocaleString("ru-RU")} ₽ · {weeklyStats.orders} заказов</p>
-        </div>
-      </div>
-
-      {/* Profile info */}
-      <div className="px-5 pb-4">
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            {profile?.is_premium && (
-              <div className="absolute -inset-[3px] rounded-full bg-gradient-to-tr from-yellow-400 via-amber-500 to-orange-500 animate-pulse opacity-80" />
-            )}
-            <AvatarWithUpload profile={profile} user={user} editable />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <h2 className="text-lg font-bold text-foreground">{profile?.full_name || "Пользователь"}</h2>
-              {profile?.is_premium && <Crown size={16} className="text-yellow-500 fill-yellow-500" />}
-            </div>
-            <div className="flex items-center gap-1 mt-0.5">
-              <Star size={14} className="text-primary fill-primary" />
-              <span className="text-sm font-bold text-foreground">{profile?.rating || "5.00"}</span>
-              <span className="text-xs text-muted-foreground ml-1">· {profile?.completed_orders || 0} заказов</span>
-            </div>
-            <div className="flex items-center gap-1 mt-0.5">
-              <Shield size={12} className="text-primary" />
-              <span className="text-xs text-primary font-semibold">Грузчик</span>
+      {/* Premium profile hero */}
+      <div className="px-5 mt-2 mb-4">
+        <div className="relative overflow-hidden rounded-[26px] border border-white/90 bg-white/72 p-5 shadow-[0_22px_55px_rgba(31,35,43,.09),inset_0_1px_0_rgba(255,255,255,.98)] backdrop-blur-2xl">
+          <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-yellow-300/15 blur-3xl" />
+          <div className="pointer-events-none absolute -left-16 -bottom-24 h-44 w-44 rounded-full bg-white/80 blur-3xl" />
+          <div className="relative flex items-start gap-4">
+            <div className="relative shrink-0">
               {profile?.is_premium && (
-                <span className="ml-1 px-2 py-0.5 rounded-full bg-yellow-500/15 text-[10px] text-yellow-500 font-bold">Premium</span>
+                <div className="absolute -inset-[4px] rounded-full bg-gradient-to-tr from-yellow-300 via-amber-400 to-yellow-500 opacity-80" />
               )}
+              <div className="relative rounded-full bg-white p-1 shadow-[0_8px_24px_rgba(31,35,43,.12)]">
+                <AvatarWithUpload profile={profile} user={user} editable />
+              </div>
+            </div>
+            <div className="min-w-0 flex-1 pt-0.5">
+              <div className="flex items-center gap-1.5">
+                <h2 className="min-w-0 truncate text-[20px] font-extrabold tracking-[-0.035em] text-foreground">{profile?.full_name || "Пользователь"}</h2>
+                {profile?.is_premium && <Crown size={16} className="shrink-0 fill-yellow-500 text-yellow-500" />}
+              </div>
+              <div className="mt-1 flex items-center gap-1.5">
+                <Star size={14} className="fill-yellow-400 text-yellow-400" />
+                <span className="text-sm font-extrabold text-foreground">{profile?.rating || "5.00"}</span>
+                <span className="text-xs text-muted-foreground">· {profile?.completed_orders || 0} заказов</span>
+              </div>
+              <div className="mt-2 flex items-center gap-1.5">
+                <span className="rounded-full bg-foreground px-2.5 py-1 text-[10px] font-bold text-background">Грузчик</span>
+                {profile?.is_premium && <span className="rounded-full bg-yellow-300/35 px-2.5 py-1 text-[10px] font-bold text-yellow-800">Premium</span>}
+              </div>
+            </div>
+          </div>
+          <div className="relative mt-5 border-t border-border/60 pt-4">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Заработано за всё время</p>
+                <div className="mt-1 text-[30px] font-extrabold leading-none tracking-[-.05em] text-foreground">{((profile as any)?.total_earned || 0).toLocaleString("ru-RU")} ₽</div>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] text-muted-foreground">За неделю</p>
+                <p className="mt-0.5 text-sm font-extrabold text-foreground">{weeklyStats.earned.toLocaleString("ru-RU")} ₽</p>
+                <p className="text-[10px] text-muted-foreground">{weeklyStats.orders} заказов</p>
+              </div>
             </div>
           </div>
         </div>
