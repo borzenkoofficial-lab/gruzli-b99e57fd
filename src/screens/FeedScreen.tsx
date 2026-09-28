@@ -380,7 +380,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
             })()}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Filters */}
       <div className="px-5 pb-4 overflow-x-auto scrollbar-hide">
