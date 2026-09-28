@@ -291,8 +291,7 @@ const OrdersScreen = () => {
   };
 
   if (loading) {
-    return (
-    <div>
+    return (\n    <div className="gruzli-orders-screen app-scroll">
         <div className="px-5 safe-top pb-4">
           <h1 className="text-lg font-bold text-foreground">Мои заказы</h1>
         </div>
