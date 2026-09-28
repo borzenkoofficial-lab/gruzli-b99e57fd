@@ -30,6 +30,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<AppRole | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [demoMode, setDemoMode] = useState(() => localStorage.getItem("gruzli_demo_worker") === "1");
 
   const fetchRoleAndProfile = async (userId: string) => {
     const [roleRes, profileRes] = await Promise.all([
@@ -78,16 +79,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
+  useEffect(() => {
+    const handler = () => setDemoMode(localStorage.getItem("gruzli_demo_worker") === "1");
+    window.addEventListener("gruzli-demo-change", handler);
+    return () => window.removeEventListener("gruzli-demo-change", handler);
+  }, []);
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
     setRole(null);
     setProfile(null);
+    localStorage.removeItem("gruzli_demo_worker");
+    setDemoMode(false);
   };
 
+  const effectiveRole = demoMode ? "worker" : role;
+  const effectiveProfile = demoMode ? { full_name: "Демо-грузчик", role: "worker" } : profile;
+
   return (
-    <AuthContext.Provider value={{ user, session, role, profile, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, role: effectiveRole, profile: effectiveProfile, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );
