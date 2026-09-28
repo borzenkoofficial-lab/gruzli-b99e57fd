@@ -1275,3 +1275,18 @@ button{ -webkit-tap-highlight-color:transparent; }
     border-radius:16px;
   }
 }
+
+@media(max-width:767px){
+  .gruzli-profile-screen{
+    padding-bottom:94px;
+  }
+  .gruzli-profile-screen .profile-premium-action{
+    min-height:52px;
+  }
+  .gruzli-profile-screen > .px-5 > .grid > *{
+    min-height:94px;
+  }
+  .gruzli-profile-screen .rounded-[26px]{
+    isolation:isolate;
+  }
+}
