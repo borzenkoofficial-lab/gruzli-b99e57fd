@@ -313,14 +313,6 @@ button,input,textarea,select{font-family:inherit;}
   -webkit-text-fill-color:initial!important;
 }
 
-/* Preserve readable dark theme if explicitly selected. */
-html:not(.light).theme-midnight,
-html:not(.light).theme-emerald,
-html:not(.light).theme-crimson,
-html:not(.light).theme-amber{
-  /* explicit designer themes remain available */
-}
-
 /* Mobile typography and spacing */
 @media(max-width:430px){
   .app-scroll{padding-bottom:calc(var(--bottom-nav-height) + env(safe-area-inset-bottom,0px) + 30px);}
@@ -328,45 +320,209 @@ html:not(.light).theme-amber{
 }
 
 
-/* Explicit dark mode remains available through the existing theme control. */
-html.gruzli-dark{
-  --background:222 18% 8%;
-  --foreground:0 0% 94%;
-  --card:222 17% 11%;
-  --card-foreground:0 0% 94%;
-  --popover:222 17% 11%;
-  --popover-foreground:0 0% 94%;
-  --muted:222 12% 16%;
-  --muted-foreground:220 8% 62%;
-  --accent:222 12% 17%;
-  --accent-foreground:0 0% 94%;
-  --border:222 11% 19%;
-  --input:222 11% 19%;
-  --surface-1:222 18% 8%;
-  --surface-2:222 17% 11%;
-  --surface-3:222 12% 16%;
-  --surface-4:222 11% 20%;
-  --bubble-own:43 38% 19%;
-  --bubble-other:222 17% 11%;
+
+/* ===== Gruzli light product system ===== */
+:root{
+  color-scheme:light;
+  --gruzli-ink:#151619;
+  --gruzli-muted:#777a82;
+  --gruzli-line:#e7e7ea;
+  --gruzli-soft:#f5f5f6;
+  --gruzli-yellow:#efb714;
+  --gruzli-yellow-soft:#fff6d5;
+  --gruzli-shadow:0 10px 32px rgba(18,20,25,.055);
+  --gruzli-shadow-hover:0 18px 46px rgba(18,20,25,.075);
 }
-html.gruzli-dark .desktop-shell{
-  background:radial-gradient(900px 520px at 76% -12%,rgba(255,255,255,.035),transparent 68%),hsl(var(--background));
+html{color-scheme:light!important;background:#f7f7f8!important;}
+body{background:#f7f7f8!important;color:var(--gruzli-ink)!important;}
+button{ -webkit-tap-highlight-color:transparent; }
+::selection{background:#ffe48a;color:#111;}
+
+.desktop-shell{
+  min-height:100vh;
+  background:
+    radial-gradient(900px 520px at 78% -8%,#fff 0%,rgba(255,255,255,.82) 42%,transparent 72%),
+    radial-gradient(720px 440px at 8% 0%,rgba(255,255,255,.95),transparent 70%),
+    #f7f7f8!important;
 }
-html.gruzli-dark .desktop-sidebar,
-html.gruzli-dark .desktop-detail,
-html.gruzli-dark .desktop-topbar{
-  background:rgba(24,25,29,.92);
-  border-color:hsl(var(--border));
+.desktop-main-inner{
+  width:100%;
+  max-width:1180px;
+  margin:0 auto;
+  padding:34px 42px 72px;
 }
-html.gruzli-dark .desktop-main{
-  background:hsl(var(--background));
+.desktop-sidebar{
+  box-sizing:border-box;
+  padding:18px 12px;
 }
-html.gruzli-dark .desktop-topbar input{
-  background:hsl(var(--card))!important;
-  border-color:hsl(var(--border))!important;
-  color:hsl(var(--foreground))!important;
+.desktop-sidebar nav{gap:4px!important;}
+.desktop-sidebar nav button{
+  min-height:42px;
+  padding-left:12px!important;
+  padding-right:12px!important;
+  font-size:13px!important;
+  font-weight:560;
 }
-html.gruzli-dark .bottom-nav-pill{
-  background:rgba(28,29,34,.86)!important;
-  border-color:rgba(255,255,255,.08)!important;
+.desktop-sidebar .rounded-xl{
+  box-shadow:0 8px 24px rgba(18,20,25,.07)!important;
+}
+.desktop-topbar{
+  min-height:68px;
+}
+.desktop-topbar > div{
+  min-height:68px;
+  max-width:1440px;
+  margin:0 auto;
+}
+.desktop-topbar h2{
+  font-size:15px!important;
+  letter-spacing:-.02em;
+}
+.desktop-topbar p{font-size:10.5px!important;}
+.desktop-topbar button:not([class*="bg-primary"]){
+  background:rgba(255,255,255,.65);
+  border:1px solid transparent;
+}
+.desktop-topbar button:not([class*="bg-primary"]):hover{
+  border-color:var(--gruzli-line);
+}
+.desktop-topbar button.bg-primary{
+  min-width:104px;
+  box-shadow:0 7px 18px rgba(18,20,25,.14)!important;
+}
+
+.app-scroll{
+  min-height:100%;
+  background:
+    radial-gradient(600px 300px at 78% 0%,rgba(255,255,255,.92),transparent 72%),
+    #f7f7f8!important;
+}
+.app-scroll > div{scrollbar-width:thin;scrollbar-color:#d8d8dc transparent;}
+
+.g-content{
+  color:var(--gruzli-ink);
+}
+
+/* Consistent card language across all Gruzli screens. */
+.desktop-main-inner .bg-card,
+.app-scroll .bg-card{
+  border-color:var(--gruzli-line)!important;
+  box-shadow:var(--gruzli-shadow);
+}
+.desktop-main-inner .bg-card:hover,
+.app-scroll .bg-card:hover{
+  box-shadow:var(--gruzli-shadow-hover);
+}
+.desktop-main-inner .border,
+.desktop-main-inner .border-border,
+.app-scroll .border,
+.app-scroll .border-border{
+  border-color:var(--gruzli-line)!important;
+}
+.desktop-main-inner input,
+.desktop-main-inner textarea,
+.desktop-main-inner select,
+.app-scroll input,
+.app-scroll textarea,
+.app-scroll select{
+  background:rgba(255,255,255,.92)!important;
+  border-color:var(--gruzli-line)!important;
+  color:var(--gruzli-ink)!important;
+}
+.desktop-main-inner input::placeholder,
+.desktop-main-inner textarea::placeholder,
+.app-scroll input::placeholder,
+.app-scroll textarea::placeholder{
+  color:#a1a3a9!important;
+}
+.desktop-main-inner input:focus,
+.desktop-main-inner textarea:focus,
+.app-scroll input:focus,
+.app-scroll textarea:focus{
+  outline:none;
+  border-color:rgba(210,158,0,.55)!important;
+  box-shadow:0 0 0 4px rgba(239,183,20,.10)!important;
+}
+
+/* Primary actions are black; yellow is reserved for identity and status. */
+.desktop-main-inner button.bg-primary,
+.app-scroll button.bg-primary{
+  background:#17181b!important;
+  color:#fff!important;
+  border-color:#17181b!important;
+  box-shadow:0 7px 18px rgba(18,20,25,.11);
+}
+.desktop-main-inner button.bg-primary:hover,
+.app-scroll button.bg-primary:hover{background:#292a2e!important;}
+.desktop-main-inner .text-primary,
+.app-scroll .text-primary{color:#b78300!important;}
+.desktop-main-inner .bg-primary\/10,
+.desktop-main-inner .bg-primary\/15,
+.app-scroll .bg-primary\/10,
+.app-scroll .bg-primary\/15{background:var(--gruzli-yellow-soft)!important;}
+
+/* Editorial section headers. */
+.desktop-main-inner h1,
+.desktop-main-inner h2{
+  letter-spacing:-.035em;
+}
+.app-scroll h1{
+  letter-spacing:-.035em;
+}
+.app-scroll > div > div:first-child h1{
+  font-size:26px!important;
+  line-height:1.05;
+}
+.app-scroll .text-muted-foreground{color:var(--gruzli-muted)!important;}
+
+/* Floating mobile shell. */
+@media(max-width:767px){
+  .app-scroll{
+    padding-top:8px;
+    padding-bottom:calc(var(--bottom-nav-height) + env(safe-area-inset-bottom,0px) + 26px);
+  }
+  .app-scroll .px-5{padding-left:18px!important;padding-right:18px!important;}
+  .app-scroll .mx-5{margin-left:18px!important;margin-right:18px!important;}
+  .app-scroll .space-y-3{row-gap:12px!important;}
+  .bottom-nav-wrapper{
+    padding-left:12px!important;
+    padding-right:12px!important;
+    bottom:8px!important;
+  }
+  .bottom-nav-pill{
+    max-width:100%;
+    min-height:62px;
+  }
+  .bottom-nav-pill button{
+    min-height:46px;
+  }
+}
+
+/* Large desktop: more editorial whitespace and stable reading width. */
+@media(min-width:1200px){
+  .desktop-main-inner{padding-left:52px;padding-right:52px;}
+}
+@media(max-width:767px){
+  .desktop-main-inner{padding:18px 18px 60px;}
+}
+
+/* Remove legacy visual treatments while keeping their layout classes intact. */
+.bg-gradient-to-br.from-foreground\/15,
+.bg-gradient-to-br.from-foreground\/20,
+[class*="from-foreground\/"]{
+  background:#ececef!important;
+}
+[class*="shadow-[0_4px_16px"],
+[class*="shadow-[0_4px_18px"],
+[class*="shadow-[0_8px"]{
+  box-shadow:0 7px 20px rgba(18,20,25,.06)!important;
+}
+
+/* Lightweight browser/mockup surface for previews and empty states. */
+.gruzli-mockup-content{
+  min-height:160px;
+  padding:18px;
+  background:
+    radial-gradient(280px 120px at 75% 0%,rgba(255,255,255,.96),transparent 72%),
+    #f7f7f8;
 }
