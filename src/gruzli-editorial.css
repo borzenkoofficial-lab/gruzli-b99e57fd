@@ -222,6 +222,28 @@ button,input,textarea,select{font-family:inherit;}
 .bottom-nav-pill .text-muted-foreground{
   color:#7d7e84!important;
 }
+.bottom-nav-active{
+  background:#191a1d!important;
+  box-shadow:0 7px 18px rgba(20,24,32,.12)!important;
+}
+.bottom-nav-active .text-foreground{
+  color:#fff!important;
+}
+.bottom-nav-active:after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:3px;
+  width:18px;
+  height:3px;
+  transform:translateX(-50%);
+  border-radius:999px;
+  background:#f4c400;
+}
+.bottom-nav-pill button:not(.bottom-nav-active):active{
+  background:#f4f4f5!important;
+}
+
 
 /* Make the primary mobile content feel like a premium product sheet. */
 @media(max-width:767px){
