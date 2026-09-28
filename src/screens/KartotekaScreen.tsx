@@ -107,8 +107,7 @@ const KartotekaScreen = () => {
     );
   }
 
-  return (
-    <div >
+  return (\n    <div className="gruzli-kartoteka-screen app-scroll">
       {/* Header */}
       <div className="px-5 safe-top pb-2">
         <div className="flex items-center justify-between">
