@@ -945,3 +945,40 @@ button{ -webkit-tap-highlight-color:transparent; }
     letter-spacing:-.045em;
   }
 }
+
+/* Feed UX: keep search reachable and quick filters thumb-friendly. */
+@media(max-width:767px){
+  .gruzli-feed-search{
+    position:sticky;
+    top:0;
+    z-index:20;
+    padding-top:4px;
+    padding-bottom:6px;
+    background:linear-gradient(180deg,#f8f8f9 72%,rgba(248,248,249,0));
+  }
+  .gruzli-feed-search .group{border-radius:17px;}
+  .gruzli-feed-search input.gruzli-feed-search-input{
+    min-height:48px!important;
+    height:48px!important;
+    padding-left:0!important;
+    padding-right:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+  }
+  .gruzli-feed-search-action{
+    box-shadow:0 5px 14px rgba(20,24,32,.12);
+  }
+  .gruzli-feed-filters{
+    position:relative;
+  }
+  .gruzli-feed-filters > div{
+    scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  .gruzli-feed-filters button{
+    min-height:40px!important;
+    flex-shrink:0;
+  }
+}
