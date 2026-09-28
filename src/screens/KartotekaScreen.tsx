@@ -108,7 +108,7 @@ const KartotekaScreen = () => {
   }
 
   return (
-    <div >
+    <div className="gruzli-mobile-screen gruzli-kartoteka-screen">
       {/* Header */}
       <div className="px-5 safe-top pb-2">
         <div className="flex items-center justify-between">
