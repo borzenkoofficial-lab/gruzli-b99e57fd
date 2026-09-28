@@ -225,9 +225,9 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
   };
 
   return (
-    <div>
+    <div className="gruzli-mobile-feed">
       {/* Header */}
-      <div className="px-5 safe-top pb-2 flex items-center justify-between">
+      <div className="gruzli-mobile-hero px-5 safe-top pb-3 flex items-center justify-between">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Заявки</h1>
           <div className="flex items-center gap-1.5 mt-1">
@@ -248,7 +248,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
 
       {/* Swipe hint chip */}
       <div className="px-5 mt-1.5">
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-card/60 border border-border text-[10.5px] text-muted-foreground">
+        <div className="gruzli-mobile-hint inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card/60 border border-border text-[10.5px] text-muted-foreground">
           <ArrowLeft size={10} className="text-destructive" /> Пропустить
           <span className="opacity-30">·</span>
           <ArrowRight size={10} className="text-online" /> Беру
