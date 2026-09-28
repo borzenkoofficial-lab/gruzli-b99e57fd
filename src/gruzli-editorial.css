@@ -1,0 +1,328 @@
+/* GRUZLI EDITORIAL UI — visual rebrand inspired by the Nexum.dev design language.
+   UI-only layer: preserves existing screen structure, navigation and business logic. */
+
+:root{
+  --background: 0 0% 96.8%;
+  --foreground: 222 18% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 18% 10%;
+  --card-hover: 0 0% 98%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 18% 10%;
+  --primary: 43 96% 48%;
+  --primary-foreground: 222 18% 8%;
+  --secondary: 0 0% 93%;
+  --secondary-foreground: 222 12% 28%;
+  --muted: 0 0% 93%;
+  --muted-foreground: 220 8% 43%;
+  --accent: 0 0% 94%;
+  --accent-foreground: 222 18% 10%;
+  --border: 220 10% 87%;
+  --input: 220 10% 87%;
+  --ring: 43 96% 48%;
+  --surface-1: 0 0% 96.8%;
+  --surface-2: 0 0% 100%;
+  --surface-3: 0 0% 97%;
+  --surface-4: 220 10% 89%;
+  --bubble-own: 43 96% 91%;
+  --bubble-other: 0 0% 100%;
+  --sidebar-background: 0 0% 99%;
+  --sidebar-foreground: 222 18% 10%;
+  --sidebar-primary: 43 96% 48%;
+  --sidebar-primary-foreground: 222 18% 8%;
+  --sidebar-accent: 0 0% 95%;
+  --sidebar-accent-foreground: 222 18% 10%;
+  --sidebar-border: 220 10% 89%;
+  --sidebar-ring: 43 96% 48%;
+  --radius: .95rem;
+}
+
+html,body,#root{background:hsl(var(--background));color:hsl(var(--foreground));}
+body{font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",sans-serif;letter-spacing:-.012em;}
+button,input,textarea,select{font-family:inherit;}
+
+.desktop-shell{
+  background:
+    radial-gradient(900px 520px at 76% -12%,rgba(255,255,255,.98),transparent 68%),
+    radial-gradient(720px 420px at 22% 0%,rgba(255,255,255,.9),transparent 72%),
+    hsl(var(--background));
+}
+.desktop-sidebar{
+  width:248px;min-width:248px;
+  background:rgba(252,252,253,.92);
+  border-right:1px solid hsl(220 10% 88% / .9);
+  box-shadow:8px 0 30px rgba(20,24,32,.025);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+}
+.desktop-topbar{
+  background:rgba(255,255,255,.78);
+  border-bottom:1px solid hsl(220 10% 88% / .8);
+  backdrop-filter:blur(22px) saturate(1.25);
+  -webkit-backdrop-filter:blur(22px) saturate(1.25);
+}
+.desktop-main{
+  background:
+    radial-gradient(700px 360px at 80% 0%,rgba(255,255,255,.8),transparent 70%),
+    hsl(var(--background));
+}
+.desktop-main-inner{
+  max-width:1120px;
+  padding:30px 38px 64px;
+}
+
+.desktop-detail{
+  width:390px;min-width:390px;
+  background:rgba(255,255,255,.84);
+  border-left:1px solid hsl(220 10% 88% / .85);
+  box-shadow:-12px 0 34px rgba(20,24,32,.025);
+  backdrop-filter:blur(18px);
+}
+.desktop-detail-header{
+  height:58px;
+  background:rgba(255,255,255,.8);
+  border-bottom:1px solid hsl(220 10% 88% / .8);
+}
+
+.desktop-sidebar > div:first-child{
+  position:relative;
+}
+.desktop-sidebar > div:first-child:after{
+  content:"WORKSPACE";
+  position:absolute;left:18px;top:58px;
+  color:hsl(220 8% 55%);
+  font-size:8px;font-weight:750;letter-spacing:.13em;
+}
+.desktop-sidebar .rounded-xl{
+  border-radius:11px;
+}
+.desktop-sidebar .bg-gradient-to-br{
+  background:linear-gradient(145deg,#17181b,#35373b)!important;
+  box-shadow:0 7px 18px rgba(20,22,26,.12)!important;
+}
+.desktop-sidebar nav button{
+  border-radius:10px;
+}
+.desktop-sidebar nav button.bg-primary\/15,
+.desktop-sidebar nav button[class*="bg-primary/15"]{
+  background:#fff7d8!important;
+  color:#17181b!important;
+  box-shadow:inset 0 0 0 1px rgba(239,183,20,.16);
+}
+.desktop-sidebar nav button.bg-primary\/15 svg,
+.desktop-sidebar nav button[class*="bg-primary/15"] svg{
+  color:#c99400!important;
+}
+.desktop-sidebar .border-t{
+  border-color:hsl(220 10% 89%)!important;
+}
+
+.desktop-topbar > div{
+  padding-left:28px!important;padding-right:28px!important;
+}
+.desktop-topbar input{
+  height:38px!important;
+  border-radius:11px!important;
+  background:rgba(255,255,255,.8)!important;
+  border:1px solid hsl(220 10% 87%)!important;
+  box-shadow:0 2px 10px rgba(20,24,32,.025);
+}
+.desktop-topbar input:focus{
+  border-color:rgba(239,183,20,.55)!important;
+  box-shadow:0 0 0 4px rgba(239,183,20,.10)!important;
+}
+.desktop-topbar button{
+  border-radius:10px!important;
+}
+.desktop-topbar button.bg-primary{
+  background:#191a1d!important;color:#fff!important;
+}
+.desktop-topbar button:hover{
+  background:#f3f3f4!important;
+}
+.desktop-topbar .text-primary{color:#b88700!important;}
+
+.app-shell{
+  max-width:none;
+  background:transparent;
+}
+.app-scroll{
+  background:
+    radial-gradient(500px 260px at 88% 0%,rgba(255,255,255,.9),transparent 70%),
+    hsl(var(--background));
+}
+
+.g-content,.desktop-main-inner .space-y-3 > *{
+  --tw-shadow:0 1px 2px rgba(20,24,32,.02),0 12px 32px rgba(20,24,32,.035);
+}
+.desktop-main-inner .rounded-2xl,
+.desktop-main-inner .rounded-xl{
+  border-radius:18px;
+}
+.desktop-main-inner .bg-card{
+  background:rgba(255,255,255,.94);
+}
+.desktop-main-inner .border-border{
+  border-color:hsl(220 10% 88%);
+}
+.desktop-main-inner .shadow-md,
+.desktop-main-inner .shadow-lg{
+  box-shadow:0 8px 28px rgba(20,24,32,.055)!important;
+}
+
+/* Feed: editorial cards, airy spacing, quiet hierarchy */
+.desktop-main-inner .space-y-3 > div,
+.desktop-main-inner [class*="rounded-2xl"][class*="bg-card"]{
+  transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+}
+.desktop-main-inner [class*="rounded-2xl"][class*="bg-card"]:hover{
+  transform:translateY(-1px);
+  box-shadow:0 16px 40px rgba(20,24,32,.06)!important;
+}
+.desktop-main-inner [class*="bg-gradient-to-br"][class*="p-[1px]"]{
+  background:linear-gradient(145deg,#e8e8ea,#fff,#e5e5e7)!important;
+}
+
+/* Yellow becomes the brand accent, not a dominant surface. */
+.bg-primary,.bg-foreground{
+  background:#191a1d!important;
+  color:#fff!important;
+}
+.text-primary{color:#b98500!important;}
+.text-background{color:#191a1d!important;}
+.border-primary{border-color:#e1ad10!important;}
+.bg-primary\/10,.bg-primary\/15,.bg-primary\/20{
+  background:rgba(239,183,20,.11)!important;
+}
+.ring-primary{--tw-ring-color:rgba(239,183,20,.35)!important;}
+
+/* Floating mobile navigation — cloud/glass capsule */
+.bottom-nav-wrapper{
+  max-width:32rem;
+  padding:0 14px max(9px,env(safe-area-inset-bottom,0px)) 14px;
+}
+.bottom-nav-pill{
+  padding:7px 8px;
+  border-radius:24px;
+  background:rgba(255,255,255,.82)!important;
+  border:1px solid rgba(255,255,255,.95)!important;
+  box-shadow:0 14px 38px rgba(20,24,32,.13),0 2px 8px rgba(20,24,32,.06)!important;
+  backdrop-filter:blur(28px) saturate(1.35)!important;
+  -webkit-backdrop-filter:blur(28px) saturate(1.35)!important;
+}
+.bottom-nav-active{
+  background:#f2f2f3!important;
+}
+.bottom-nav-pill button{
+  border-radius:17px!important;
+}
+.bottom-nav-pill .text-foreground{
+  color:#17181b!important;
+}
+.bottom-nav-pill .text-muted-foreground{
+  color:#7d7e84!important;
+}
+
+/* Make the primary mobile content feel like a premium product sheet. */
+@media(max-width:767px){
+  body{background:hsl(var(--background));}
+  .app-shell{max-width:100%;background:hsl(var(--background));}
+  .app-scroll{
+    background:
+      radial-gradient(500px 260px at 50% -80px,rgba(255,255,255,.95),transparent 70%),
+      hsl(var(--background));
+  }
+  .app-scroll > div{
+    background:transparent!important;
+  }
+  .app-scroll .rounded-2xl{border-radius:18px;}
+  .app-scroll .rounded-xl{border-radius:14px;}
+  .app-scroll .bg-card{background:rgba(255,255,255,.96);}
+  .app-scroll .border-border{border-color:hsl(220 10% 88%);}
+  .app-scroll .shadow-md,.app-scroll .shadow-lg{
+    box-shadow:0 10px 30px rgba(20,24,32,.05)!important;
+  }
+}
+
+/* Shared modal / popover surfaces */
+[role="dialog"],
+[data-radix-popper-content-wrapper] > div{
+  border-color:hsl(220 10% 87%)!important;
+  box-shadow:0 24px 70px rgba(20,24,32,.14)!important;
+  border-radius:18px!important;
+}
+.bg-popover{background:#fff!important;}
+
+/* Mockup language: browser/device shells used by empty states and detail previews. */
+.gruzli-mockup{
+  position:relative;
+  overflow:hidden;
+  border:1px solid #e4e4e7;
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 18px 50px rgba(20,24,32,.065);
+}
+.gruzli-mockup:before{
+  content:"";
+  display:block;
+  height:30px;
+  border-bottom:1px solid #ececef;
+  background:#fafafa;
+}
+.gruzli-mockup .mockup-dots{
+  position:absolute;top:11px;left:13px;display:flex;gap:5px;
+}
+.gruzli-mockup .mockup-dots i{
+  width:6px;height:6px;border-radius:50%;background:#d5d5d9;
+}
+.gruzli-cloud{
+  position:relative;
+  isolation:isolate;
+}
+.gruzli-cloud:before,
+.gruzli-cloud:after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  border-radius:999px;
+  filter:blur(1px);
+  pointer-events:none;
+}
+.gruzli-cloud:before{
+  width:360px;height:150px;
+  top:-70px;right:-80px;
+  background:rgba(255,255,255,.95);
+  box-shadow:0 30px 80px rgba(255,255,255,.72);
+}
+.gruzli-cloud:after{
+  width:260px;height:120px;
+  bottom:-70px;left:-100px;
+  background:rgba(255,255,255,.72);
+  box-shadow:0 20px 60px rgba(255,255,255,.5);
+}
+
+/* Reduce the old neon / dark treatment without touching component logic. */
+[class*="glow"],[class*="shimmer"]{box-shadow:none;}
+.gradient-cyan,.gradient-primary{
+  background:#191a1d!important;
+  color:#fff!important;
+}
+.text-gradient-cyan,.text-gradient-primary{
+  color:#191a1d!important;
+  background:none!important;
+  -webkit-text-fill-color:initial!important;
+}
+
+/* Preserve readable dark theme if explicitly selected. */
+html:not(.light).theme-midnight,
+html:not(.light).theme-emerald,
+html:not(.light).theme-crimson,
+html:not(.light).theme-amber{
+  /* explicit designer themes remain available */
+}
+
+/* Mobile typography and spacing */
+@media(max-width:430px){
+  .app-scroll{padding-bottom:calc(var(--bottom-nav-height) + env(safe-area-inset-bottom,0px) + 30px);}
+  .app-scroll .px-5{padding-left:16px!important;padding-right:16px!important;}
+}
