@@ -225,9 +225,9 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
   };
 
   return (
-    <div className="gruzli-mobile-feed">
+    <div className="gruzli-mobile-feed app-scroll">
       {/* Header */}
-      <div className="gruzli-mobile-hero px-5 safe-top pb-3 flex items-center justify-between">
+      <header className="gruzli-mobile-hero px-5 safe-top pb-3 flex items-center justify-between">
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-foreground tracking-tight">Заявки</h1>
           <div className="flex items-center gap-1.5 mt-1">
@@ -244,7 +244,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
           <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-foreground/20 to-online/10 blur-md opacity-60" />
           <img src={gruzliLogo} alt="Gruzli" className="relative h-10 w-10 rounded-xl object-cover ring-1 ring-border" loading="lazy" />
         </div>
-      </div>
+      </header>
 
       {/* Swipe hint chip */}
       <div className="px-5 mt-1.5">
@@ -292,7 +292,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
       </div>
 
       {/* Stats bar */}
-      <div className="mx-5 mt-3 mb-4 grid grid-cols-2 gap-3">
+      <div className="px-5 mt-3 mb-4 grid grid-cols-2 gap-3">
         <StatCard
           icon={MapPin}
           label="Заказов рядом"
@@ -308,8 +308,9 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
       </div>
 
       {/* Category chips (subscription-aware) */}
-      <div className="px-5 pb-2">
-        <div className="flex items-center justify-between mb-2">
+      <section className="gruzli-mobile-section !px-5 !pt-1">
+        <div className="gruzli-mobile-section-title">
+          <h2>Категории</h2>
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
               Ваши категории
