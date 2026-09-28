@@ -80,7 +80,7 @@ const SwipeableChatItem = ({
         dragElastic={0.1}
         onDragEnd={handleDragEnd}
         onClick={() => !swiped && onOpen()}
-        className="relative z-10 flex items-center gap-3 px-4 py-3 cursor-pointer active:bg-muted/20 transition-colors bg-background"
+        className="relative z-10 flex items-center gap-3 px-4 py-3 cursor-pointer active:bg-muted/20 transition-colors bg-transparent"
       >
         <div className="relative shrink-0">
           {conv.isCommunity ? (
