@@ -759,7 +759,13 @@ const SwipeableJobCard = ({
         </div>
 
         {/* Title */}
-        <h3 className="text-[15px] font-semibold text-foreground leading-snug pr-2">{job.title}</h3>
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-[17px] font-bold text-foreground leading-[1.14] tracking-[-0.025em] pr-1">{job.title}</h3>
+          <div className="shrink-0 text-right">
+            <div className="text-[16px] font-extrabold tracking-[-0.02em] text-foreground">{job.hourly_rate.toLocaleString("ru-RU")} ₽</div>
+            <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.08em]">в час</div>
+          </div>
+        </div>
 
         {/* Dispatcher */}
         <button
@@ -791,16 +797,16 @@ const SwipeableJobCard = ({
         )}
 
         {/* Pay block */}
-        <div className="mt-3 relative rounded-xl bg-gradient-to-br from-surface-3 to-surface-2 border border-border overflow-hidden">
+        <div className="mt-4 relative rounded-2xl bg-white/60 border border-white/90 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,.9)]">
           <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-online/60" />
-          <div className="px-3 py-2.5">
+          <div className="px-3.5 py-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 min-w-0">
                 <TrendingUp size={12} className="text-online shrink-0" />
                 <span className="text-[11px] text-muted-foreground">Ты получишь</span>
               </div>
               <div className="flex items-baseline gap-0.5">
-                <span className="text-xl font-bold text-foreground tracking-tight">
+                <span className="text-[24px] font-extrabold text-foreground tracking-[-0.04em]">
                   {totalPay.toLocaleString("ru-RU")}
                 </span>
                 <span className="text-xs text-muted-foreground font-semibold">₽</span>
@@ -832,7 +838,7 @@ const SwipeableJobCard = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
+        <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/70">
           <div className="flex flex-col">
             <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Ставка</span>
             <span className="text-base font-bold text-foreground leading-tight">{job.hourly_rate} ₽<span className="text-xs text-muted-foreground font-medium">/час</span></span>
@@ -852,7 +858,7 @@ const SwipeableJobCard = ({
             <motion.button
               whileTap={{ scale: 0.93 }}
               onClick={(e) => { e.stopPropagation(); onRespond(); }}
-              className="btn-shimmer flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-[13px] font-semibold bg-gradient-to-r from-foreground to-foreground/85 text-background shadow-[0_4px_14px_-4px_hsl(var(--foreground)/0.4)] hover:shadow-[0_6px_18px_-4px_hsl(var(--foreground)/0.5)] transition-shadow"
+              className="btn-shimmer flex min-h-[44px] items-center justify-center gap-2 px-5 rounded-[14px] text-[13px] font-bold bg-foreground text-background shadow-[0_8px_20px_-6px_hsl(var(--foreground)/0.42)] hover:shadow-[0_10px_24px_-6px_hsl(var(--foreground)/0.5)] transition-all"
             >
               Беру!
               <ArrowRight size={13} />
