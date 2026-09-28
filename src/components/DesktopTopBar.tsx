@@ -38,6 +38,7 @@ const DesktopTopBar = ({
 
   useEffect(() => {
     document.documentElement.classList.toggle("light", theme === "light");
+    document.documentElement.classList.toggle("gruzli-dark", theme === "dark");
     try {
       localStorage.setItem("gruzli_theme", theme);
     } catch {}
