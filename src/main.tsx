@@ -5,9 +5,11 @@ import "./gruzli-editorial.css";
 
 // Restore theme from localStorage
 const savedTheme = localStorage.getItem("theme");
-if (savedTheme === "light") {
+if (savedTheme === "dark") {
+  document.documentElement.classList.add("gruzli-dark");
+} else if (savedTheme === "light" || !savedTheme) {
   document.documentElement.classList.add("light");
-} else if (savedTheme && savedTheme !== "dark") {
+} else {
   document.documentElement.classList.add(savedTheme);
 }
 
