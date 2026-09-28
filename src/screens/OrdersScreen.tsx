@@ -308,13 +308,13 @@ const OrdersScreen = () => {
   const finishing = jobs.filter((j) => j.workerStatus === "finishing");
 
   return (
-    <div>
-      <div className="px-5 safe-top pb-4">
-        <h1 className="text-lg font-bold text-foreground">Мои заказы</h1>
-        <p className="text-xs text-muted-foreground mt-0.5">Заявки, на которые вас выбрали</p>
-      </div>
+    <div className="app-scroll">
+      <header className="px-5 safe-top pb-4">
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">Мои заказы</h1>
+        <p className="text-xs text-muted-foreground mt-1">Заявки, на которые вас выбрали</p>
+      </header>
 
-      <div className="px-5 space-y-3">
+      <main className="px-5 pb-28 space-y-3">
         {/* Finishing — dispatcher requested finish */}
         {finishing.length > 0 && (
           <>
