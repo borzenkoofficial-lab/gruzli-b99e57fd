@@ -33,7 +33,7 @@ const DesktopTopBar = ({
   searchPlaceholder = "Поиск по заявкам, людям, чатам...",
 }: DesktopTopBarProps) => {
   const [theme, setTheme] = useState<"light" | "dark">(
-    () => (document.documentElement.classList.contains("light") ? "light" : "dark"),
+    () => (localStorage.getItem("gruzli_theme") === "dark" ? "dark" : "light"),
   );
 
   useEffect(() => {
