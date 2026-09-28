@@ -260,33 +260,47 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
       <MaxChannelBanner />
 
       {/* Smart Search */}
-      <div className="mx-5 mt-3 mb-1">
-        <div className="group relative rounded-2xl bg-gradient-to-br from-foreground/15 via-border to-border p-[1px] transition-all focus-within:from-foreground/40 focus-within:via-foreground/20">
-          <div className="flex items-center gap-2 bg-card rounded-2xl px-3 py-2.5">
+      <div className="gruzli-feed-search mx-5 mt-3 mb-2">
+        <div className="group relative">
+          <div className="flex items-center gap-2 rounded-[17px] border border-border bg-card px-3 shadow-sm focus-within:ring-2 focus-within:ring-yellow-400/20">
             {searchLoading ? (
-              <Loader2 size={16} className="text-foreground animate-spin shrink-0" />
+              <Loader2 size={17} className="text-muted-foreground animate-spin shrink-0" />
             ) : (
-              <Sparkles size={16} className="text-foreground/80 shrink-0" />
+              <Search size={17} className="text-muted-foreground shrink-0" />
             )}
             <input
+              aria-label="Поиск заявок"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") handleSmartSearch(); }}
-              placeholder="AI-поиск: «переезд завтра утром»..."
-              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none"
+              placeholder="Найти заявку: переезд, Москва..."
+              className="gruzli-feed-search-input flex-1 min-w-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none"
             />
-            {searchQuery && (
-              <button onClick={clearSearch} className="shrink-0 rounded-full p-0.5 hover:bg-muted">
+            {searchQuery ? (
+              <button
+                aria-label="Очистить поиск"
+                onClick={clearSearch}
+                className="h-8 w-8 shrink-0 rounded-full flex items-center justify-center hover:bg-muted active:scale-95"
+              >
                 <X size={14} className="text-muted-foreground" />
               </button>
-            )}
+            ) : null}
+            <button
+              aria-label="Найти"
+              onClick={handleSmartSearch}
+              disabled={searchLoading || !searchQuery.trim()}
+              className="gruzli-feed-search-action h-9 w-9 shrink-0 rounded-xl flex items-center justify-center bg-foreground text-background disabled:opacity-30 active:scale-95 transition-transform"
+            >
+              <ArrowRight size={15} />
+            </button>
           </div>
         </div>
         {searchResultIds !== null && (
-          <div className="mt-1.5 px-1">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-foreground/10 text-[10.5px] text-foreground font-medium">
-              <Search size={9} /> Найдено: {filtered.length}
+          <div className="mt-2 flex items-center justify-between px-1">
+            <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium">
+              <Sparkles size={11} className="text-yellow-600" /> Найдено: <b className="text-foreground">{filtered.length}</b>
             </span>
+            <button onClick={clearSearch} className="text-[11px] font-semibold text-foreground">Сбросить</button>
           </div>
         )}
       </div>
@@ -382,9 +396,9 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
         </div>
       </section>
 
-      {/* Filters */}
-      <div className="px-5 pb-4 overflow-x-auto scrollbar-hide">
-        <div className="flex gap-2">
+      {/* Quick filters */}
+      <div className="gruzli-feed-filters px-5 pb-4 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 pr-1">
           {filters.map((f) => {
             const Icon = f.icon;
             const isActive = activeFilter === f.key;
