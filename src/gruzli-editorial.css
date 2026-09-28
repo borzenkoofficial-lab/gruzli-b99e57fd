@@ -1190,3 +1190,74 @@ button{ -webkit-tap-highlight-color:transparent; }
     background:transparent!important;
   }
 }
+
+/* Premium component language — one visual hierarchy across the product. */
+@media(max-width:767px){
+  .gruzli-chats-screen .border-b,
+  .gruzli-orders-screen .border-b,
+  .gruzli-kartoteka-screen .border-b{
+    border-color:rgba(225,225,229,.72)!important;
+  }
+
+  .gruzli-chats-screen [class*="rounded-2xl"],
+  .gruzli-orders-screen [class*="rounded-2xl"],
+  .gruzli-kartoteka-screen [class*="rounded-2xl"]{
+    border-radius:20px;
+  }
+
+  .gruzli-orders-screen [class*="bg-card"],
+  .gruzli-kartoteka-screen [class*="bg-card"]{
+    background:linear-gradient(145deg,rgba(255,255,255,.88),rgba(255,255,255,.68))!important;
+    border-color:rgba(255,255,255,.92)!important;
+    box-shadow:0 16px 42px rgba(31,35,43,.065),inset 0 1px 0 rgba(255,255,255,.96)!important;
+    backdrop-filter:blur(22px) saturate(1.15);
+    -webkit-backdrop-filter:blur(22px) saturate(1.15);
+  }
+
+  .gruzli-chats-screen .bg-background{
+    background:linear-gradient(145deg,rgba(255,255,255,.86),rgba(255,255,255,.68))!important;
+  }
+
+  .gruzli-chats-screen .cursor-pointer{
+    transition:transform .18s ease,background .18s ease;
+  }
+  .gruzli-chats-screen .cursor-pointer:active{
+    transform:scale(.992);
+  }
+
+  .gruzli-orders-screen button,
+  .gruzli-kartoteka-screen button{
+    -webkit-tap-highlight-color:transparent;
+  }
+
+  .gruzli-orders-screen button[class*="bg-primary"],
+  .gruzli-kartoteka-screen button[class*="bg-primary"]{
+    min-height:46px;
+    border-radius:14px!important;
+    box-shadow:0 8px 20px rgba(20,24,32,.11);
+  }
+
+  .gruzli-kartoteka-screen .text-red-500{
+    color:#d43b3b!important;
+  }
+
+  .gruzli-kartoteka-screen .text-orange-500{
+    color:#c96b16!important;
+  }
+
+  .gruzli-kartoteka-screen .text-yellow-500{
+    color:#927500!important;
+  }
+
+  /* Keep destructive data visually secondary until the user explicitly opens it. */
+  .gruzli-kartoteka-screen [class*="bg-red-500/10"],
+  .gruzli-kartoteka-screen [class*="bg-orange-500/10"],
+  .gruzli-kartoteka-screen [class*="bg-yellow-500/10"]{
+    border:1px solid rgba(225,225,229,.62);
+  }
+}
+
+/* The floating dock must remain interactive even though its wrapper is click-through. */
+.bottom-nav-pill{
+  pointer-events:auto;
+}
