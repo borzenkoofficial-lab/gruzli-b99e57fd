@@ -45,7 +45,15 @@ const DesktopLayout = ({
               )}
             </div>
           )}
-          <div className="desktop-detail-body">{detail}</div>
+          <div className="desktop-detail-body">
+            <div className="gruzli-preview-frame">
+              <div className="gruzli-preview-chrome">
+                <span className="gruzli-window-dot" /><span className="gruzli-window-dot" /><span className="gruzli-window-dot" />
+                <span className="gruzli-preview-address">gruzli.app</span>
+              </div>
+              <div className="gruzli-preview-content">{detail}</div>
+            </div>
+          </div>
         </aside>
       )}
     </div>
