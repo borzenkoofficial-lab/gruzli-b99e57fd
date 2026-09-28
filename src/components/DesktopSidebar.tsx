@@ -115,12 +115,12 @@ const DesktopSidebar = ({
   return (
     <aside className="desktop-sidebar">
       {/* Brand */}
-      <div className="px-5 pt-6 pb-4 flex items-center gap-2">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-md">
-          <span className="text-primary-foreground font-black text-base">G</span>
+      <div className="px-5 pt-6 pb-4 flex items-center gap-2 gruzli-brand-lockup">
+        <div className="w-9 h-9 rounded-xl bg-[#17181b] flex items-center justify-center shadow-[0_8px_20px_rgba(18,20,25,.14)]">
+          <span className="text-white font-black text-base tracking-[-.04em]">G</span>
         </div>
         <div className="flex flex-col">
-          <h1 className="text-base font-bold text-foreground tracking-tight leading-none">Gruzli</h1>
+          <h1 className="text-base font-bold text-foreground tracking-[-.035em] leading-none">Gruzli</h1>
           <span className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
             {isDispatcher ? "Диспетчер" : "Грузчик"}
           </span>
