@@ -35,6 +35,49 @@ interface FeedScreenProps {
   onRefreshRef?: React.MutableRefObject<(() => Promise<void>) | null>;
 }
 
+const DEMO_JOBS: Tables<"jobs">[] = [
+  {
+    id: "demo-job-1", title: "Переезд квартиры · Сокольники", description: "Нужно 2 грузчика: мебель, коробки и техника. Лифт есть.",
+    address: "Москва, ул. Стромынка, 18", metro: "Сокольники", hourly_rate: 900, duration_hours: 5,
+    workers_needed: 2, urgent: true, quick_minimum: false, is_bot: false, is_official: true,
+    dispatcher_id: "demo-dispatcher-1", dispatcher_income: null, expense_per_worker: null,
+    requires_contract: false, recurring_rule: null, replacement_for_job_id: null, replacement_for_worker_id: null,
+    template_id: null, status: "active", created_at: "2026-09-29T17:30:00Z", updated_at: "2026-09-29T17:30:00Z",
+  },
+  {
+    id: "demo-job-2", title: "Разгрузка фуры · Химки", description: "Разгрузить бытовую технику на складе. Работа без ночёвки.",
+    address: "Химки, Ленинградское шоссе, 23", metro: "Ховрино", hourly_rate: 750, duration_hours: 6,
+    workers_needed: 4, urgent: false, quick_minimum: true, is_bot: false, is_official: false,
+    dispatcher_id: "demo-dispatcher-2", dispatcher_income: null, expense_per_worker: null,
+    requires_contract: false, recurring_rule: null, replacement_for_job_id: null, replacement_for_worker_id: null,
+    template_id: null, status: "active", created_at: "2026-09-29T16:45:00Z", updated_at: "2026-09-29T16:45:00Z",
+  },
+  {
+    id: "demo-job-3", title: "Демонтаж перегородок · Москва-Сити", description: "Ручной демонтаж гипсокартона, вынос и сортировка материалов.",
+    address: "Москва, Пресненская наб., 8", metro: "Деловой центр", hourly_rate: 1000, duration_hours: 7,
+    workers_needed: 3, urgent: false, quick_minimum: false, is_bot: false, is_official: true,
+    dispatcher_id: "demo-dispatcher-3", dispatcher_income: null, expense_per_worker: null,
+    requires_contract: false, recurring_rule: null, replacement_for_job_id: null, replacement_for_worker_id: null,
+    template_id: null, status: "active", created_at: "2026-09-29T15:20:00Z", updated_at: "2026-09-29T15:20:00Z",
+  },
+  {
+    id: "demo-job-4", title: "Подъём стройматериалов · Арбат", description: "Поднять материалы на 5 этаж. Лифт для грузов отсутствует.",
+    address: "Москва, ул. Арбат, 41", metro: "Арбатская", hourly_rate: 850, duration_hours: 4,
+    workers_needed: 2, urgent: false, quick_minimum: false, is_bot: false, is_official: false,
+    dispatcher_id: "demo-dispatcher-4", dispatcher_income: null, expense_per_worker: null,
+    requires_contract: false, recurring_rule: null, replacement_for_job_id: null, replacement_for_worker_id: null,
+    template_id: null, status: "active", created_at: "2026-09-29T14:10:00Z", updated_at: "2026-09-29T14:10:00Z",
+  },
+  {
+    id: "demo-job-5", title: "Погрузка мебели · Одинцово", description: "Погрузить мебель в газель, аккуратно упаковать стекло и крупные предметы.",
+    address: "Одинцово, Можайское шоссе, 112", metro: "Одинцово", hourly_rate: 800, duration_hours: 5,
+    workers_needed: 3, urgent: false, quick_minimum: true, is_bot: false, is_official: false,
+    dispatcher_id: "demo-dispatcher-5", dispatcher_income: null, expense_per_worker: null,
+    requires_contract: false, recurring_rule: null, replacement_for_job_id: null, replacement_for_worker_id: null,
+    template_id: null, status: "active", created_at: "2026-09-29T13:00:00Z", updated_at: "2026-09-29T13:00:00Z",
+  },
+];
+
 const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: FeedScreenProps) => {
   const { user } = useAuth();
   const { respondAndOpenChat } = useRespondToJob(onOpenChat);
@@ -74,9 +117,11 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
       .select("*")
       .eq("status", "active")
       .order("created_at", { ascending: false });
-    if (data) {
-      setJobs(data);
-      const dispatcherIds = [...new Set(data.map((j) => j.dispatcher_id))];
+    const demoMode = localStorage.getItem("gruzli_demo_worker") === "1";
+    const feedJobs = data && data.length > 0 ? data : (demoMode ? DEMO_JOBS : []);
+    if (feedJobs.length > 0) {
+      setJobs(feedJobs);
+      const dispatcherIds = [...new Set(feedJobs.map((j) => j.dispatcher_id))];
       if (dispatcherIds.length > 0) {
         const { data: profiles } = await supabase
           .from("profiles_public" as any)
@@ -86,6 +131,14 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
           const map: Record<string, string> = {};
           (profiles as any[]).forEach((p) => { map[p.user_id] = p.full_name; });
           setDispatcherNames(map);
+        } else if (demoMode) {
+          setDispatcherNames({
+            "demo-dispatcher-1": "Алексей",
+            "demo-dispatcher-2": "Мария",
+            "demo-dispatcher-3": "Gruzli",
+            "demo-dispatcher-4": "Илья",
+            "demo-dispatcher-5": "Анна",
+          });
         }
       }
     }
