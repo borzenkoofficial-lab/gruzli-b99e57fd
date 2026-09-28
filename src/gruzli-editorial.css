@@ -374,6 +374,81 @@ button,input,textarea,select{font-family:inherit;}
   }
 }
 
+/* Global mobile editorial system: reusable components and screen primitives. */
+.gruzli-mobile-section{
+  padding:18px 16px 0;
+}
+.gruzli-mobile-section-title{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:12px;
+}
+.gruzli-mobile-section-title h2{
+  margin:0;
+  font-size:20px;
+  line-height:1.08;
+  letter-spacing:-.035em;
+  font-weight:760;
+}
+.gruzli-mobile-section-title span{
+  color:#7a7b81;
+  font-size:12px;
+  font-weight:600;
+}
+.gruzli-mobile-card{
+  position:relative;
+  overflow:hidden;
+  border:1px solid #e5e5e8;
+  border-radius:20px;
+  background:rgba(255,255,255,.96);
+  box-shadow:0 10px 32px rgba(20,24,32,.055);
+}
+.gruzli-mobile-card + .gruzli-mobile-card{margin-top:10px;}
+.gruzli-mobile-card:active{transform:scale(.992);}
+.gruzli-mobile-chip{
+  display:inline-flex;
+  align-items:center;
+  min-height:28px;
+  padding:0 10px;
+  border-radius:999px;
+  background:#f0f0f2;
+  color:#5f6066;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.01em;
+}
+.gruzli-mobile-chip--accent{
+  background:#fff3b8;
+  color:#6a5700;
+}
+.gruzli-mobile-cta{
+  min-height:46px;
+  padding:0 16px;
+  border-radius:14px;
+  background:#191a1d;
+  color:#fff;
+  font-weight:700;
+  box-shadow:0 8px 20px rgba(20,24,32,.12);
+}
+.gruzli-mobile-cta:active{transform:scale(.985);}
+.gruzli-mobile-divider{
+  height:1px;
+  background:#e9e9ec;
+}
+.gruzli-mobile-empty{
+  padding:34px 22px;
+  text-align:center;
+  border:1px dashed #dedee2;
+  border-radius:20px;
+  background:rgba(255,255,255,.72);
+}
+@media(max-width:767px){
+  .gruzli-mobile-section{padding-left:16px;padding-right:16px;}
+  .gruzli-mobile-card{border-radius:20px;}
+}
+
 /* Mockup language: browser/device shells used by empty states and detail previews. */
 
 .gruzli-mockup{
