@@ -326,3 +326,47 @@ html:not(.light).theme-amber{
   .app-scroll{padding-bottom:calc(var(--bottom-nav-height) + env(safe-area-inset-bottom,0px) + 30px);}
   .app-scroll .px-5{padding-left:16px!important;padding-right:16px!important;}
 }
+
+
+/* Explicit dark mode remains available through the existing theme control. */
+html.gruzli-dark{
+  --background:222 18% 8%;
+  --foreground:0 0% 94%;
+  --card:222 17% 11%;
+  --card-foreground:0 0% 94%;
+  --popover:222 17% 11%;
+  --popover-foreground:0 0% 94%;
+  --muted:222 12% 16%;
+  --muted-foreground:220 8% 62%;
+  --accent:222 12% 17%;
+  --accent-foreground:0 0% 94%;
+  --border:222 11% 19%;
+  --input:222 11% 19%;
+  --surface-1:222 18% 8%;
+  --surface-2:222 17% 11%;
+  --surface-3:222 12% 16%;
+  --surface-4:222 11% 20%;
+  --bubble-own:43 38% 19%;
+  --bubble-other:222 17% 11%;
+}
+html.gruzli-dark .desktop-shell{
+  background:radial-gradient(900px 520px at 76% -12%,rgba(255,255,255,.035),transparent 68%),hsl(var(--background));
+}
+html.gruzli-dark .desktop-sidebar,
+html.gruzli-dark .desktop-detail,
+html.gruzli-dark .desktop-topbar{
+  background:rgba(24,25,29,.92);
+  border-color:hsl(var(--border));
+}
+html.gruzli-dark .desktop-main{
+  background:hsl(var(--background));
+}
+html.gruzli-dark .desktop-topbar input{
+  background:hsl(var(--card))!important;
+  border-color:hsl(var(--border))!important;
+  color:hsl(var(--foreground))!important;
+}
+html.gruzli-dark .bottom-nav-pill{
+  background:rgba(28,29,34,.86)!important;
+  border-color:rgba(255,255,255,.08)!important;
+}
