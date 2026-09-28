@@ -29,6 +29,9 @@ const queryClient = new QueryClient();
 const AppRoutes = () => {
   const { user, loading, role } = useAuth();
   const [splashDone, setSplashDone] = useState(false);
+  // Temporary demo mode: lets us inspect the worker cabinet without Supabase authentication.
+  // Remove this flag/flow before production release.
+  const [demoWorkerMode, setDemoWorkerMode] = useState(false);
   const [alertQueue, setAlertQueue] = useState<Tables<"jobs">[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return !localStorage.getItem("onboarding_completed");
@@ -63,8 +66,8 @@ const AppRoutes = () => {
     return <SplashScreen onFinished={handleSplashFinished} />;
   }
 
-  if (!user && !isConsentRoute) {
-    return <AuthPage />;
+  if (!user && !isConsentRoute && !demoWorkerMode) {
+    return <AuthPage onDemoLogin={() => setDemoWorkerMode(true)} />;
   }
 
   return (
