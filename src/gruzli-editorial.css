@@ -321,6 +321,31 @@ button,input,textarea,select{font-family:inherit;}
 
 
 
+/* ===== Forced mobile product shell ===== */
+/* The Gruzli experience is intentionally rendered as the mobile product on every viewport. */
+.app-shell{
+  width:100%;
+  max-width:430px;
+  min-height:100dvh;
+  margin:0 auto;
+  position:relative;
+  background:#f7f7f8;
+  overflow-x:hidden;
+  box-shadow:0 0 0 1px rgba(20,24,32,.025);
+}
+.app-shell .app-scroll{
+  width:100%;
+  min-height:100dvh;
+  overflow-x:hidden;
+}
+@media(min-width:768px){
+  body{background:#ececee!important;}
+  #root{min-height:100dvh;}
+  .app-shell{
+    box-shadow:0 24px 80px rgba(20,24,32,.10);
+  }
+}
+
 /* ===== Gruzli light product system ===== */
 :root{
   color-scheme:light;
