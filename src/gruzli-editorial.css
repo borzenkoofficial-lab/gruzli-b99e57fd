@@ -275,7 +275,107 @@ button,input,textarea,select{font-family:inherit;}
 }
 .bg-popover{background:#fff!important;}
 
+/* Global mobile editorial system: applies consistently across every existing screen. */
+@media(max-width:767px){
+  .app-shell{
+    background:#f6f6f7!important;
+    color:#17181b;
+  }
+  .app-scroll{
+    background:
+      radial-gradient(520px 240px at 50% -70px,rgba(255,255,255,.98),transparent 72%),
+      linear-gradient(180deg,#f8f8f9 0%,#f4f4f5 100%)!important;
+  }
+  .app-scroll h1{
+    font-size:29px!important;
+    line-height:1.04!important;
+    letter-spacing:-.045em!important;
+    font-weight:780!important;
+  }
+  .app-scroll h2{
+    letter-spacing:-.035em!important;
+    font-weight:740!important;
+  }
+  .app-scroll h3{
+    letter-spacing:-.025em!important;
+    font-weight:700!important;
+  }
+  .app-scroll .bg-card,
+  .app-scroll [class*="bg-white"],
+  .app-scroll [class*="bg-background"]{
+    background:rgba(255,255,255,.94)!important;
+  }
+  .app-scroll .border,
+  .app-scroll [class*="border-border"]{
+    border-color:#e5e5e8!important;
+  }
+  .app-scroll .rounded-2xl{
+    border-radius:20px!important;
+  }
+  .app-scroll .rounded-xl{
+    border-radius:16px!important;
+  }
+  .app-scroll .shadow,
+  .app-scroll .shadow-sm,
+  .app-scroll .shadow-md,
+  .app-scroll .shadow-lg{
+    box-shadow:0 10px 32px rgba(20,24,32,.055)!important;
+  }
+  .app-scroll input,
+  .app-scroll textarea,
+  .app-scroll select{
+    min-height:46px;
+    border-radius:14px!important;
+    border-color:#e1e1e5!important;
+    background:#fff!important;
+  }
+  .app-scroll button{
+    -webkit-tap-highlight-color:transparent;
+  }
+  .app-scroll button.bg-primary,
+  .app-scroll button[class*="bg-primary"]{
+    background:#191a1d!important;
+    color:#fff!important;
+    border-color:#191a1d!important;
+    box-shadow:0 8px 20px rgba(20,24,32,.12);
+  }
+  .app-scroll .text-primary{
+    color:#191a1d!important;
+  }
+  .app-scroll [class*="text-muted-foreground"]{
+    color:#77787e!important;
+  }
+  .app-scroll [class*="bg-muted"]{
+    background:#f0f0f2!important;
+  }
+
+  /* Common screen header rhythm. */
+  .app-scroll > div > .px-5:first-child,
+  .app-scroll > div > .px-4:first-child{
+    padding-top:calc(env(safe-area-inset-top,0px) + 10px);
+  }
+
+  /* Editorial cards: flatter structure, stronger hierarchy, restrained motion. */
+  .app-scroll .rounded-2xl,
+  .app-scroll .rounded-xl{
+    transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
+  }
+  .app-scroll .rounded-2xl:active,
+  .app-scroll .rounded-xl:active{
+    transform:scale(.992);
+  }
+
+  /* Remove legacy visual noise while retaining semantic colors for destructive states. */
+  .app-scroll [class*="animate-pulse"]{
+    animation-duration:2.2s!important;
+  }
+  .app-scroll [class*="gradient"]{
+    background-image:none;
+  }
+}
+
 /* Mockup language: browser/device shells used by empty states and detail previews. */
+
 .gruzli-mockup{
   position:relative;
   overflow:hidden;
