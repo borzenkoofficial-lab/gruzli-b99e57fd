@@ -982,3 +982,175 @@ button{ -webkit-tap-highlight-color:transparent; }
     flex-shrink:0;
   }
 }
+
+/* Premium glass system — shared across feed, cards, navigation and profile. */
+@keyframes gruzli-glass-drift-a{
+  0%,100%{transform:translate3d(-4%,0,0) scale(1);}
+  50%{transform:translate3d(5%,3%,0) scale(1.08);}
+}
+@keyframes gruzli-glass-drift-b{
+  0%,100%{transform:translate3d(4%,1%,0) scale(1.02);}
+  50%{transform:translate3d(-5%,-3%,0) scale(1.1);}
+}
+@keyframes gruzli-glass-breathe{
+  0%,100%{opacity:.72;}
+  50%{opacity:.96;}
+}
+
+@media(max-width:767px){
+  .app-scroll{
+    position:relative;
+    isolation:isolate;
+    background:
+      radial-gradient(520px 300px at 18% -4%,rgba(255,255,255,.98),transparent 70%),
+      radial-gradient(420px 260px at 92% 12%,rgba(244,196,0,.055),transparent 72%),
+      linear-gradient(180deg,#f8f8f9 0%,#f3f3f5 100%)!important;
+  }
+  .app-scroll:before,
+  .app-scroll:after{
+    content:"";
+    position:fixed;
+    z-index:-1;
+    pointer-events:none;
+    border-radius:999px;
+    filter:blur(42px);
+    will-change:transform;
+  }
+  .app-scroll:before{
+    width:260px;height:180px;
+    top:6%;
+    left:-90px;
+    background:rgba(255,255,255,.88);
+    animation:gruzli-glass-drift-a 12s ease-in-out infinite;
+  }
+  .app-scroll:after{
+    width:240px;height:170px;
+    top:38%;
+    right:-100px;
+    background:rgba(255,255,255,.76);
+    animation:gruzli-glass-drift-b 15s ease-in-out infinite;
+  }
+
+  /* Glass cards: translucent surface + soft inner highlight, not a heavy blur. */
+  .gruzli-mobile-card,
+  .gruzli-job-card,
+  .gruzli-profile-screen .rounded-2xl,
+  .gruzli-profile-screen .rounded-xl{
+    position:relative;
+    background:linear-gradient(145deg,rgba(255,255,255,.86),rgba(255,255,255,.66))!important;
+    border:1px solid rgba(255,255,255,.92)!important;
+    box-shadow:
+      0 18px 50px rgba(31,35,43,.075),
+      0 2px 8px rgba(31,35,43,.035),
+      inset 0 1px 0 rgba(255,255,255,.96)!important;
+    backdrop-filter:blur(24px) saturate(1.18);
+    -webkit-backdrop-filter:blur(24px) saturate(1.18);
+  }
+  .gruzli-mobile-card:before,
+  .gruzli-job-card:before,
+  .gruzli-profile-screen .rounded-2xl:before{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    border-radius:inherit;
+    background:
+      radial-gradient(180px 90px at 12% 0%,rgba(255,255,255,.82),transparent 72%),
+      linear-gradient(115deg,rgba(255,255,255,.26),transparent 38%);
+    opacity:.8;
+  }
+  .gruzli-job-card > *{
+    position:relative;
+    z-index:1;
+  }
+
+  /* Order cards: make the money/action hierarchy immediately scannable. */
+  .gruzli-job-card{
+    padding:16px!important;
+    overflow:hidden!important;
+    transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,border-color .2s ease!important;
+  }
+  .gruzli-job-card:active{
+    transform:scale(.985)!important;
+    box-shadow:0 10px 28px rgba(31,35,43,.08)!important;
+  }
+  .gruzli-job-card h3{
+    font-size:17px!important;
+    letter-spacing:-.025em;
+    line-height:1.16!important;
+    overflow-wrap:anywhere;
+  }
+  .gruzli-job-card p{
+    overflow-wrap:anywhere;
+  }
+  .gruzli-job-card [class*="rounded-xl"][class*="bg-gradient"]{
+    background:rgba(248,248,249,.72)!important;
+    border-color:rgba(225,225,229,.78)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.8)!important;
+  }
+
+  /* Premium navigation: same glass material as the cards, but denser. */
+  .bottom-nav-wrapper{
+    bottom:7px!important;
+    padding-left:12px!important;
+    padding-right:12px!important;
+    pointer-events:none;
+  }
+  .bottom-nav-pill{
+    min-height:64px!important;
+    padding:7px!important;
+    border-radius:25px!important;
+    background:rgba(255,255,255,.58)!important;
+    border:1px solid rgba(255,255,255,.92)!important;
+    box-shadow:
+      0 22px 55px rgba(25,29,36,.16),
+      0 3px 12px rgba(25,29,36,.06),
+      inset 0 1px 0 rgba(255,255,255,.96)!important;
+    backdrop-filter:blur(30px) saturate(1.35);
+    -webkit-backdrop-filter:blur(30px) saturate(1.35);
+    overflow:hidden;
+  }
+  .bottom-nav-pill:before{
+    content:"";
+    position:absolute;
+    inset:0;
+    pointer-events:none;
+    border-radius:inherit;
+    background:linear-gradient(105deg,rgba(255,255,255,.42),transparent 40%,rgba(255,255,255,.2));
+    animation:gruzli-glass-breathe 6s ease-in-out infinite;
+  }
+  .bottom-nav-pill button{
+    position:relative;
+    z-index:1;
+    min-height:48px!important;
+    border-radius:18px!important;
+    transition:transform .18s ease,background .18s ease,box-shadow .18s ease!important;
+  }
+  .bottom-nav-active{
+    background:rgba(25,26,29,.94)!important;
+    box-shadow:0 8px 20px rgba(25,26,29,.17),inset 0 1px 0 rgba(255,255,255,.12)!important;
+  }
+  .bottom-nav-active:after{
+    bottom:4px;
+    width:16px;
+    height:2.5px;
+  }
+
+  /* Remove unstable horizontal text movement and prevent long labels from shifting layout. */
+  .app-scroll h1,.app-scroll h2,.app-scroll h3,
+  .app-scroll p,.app-scroll span,.app-scroll button{
+    overflow-wrap:anywhere;
+  }
+  .app-scroll [class*="animate-marquee"],
+  .app-scroll [class*="marquee"],
+  .app-scroll [data-marquee="true"]{
+    animation:none!important;
+    transform:none!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .app-scroll:before,.app-scroll:after,.bottom-nav-pill:before{
+    animation:none!important;
+  }
+}
