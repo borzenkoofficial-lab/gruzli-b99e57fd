@@ -130,15 +130,16 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
         if (profiles) {
           const map: Record<string, string> = {};
           (profiles as any[]).forEach((p) => { map[p.user_id] = p.full_name; });
+          if (demoMode) {
+            Object.assign(map, {
+              "demo-dispatcher-1": "Алексей",
+              "demo-dispatcher-2": "Мария",
+              "demo-dispatcher-3": "Gruzli",
+              "demo-dispatcher-4": "Илья",
+              "demo-dispatcher-5": "Анна",
+            });
+          }
           setDispatcherNames(map);
-        } else if (demoMode) {
-          setDispatcherNames({
-            "demo-dispatcher-1": "Алексей",
-            "demo-dispatcher-2": "Мария",
-            "demo-dispatcher-3": "Gruzli",
-            "demo-dispatcher-4": "Илья",
-            "demo-dispatcher-5": "Анна",
-          });
         }
       }
     }
