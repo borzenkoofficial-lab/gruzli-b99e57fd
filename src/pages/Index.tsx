@@ -44,7 +44,7 @@ const PullToRefresh = lazy(() => import("@/components/PullToRefresh"));
 const Index = () => {
   const { role, user } = useAuth();
   const { unreadMessages, newJobsCount, resetMessages, resetJobs, refetchUnread } = useUnreadCounts();
-  const isMobile = useIsMobile();
+  // Gruzli is intentionally mobile-first: the product always uses the mobile navigation/layout.\n  // Keep the hook imported for future responsive capabilities, but do not switch to the legacy desktop shell.\n  useIsMobile();\n  const isMobile = true;
   const { jobId: routeJobId } = useParams<{ jobId?: string }>();
   const [supportUserId, setSupportUserId] = useState<string | null>(null);
   const SUPPORT_NAME = "Gruzli Official";
