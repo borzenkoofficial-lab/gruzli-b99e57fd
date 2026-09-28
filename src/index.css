@@ -525,9 +525,11 @@
     pointer-events: none;
   }
 
+  /* Gruzli is mobile-first even on wide screens: keep the primary navigation visible. */
   @media (min-width: 768px) {
     .bottom-nav-wrapper {
-      display: none;
+      display: block;
+      max-width: 32rem;
     }
   }
 
