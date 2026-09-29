@@ -6,7 +6,7 @@ interface SplashScreenProps {
   minDuration?: number;
 }
 
-const SplashScreen = ({ onFinished, minDuration = 2000 }: SplashScreenProps) => {
+const SplashScreen = ({ onFinished, minDuration = 1200 }: SplashScreenProps) => {
   const isReturning = !!localStorage.getItem("gruzli_returning");
   const duration = isReturning ? 450 : minDuration;
   const [visible, setVisible] = useState(true);
@@ -38,7 +38,7 @@ const SplashScreen = ({ onFinished, minDuration = 2000 }: SplashScreenProps) => 
             initial={{ scaleX: 0, opacity: 0 }}
             animate={{ scaleX: 1, opacity: 1 }}
             transition={{ delay: 0.15, duration: 0.6, ease: "easeOut" }}
-            className="absolute top-1/2 -translate-y-[64px] w-24 h-px bg-foreground/20 origin-center"
+            className="absolute top-1/2 -translate-y-[62px] w-20 h-[2px] bg-[#f2c400] rounded-full origin-center"
           />
 
           {/* Wordmark */}
@@ -47,7 +47,7 @@ const SplashScreen = ({ onFinished, minDuration = 2000 }: SplashScreenProps) => 
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="text-[40px] leading-none font-light tracking-[-0.03em] text-foreground"
+              className="text-[42px] leading-none font-extrabold tracking-[-0.05em] text-foreground"
             >
               Gruzli
             </motion.h1>
@@ -67,7 +67,7 @@ const SplashScreen = ({ onFinished, minDuration = 2000 }: SplashScreenProps) => 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7, duration: 0.4 }}
-            className="absolute bottom-[15%] w-32 h-px bg-foreground/10 overflow-hidden"
+            className="absolute bottom-[13%] w-24 h-[2px] rounded-full bg-foreground/10 overflow-hidden"
           >
             <motion.div
               initial={{ x: "-100%" }}
@@ -77,7 +77,7 @@ const SplashScreen = ({ onFinished, minDuration = 2000 }: SplashScreenProps) => 
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
-              className="h-full w-1/2 bg-foreground/60"
+              className="h-full w-1/2 bg-[#f2c400]"
             />
           </motion.div>
         </motion.div>
