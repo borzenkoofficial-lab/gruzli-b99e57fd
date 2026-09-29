@@ -43,6 +43,7 @@ const PullToRefresh = lazy(() => import("@/components/PullToRefresh"));
 
 const Index = () => {
   const { role, user } = useAuth();
+  const isClient = role === "client";
   const { unreadMessages, newJobsCount, resetMessages, resetJobs, refetchUnread } = useUnreadCounts();
   // Gruzli intentionally uses the mobile product shell on every viewport.
   useIsMobile();
@@ -423,6 +424,8 @@ const Index = () => {
                     onRefreshRef={feedRefreshRef}
                     onCreateJob={() => setShowCreateJob(true)}
                   />
+                ) : isClient ? (
+                  <CreateJobScreen onBack={() => {}} onCreated={() => { setTab("orders"); }} />
                 ) : (
                   <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
                 )}
@@ -474,6 +477,8 @@ const Index = () => {
               onRefreshRef={feedRefreshRef}
               onCreateJob={() => setShowCreateJob(true)}
             />
+          ) : isClient ? (
+            <CreateJobScreen onBack={() => {}} onCreated={() => { setTab("orders"); }} />
           ) : (
             <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
           )
