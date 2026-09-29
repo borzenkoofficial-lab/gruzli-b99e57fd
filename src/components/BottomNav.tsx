@@ -48,7 +48,7 @@ const BottomNav = memo(({ active, onNavigate, isDispatcher, isClient, unreadMess
 
   return (
     <nav className="bottom-nav-wrapper" role="navigation" aria-label="Основная навигация">
-      <div className="bottom-nav-pill" role="tablist" aria-label="Разделы Gruzli">
+      <div className="bottom-nav-pill native-surface" role="tablist" aria-label="Разделы Gruzli">
         {tabs.map((tab) => {
           const isActive = active === tab.id;
           const Icon = tab.icon;
