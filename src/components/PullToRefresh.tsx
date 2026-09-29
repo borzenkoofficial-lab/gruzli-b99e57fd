@@ -80,6 +80,7 @@ const PullToRefresh = ({ onRefresh, children }: PullToRefreshProps) => {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onTouchCancel={resetPull}
       >
         {children}
       </div>
@@ -88,7 +89,7 @@ const PullToRefresh = ({ onRefresh, children }: PullToRefreshProps) => {
         className="pull-refresh-indicator"
         data-ready="false"
         aria-label={refreshing ? "Обновление" : "Потяните вниз для обновления"}
-        aria-hidden={!refreshing}
+        aria-hidden="true"
       >
         {refreshing ? <Loader2 size={18} className="animate-spin" /> : <ArrowDown size={18} />}
       </div>
