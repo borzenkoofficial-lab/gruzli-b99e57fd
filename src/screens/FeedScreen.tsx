@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import {
-  MapPin, Clock, Users, Zap, Wallet, ArrowRight, Ban, UserPlus, Train,
-  Search, X, Sparkles, Loader2, TrendingUp, Check, ArrowLeft, Hourglass, SlidersHorizontal,
+  MapPin, Clock, Users, Wallet, ArrowRight, Ban, UserPlus, Train,
+  Search, X, Sparkles, Loader2, TrendingUp, Check, ArrowLeft, SlidersHorizontal,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,17 +16,9 @@ import CategorySubscriptionModal from "@/components/CategorySubscriptionModal";
 import {
   CATEGORIES,
   classifyJob,
-  getCategory,
   loadSubscribedCategories,
   type CategoryKey,
 } from "@/lib/jobCategories";
-
-type FilterKey = "all" | "urgent" | "quick";
-const filters: { key: FilterKey; label: string; icon: typeof Sparkles }[] = [
-  { key: "all", label: "Все", icon: Sparkles },
-  { key: "urgent", label: "Срочные", icon: Zap },
-  { key: "quick", label: "Быстрая минималка", icon: Hourglass },
-];
 
 interface FeedScreenProps {
   onOpenChat?: (conversationId: string, title: string) => void;
