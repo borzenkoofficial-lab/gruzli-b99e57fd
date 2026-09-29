@@ -351,7 +351,7 @@ const OrdersScreen = () => {
 
   if (loading) {
     return (
-    <div className="gruzli-orders-screen app-scroll gruzli-page-enter">
+    <div className="gruzli-orders-screen app-scroll gruzli-page-enter native-surface">
         <div className="px-5 safe-top pb-4">
           <h1 className="text-lg font-bold text-foreground">Мои заказы</h1>
         </div>
@@ -364,7 +364,7 @@ const OrdersScreen = () => {
 
   if (role === "client") {
     return (
-      <div className="gruzli-orders-screen app-scroll gruzli-page-enter">
+      <div className="gruzli-orders-screen app-scroll gruzli-page-enter native-surface">
         <header className="px-5 safe-top pb-4">
           <p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Gruzli / CLIENT</p>
           <h1 className="text-[29px] font-extrabold text-foreground tracking-[-.045em] leading-none">Мои заявки</h1>
@@ -372,12 +372,12 @@ const OrdersScreen = () => {
         </header>
         <main className="px-5 pb-28 space-y-3">
           {jobs.length === 0 ? (
-            <div className="rounded-3xl border border-border bg-card p-6">
+            <div className="rounded-3xl border border-border bg-card p-6 native-surface">
               <p className="text-sm font-bold text-foreground">Заявок пока нет</p>
               <p className="text-xs text-muted-foreground mt-1">Создайте заказ в разделе заявки.</p>
             </div>
           ) : jobs.map((job) => (
-            <motion.div key={job.jobId} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-border bg-card p-5">
+            <motion.div key={job.jobId} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-border bg-card p-5 native-surface">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[.14em] text-muted-foreground">ЗАКАЗ / {job.jobId.slice(0, 6).toUpperCase()}</p>
@@ -395,7 +395,7 @@ const OrdersScreen = () => {
                 <div className="mt-4 space-y-2 border-t border-border pt-4">
                   <p className="text-xs font-extrabold uppercase tracking-wider">Предложения диспетчеров · {clientOffers[job.jobId].length}</p>
                   {clientOffers[job.jobId].map((offer: any) => (
-                    <div key={offer.id} className="rounded-2xl border border-border bg-background p-3">
+                    <div key={offer.id} className="rounded-2xl border border-border bg-background p-3 native-surface">
                       <div className="flex items-center justify-between gap-2">
                         <div>
                           <p className="text-sm font-bold">{offer.profile?.full_name || "Диспетчер Gruzli"}</p>
@@ -412,7 +412,7 @@ const OrdersScreen = () => {
                           toast.success("Диспетчер выбран");
                           await fetchAcceptedJobs();
                         }}
-                        className="mt-3 w-full rounded-xl bg-foreground py-3 text-xs font-bold text-background active:scale-[.98] transition-transform"
+                        className="mt-3 w-full rounded-xl bg-foreground py-3 text-xs font-bold text-background native-press active:scale-[.98] transition-transform"
                       >ВЫБРАТЬ ДИСПЕТЧЕРА</button>
                     </div>
                   ))}
@@ -431,7 +431,7 @@ const OrdersScreen = () => {
   const finishing = jobs.filter((j) => j.workerStatus === "finishing");
 
   return (
-    <div className="gruzli-orders-screen app-scroll">
+    <div className="gruzli-orders-screen app-scroll native-surface">
       <header className="px-5 safe-top pb-4"><div><p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Gruzli</p>
         <h1 className="text-[29px] font-extrabold text-foreground tracking-[-.045em] leading-none">Мои заказы</h1></div>
         <p className="text-xs text-muted-foreground mt-1">Заявки, на которые вас выбрали</p>
