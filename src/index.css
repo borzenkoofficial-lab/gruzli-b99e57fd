@@ -1185,3 +1185,23 @@ html, body {
   html,body,#root,.app-shell{background:#f7f7f8!important;}
   .bottom-nav-wrapper{background:#f7f7f8!important;background:transparent!important;}
 }
+
+/* Final desktop skin: intentionally appended so it wins over legacy desktop rules. */
+@media (min-width: 768px) {
+  .desktop-shell { background:#f7f7f8; }
+  .desktop-sidebar { width:248px; min-width:248px; background:#fff; border-right:1px solid #e7e7e9; }
+  .desktop-content, .desktop-main { background:#f7f7f8; }
+  .desktop-topbar { height:68px; background:#f7f7f8; border-bottom:1px solid #e7e7e9; backdrop-filter:none; -webkit-backdrop-filter:none; }
+  .desktop-main-inner { max-width:1120px; padding:28px 32px 56px; }
+  .desktop-detail { width:460px; min-width:460px; background:#fff; border-left:1px solid #e7e7e9; }
+  .desktop-detail-header { height:68px; background:#fff; border-bottom:1px solid #e7e7e9; }
+  .desktop-detail-body { background:#f7f7f8; }
+  .desktop-detail-body .gruzli-preview-frame { margin:16px; border:1px solid #e5e5e7; border-radius:24px; overflow:hidden; background:#fff; }
+  .desktop-detail-body .gruzli-preview-chrome { background:#181818; }
+  .desktop-sidebar .gruzli-brand-lockup { padding-top:22px; }
+}
+@media (min-width:768px) and (max-width:1180px) {
+  .desktop-sidebar { width:220px; min-width:220px; }
+  .desktop-main-inner { padding-left:24px; padding-right:24px; }
+  .desktop-detail { width:390px; min-width:390px; }
+}
