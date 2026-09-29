@@ -870,6 +870,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
       {/* 05 / WALLET — Worker */}
       <div className="px-5 pb-5">
+        <div className="gruzli-wallet-section-head"><span>05 / WALLET</span><i /><b>ЛИЧНЫЙ БАЛАНС</b></div>
         <BankCard
           balance={profile?.balance || 0}
           holderName={profile?.full_name || "WORKER"}
