@@ -79,3 +79,13 @@ BEGIN
   RAISE EXCEPTION 'submit_dispatcher_offer_instead';
 END;
 $$;
+-- SECURITY DEFINER functions are executable by PUBLIC unless explicitly revoked.
+-- Limit order creation and offer workflow RPCs to authenticated sessions.
+REVOKE ALL ON FUNCTION public.client_create_job(text,text,numeric,timestamptz,numeric,text,text,integer,boolean,boolean,boolean) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.client_create_job(text,text,numeric,timestamptz,numeric,text,text,integer,boolean,boolean,boolean) TO authenticated;
+REVOKE ALL ON FUNCTION public.dispatcher_claim_job(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.dispatcher_claim_job(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.dispatcher_submit_offer(uuid,numeric,integer,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.dispatcher_submit_offer(uuid,numeric,integer,text) TO authenticated;
+REVOKE ALL ON FUNCTION public.client_select_dispatcher_offer(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.client_select_dispatcher_offer(uuid) TO authenticated;
