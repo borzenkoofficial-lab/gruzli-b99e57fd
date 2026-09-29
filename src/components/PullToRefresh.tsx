@@ -48,16 +48,21 @@ const PullToRefresh = ({ onRefresh, children }: PullToRefreshProps) => {
     }
   }, [refreshing]);
 
-  const handleTouchEnd = useCallback(async () => {
-    if (!pulling.current) return;
+  const resetPull = useCallback(() => {
     pulling.current = false;
-    const shouldRefresh = distance.current >= THRESHOLD;
     distance.current = 0;
     if (indicatorRef.current) {
       indicatorRef.current.style.opacity = "0";
       indicatorRef.current.style.transform = "translate(-50%, 0)";
       indicatorRef.current.dataset.ready = "false";
+      indicatorRef.current.style.removeProperty("--pull-progress");
     }
+  }, []);
+
+  const handleTouchEnd = useCallback(async () => {
+    if (!pulling.current) return;
+    const shouldRefresh = distance.current >= THRESHOLD;
+    resetPull();
     if (!shouldRefresh || refreshing) return;
     setRefreshing(true);
     try {
@@ -65,7 +70,7 @@ const PullToRefresh = ({ onRefresh, children }: PullToRefreshProps) => {
     } finally {
       setRefreshing(false);
     }
-  }, [refreshing, onRefresh]);
+  }, [refreshing, onRefresh, resetPull]);
 
   return (
     <div className="pull-refresh-shell">
