@@ -112,15 +112,15 @@ const KartotekaScreen = () => {
       <div className="px-5 safe-top pb-2">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold text-foreground tracking-tight flex items-center gap-2">
+            <h1 className="text-[29px] font-extrabold text-foreground tracking-[-.045em] leading-none flex items-center gap-2">
               <Shield size={22} className="text-primary" />
               Картотека
             </h1>
-            <p className="text-xs text-muted-foreground mt-1">Реестр недобросовестных исполнителей</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground mt-1.5">Реестр исполнителей</p>
           </div>
           <button
             onClick={() => setShowForm(true)}
-            className="w-11 h-11 rounded-2xl bg-foreground flex items-center justify-center tap-scale shadow-lg"
+            className="w-11 h-11 rounded-[16px] bg-foreground flex items-center justify-center tap-scale shadow-[0_10px_24px_rgba(31,35,43,.14)]"
           >
             <Plus size={18} className="text-primary-foreground" />
           </button>
@@ -136,7 +136,7 @@ const KartotekaScreen = () => {
             { label: "Не вышли", value: stats.noShows, color: "text-orange-500" },
             { label: "Плохая работа", value: stats.badWork, color: "text-yellow-500" },
           ].map((s) => (
-            <div key={s.label} className="flex-1 bg-card border border-border rounded-2xl p-2.5 text-center">
+            <div key={s.label} className="flex-1 bg-white/68 border border-white/90 rounded-[18px] p-2.5 text-center shadow-[0_10px_28px_rgba(31,35,43,.045)] backdrop-blur-xl">
               <p className={`text-lg font-extrabold ${s.color}`}>{s.value}</p>
               <p className="text-[9px] text-muted-foreground font-medium leading-tight">{s.label}</p>
             </div>
@@ -153,7 +153,7 @@ const KartotekaScreen = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Поиск по ФИО, телефону..."
-              className="w-full bg-surface-1 border border-border rounded-2xl py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none"
+              className="w-full min-h-[48px] bg-white/72 border border-white/90 rounded-[16px] py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none shadow-[0_10px_28px_rgba(31,35,43,.055)] backdrop-blur-xl"
             />
             {search && (
               <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -253,7 +253,7 @@ const KartotekaScreen = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.03 }}
                 onClick={() => setViewEntry(entry)}
-                className="w-full bg-card border border-border rounded-2xl p-3.5 text-left active:bg-surface-1 border border-border transition-all"
+                className="w-full bg-white/68 border border-white/90 rounded-[20px] p-3.5 text-left active:scale-[.995] transition-all shadow-[0_14px_36px_rgba(31,35,43,.055)] backdrop-blur-xl"
               >
                 <div className="flex items-start gap-3">
                   {entry.photo_url ? (
@@ -337,7 +337,7 @@ const EntryDetail = ({ entry, isOwner, onBack, onEdit, onDelete }: EntryDetailPr
 
       {/* Photo + Name */}
       <div className="px-5">
-        <div className="bg-card border border-border rounded-2xl p-5 mb-4">
+        <div className="bg-white/72 border border-white/90 rounded-[24px] p-5 mb-4 shadow-[0_18px_45px_rgba(31,35,43,.07),inset_0_1px_0_rgba(255,255,255,.96)] backdrop-blur-2xl">
           <div className="flex items-center gap-4">
             {entry.photo_url ? (
               <img src={entry.photo_url} alt={entry.full_name} className="w-20 h-20 rounded-2xl object-cover bg-card border border-border" />
@@ -365,7 +365,7 @@ const EntryDetail = ({ entry, isOwner, onBack, onEdit, onDelete }: EntryDetailPr
 
         {/* Contact info */}
         {entry.phone && (
-          <div className="bg-card border border-border rounded-2xl p-4 mb-3">
+          <div className="bg-white/68 border border-white/90 rounded-[20px] p-4 mb-3 shadow-[0_12px_32px_rgba(31,35,43,.05)] backdrop-blur-xl">
             <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mb-2">Контакты</p>
             <a href={`tel:${entry.phone}`} className="flex items-center gap-2.5 text-sm text-primary font-semibold">
               <Phone size={16} className="text-primary" />
