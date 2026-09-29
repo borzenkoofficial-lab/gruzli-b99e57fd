@@ -38,7 +38,7 @@ const DispatcherCabinetScreen = lazy(() => import("@/screens/DispatcherCabinetSc
 const DispatcherCommunityScreen = lazy(() => import("@/screens/DispatcherCommunityScreen"));
 const SupportChatScreen = lazy(() => import("@/screens/SupportChatScreen"));
 const ContractScreen = lazy(() => import("@/screens/ContractScreen"));
-const PullToRefresh = lazy(() => import("@/components/PullToRefresh"));
+import PullToRefresh from "@/components/PullToRefresh";
 
 /**
  * Warm the primary app surfaces after first paint.
