@@ -513,16 +513,16 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   ];
 
   return (
-    <div className="h-full w-full overflow-y-auto overflow-x-hidden bg-background overscroll-contain" style={{ WebkitOverflowScrolling: "touch", paddingBottom: "calc(var(--bottom-nav-height, 76px) + env(safe-area-inset-bottom, 0px) + 16px)" }}>
+    <div className="native-surface h-full w-full overflow-y-auto overflow-x-hidden bg-background overscroll-contain" style={{ WebkitOverflowScrolling: "touch", paddingBottom: "calc(var(--bottom-nav-height, 76px) + env(safe-area-inset-bottom, 0px) + 16px)" }}>
       {/* Header */}
-      <div className="px-4 safe-top pb-2">
-        <div className="flex items-center gap-3">
+      <div className="native-surface px-4 safe-top pb-2">
+        <div className="native-surface flex items-center gap-3">
           {!embedded && (
             <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 transition-all">
               <ArrowLeft size={18} className="text-foreground" />
             </button>
           )}
-          <div className="flex-1">
+          <div className="native-surface flex-1">
             <h1 className="text-lg font-bold text-foreground">Кабинет диспетчера</h1>
             <p className="text-[11px] text-muted-foreground">Заявки · заказы · финансы</p>
           </div>
@@ -532,27 +532,27 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
       <EnablePushButton />
 
       {/* Quick Stats Banner */}
-      <div className="px-4 pb-3">
+      <div className="native-surface px-4 pb-3">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           className="rounded-2xl overflow-hidden"
           style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(220 65% 45%))" }}
         >
-          <div className="px-4 py-4">
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
+          <div className="native-surface px-4 py-4">
+            <div className="native-surface flex items-center gap-4">
+              <div className="native-surface flex-1">
                 <p className="text-primary-foreground/60 text-[10px] font-medium uppercase tracking-wider">Активных заказов</p>
                 <p className="text-primary-foreground text-3xl font-extrabold">{activeJobs.length}</p>
               </div>
-              <div className="w-px h-10 bg-primary-foreground/20" />
-              <div className="flex-1">
+              <div className="native-surface w-px h-10 bg-primary-foreground/20" />
+              <div className="native-surface flex-1">
                 <p className="text-primary-foreground/60 text-[10px] font-medium uppercase tracking-wider">За неделю</p>
                 <p className="text-primary-foreground text-lg font-bold">{weeklyStats.profit >= 0 ? "+" : ""}{weeklyStats.profit.toLocaleString("ru-RU")} ₽</p>
                 <p className="text-primary-foreground/50 text-[10px]">{weeklyStats.jobs} заказов</p>
               </div>
-              <div className="w-px h-10 bg-primary-foreground/20" />
-              <div className="flex-1 text-right">
+              <div className="native-surface w-px h-10 bg-primary-foreground/20" />
+              <div className="native-surface flex-1 text-right">
                 <p className="text-primary-foreground/60 text-[10px] font-medium uppercase tracking-wider">За месяц</p>
                 <p className="text-primary-foreground text-lg font-bold">{monthlyStats.profit >= 0 ? "+" : ""}{monthlyStats.profit.toLocaleString("ru-RU")} ₽</p>
                 <p className="text-primary-foreground/50 text-[10px]">{monthlyStats.jobs} заказов</p>
@@ -563,15 +563,15 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
       </div>
 
       {/* Community button */}
-      <div className="px-4 pb-3">
+      <div className="native-surface px-4 pb-3">
         <button
           onClick={onOpenCommunity}
           className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border active:bg-surface-1 transition-all"
         >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0">
+          <div className="native-surface w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0">
             <Users size={18} className="text-primary" />
           </div>
-          <div className="flex-1 text-left">
+          <div className="native-surface flex-1 text-left">
             <p className="text-sm font-bold text-foreground">Сообщество диспетчеров</p>
             <p className="text-[11px] text-muted-foreground">Общий чат · советы · обсуждения</p>
           </div>
@@ -580,8 +580,8 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
       </div>
 
       {/* Quick actions: Templates, Top workers, Goals, Export */}
-      <div className="px-4 pb-3">
-        <div className="grid grid-cols-5 gap-2">
+      <div className="native-surface px-4 pb-3">
+        <div className="native-surface grid grid-cols-5 gap-2">
           {[
             { icon: FileText, label: "Шаблоны", color: "text-blue-400", bg: "bg-blue-500/10", onClick: () => setShowTemplates(true) },
             { icon: Trophy, label: "Топ", color: "text-yellow-500", bg: "bg-yellow-500/10", onClick: () => setShowTopWorkers(true) },
@@ -610,8 +610,8 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
       </div>
 
       {/* Tab navigation */}
-      <div className="px-4 pb-3">
-        <div className="flex gap-1 bg-card border border-border rounded-2xl p-1">
+      <div className="native-surface px-4 pb-3">
+        <div className="native-surface flex gap-1 bg-card border border-border rounded-2xl p-1">
           {tabs.map((t) => {
             const Icon = t.icon;
             const isActive = currentTab === t.id;
@@ -635,7 +635,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
         {offerJob && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-3">
             <motion.div initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 24, opacity: 0 }} className="w-full max-w-md rounded-3xl bg-background border border-border shadow-2xl p-5">
-              <div className="flex items-start justify-between gap-4 mb-4">
+              <div className="native-surface flex items-start justify-between gap-4 mb-4">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[.14em] text-muted-foreground">GRUZLI / OFFER</p>
                   <h3 className="text-lg font-extrabold text-foreground">Предложение заказчику</h3>
@@ -643,7 +643,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                 </div>
                 <button onClick={() => setOfferJob(null)} className="w-9 h-9 rounded-xl border border-border text-muted-foreground">×</button>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="native-surface grid grid-cols-2 gap-3">
                 <label className="text-xs font-semibold text-foreground">Ставка, ₽/час
                   <input value={offerRate} onChange={(e) => setOfferRate(e.target.value)} inputMode="numeric" className="mt-1.5 w-full rounded-2xl border border-border bg-card px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
                 </label>
@@ -654,7 +654,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
               <label className="block mt-3 text-xs font-semibold text-foreground">Комментарий
                 <textarea value={offerMessage} onChange={(e) => setOfferMessage(e.target.value)} rows={3} placeholder="Например: организую 3 грузчиков к 10:00" className="mt-1.5 w-full resize-none rounded-2xl border border-border bg-card px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
               </label>
-              <div className="flex gap-2 mt-4">
+              <div className="native-surface flex gap-2 mt-4">
                 <button onClick={() => setOfferJob(null)} disabled={offerSubmitting} className="flex-1 rounded-2xl border border-border py-3 text-sm font-bold">Отмена</button>
                 <button onClick={handleSubmitOffer} disabled={offerSubmitting} className="flex-1 rounded-2xl bg-foreground text-background py-3 text-sm font-bold flex items-center justify-center gap-2">
                   {offerSubmitting && <Loader2 size={15} className="animate-spin" />} Отправить
@@ -666,8 +666,8 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
       </AnimatePresence>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="native-surface flex flex-col items-center justify-center py-20 gap-3">
+          <div className="native-surface w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           <p className="text-sm text-muted-foreground">Загрузка...</p>
         </div>
       ) : (
@@ -686,19 +686,19 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
             <>
               {/* Client requests waiting for a dispatcher */}
               {openRequests.length > 0 && (
-                <div className="px-4 pb-4">
-                  <div className="mb-2 flex items-end justify-between">
+                <div className="native-surface px-4 pb-4">
+                  <div className="native-surface mb-2 flex items-end justify-between">
                     <div>
                       <p className="text-[10px] font-bold uppercase tracking-[.16em] text-muted-foreground">GRUZLI / INBOX</p>
                       <h2 className="text-lg font-extrabold text-foreground">Новые запросы</h2>
                     </div>
                     <span className="text-[11px] font-bold text-muted-foreground">{openRequests.length}</span>
                   </div>
-                  <div className="space-y-2.5">
+                  <div className="native-surface space-y-2.5">
                     {openRequests.map((job) => (
                       <motion.div key={job.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-border bg-card p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
+                        <div className="native-surface flex items-start justify-between gap-3">
+                          <div className="native-surface min-w-0">
                             <p className="text-[10px] font-bold uppercase tracking-[.14em] text-muted-foreground">ЗАКАЗ / {job.id.slice(0, 6).toUpperCase()}</p>
                             <h3 className="mt-1 text-sm font-extrabold text-foreground">{job.title}</h3>
                             <p className="mt-1 text-xs text-muted-foreground">{job.address || "Адрес уточняется"} · {job.workers_needed || 1} чел.</p>
@@ -715,8 +715,8 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
               )}
 
               {/* Category sub-tabs */}
-              <div className="px-4 pb-3">
-                <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+              <div className="native-surface px-4 pb-3">
+                <div className="native-surface flex gap-1.5 overflow-x-auto no-scrollbar">
                   {categories.map((c) => {
                     const isActive = myCategory === c.id;
                     return (
@@ -742,15 +742,15 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
               {/* OPEN: postings without accepted workers */}
               {myCategory === "open" && (
                 openJobs.length === 0 ? (
-                  <div className="mx-4 mb-5 rounded-2xl bg-card border border-border p-6 text-center">
-                    <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-card border border-border flex items-center justify-center">
+                  <div className="native-surface mx-4 mb-5 rounded-2xl bg-card border border-border p-6 text-center">
+                    <div className="native-surface w-14 h-14 mx-auto mb-3 rounded-2xl bg-card border border-border flex items-center justify-center">
                       <Briefcase size={24} className="text-muted-foreground" />
                     </div>
                     <p className="text-sm font-bold text-foreground">Нет активных заявок</p>
                     <p className="text-xs text-muted-foreground mt-1.5">Создайте новую заявку, чтобы получить отклики</p>
                   </div>
                 ) : (
-                <div className="px-4 pb-5 space-y-3">
+                <div className="native-surface px-4 pb-5 space-y-3">
                   {openJobs.map((job, i) => (
                     <motion.div
                       key={job.id}
@@ -760,9 +760,9 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                       className="relative rounded-2xl p-4 border border-white/10 backdrop-blur-2xl backdrop-saturate-150 bg-white/5 shadow-[0_8px_32px_-8px_hsl(0_0%_0%/0.4)] overflow-hidden"
                       style={{ backgroundImage: 'linear-gradient(135deg, hsl(0 0% 100% / 0.08), hsl(0 0% 100% / 0.02))' }}
                     >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <div className="native-surface flex items-start justify-between mb-2">
+                        <div className="native-surface flex-1">
+                          <div className="native-surface flex items-center gap-2 mb-1 flex-wrap">
                             {job.urgent && (
                               <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-destructive/20 text-destructive text-[11px] font-semibold">
                                 <Zap size={10} /> Срочно
@@ -787,16 +787,16 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                         <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{job.description}</p>
                       )}
 
-                      <div className="flex items-center gap-3 text-[11px] text-muted-foreground mb-3 flex-wrap">
+                      <div className="native-surface flex items-center gap-3 text-[11px] text-muted-foreground mb-3 flex-wrap">
                         {job.address && <span className="flex items-center gap-1"><MapPin size={11} /> {job.address}</span>}
                         {job.start_time && <span className="flex items-center gap-1"><Clock size={11} /> {new Date(job.start_time).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span>}
                         <span className="flex items-center gap-1"><Users size={11} /> {job.workers_needed} чел.</span>
                       </div>
 
-                      <div className="rounded-xl px-3 py-2.5 mb-3 border border-white/10 bg-white/5 backdrop-blur-xl">
-                        <div className="flex items-center justify-between gap-2">
+                      <div className="native-surface rounded-xl px-3 py-2.5 mb-3 border border-white/10 bg-white/5 backdrop-blur-xl">
+                        <div className="native-surface flex items-center justify-between gap-2">
                           <span className="text-xs text-muted-foreground">Оплата</span>
-                          <div className="flex items-center gap-1.5">
+                          <div className="native-surface flex items-center gap-1.5">
                             <button
                               onClick={() => handleAdjustRate(job, -50)}
                               disabled={adjustingId === job.id || (job.hourly_rate || 0) <= 0}
@@ -823,7 +823,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="native-surface flex items-center gap-2">
                         <button
                           onClick={() => onViewResponses?.(job)}
                           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-semibold tap-scale"
@@ -865,7 +865,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                 <>
               {activeJobs.length === 0 ? (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-10 px-8">
-                  <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-card border border-border flex items-center justify-center">
+                  <div className="native-surface w-14 h-14 mx-auto mb-3 rounded-2xl bg-card border border-border flex items-center justify-center">
                     <Briefcase size={24} className="text-muted-foreground" />
                   </div>
                   <p className="text-sm font-bold text-foreground">Нет активных заказов</p>
@@ -873,7 +873,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                 </motion.div>
               ) : null}
               {activeJobs.length > 0 && (
-              <div className="px-4 space-y-3">
+              <div className="native-surface px-4 space-y-3">
                 {activeJobs.map((aj, jobIdx) => {
                   const isExpanded = expandedJobs.has(aj.job.id);
                   const totalEarned = getTotalEarned(aj.workers);
@@ -892,14 +892,14 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isFinishing ? "bg-orange-500/10" : allDone ? "bg-green-500/10" : "bg-primary/10"}`}>
                           {isFinishing ? <Timer size={18} className="text-orange-500" /> : allDone ? <CheckCircle2 size={18} className="text-green-500" /> : <Briefcase size={18} className="text-primary" />}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
+                        <div className="native-surface flex-1 min-w-0">
+                          <div className="native-surface flex items-center gap-2 flex-wrap">
                             <h3 className="text-sm font-bold text-foreground truncate">{aj.job.title}</h3>
                             {aj.job.status === "filled" && <span className="shrink-0 px-2 py-0.5 rounded-lg bg-primary/15 text-[10px] font-bold text-primary flex items-center gap-1"><Lock size={9} /> Набрано</span>}
                             {isFinishing && <span className="shrink-0 px-2 py-0.5 rounded-lg bg-orange-500/10 text-[10px] font-bold text-orange-500">Завершается</span>}
                             {allDone && !isFinishing && <span className="shrink-0 px-2 py-0.5 rounded-lg bg-green-500/10 text-[10px] font-bold text-green-500">Готово</span>}
                           </div>
-                          <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
+                          <div className="native-surface flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
                             {aj.job.address && <span className="flex items-center gap-1"><MapPin size={10} /> {aj.job.address}</span>}
                             <span className="flex items-center gap-1"><Users size={10} /> {aj.workers.length} чел.</span>
                             {totalEarned > 0 && <span className="flex items-center gap-1 text-green-500"><Wallet size={10} /> {totalEarned.toLocaleString("ru-RU")} ₽</span>}
@@ -913,7 +913,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                       <AnimatePresence>
                         {isExpanded && (
                           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
-                            <div className="px-4 pb-4 space-y-2">
+                            <div className="native-surface px-4 pb-4 space-y-2">
                               {aj.workers.map((w) => {
                                 const ws = w.workerStatus ? WORKER_STATUS_MAP[w.workerStatus] : null;
                                 const WsIcon = ws?.icon;
@@ -927,37 +927,37 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                                     animate={{ opacity: 1, x: 0 }}
                                     className="bg-surface-1 border border-border rounded-xl p-3"
                                   >
-                                    <div className="flex items-center gap-3">
+                                    <div className="native-surface flex items-center gap-3">
                                       <button onClick={() => onViewProfile?.(w.workerId)} className="shrink-0">
-                                        <div className="relative">
-                                          {w.profile?.is_premium && <div className="absolute -inset-[2px] rounded-full bg-gradient-to-tr from-yellow-400 via-amber-500 to-orange-500 opacity-80" />}
+                                        <div className="native-surface relative">
+                                          {w.profile?.is_premium && <div className="native-surface absolute -inset-[2px] rounded-full bg-gradient-to-tr from-yellow-400 via-amber-500 to-orange-500 opacity-80" />}
                                           {w.profile?.avatar_url ? (
                                             <img src={w.profile.avatar_url} alt="" className="relative w-10 h-10 rounded-full object-cover" />
                                           ) : (
-                                            <div className="relative w-10 h-10 rounded-full bg-foreground flex items-center justify-center text-sm font-bold text-primary-foreground">{initials}</div>
+                                            <div className="native-surface relative w-10 h-10 rounded-full bg-foreground flex items-center justify-center text-sm font-bold text-primary-foreground">{initials}</div>
                                           )}
                                         </div>
                                       </button>
 
                                       <button onClick={() => onViewProfile?.(w.workerId)} className="flex-1 min-w-0 text-left">
-                                        <div className="flex items-center gap-1.5">
+                                        <div className="native-surface flex items-center gap-1.5">
                                           <span className="text-sm font-semibold text-foreground truncate">{w.profile?.full_name || "Грузчик"}</span>
                                           {w.profile?.is_premium && <Crown size={12} className="text-yellow-500 fill-yellow-500 shrink-0" />}
                                         </div>
-                                        <div className="flex items-center gap-2 mt-0.5">
+                                        <div className="native-surface flex items-center gap-2 mt-0.5">
                                           <Star size={10} className="text-primary fill-primary" />
                                           <span className="text-[11px] text-muted-foreground">{w.profile?.rating || "5.0"} · {w.profile?.completed_orders || 0} заказов</span>
                                         </div>
                                       </button>
 
-                                      <div className="shrink-0">
+                                      <div className="native-surface shrink-0">
                                         {ws && WsIcon ? (
                                           <div className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl ${ws.bg}`}>
                                             <WsIcon size={13} className={ws.color} />
                                             <span className={`text-[11px] font-bold ${ws.color}`}>{ws.label}</span>
                                           </div>
                                         ) : (
-                                          <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-muted">
+                                          <div className="native-surface flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-muted">
                                             <Clock size={13} className="text-muted-foreground" />
                                             <span className="text-[11px] font-bold text-muted-foreground">Ожидает</span>
                                           </div>
@@ -966,7 +966,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                                     </div>
 
                                     {w.workerStatus === "completed" && w.earned != null && (
-                                      <div className="mt-2 flex items-center gap-3 px-2 py-1.5 rounded-lg bg-green-500/10 text-[11px]">
+                                      <div className="native-surface mt-2 flex items-center gap-3 px-2 py-1.5 rounded-lg bg-green-500/10 text-[11px]">
                                         <span className="text-green-500 font-bold flex items-center gap-1"><Wallet size={10} /> {w.earned.toLocaleString("ru-RU")} ₽</span>
                                         {w.hoursWorked != null && <span className="text-green-500/70 flex items-center gap-1"><Timer size={10} /> {w.hoursWorked}ч</span>}
                                       </div>
@@ -975,7 +975,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                                     {/* Review badge or button */}
                                     {w.workerStatus === "completed" && (
                                       w.dispatcherReviewRating ? (
-                                        <div className="mt-2 flex items-center gap-2 px-2 py-1.5 rounded-lg bg-primary/10 text-[11px]">
+                                        <div className="native-surface mt-2 flex items-center gap-2 px-2 py-1.5 rounded-lg bg-primary/10 text-[11px]">
                                           <Award size={10} className="text-primary" />
                                           <span className="text-primary font-semibold">Отзыв: {"⭐".repeat(w.dispatcherReviewRating)}</span>
                                         </div>
@@ -989,7 +989,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                                       )
                                     )}
 
-                                    <div className="flex gap-2 mt-2.5">
+                                    <div className="native-surface flex gap-2 mt-2.5">
                                       <button onClick={() => onChatWithWorker(w.workerId, w.profile?.full_name || "Грузчик")} className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl bg-card border border-border text-xs font-semibold text-foreground active:bg-surface-1 transition-all">
                                         <MessageCircle size={13} className="text-primary" /> Написать
                                       </button>
@@ -1020,14 +1020,14 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                               )}
 
                               {allDone && (
-                                <div className="space-y-2 mt-1">
-                                  <div className="text-center py-2 bg-green-500/5 rounded-xl">
+                                <div className="native-surface space-y-2 mt-1">
+                                  <div className="native-surface text-center py-2 bg-green-500/5 rounded-xl">
                                     <p className="text-xs font-bold text-green-500">✅ Все грузчики завершили работу</p>
                                     <p className="text-[10px] text-muted-foreground mt-0.5">Итого расход: {getTotalEarned(aj.workers).toLocaleString("ru-RU")} ₽</p>
                                   </div>
                                   <button
                                     onClick={() => completeJobFully(aj.job.id)}
-                                    className="w-full py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold active:scale-[0.98] transition-all"
+                                    className="w-full py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold native-press active:scale-[0.98] transition-all"
                                   >
                                     📊 Закрыть заказ и заполнить расход
                                   </button>
@@ -1048,33 +1048,33 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
               {/* COMPLETED: my completed jobs */}
               {myCategory === "completed" && (
                 completedMyJobs.length === 0 ? (
-                  <div className="mx-4 mb-5 rounded-2xl bg-card border border-border p-6 text-center">
-                    <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-card border border-border flex items-center justify-center">
+                  <div className="native-surface mx-4 mb-5 rounded-2xl bg-card border border-border p-6 text-center">
+                    <div className="native-surface w-14 h-14 mx-auto mb-3 rounded-2xl bg-card border border-border flex items-center justify-center">
                       <CheckCircle2 size={24} className="text-muted-foreground" />
                     </div>
                     <p className="text-sm font-bold text-foreground">Завершённых заявок ещё нет</p>
                     <p className="text-xs text-muted-foreground mt-1.5">Закрытые заказы появятся здесь</p>
                   </div>
                 ) : (
-                  <div className="px-4 pb-5 space-y-3">
+                  <div className="native-surface px-4 pb-5 space-y-3">
                     {completedMyJobs.map((job, i) => (
                       <motion.div
                         key={job.id}
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: Math.min(i, 6) * 0.04 }}
-                        className="bg-card border border-border rounded-2xl p-4"
+                        className="bg-card border border-border rounded-2xl p-4 native-surface"
                       >
-                        <div className="flex items-start justify-between mb-2 gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <div className="native-surface flex items-start justify-between mb-2 gap-3">
+                          <div className="native-surface flex-1 min-w-0">
+                            <div className="native-surface flex items-center gap-2 mb-1 flex-wrap">
                               <span className="px-2 py-0.5 rounded-lg bg-green-500/15 text-green-500 text-[11px] font-semibold">Завершена</span>
                               <span className="text-[10px] text-muted-foreground">{new Date(job.created_at).toLocaleDateString("ru-RU")}</span>
                             </div>
                             <h3 className="text-[14px] font-semibold text-foreground truncate">{job.title}</h3>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
+                        <div className="native-surface flex items-center gap-3 text-[11px] text-muted-foreground flex-wrap">
                           {job.address && <span className="flex items-center gap-1"><MapPin size={11} /> {job.address}</span>}
                           <span className="flex items-center gap-1"><Users size={11} /> {job.workers_needed} чел.</span>
                           <span className="flex items-center gap-1"><Wallet size={11} /> {job.hourly_rate} ₽/ч</span>
@@ -1090,21 +1090,21 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
 
           {/* STATS TAB */}
           {currentTab === "stats" && (
-            <div className="px-4 space-y-3">
+            <div className="native-surface px-4 space-y-3">
               {/* Income/Expense Summary */}
-              <div className="grid grid-cols-2 gap-3">
-                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }} className="bg-card border border-border rounded-2xl p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-xl bg-green-500/10 flex items-center justify-center">
+              <div className="native-surface grid grid-cols-2 gap-3">
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0 }} className="bg-card border border-border rounded-2xl p-4 native-surface">
+                  <div className="native-surface flex items-center gap-2 mb-2">
+                    <div className="native-surface w-8 h-8 rounded-xl bg-green-500/10 flex items-center justify-center">
                       <TrendingUp size={14} className="text-green-500" />
                     </div>
                     <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Доход неделя</span>
                   </div>
                   <p className="text-xl font-extrabold text-green-500">{weeklyStats.income.toLocaleString("ru-RU")} ₽</p>
                 </motion.div>
-                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="bg-card border border-border rounded-2xl p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-xl bg-destructive/10 flex items-center justify-center">
+                <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="bg-card border border-border rounded-2xl p-4 native-surface">
+                  <div className="native-surface flex items-center gap-2 mb-2">
+                    <div className="native-surface w-8 h-8 rounded-xl bg-destructive/10 flex items-center justify-center">
                       <TrendingDown size={14} className="text-destructive" />
                     </div>
                     <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Расход неделя</span>
@@ -1114,8 +1114,8 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
               </div>
 
               {/* Profit card */}
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card border border-border rounded-2xl p-4">
-                <div className="flex items-center justify-between">
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card border border-border rounded-2xl p-4 native-surface">
+                <div className="native-surface flex items-center justify-between">
                   <div>
                     <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-1">Чистая прибыль за неделю</p>
                     <p className={`text-2xl font-extrabold ${weeklyStats.profit >= 0 ? "text-green-500" : "text-destructive"}`}>
@@ -1129,9 +1129,9 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
               </motion.div>
 
               {/* Monthly */}
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card border border-border rounded-2xl p-4">
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card border border-border rounded-2xl p-4 native-surface">
                 <h3 className="text-xs font-bold text-foreground mb-3 flex items-center gap-1.5"><DollarSign size={14} className="text-primary" /> За месяц</h3>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="native-surface grid grid-cols-3 gap-3">
                   <div>
                     <p className="text-[10px] text-muted-foreground mb-0.5">Доход</p>
                     <p className="text-sm font-bold text-green-500">{monthlyStats.income.toLocaleString("ru-RU")} ₽</p>
@@ -1150,12 +1150,12 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
               </motion.div>
 
               {/* Chart */}
-              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card border border-border rounded-2xl p-4">
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card border border-border rounded-2xl p-4 native-surface">
                 <h3 className="text-xs font-bold text-foreground mb-4 flex items-center gap-1.5"><BarChart3 size={14} className="text-primary" /> Динамика за неделю</h3>
-                <div className="flex items-end justify-between gap-2 h-28">
+                <div className="native-surface flex items-end justify-between gap-2 h-28">
                   {chartData.map((d, i) => (
                     <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                      <div className="w-full flex flex-col items-center gap-0.5" style={{ height: 90 }}>
+                      <div className="native-surface w-full flex flex-col items-center gap-0.5" style={{ height: 90 }}>
                         <motion.div
                           initial={{ height: 0 }}
                           animate={{ height: `${(d.income / maxChartVal) * 100}%` }}
@@ -1175,17 +1175,17 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center gap-4 mt-3 justify-center text-[10px] text-muted-foreground">
-                  <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500" /> Доход</span>
-                  <span className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-destructive" /> Расход</span>
+                <div className="native-surface flex items-center gap-4 mt-3 justify-center text-[10px] text-muted-foreground">
+                  <span className="flex items-center gap-1"><div className="native-surface w-2 h-2 rounded-full bg-green-500" /> Доход</span>
+                  <span className="flex items-center gap-1"><div className="native-surface w-2 h-2 rounded-full bg-destructive" /> Расход</span>
                 </div>
               </motion.div>
               {/* AI Advice */}
               <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
                 {aiAdvice ? (
-                  <div className="bg-card border border-primary/20 rounded-2xl p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <div className="native-surface bg-card border border-primary/20 rounded-2xl p-4">
+                    <div className="native-surface flex items-center gap-2 mb-3">
+                      <div className="native-surface w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
                         <Sparkles size={14} className="text-primary" />
                       </div>
                       <span className="text-xs font-bold text-foreground">AI-совет</span>
@@ -1236,14 +1236,14 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
           {currentTab === "history" && (
             completedStats.length === 0 ? (
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center py-16 px-8">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-card border border-border flex items-center justify-center">
+                <div className="native-surface w-16 h-16 mx-auto mb-4 rounded-2xl bg-card border border-border flex items-center justify-center">
                   <FileText size={28} className="text-muted-foreground" />
                 </div>
                 <p className="text-sm font-bold text-foreground">Нет завершённых заказов</p>
                 <p className="text-xs text-muted-foreground mt-1.5">Завершённые заказы появятся здесь</p>
               </motion.div>
             ) : (
-              <div className="px-4 space-y-2">
+              <div className="native-surface px-4 space-y-2">
                 {completedStats.map((s, i) => {
                   const profit = s.dispatcherIncome - s.totalExpense;
                   return (
@@ -1252,13 +1252,13 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.03 }}
-                      className="bg-card border border-border rounded-2xl p-4"
+                      className="bg-card border border-border rounded-2xl p-4 native-surface"
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="native-surface flex items-start gap-3">
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${profit >= 0 ? "bg-green-500/10" : "bg-destructive/10"}`}>
                           {profit >= 0 ? <TrendingUp size={16} className="text-green-500" /> : <TrendingDown size={16} className="text-destructive" />}
                         </div>
-                        <div className="flex-1 min-w-0">
+                        <div className="native-surface flex-1 min-w-0">
                           <h3 className="text-sm font-bold text-foreground truncate">{s.title}</h3>
                           <p className="text-[11px] text-muted-foreground mt-0.5">
                             {new Date(s.createdAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })} · {s.workersCount} чел.
@@ -1268,7 +1268,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                           {profit >= 0 ? "+" : ""}{profit.toLocaleString("ru-RU")} ₽
                         </span>
                       </div>
-                      <div className="flex items-center gap-4 mt-2.5 ml-13 text-[11px]">
+                      <div className="native-surface flex items-center gap-4 mt-2.5 ml-13 text-[11px]">
                         <span className="flex items-center gap-1 text-green-500/80"><TrendingUp size={10} /> {s.dispatcherIncome.toLocaleString("ru-RU")} ₽</span>
                         <span className="flex items-center gap-1 text-destructive/80"><TrendingDown size={10} /> {s.totalExpense.toLocaleString("ru-RU")} ₽</span>
                       </div>
@@ -1290,11 +1290,11 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-lg bg-card rounded-t-3xl p-6 border-t border-border"
             >
-              <div className="w-10 h-1 bg-muted-foreground/20 rounded-full mx-auto mb-4" />
+              <div className="native-surface w-10 h-1 bg-muted-foreground/20 rounded-full mx-auto mb-4" />
               <h3 className="text-lg font-bold text-foreground mb-1">Отзыв о {reviewModal.workerName}</h3>
               <p className="text-xs text-muted-foreground mb-4">Оцените работу исполнителя</p>
 
-              <div className="flex items-center gap-2 mb-4">
+              <div className="native-surface flex items-center gap-2 mb-4">
                 {[1, 2, 3, 4, 5].map((v) => (
                   <button key={v} onClick={() => setReviewRating(v)} className="p-1">
                     <Star size={28} className={v <= reviewRating ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"} />
@@ -1309,7 +1309,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                 className="w-full bg-surface-1 rounded-xl p-3 text-sm text-foreground placeholder:text-muted-foreground outline-none border border-border resize-none h-20 mb-4"
               />
 
-              <button onClick={submitReview} className="w-full py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold active:scale-[0.98] transition-all">
+              <button onClick={submitReview} className="w-full py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold native-press active:scale-[0.98] transition-all">
                 Отправить отзыв
               </button>
             </motion.div>
@@ -1326,11 +1326,11 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
               onClick={(e) => e.stopPropagation()}
               className="w-full max-w-lg bg-card rounded-t-3xl p-6 border-t border-border"
             >
-              <div className="w-10 h-1 bg-muted-foreground/20 rounded-full mx-auto mb-4" />
+              <div className="native-surface w-10 h-1 bg-muted-foreground/20 rounded-full mx-auto mb-4" />
               <h3 className="text-lg font-bold text-foreground mb-1">Закрытие заказа</h3>
               <p className="text-xs text-muted-foreground mb-4">{expenseModal.title} · {expenseModal.workersCount} грузчиков</p>
 
-              <div className="space-y-3 mb-4">
+              <div className="native-surface space-y-3 mb-4">
                 <div>
                   <label className="text-xs text-muted-foreground mb-1.5 block font-medium">💰 Ваш доход (от клиента)</label>
                   <input
@@ -1342,15 +1342,15 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                   />
                 </div>
 
-                <div className="bg-surface-1 border border-border rounded-xl p-3">
-                  <div className="flex items-center justify-between text-xs">
+                <div className="native-surface bg-surface-1 border border-border rounded-xl p-3">
+                  <div className="native-surface flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">Выплата грузчикам</span>
                     <span className="font-bold text-foreground">
                       {getTotalEarned(activeJobs.find((a) => a.job.id === expenseModal.jobId)?.workers || []).toLocaleString("ru-RU")} ₽
                     </span>
                   </div>
                   {parseInt(dispatcherIncome) > 0 && (
-                    <div className="flex items-center justify-between text-xs mt-2 pt-2 border-t border-border">
+                    <div className="native-surface flex items-center justify-between text-xs mt-2 pt-2 border-t border-border">
                       <span className="text-muted-foreground">Чистая прибыль</span>
                       <span className={`font-extrabold ${(parseInt(dispatcherIncome) - getTotalEarned(activeJobs.find((a) => a.job.id === expenseModal.jobId)?.workers || [])) >= 0 ? "text-green-500" : "text-destructive"}`}>
                         {((parseInt(dispatcherIncome) || 0) - getTotalEarned(activeJobs.find((a) => a.job.id === expenseModal.jobId)?.workers || [])).toLocaleString("ru-RU")} ₽
@@ -1360,7 +1360,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                 </div>
               </div>
 
-              <button onClick={submitExpenseAndComplete} className="w-full py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold active:scale-[0.98] transition-all">
+              <button onClick={submitExpenseAndComplete} className="w-full py-3 rounded-xl bg-foreground text-primary-foreground text-sm font-bold native-press active:scale-[0.98] transition-all">
                 ✅ Завершить и сохранить
               </button>
             </motion.div>
