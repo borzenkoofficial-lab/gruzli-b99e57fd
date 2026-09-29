@@ -3535,3 +3535,279 @@ body,
 .gruzli-card-swipe-hint i{width:2px;height:2px;border-radius:50%;background:#c4c5c6}
 .gruzli-job-card:hover .gruzli-card-swipe-hint{opacity:1;color:#74767a}
 @media(max-width:390px){.gruzli-card-swipe-hint{margin-top:-2px;margin-bottom:7px;font-size:6px}}
+
+
+/* Profile v2 — editorial identity system */
+.gruzli-profile-screen{
+  position:relative;
+  isolation:isolate;
+  padding-bottom:24px;
+  background:
+    radial-gradient(500px 280px at 100% 0%,rgba(242,189,22,.055),transparent 68%),
+    linear-gradient(180deg,#f7f7f5 0%,#f3f3f1 100%);
+}
+.gruzli-profile-screen::before{
+  content:"";
+  position:fixed;
+  z-index:-1;
+  top:84px;
+  right:-90px;
+  width:220px;
+  height:220px;
+  border:1px solid rgba(17,18,20,.045);
+  border-radius:50%;
+  box-shadow:0 0 0 36px rgba(17,18,20,.018),0 0 0 72px rgba(17,18,20,.012);
+  pointer-events:none;
+}
+.gruzli-profile-title{
+  display:flex;
+  align-items:flex-end;
+  gap:10px;
+}
+.gruzli-profile-title>span{
+  margin-bottom:3px;
+  color:#a0a1a5;
+  font-size:6.5px;
+  font-weight:900;
+  letter-spacing:.16em;
+}
+.gruzli-profile-title h1{
+  margin:0;
+  color:#111214;
+  font-size:24px;
+  line-height:.92;
+  font-weight:900;
+  letter-spacing:-.055em;
+}
+.gruzli-profile-screen>.px-5:first-child{
+  padding-bottom:14px;
+}
+.gruzli-worker-id-hero{
+  position:relative;
+  transform:translateZ(0);
+  background:
+    radial-gradient(240px 180px at 100% 0%,rgba(242,189,22,.18),transparent 70%),
+    radial-gradient(180px 150px at 0% 100%,rgba(255,255,255,.92),transparent 72%),
+    linear-gradient(145deg,#fff,#f0f0ee);
+}
+.gruzli-worker-id-hero::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  background:linear-gradient(110deg,transparent 25%,rgba(255,255,255,.32) 48%,transparent 67%);
+  transform:translateX(-130%);
+  animation:gruzli-profile-sheen 7s cubic-bezier(.22,1,.36,1) infinite;
+  pointer-events:none;
+}
+.gruzli-worker-id-top,
+.gruzli-worker-id-body,
+.gruzli-worker-id-bottom{
+  position:relative;
+  z-index:1;
+}
+.gruzli-worker-id-top{
+  padding-bottom:11px;
+  border-bottom:1px solid rgba(17,18,20,.075);
+}
+.gruzli-worker-id-top span:first-child{
+  color:#111214;
+  font-size:11px;
+  font-weight:950;
+  letter-spacing:.12em;
+}
+.gruzli-worker-id-top span:last-child{
+  color:#92949a;
+  font-size:6px;
+  font-weight:850;
+  letter-spacing:.15em;
+}
+.gruzli-worker-id-info strong{
+  font-size:21px;
+  letter-spacing:-.045em;
+}
+.gruzli-worker-id-role{
+  color:#707278;
+  font-size:6.5px;
+  letter-spacing:.14em;
+}
+.gruzli-worker-id-meta{
+  margin-top:10px;
+}
+.gruzli-worker-id-meta span{
+  color:#92949a;
+  font-size:7px;
+}
+.gruzli-worker-id-meta b{
+  color:#17181b;
+  font-size:10px;
+}
+.gruzli-worker-id-status{
+  border:1px solid rgba(17,18,20,.08);
+  background:rgba(255,255,255,.65);
+  padding:5px 7px;
+  border-radius:8px;
+}
+.gruzli-worker-dashboard,
+.gruzli-earnings-mockup,
+.gruzli-work-history{
+  transition:transform .35s cubic-bezier(.22,1,.36,1),box-shadow .35s cubic-bezier(.22,1,.36,1);
+}
+.gruzli-worker-dashboard:hover,
+.gruzli-earnings-mockup:hover,
+.gruzli-work-history:hover{
+  transform:translateY(-2px);
+  box-shadow:0 24px 55px rgba(17,18,20,.09),inset 0 1px 0 #fff;
+}
+.gruzli-worker-dashboard-head{
+  padding:16px 16px 13px;
+}
+.gruzli-worker-dashboard-grid{
+  background:linear-gradient(180deg,rgba(255,255,255,.35),rgba(247,247,245,.2));
+}
+.gruzli-worker-calendar-head{
+  padding:12px 15px 8px;
+}
+.gruzli-worker-calendar-head span:first-child{
+  color:#17181b;
+  font-size:7px;
+  font-weight:900;
+  letter-spacing:.14em;
+}
+.gruzli-worker-calendar-head span:last-child{
+  font-size:7px;
+  color:#a0a1a5;
+}
+.gruzli-worker-calendar-days{
+  padding:0 15px 15px;
+}
+.gruzli-worker-calendar-days button{
+  position:relative;
+  overflow:hidden;
+  background:rgba(17,18,20,.025);
+  border:1px solid rgba(17,18,20,.07);
+  transition:all .25s cubic-bezier(.22,1,.36,1);
+}
+.gruzli-worker-calendar-days button.is-active{
+  background:#17181b;
+  border-color:#17181b;
+  box-shadow:0 8px 18px rgba(17,18,20,.12);
+}
+.gruzli-worker-calendar-days button.is-active i{
+  box-shadow:0 0 0 4px rgba(242,189,22,.12);
+}
+.gruzli-earnings-mockup{
+  position:relative;
+  min-height:184px;
+  background:
+    radial-gradient(260px 180px at 100% 0%,rgba(242,189,22,.2),transparent 70%),
+    radial-gradient(180px 130px at 0% 100%,rgba(255,255,255,.04),transparent 75%),
+    linear-gradient(145deg,#141518,#242529);
+}
+.gruzli-earnings-mockup::after{
+  content:"";
+  position:absolute;
+  width:170px;
+  height:170px;
+  right:-80px;
+  bottom:-100px;
+  border:1px solid rgba(242,189,22,.18);
+  border-radius:50%;
+  box-shadow:0 0 0 22px rgba(242,189,22,.025),0 0 0 44px rgba(242,189,22,.018);
+  pointer-events:none;
+}
+.gruzli-earnings-head,
+.gruzli-earnings-main,
+.gruzli-earnings-meta{
+  position:relative;
+  z-index:1;
+}
+.gruzli-earnings-ring{
+  background:rgba(17,18,20,.18);
+  backdrop-filter:blur(8px);
+}
+.gruzli-profile-section-head{
+  margin-bottom:10px;
+}
+.gruzli-profile-section-index{
+  display:inline-flex;
+  min-width:25px;
+  height:20px;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(17,18,20,.08);
+  border-radius:7px;
+  background:rgba(255,255,255,.6);
+  color:#77797e;
+}
+.gruzli-profile-section-head h2{
+  font-size:14px!important;
+  letter-spacing:-.025em;
+}
+.gruzli-work-history{
+  box-shadow:0 16px 40px rgba(17,18,20,.05),inset 0 1px 0 #fff;
+}
+.gruzli-work-history-row{
+  min-height:62px;
+  padding:11px 13px;
+}
+.gruzli-work-history-index{
+  width:23px;
+  height:23px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:7px;
+  background:#17181b;
+  color:#fff;
+  font-size:7px;
+  font-weight:900;
+}
+.gruzli-work-history-row>b{
+  padding:5px 7px;
+  border-radius:8px;
+  background:#fff3bf;
+  color:#17181b;
+  font-size:9px;
+}
+.gruzli-profile-menu{
+  padding-top:5px;
+}
+.gruzli-profile-menu-label{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:0 2px 8px;
+  color:#a0a1a5;
+  font-size:6.5px;
+  font-weight:900;
+  letter-spacing:.16em;
+}
+.gruzli-profile-menu-label i{
+  flex:1;
+  height:1px;
+  background:rgba(17,18,20,.07);
+}
+.gruzli-profile-menu button{
+  border-radius:15px!important;
+  background:rgba(255,255,255,.58)!important;
+  border-color:rgba(17,18,20,.07)!important;
+  box-shadow:0 7px 20px rgba(17,18,20,.025),inset 0 1px 0 #fff;
+}
+@keyframes gruzli-profile-sheen{
+  0%,55%{transform:translateX(-130%)}
+  72%,100%{transform:translateX(130%)}
+}
+@media(max-width:390px){
+  .gruzli-profile-title h1{font-size:22px}
+  .gruzli-worker-id-info strong{font-size:18px}
+  .gruzli-worker-id-meta{gap:7px}
+  .gruzli-worker-dashboard-grid>div{padding:0 6px}
+  .gruzli-worker-calendar-days{padding-left:12px;padding-right:12px}
+}
+@media(prefers-reduced-motion:reduce){
+  .gruzli-worker-id-hero::after{animation:none}
+  .gruzli-worker-dashboard,
+  .gruzli-earnings-mockup,
+  .gruzli-work-history{transition:none}
+}
