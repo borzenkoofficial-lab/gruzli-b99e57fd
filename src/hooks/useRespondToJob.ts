@@ -33,13 +33,14 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
         worker_id: user.id,
         message: `Здравствуйте! Откликнулся на заказ «${job.title}». Готов обсудить детали и условия.`,
       });
+      const isNewResponse = !respError;
 
       if (respError) {
         if (respError.code === "23505") {
-          // Already responded — still open chat
+          // An existing response is not a new application; open the conversation without duplicating messages.
           toast.info("Вы уже откликнулись, открываем чат...");
         } else {
-          toast.error("Ошибка отклика: " + respError.message);
+          toast.error("Не удалось отправить отклик. " + (respError.message || "Попробуйте ещё раз."));
           return false;
         }
       }
@@ -61,24 +62,28 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
         return false;
       }
 
-      // Always send a message about the job in the chat
+      // Only create the initial message and notification for a newly inserted response.
       const responseMessage = `Здравствуйте! Откликнулся на ваш заказ «${job.title}». Готов обсудить детали и условия.`;
-      await supabase.from("messages").insert({
-        conversation_id: conversationId,
-        sender_id: user.id,
-        text: responseMessage,
-        message_type: "text",
-      });
+      if (isNewResponse) {
+        const { error: messageError } = await supabase.from("messages").insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          text: responseMessage,
+          message_type: "text",
+        });
+        if (messageError) {
+          toast.error("Отклик сохранён, но сообщение не отправлено. Откройте чат и отправьте его повторно.");
+        }
 
-      // Send email notification to dispatcher about the response
-      supabase.functions.invoke("notify-email", {
-        body: {
-          type: "new_job_response",
-          job_id: job.id,
-          worker_id: user.id,
-          message: responseMessage,
-        },
-      }).catch(() => {});
+        supabase.functions.invoke("notify-email", {
+          body: {
+            type: "new_job_response",
+            job_id: job.id,
+            worker_id: user.id,
+            message: responseMessage,
+          },
+        }).catch(() => {});
+      }
 
       // 3. Open chat
       if (navigator.vibrate) navigator.vibrate(50);
