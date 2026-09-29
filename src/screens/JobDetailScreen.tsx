@@ -110,10 +110,10 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
   const isOfficial = job.is_official;
 
   return (
-    <div className="gruzli-job-detail app-scroll gruzli-page-enter min-h-screen bg-background pb-28">
+    <div className="gruzli-job-detail app-scroll gruzli-page-enter min-h-screen bg-background pb-32 native-surface">
       {/* Header */}
       <div className="flex items-center gap-3 px-5 safe-top pb-4">
-        <button onClick={onBack} className="w-11 h-11 rounded-2xl bg-white border border-border flex items-center justify-center shadow-sm active:scale-95 transition-all">
+        <button onClick={onBack} className="native-press w-11 h-11 rounded-2xl bg-white border border-border flex items-center justify-center shadow-sm transition-all">
           <ArrowLeft size={18} className="text-foreground" />
         </button>
         <div className="flex-1 min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Заказ</p><h2 className="text-[17px] font-extrabold tracking-[-.03em] text-foreground truncate">Детали заказа</h2></div>
@@ -165,7 +165,7 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
             ) : (
               <button
                 onClick={() => onOpenProfile?.(job.dispatcher_id)}
-                className="flex items-center gap-1.5 mt-1.5 active:opacity-70"
+                className="native-press flex items-center gap-1.5 mt-1.5"
               >
                 <UserPlus size={12} className="text-primary" />
                 <span className="text-xs text-primary font-medium">{dispatcherName}</span>
@@ -209,7 +209,7 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
             <button
               type="button"
               onClick={() => setSafetyOpen((v) => !v)}
-              className="w-full flex items-center gap-3 p-3.5 text-left active:opacity-80"
+              className="native-press w-full flex items-center gap-3 p-3.5 text-left"
             >
               <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center flex-shrink-0">
                 <ShieldAlert size={16} className="text-amber-500" />
@@ -272,11 +272,11 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
         </div>
 
         {/* Actions */}
-        <div className="sticky bottom-3 z-30 flex gap-2 rounded-[22px] border border-white/90 bg-white/72 p-2 shadow-[0_18px_45px_rgba(31,35,43,.14),inset_0_1px_0_rgba(255,255,255,.96)] backdrop-blur-2xl">
+        <div className="native-surface sticky bottom-3 z-30 flex gap-2 rounded-[22px] border border-white/90 bg-white/72 p-2 shadow-[0_18px_45px_rgba(31,35,43,.14),inset_0_1px_0_rgba(255,255,255,.96)] backdrop-blur-2xl">
           <button
             onClick={handleRespond}
             disabled={responding || responded}
-            className={`gruzli-job-detail-action flex-1 min-h-[50px] py-3.5 rounded-[16px] text-sm font-bold active:scale-[0.98] transition-all ${
+            className={`native-press gruzli-job-detail-action flex-1 min-h-[50px] py-3.5 rounded-[16px] text-sm font-bold active:scale-[0.98] transition-all ${
               responded
                 ? isAccepted
                   ? "bg-online/20 text-online"
