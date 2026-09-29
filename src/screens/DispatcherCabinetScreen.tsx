@@ -486,11 +486,16 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
 
   const submitReview = async () => {
     if (!reviewModal) return;
-    await supabase.from("job_responses").update({
-      dispatcher_review_rating: reviewRating,
-      dispatcher_review_text: reviewText || null,
-    } as any).eq("id", reviewModal.responseId);
-    toast.success("Отзыв оставлен ✓");
+    const { error } = await supabase.rpc("dispatcher_review_worker", {
+      _response_id: reviewModal.responseId,
+      _rating: reviewRating,
+      _text: reviewText || null,
+    });
+    if (error) {
+      toast.error(error.code === "P0001" ? "Отзыв можно оставить после завершения работы" : "Не удалось сохранить отзыв");
+      return;
+    }
+    toast.success("Отзыв оставлен");
     setReviewModal(null);
     setReviewRating(5);
     setReviewText("");
