@@ -584,6 +584,7 @@ const Index = () => {
       active={tab}
       onNavigate={handleNavigate}
       isDispatcher={isDispatcher}
+      isClient={isClient}
       unreadMessages={unreadMessages}
       newJobsCount={newJobsCount}
       onCreateJob={() => setShowCreateJob(true)}
