@@ -40,19 +40,19 @@ const BottomNav = memo(({ active, onNavigate, isDispatcher, unreadMessages = 0, 
 
   return (
     <nav className="bottom-nav-wrapper" role="navigation" aria-label="Основная навигация">
-      <div className="bottom-nav-pill" role="tablist">
+      <div className="bottom-nav-pill" role="tablist" aria-label="Разделы Gruzli">
         {tabs.map((tab) => {
           const isActive = active === tab.id;
           const Icon = tab.icon;
           return (
             <motion.button
               key={tab.id}
-              whileTap={{ scale: 0.9 }}
+              whileTap={{ scale: 0.94 }}
               onClick={() => onNavigate(tab.id)}
               role="tab"
               aria-selected={isActive}
               aria-label={`${tab.label}${tab.badge > 0 ? `, ${tab.badge} новых` : ""}`}
-              className={`relative flex min-w-0 flex-1 flex-col items-center gap-0.5 py-2 px-1 rounded-xl transition-all duration-200 ${
+              className={`relative flex min-w-0 flex-1 flex-col items-center gap-0.5 py-2.5 px-1 rounded-xl transition-all duration-200 ${
                 isActive ? "bottom-nav-active" : ""
               }`}
             >
