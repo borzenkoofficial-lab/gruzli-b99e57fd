@@ -282,6 +282,10 @@ const Index = () => {
     return undefined;
   }, [openChatId, viewProfileUserId, showSettings, showNotifications, showPremium, showCompany, showChannel, showCreateJob, viewResponsesJob, showCommunity, showCabinet, showSupportChat, viewJobDetail, viewContractId]);
 
+  // Keep gesture listeners stable while always invoking the latest navigation state.
+  const goBackRef = useRef(goBack);
+  goBackRef.current = goBack;
+
   useEffect(() => {
     if (!isMobile) return;
     let startX = 0;
@@ -316,7 +320,7 @@ const Index = () => {
       if (!t) return;
       const dx = t.clientX - startX;
       const dy = Math.abs(t.clientY - startY);
-      if (dx >= 60 && dx > dy * 1.15) goBack();
+      if (dx >= 60 && dx > dy * 1.15) goBackRef.current();
     };
 
     window.addEventListener("touchstart", onTouchStart, { passive: true });
@@ -327,15 +331,15 @@ const Index = () => {
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("touchend", onTouchEnd);
     };
-  }, [isMobile, goBack]);
+  }, [isMobile]);
 
   // Desktop browser back also follows the same in-app stack.
   useEffect(() => {
     if (isMobile || !canGoBack) return;
-    const onPop = () => goBack();
+    const onPop = () => goBackRef.current();
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
-  }, [isMobile, canGoBack, goBack]);
+  }, [isMobile, canGoBack]);
 
   const renderMobileBackButton = canGoBack ? (
     <button
