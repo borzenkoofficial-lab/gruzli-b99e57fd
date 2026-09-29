@@ -13,7 +13,7 @@ interface BottomNavProps {
 const Badge = memo(({ count }: { count: number }) => {
   if (count <= 0) return null;
   return (
-    <span className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-foreground text-background text-[10px] font-bold leading-none" aria-label={`${count} непрочитанных`}>
+    <span className="absolute -top-1.5 -right-2 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-[#17181b] text-white text-[10px] font-bold leading-none shadow-sm" aria-label={`${count} непрочитанных`}>
       {count > 99 ? "99+" : count}
     </span>
   );
@@ -52,7 +52,7 @@ const BottomNav = memo(({ active, onNavigate, isDispatcher, unreadMessages = 0, 
               role="tab"
               aria-selected={isActive}
               aria-label={`${tab.label}${tab.badge > 0 ? `, ${tab.badge} новых` : ""}`}
-              className={`relative flex min-w-0 flex-1 flex-col items-center gap-0.5 py-2 px-1 rounded-2xl transition-colors duration-150 ${
+              className={`relative flex min-w-0 flex-1 flex-col items-center gap-0.5 py-2 px-1 rounded-xl transition-all duration-200 ${
                 isActive ? "bottom-nav-active" : ""
               }`}
             >
