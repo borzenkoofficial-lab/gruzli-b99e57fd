@@ -493,7 +493,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
                   className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
-                  style={{ colorScheme: "dark" }}
+                  style={{ colorScheme: "light" }}
                 />
               </div>
             </div>
@@ -600,7 +600,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
         <button type="button" onClick={() => setSecurityOpen(true)} className="flex items-center justify-center gap-1.5 mt-4 mx-auto opacity-50 hover:opacity-80 transition-opacity cursor-pointer">
           <Shield size={14} className="text-foreground" />
           <span className="text-[10px] text-muted-foreground tracking-wide">
-            Защищено <span className="font-bold text-foreground">PRO.SC</span>
+            Безопасность Gruzli
           </span>
         </button>
         <SecurityModal open={securityOpen} onClose={() => setSecurityOpen(false)} />
