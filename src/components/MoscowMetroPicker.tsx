@@ -1,0 +1,13 @@
+import {useMemo,useState} from "react";
+import {Check,Search,Train} from "lucide-react";
+import {ALL_MOSCOW_METRO_STATIONS,MOSCOW_METRO_LINES,type MetroStation} from "@/data/moscowMetro";
+export default function MoscowMetroPicker({value,onChange}:{value:string;onChange:(v:string)=>void}){
+ const [query,setQuery]=useState("");
+ const selected=useMemo(()=>ALL_MOSCOW_METRO_STATIONS.find(s=>s.name===value)??null,[value]);
+ const results=useMemo(()=>{const q=query.toLocaleLowerCase("ru-RU").replace(/ё/g,"е").trim();return q?ALL_MOSCOW_METRO_STATIONS.filter(s=>s.name.toLocaleLowerCase("ru-RU").replace(/ё/g,"е").includes(q)||s.line.name.toLocaleLowerCase("ru-RU").replace(/ё/g,"е").includes(q)):ALL_MOSCOW_METRO_STATIONS},[query]);
+ return <div className="overflow-hidden rounded-2xl border border-border bg-card">
+  <div className="flex items-center gap-2 border-b border-border px-3.5 py-3"><Search size={15} className="text-muted-foreground"/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Найти станцию" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"/>{selected&&<Train size={15} style={{color:selected.line.color}}/>}</div>
+  <div className="max-h-64 overflow-y-auto overscroll-contain">{results.slice(0,100).map((s,i)=>{const active=s.name===value;return <button type="button" key={s.line.id+"-"+s.name+"-"+i} onClick={()=>{onChange(s.name);setQuery("")}} className="flex w-full items-center gap-3 border-b border-border/60 px-3.5 py-3 text-left last:border-0 active:bg-muted/50" style={active?{backgroundColor:s.line.color+"16"}:undefined}><span className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[10px] font-extrabold text-white" style={{backgroundColor:s.line.color}}>{s.line.id}</span><span className="min-w-0 flex-1"><span className="block truncate text-sm font-semibold">{s.name}</span><span className="mt-0.5 block text-[10px] text-muted-foreground">{s.line.name} линия</span></span>{active&&<Check size={16} style={{color:s.line.color}}/>}</button>})}{!results.length&&<div className="px-4 py-8 text-center text-sm text-muted-foreground">Станция не найдена</div>}</div>
+  {!query&&<div className="flex gap-1.5 overflow-x-auto border-t border-border px-3 py-2.5">{MOSCOW_METRO_LINES.map(l=><span key={l.id} className="shrink-0 rounded-full px-2 py-1 text-[9px] font-bold text-white" style={{backgroundColor:l.color}}>{l.id}</span>)}</div>}
+ </div>;
+}
