@@ -459,15 +459,11 @@ const Index = () => {
   // --- Mobile: full-screen overlays ---
   if (isMobile) {
     const wrapSuspense = (node: React.ReactNode) => (
-      <ErrorBoundary>
-        <Suspense fallback={<ScreenSkeleton />}>{node}</Suspense>
-      </ErrorBoundary>
-    );
-
-    const withBack = (node: React.ReactNode) => (
       <>
         {renderMobileBackButton}
-        {node}
+        <ErrorBoundary>
+          <Suspense fallback={<ScreenSkeleton />}>{node}</Suspense>
+        </ErrorBoundary>
       </>
     );
 
