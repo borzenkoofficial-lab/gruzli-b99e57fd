@@ -410,52 +410,50 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             </div>
           </div>
 
-          {/* Hero: identity card */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-            className="mx-5 mb-3 rounded-3xl bg-card border border-border overflow-hidden"
-          >
-            <div className="relative p-5">
-              {/* Decorative grid */}
-              <div
-                className="absolute inset-0 opacity-[0.03] pointer-events-none"
-                style={{
-                  backgroundImage: "linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)",
-                  backgroundSize: "24px 24px",
-                }}
-              />
+          {/* Dispatcher identity mockup */}
+          <div className="mx-5 mb-4">
+            <div className="relative overflow-hidden rounded-[28px] bg-[#181818] text-white p-5 min-h-[210px]">
+              <div className="absolute -right-14 -top-14 h-44 w-44 rounded-full border border-white/10" />
+              <div className="absolute right-8 top-8 h-24 w-24 rounded-full border border-[#f2c400]/25" />
+              <div className="absolute left-0 bottom-0 h-1 w-full bg-[#f2c400]" />
               <div className="relative flex items-start gap-4">
                 <AvatarWithUpload profile={profile} user={user} editable />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <h2 className="text-lg font-bold text-foreground truncate">{profile?.full_name || "Диспетчер"}</h2>
-                    {profile?.verified && (
-                      <button onClick={() => setShowVerified(true)} aria-label="Аккаунт верифицирован">
-                        <BadgeCheck size={18} className="text-primary" />
-                      </button>
-                    )}
+                <div className="min-w-0 flex-1">
+                  <span className="text-[9px] uppercase tracking-[.18em] text-white/45">DISPATCHER / ID</span>
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <h2 className="text-xl font-extrabold truncate">{profile?.full_name || "Диспетчер"}</h2>
+                    {profile?.verified && <BadgeCheck size={17} className="shrink-0 text-[#f2c400]" />}
                   </div>
-                  <div className="inline-flex items-center gap-1.5 mt-1.5 px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20">
-                    <Shield size={11} className="text-primary" />
-                    <span className="text-[11px] font-bold text-primary uppercase tracking-wider">Диспетчер</span>
+                  <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-2.5 py-1">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#f2c400]" />
+                    <span className="text-[10px] font-bold">ДИСПЕТЧЕР</span>
                   </div>
-                  <div className="flex items-center gap-3 mt-2.5">
-                    <div className="flex items-center gap-1">
-                      <Star size={13} className="text-primary fill-primary" />
-                      <span className="text-sm font-bold text-foreground">{ratingValue.toFixed(1)}</span>
-                      <span className="text-[11px] text-muted-foreground ml-0.5">· {reviews.length}</span>
-                    </div>
-                    <button onClick={copyId} className="flex items-center gap-1 active:scale-95 transition-transform">
-                      {idCopied ? <CheckCircle2 size={12} className="text-primary" /> : <Hash size={12} className="text-muted-foreground" />}
-                      <span className="text-[11px] font-semibold text-muted-foreground tracking-wider">{shortId}</span>
-                    </button>
+                  <div className="mt-3 flex items-center gap-3">
+                    <span className="flex items-center gap-1 text-xs font-bold"><Star size={12} className="fill-[#f2c400] text-[#f2c400]"/>{ratingValue.toFixed(1)}</span>
+                    <span className="text-[10px] text-white/45">{reviews.length} отзывов</span>
                   </div>
                 </div>
               </div>
+              <div className="absolute bottom-5 left-5 right-5 flex items-end justify-between border-t border-white/10 pt-3">
+                <div><span className="block text-[8px] uppercase tracking-[.16em] text-white/40">DISPATCHER NUMBER</span><strong className="text-sm tracking-wider">{shortId}</strong></div>
+                <div className="text-right"><span className="block text-[8px] uppercase tracking-[.16em] text-white/40">ПРИБЫЛЬ / НЕД</span><strong className="text-lg">{weekProfit.toLocaleString("ru-RU")} ₽</strong></div>
+              </div>
             </div>
-          </motion.div>
+          </div>
+
+          <div className="mx-5 mb-4 grid grid-cols-3 gap-2">
+            {[
+              ["Рейтинг", ratingValue.toFixed(1), "из 5"],
+              ["Заказы", String(profile?.completed_orders || 0), "завершено"],
+              ["Доход", totalProfit.toLocaleString("ru-RU") + " ₽", "всего"],
+            ].map(([label,value,caption]) => (
+              <div key={label} className="rounded-2xl border border-border bg-card p-3">
+                <span className="block text-[8px] font-bold uppercase tracking-[.13em] text-muted-foreground">{label}</span>
+                <strong className="mt-1 block text-base font-extrabold truncate">{value}</strong>
+                <span className="text-[9px] text-muted-foreground">{caption}</span>
+              </div>
+            ))}
+          </div>
 
           {/* PRIMARY CTA: Кабинет диспетчера */}
           <motion.div
