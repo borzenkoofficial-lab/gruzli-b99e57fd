@@ -110,12 +110,12 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
   };
 
   const rejectResponse = async (responseId: string) => {
-    const r = responses.find((x) => x.id === responseId);
-    const { error } = await supabase.from("job_responses").update({ status: "rejected" }).eq("id", responseId);
-    if (error) { toast.error("Не удалось отклонить"); return; }
+    const { error } = await supabase.rpc("dispatcher_reject_job_response", {
+      _response_id: responseId,
+    });
+    if (error) { toast.error(error.code === "P0001" ? "Этот отклик уже нельзя отклонить" : "Не удалось отклонить"); return; }
     setResponses((prev) => prev.map((x) => (x.id === responseId ? { ...x, status: "rejected" } : x)));
     toast.success("Отклик отклонён");
-    void r;
 
   };
 
