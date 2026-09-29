@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense, startTransition } from "react";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import DesktopSidebar from "@/components/DesktopSidebar";
 import DesktopLayout from "@/components/DesktopLayout";
@@ -463,31 +462,22 @@ const Index = () => {
               </PullToRefresh>
             ) : (
               <div className="app-scroll">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={tab}
-                    initial={{ opacity: 0, y: 3 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -2 }}
-                    transition={{ duration: 0.12, ease: "easeOut" }}
-                    className="native-surface"
-                  >
-                    {tab === "orders" && <OrdersScreen />}
-                    {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} onOpenCommunity={() => setShowCommunity(true)} />}
-                    {tab === "kartoteka" && <KartotekaScreen />}
-                    {tab === "dispatchers" && !isDispatcher && <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithUser(d.id, d.name)} />}
-                    {tab === "profile" && (
-                      <ProfileScreen
-                        onOpenSettings={() => setShowSettings(true)}
-                        onOpenNotifications={() => setShowNotifications(true)}
-                        onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage)}
-                        onOpenPremium={() => setShowPremium(true)}
-                        onOpenCabinet={() => { setShowCabinet(false); handleNavigate("feed"); }}
-                        onOpenCompany={() => setShowCompany(true)}
-                      />
-                    )}
-                  </motion.div>
-                </AnimatePresence>
+                <div className="native-surface">
+                  {tab === "orders" && <OrdersScreen />}
+                  {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} onOpenCommunity={() => setShowCommunity(true)} />}
+                  {tab === "kartoteka" && <KartotekaScreen />}
+                  {tab === "dispatchers" && !isDispatcher && <DispatchersScreen onChatWithDispatcher={(d) => handleChatWithDispatcher(d.id, d.name)} />}
+                  {tab === "profile" && (
+                    <ProfileScreen
+                      onOpenSettings={() => setShowSettings(true)}
+                      onOpenNotifications={() => setShowNotifications(true)}
+                      onOpenSupport={(prefillMessage) => handleChatWithUser(supportUserId || '', SUPPORT_NAME, prefillMessage)}
+                      onOpenPremium={() => setShowPremium(true)}
+                      onOpenCabinet={() => { setShowCabinet(false); handleNavigate("feed"); }}
+                      onOpenCompany={() => setShowCompany(true)}
+                    />
+                  )}
+                </div>
               </div>
             )}
           </Suspense>
