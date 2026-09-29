@@ -245,6 +245,15 @@ const Index = () => {
     startTransition(() => setTab(t));
   };
 
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const target = (event as CustomEvent<{ tab?: string }>).detail?.tab;
+      if (target) handleNavigate(target);
+    };
+    window.addEventListener("gruzli-os-navigate", handler);
+    return () => window.removeEventListener("gruzli-os-navigate", handler);
+  }, [handleNavigate]);
+
   // Unified mobile back stack: every opened surface registers as a level.
   const backStackDepth =
     Number(!!openChatId) +
