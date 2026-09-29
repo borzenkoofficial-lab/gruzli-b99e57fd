@@ -769,33 +769,37 @@ const SwipeableJobCard = ({
           </div>
         </div>
 
-        {/* Dispatcher */}
-        <button
-          onClick={(e) => { e.stopPropagation(); if (!isOfficial) onOpenProfile?.(); }}
-          className="flex items-center gap-2 mt-2 tap-scale"
-        >
-          {isOfficial ? (
-            <>
-              <div className="h-5 w-5 rounded-full bg-yellow-400 border border-yellow-500 flex items-center justify-center overflow-hidden">
-                <img src={gruzliLogo} alt="Gruzli" className="w-full h-full object-cover" />
+        {/* Mockup scene: location + time + team become one visual composition */}
+        <div className="gruzli-order-scene" aria-label="Ключевые параметры заявки">
+          <div className="gruzli-order-scene-main">
+            <div className="gruzli-order-route">
+              <span className="gruzli-order-route-dot" />
+              <div>
+                <span className="gruzli-order-scene-label">ЛОКАЦИЯ</span>
+                <strong>{job.metro || job.address || "Москва"}</strong>
               </div>
-              <span className="text-[11.5px] font-semibold text-yellow-600 dark:text-yellow-400 flex items-center gap-1">
-                Gruzli
-                <Check size={10} strokeWidth={3} className="text-yellow-500" />
+            </div>
+            <div className="gruzli-order-time">
+              <span className="gruzli-order-scene-label">КОГДА</span>
+              <strong>{job.start_time ? new Date(job.start_time).toLocaleString("ru-RU",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "Сегодня"}</strong>
+            </div>
+          </div>
+          <div className="gruzli-order-scene-line" />
+          <div className="gruzli-order-scene-bottom">
+            <span><Users size={11}/>{job.workers_needed} чел.</span>
+            <span><Clock size={11}/>{job.duration_hours || 4} ч</span>
+            <button onClick={(e)=>{e.stopPropagation(); if(!isOfficial) onOpenProfile?.();}} className="gruzli-order-dispatcher">
+              <span className="gruzli-order-avatar">
+                {isOfficial ? <img src={gruzliLogo} alt="Gruzli" /> : getInitials(dispatcherName)}
               </span>
-            </>
-          ) : (
-            <>
-              <div className="h-5 w-5 rounded-full bg-surface-3 border border-border flex items-center justify-center text-[9px] font-bold text-foreground/80">
-                {getInitials(dispatcherName)}
-              </div>
-              <span className="text-[11.5px] text-muted-foreground">{dispatcherName}</span>
-            </>
-          )}
-        </button>
+              <span>{isOfficial ? "Gruzli" : dispatcherName}</span>
+              {isOfficial && <Check size={10} strokeWidth={3}/>}
+            </button>
+          </div>
+        </div>
 
         {job.description && (
-          <p className="text-[13px] text-muted-foreground mt-2 line-clamp-2 leading-relaxed">{job.description}</p>
+          <p className="gruzli-order-description">{job.description}</p>
         )}
 
         {/* Pay block */}
