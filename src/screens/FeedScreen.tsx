@@ -491,10 +491,6 @@ const SwipeableJobCard = ({
   const x = useMotionValue(0);
   const bgLeft = useTransform(x, [-150, 0], [1, 0]);
   const bgRight = useTransform(x, [0, 150], [0, 1]);
-  // Subtle pointer/swipe light follows the card, extending the editorial canvas.
-  const glowX = useTransform(x, [-150, 0, 150], [-18, 0, 18]);
-  const glowOpacity = useTransform(x, [-150, 0, 150], [0.18, 0.045, 0.18]);
-  const glowRotate = useTransform(x, [-150, 0, 150], [-1.5, 0, 1.5]);
   const didDrag = useRef(false);
   const swipeCommitted = useRef(false);
   const [swipeExitDirection, setSwipeExitDirection] = useState<1 | -1>(-1);
@@ -563,10 +559,6 @@ const SwipeableJobCard = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: swipeExitDirection * 260, scale: 0.98, transition: { duration: 0.18, ease: "easeOut" } }}
-      transition={{ delay: index < 5 ? index * 0.04 : 0, duration: 0.3 }}
       className="relative native-list-item"
     >
       {/* Swipe backgrounds */}
@@ -590,19 +582,9 @@ const SwipeableJobCard = ({
       </motion.div>
 
       <motion.div
-        className="gruzli-card-follow-light pointer-events-none absolute inset-0 z-[11] rounded-2xl"
-        style={{
-          x: glowX,
-          opacity: glowOpacity,
-          rotate: glowRotate,
-        }}
-        aria-hidden="true"
-      />
-      
-      <motion.div
         drag={isBot ? false : "x"}
         dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.4}
+        dragElastic={0.08}
         style={{
           x,
           ...(isOfficial ? {
@@ -614,7 +596,6 @@ const SwipeableJobCard = ({
         onDrag={handleDrag}
         onDragEnd={handleDragEnd}
         onClick={handleTap}
-        whileTap={{ scale: 0.985 }}
         className={`gruzli-job-card native-surface relative z-10 rounded-2xl border p-4 cursor-pointer transition-colors overflow-hidden ${
           isOfficial
             ? "border-yellow-400/40"
@@ -841,7 +822,6 @@ const SwipeableJobCard = ({
             </span>
           ) : (
             <motion.button
-              whileTap={{ scale: 0.93 }}
               onClick={(e) => { e.stopPropagation(); onRespond(); }}
               className="btn-shimmer native-press flex min-h-[44px] items-center justify-center gap-2 px-5 rounded-[14px] text-[13px] font-bold bg-foreground text-background shadow-[0_8px_20px_-6px_hsl(var(--foreground)/0.42)] hover:shadow-[0_10px_24px_-6px_hsl(var(--foreground)/0.5)] transition-all"
             >
