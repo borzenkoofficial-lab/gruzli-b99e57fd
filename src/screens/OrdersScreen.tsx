@@ -30,7 +30,7 @@ const STATUS_STEPS = [
 ];
 
 const OrdersScreen = () => {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const [jobs, setJobs] = useState<AcceptedJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [completedJobs, setCompletedJobs] = useState<AcceptedJob[]>([]);
@@ -60,6 +60,35 @@ const OrdersScreen = () => {
       return;
     }
     setLoading(true);
+
+    if (role === "client") {
+      const { data: clientJobs } = await supabase
+        .from("jobs")
+        .select("*")
+        .eq("client_id", user.id)
+        .order("created_at", { ascending: false });
+
+      const mapped: AcceptedJob[] = (clientJobs || []).map((j) => ({
+        responseId: j.id,
+        jobId: j.id,
+        title: j.title,
+        address: j.address,
+        startTime: j.start_time,
+        hourlyRate: j.hourly_rate,
+        durationHours: Number(j.duration_hours) || 1,
+        dispatcherName: j.dispatcher_id ? "Диспетчер назначен" : "Ищем диспетчера",
+        workerStatus: j.status || "open",
+        workStartedAt: null,
+        workFinishedAt: null,
+        hoursWorked: null,
+        earned: null,
+      }));
+
+      setJobs(mapped.filter((j) => j.workerStatus !== "completed"));
+      setCompletedJobs(mapped.filter((j) => j.workerStatus === "completed"));
+      setLoading(false);
+      return;
+    }
 
     const { data: responses } = await supabase
       .from("job_responses")
@@ -178,12 +207,12 @@ const OrdersScreen = () => {
       setCompletedJobs(mapped);
     };
     fetchCompleted();
-  }, [user]);
+  }, [user, role]);
 
   useEffect(() => {
     fetchAcceptedJobs();
 
-    if (!user) return;
+    if (!user || role === "client") return;
     const channel = supabase
       .channel("my-orders")
       .on(
@@ -312,6 +341,43 @@ const OrdersScreen = () => {
         <div className="flex items-center justify-center py-16">
           <Loader2 size={24} className="animate-spin text-primary" />
         </div>
+      </div>
+    );
+  }
+
+  if (role === "client") {
+    return (
+      <div className="gruzli-orders-screen app-scroll">
+        <header className="px-5 safe-top pb-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Gruzli / CLIENT</p>
+          <h1 className="text-[29px] font-extrabold text-foreground tracking-[-.045em] leading-none">Мои заявки</h1>
+          <p className="text-xs text-muted-foreground mt-1">Статус заказов и назначенный диспетчер.</p>
+        </header>
+        <main className="px-5 pb-28 space-y-3">
+          {jobs.length === 0 ? (
+            <div className="rounded-3xl border border-border bg-card p-6">
+              <p className="text-sm font-bold text-foreground">Заявок пока нет</p>
+              <p className="text-xs text-muted-foreground mt-1">Создайте заказ в разделе заявки.</p>
+            </div>
+          ) : jobs.map((job) => (
+            <motion.div key={job.jobId} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-border bg-card p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[.14em] text-muted-foreground">ЗАКАЗ / {job.jobId.slice(0, 6).toUpperCase()}</p>
+                  <h3 className="text-base font-extrabold text-foreground mt-1">{job.title}</h3>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider rounded-full border border-border px-2.5 py-1">
+                  {job.workerStatus === "open" ? "Ищем диспетчера" : "В работе"}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mt-4 text-xs">
+                <div><span className="text-muted-foreground">Адрес</span><p className="font-bold mt-0.5">{job.address || "—"}</p></div>
+                <div><span className="text-muted-foreground">Ставка</span><p className="font-bold mt-0.5">{job.hourlyRate} ₽/ч</p></div>
+              </div>
+              <div className="mt-4 pt-3 border-t border-border text-xs text-muted-foreground">{job.dispatcherName}</div>
+            </motion.div>
+          ))}
+        </main>
       </div>
     );
   }
