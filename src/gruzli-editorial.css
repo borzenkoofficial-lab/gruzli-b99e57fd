@@ -2699,3 +2699,75 @@ body,
     white-space:nowrap!important;
   }
 }
+
+
+/* ===== FEED RESPONSIVE FINALIZATION =====
+   One stable flow for compact phones; no transform-based layout tricks.
+*/
+.gruzli-mobile-feed .gruzli-feed-swipe-note{
+  margin-left:0!important;
+  margin-right:0!important;
+  min-height:24px;
+}
+.gruzli-mobile-feed .gruzli-order-card{
+  overflow:hidden!important;
+}
+.gruzli-mobile-feed .gruzli-order-scene-bottom{
+  flex-wrap:wrap!important;
+}
+@media(max-width:390px){
+  .gruzli-mobile-feed .gruzli-feed-hero{
+    padding-top:16px!important;
+  }
+  .gruzli-mobile-feed .gruzli-feed-mark{
+    width:46px!important;
+    height:46px!important;
+  }
+  .gruzli-mobile-feed .gruzli-feed-title{
+    font-size:39px!important;
+  }
+  .gruzli-mobile-feed .gruzli-feed-subtitle{
+    margin-top:12px!important;
+  }
+  .gruzli-mobile-feed .gruzli-feed-earnings{
+    grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr)!important;
+    padding:11px 10px!important;
+  }
+  .gruzli-mobile-feed .gruzli-feed-earnings-arrow{
+    display:none!important;
+  }
+  .gruzli-mobile-feed .gruzli-order-scene-main{
+    grid-template-columns:minmax(0,1fr) 92px!important;
+    gap:8px!important;
+  }
+  .gruzli-mobile-feed .gruzli-order-scene-bottom{
+    gap:6px!important;
+  }
+  .gruzli-mobile-feed .gruzli-order-dispatcher{
+    margin-left:0!important;
+    max-width:100%!important;
+    overflow:hidden!important;
+  }
+}
+@media(max-width:340px){
+  .gruzli-mobile-feed .gruzli-order-heading{
+    align-items:flex-start!important;
+  }
+  .gruzli-mobile-feed .gruzli-order-heading h3{
+    max-width:62%!important;
+    font-size:18px!important;
+  }
+  .gruzli-mobile-feed .gruzli-order-heading > div{
+    min-width:68px!important;
+    padding:7px 8px 6px!important;
+  }
+  .gruzli-mobile-feed .gruzli-order-heading > div > div:first-child{
+    font-size:15px!important;
+  }
+  .gruzli-mobile-feed .gruzli-order-scene-main{
+    grid-template-columns:minmax(0,1fr) 82px!important;
+  }
+  .gruzli-mobile-feed .gruzli-order-scene-main strong{
+    font-size:13px!important;
+  }
+}
