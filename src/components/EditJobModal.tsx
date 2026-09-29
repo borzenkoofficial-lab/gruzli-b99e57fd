@@ -65,7 +65,11 @@ export default function EditJobModal({ job, open, onClose, onSaved }: EditJobMod
     setLoading(false);
 
     if (error || !data) {
-      toast.error("Не удалось обновить заявку");
+      if (error?.message?.includes("workers_below_assigned")) {
+        toast.error("Нельзя уменьшить число грузчиков ниже уже назначенных");
+      } else {
+        toast.error("Не удалось обновить заявку");
+      }
       return;
     }
     toast.success("Заявка обновлена и опубликована заново");
