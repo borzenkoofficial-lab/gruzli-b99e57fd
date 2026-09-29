@@ -51,7 +51,7 @@ const NewJobAlert = ({ job, queueSize = 0, onRespond, onDismiss }: NewJobAlertPr
           animate={{ scale: 1, y: 0 }}
           exit={{ scale: 0.85, y: 40 }}
           transition={{ type: "spring", damping: 20, stiffness: 300 }}
-          className="w-full max-w-sm bg-card border border-border rounded-3xl p-5 relative"
+          className="w-full max-w-sm bg-white border border-[#e5e5e8] rounded-[22px] p-5 relative shadow-[0_30px_90px_rgba(20,24,32,.18)]"
         >
           {/* Close */}
           <button onClick={onDismiss} className="absolute top-4 right-4 text-muted-foreground">
@@ -62,7 +62,7 @@ const NewJobAlert = ({ job, queueSize = 0, onRespond, onDismiss }: NewJobAlertPr
           <div className="w-full h-1 rounded-full bg-muted mb-4 overflow-hidden">
             <motion.div
               className="h-full rounded-full"
-              style={{ background: "linear-gradient(90deg, hsl(var(--primary)), hsl(195 100% 50%))" }}
+              style={{ background: "#f2c400" }}
               initial={{ width: "100%" }}
               animate={{ width: "0%" }}
               transition={{ duration: AUTO_DISMISS_MS / 1000, ease: "linear" }}
@@ -98,7 +98,7 @@ const NewJobAlert = ({ job, queueSize = 0, onRespond, onDismiss }: NewJobAlertPr
             <div className="flex items-center gap-2">
               <Wallet size={14} className="text-primary" />
               <span className="text-xs text-muted-foreground">Заработок</span>
-              <span className="text-lg font-extrabold text-bg-foreground ml-auto">
+              <span className="text-lg font-extrabold text-foreground ml-auto">
                 {totalPay.toLocaleString("ru-RU")} ₽
               </span>
             </div>
