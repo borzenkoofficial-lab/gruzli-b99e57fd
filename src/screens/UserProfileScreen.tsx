@@ -201,6 +201,11 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
   const positiveCount = reviews.filter(r => r.rating >= 4).length;
   const neutralCount = reviews.filter(r => r.rating === 3).length;
   const negativeCount = reviews.filter(r => r.rating <= 2).length;
+  const isWorker = !isDispatcher && !isAdminAccount;
+  const completedOrders = Number(profile.completed_orders || 0);
+  const workerRating = Number(profile.rating || avgRating || 5);
+  const workerSkills = Array.isArray(profile.skills) ? profile.skills : [];
+  const workerStatus = profile.is_available === false ? "Сейчас занят" : "Готов к работе";
 
   return (
     <div className="min-h-screen bg-background animate-fade-in pb-[calc(var(--bottom-nav-height,80px)+env(safe-area-inset-bottom,0px)+32px)]">
@@ -245,6 +250,77 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
           </div>
         </div>
       </div>
+
+      {/* Worker dossier — the dispatcher-facing profile */}
+      {isWorker && (
+        <div className="mx-5 mb-4">
+          <motion.div
+            className="gruzli-worker-dossier"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: .45 }}
+          >
+            <div className="gruzli-worker-dossier-head">
+              <span>GRUZLI / WORKER DOSSIER</span>
+              <span>{workerStatus}</span>
+            </div>
+
+            <div className="gruzli-worker-dossier-identity">
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt="" className="gruzli-worker-dossier-avatar" />
+              ) : (
+                <div className="gruzli-worker-dossier-avatar gruzli-worker-dossier-avatar-fallback">{initials}</div>
+              )}
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <h3>{profile.full_name || "Грузчик"}</h3>
+                  {profile.verified && <BadgeCheck size={16} />}
+                </div>
+                <p>ИДЕНТИФИКАТОР / {shortId}</p>
+              </div>
+            </div>
+
+            <div className="gruzli-worker-dossier-rating">
+              <div>
+                <span>РЕЙТИНГ</span>
+                <strong>{workerRating.toFixed(1)} <Star size={14} /></strong>
+              </div>
+              <div>
+                <span>ЗАКАЗЫ</span>
+                <strong>{completedOrders}</strong>
+              </div>
+              <div>
+                <span>СТАТУС</span>
+                <strong>{workerStatus}</strong>
+              </div>
+            </div>
+
+            {workerSkills.length > 0 && (
+              <div className="gruzli-worker-dossier-skills">
+                {workerSkills.slice(0, 5).map((skill: string) => (
+                  <span key={skill}>{skill}</span>
+                ))}
+              </div>
+            )}
+
+            <div className="gruzli-worker-dossier-actions">
+              {onChat && (
+                <button
+                  onClick={() => onChat(userId, profile.full_name || "Грузчик")}
+                  className="gruzli-worker-dossier-primary"
+                >
+                  <MessageSquare size={15} />
+                  Написать
+                </button>
+              )}
+              <button onClick={copyId} className="gruzli-worker-dossier-secondary">
+                {idCopied ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                ID
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* ID Card */}
       <div className="mx-5 mb-4">
