@@ -84,7 +84,6 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
 
   // ─── Category subscription ───
   const [subscribed, setSubscribed] = useState<CategoryKey[] | null>(() => loadSubscribedCategories());
-  const [categoryFilter, setCategoryFilter] = useState<CategoryKey | "all">("all");
   const [subModalOpen, setSubModalOpen] = useState(false);
 
   useEffect(() => {
@@ -215,10 +214,6 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
       if (!subscribed) return true;
       const cat = jobCategory.get(j.id) || "other";
       return subscribed.includes(cat);
-    })
-    .filter((j) => {
-      if (categoryFilter === "all") return true;
-      return (jobCategory.get(j.id) || "other") === categoryFilter;
     })
     .filter((j) => {
       if (searchResultIds !== null) return searchResultIds.includes(j.id);
@@ -737,7 +732,6 @@ const SwipeableJobCard = ({
 
         {/* Compact metadata — details already shown in the visual scene above. */}
         <div className="gruzli-order-meta flex items-center gap-1.5 mt-3 flex-wrap">
-          <MetaChip icon={Clock} text={`${job.duration_hours || 4} ч работы`} />
           {job.address && job.metro && job.address !== job.metro && (
             <MetaChip icon={MapPin} text={job.address} />
           )}
@@ -745,10 +739,6 @@ const SwipeableJobCard = ({
 
         {/* Footer */}
         <div className="gruzli-order-footer flex items-center justify-between mt-4 pt-3 border-t border-border/70">
-          <div className="flex flex-col">
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Ставка</span>
-            <span className="text-base font-bold text-foreground leading-tight">{job.hourly_rate} ₽<span className="text-xs text-muted-foreground font-medium">/час</span></span>
-          </div>
           {isBot ? (
             <span className="px-4 py-2.5 rounded-xl text-[13px] font-medium bg-muted text-muted-foreground">
               Не успели
