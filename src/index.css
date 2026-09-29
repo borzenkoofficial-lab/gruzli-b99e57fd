@@ -1124,3 +1124,8 @@ html, body {
   .app-shell .bg-black\/40{background:rgba(0,0,0,.42)!important;}
   .app-scroll{scroll-behavior:auto!important;}
 }
+
+@media(max-width:767px){
+  .native-surface{transform:none!important;backface-visibility:visible!important;contain:layout!important;}
+  .skeleton-shimmer,.btn-shimmer::after{animation:none!important;}
+}
