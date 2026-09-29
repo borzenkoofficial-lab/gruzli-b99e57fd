@@ -758,7 +758,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
       {/* Worker identity mockup — physical-style Gruzli ID */}
       <div className="px-5 mb-5">
         <motion.div
-          className="gruzli-worker-id-mockup"
+          className="gruzli-worker-id-mockup gruzli-worker-id-hero"
           initial={{ opacity: 0, y: 14, rotateX: 7 }}
           animate={{ opacity: 1, y: 0, rotateX: 0 }}
           transition={{ duration: .55, ease: [0.22, 1, 0.36, 1] }}
