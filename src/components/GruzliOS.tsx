@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Command, X, Map, MessageCircle, Users, BriefcaseBusiness, LayoutDashboard, Search } from "lucide-react";
+import { Command, X, Map, MessageCircle, Users, BriefcaseBusiness, LayoutDashboard } from "lucide-react";
 import "../styles/gruzli-os.css";
 
 type Props={onClose:()=>void};
