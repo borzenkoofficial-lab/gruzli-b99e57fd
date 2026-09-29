@@ -65,9 +65,9 @@ const Index = () => {
   const { role, user } = useAuth();
   const isClient = role === "client";
   const { unreadMessages, newJobsCount, resetMessages, resetJobs, refetchUnread } = useUnreadCounts();
-  // Gruzli intentionally uses the mobile product shell on every viewport.
-  useIsMobile();
-  const isMobile = true;
+  // Automatically switch between the native mobile shell and the desktop workspace.
+  // The breakpoint is shared with Tailwind/use-mobile: <768px is mobile.
+  const isMobile = useIsMobile();
   const { jobId: routeJobId } = useParams<{ jobId?: string }>();
   const [supportUserId, setSupportUserId] = useState<string | null>(null);
   const SUPPORT_NAME = "Gruzli Official";
