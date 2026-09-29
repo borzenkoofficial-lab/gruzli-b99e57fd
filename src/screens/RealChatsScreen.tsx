@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { motion, useMotionValue, useTransform, animate, PanInfo } from "framer-motion";
+import { motion, useMotionValue, useTransform, animate, type PanInfo } from "framer-motion";
 import { Search, Megaphone, Trash2, Ban, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -80,21 +80,21 @@ const SwipeableChatItem = ({
         dragElastic={0.1}
         onDragEnd={handleDragEnd}
         onClick={() => !swiped && onOpen()}
-        className="native-surface native-press relative z-10 flex items-center gap-3 px-3.5 py-3.5 cursor-pointer active:bg-white/50 transition-colors bg-white/58 border-b border-white/70 backdrop-blur-xl"
+        className="relative z-10 flex items-center gap-3 px-3.5 py-3.5 cursor-pointer active:bg-muted/50 transition-colors bg-background border-b border-border/70"
       >
         <div className="relative shrink-0">
           {conv.isCommunity ? (
             <div
-              className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-lg font-extrabold shadow-lg"
+              className="w-[48px] h-[48px] rounded-full flex items-center justify-center text-lg font-extrabold"
               style={{ background: "linear-gradient(135deg, hsl(45 95% 55%), hsl(35 90% 50%))", color: "#1a1a1a" }}
             >
               G
             </div>
           ) : conv.otherAvatarUrl ? (
-            <img src={conv.otherAvatarUrl} alt="" className="w-[52px] h-[52px] rounded-full object-cover shadow-lg" />
+            <img src={conv.otherAvatarUrl} alt="" className="w-[48px] h-[48px] rounded-full object-cover" />
           ) : (
             <div
-              className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-sm font-bold text-white shadow-lg"
+              className="w-[48px] h-[48px] rounded-full flex items-center justify-center text-sm font-bold text-white"
               style={{ background: avatarBg }}
             >
               {initials}
@@ -345,7 +345,7 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Поиск..."
-            className="w-full min-h-[48px] bg-white/72 rounded-[16px] py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none border border-white/90 shadow-[0_10px_28px_rgba(31,35,43,.055),inset_0_1px_0_rgba(255,255,255,.96)] backdrop-blur-xl focus:ring-2 focus:ring-yellow-400/20 transition-all"
+            className="w-full min-h-[46px] bg-card rounded-[14px] py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none border border-border focus:border-foreground/20 transition-colors"
           />
         </div>
       </div>
@@ -354,9 +354,9 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
       <div className="px-5 pb-2">
         <button
           onClick={onOpenChannel}
-          className="w-full flex items-center gap-3 px-3.5 py-3 rounded-[20px] border border-white/90 bg-white/68 shadow-[0_12px_32px_rgba(31,35,43,.055)] backdrop-blur-xl active:scale-[.995] transition-all"
+          className="w-full flex items-center gap-3 px-3.5 py-3 rounded-[18px] border border-border bg-card active:bg-muted/50 transition-colors"
         >
-          <div className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-primary-foreground shrink-0 shadow-lg"
+          <div className="w-[48px] h-[48px] rounded-full flex items-center justify-center text-primary-foreground shrink-0"
             style={{ background: "linear-gradient(135deg, #3b82f6, #6366f1)" }}
           >
             <Megaphone size={22} />
@@ -373,7 +373,7 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
           <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="mx-5 mt-4 flex flex-col items-center justify-center py-16 text-muted-foreground rounded-[24px] border border-dashed border-[#dedee2] bg-white/55">
+        <div className="mx-5 mt-4 flex flex-col items-center justify-center py-16 text-muted-foreground rounded-[20px] border border-dashed border-border bg-card">
           <MessageCircle size={40} className="mb-3 opacity-30" />
           <p className="text-sm">
             {conversations.length === 0 ? "Нет чатов" : "Ничего не найдено"}
