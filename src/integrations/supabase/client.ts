@@ -162,6 +162,20 @@ class QueryBuilder implements PromiseLike<{ data: any; error: any; count?: numbe
         created_at: row!.created_at ?? new Date().toISOString(),
         ...row,
       }));
+
+      if (this.operation === "insert" && this.table === "job_responses") {
+        const duplicate = incoming.find((item) => db[this.table].some((existing) =>
+          existing.job_id === item.job_id && existing.worker_id === item.worker_id
+        ));
+        if (duplicate) return { data: null, error: { code: "23505", message: "Вы уже откликнулись на этот заказ" } };
+      }
+
+      if (this.operation === "insert" && this.table === "dispatcher_offers") {
+        const duplicate = incoming.find((item) => db[this.table].some((existing) =>
+          existing.job_id === item.job_id && existing.dispatcher_id === item.dispatcher_id && existing.status === "pending"
+        ));
+        if (duplicate) return { data: null, error: { code: "23505", message: "Предложение по этому заказу уже отправлено" } };
+      }
       if (this.operation === "upsert") {
         for (const item of incoming) {
           const index = db[this.table].findIndex((r) => item.id && r.id === item.id);
@@ -233,15 +247,23 @@ async function rpc(name: string, args: Record<string, any> = {}) {
     db.jobs.push(job); saveDb(db); return { data: job, error: null };
   }
   if (name === "dispatcher_submit_offer") {
-    const offer = { id: uid("offer"), job_id: args._job_id, dispatcher_id: user?.id, proposed_hourly_rate: args._proposed_hourly_rate, proposed_workers: args._proposed_workers, message: args._message || "", status: "pending", created_at: new Date().toISOString() };
+    if (!user) return { data: null, error: { message: "Не авторизован" } };
+    const job = db.jobs.find((j) => j.id === args._job_id);
+    if (!job || job.status !== "open" || job.dispatcher_id) return { data: null, error: { message: "unavailable" } };
+    const duplicate = db.dispatcher_offers.find((o) => o.job_id === args._job_id && o.dispatcher_id === user.id && o.status === "pending");
+    if (duplicate) return { data: null, error: { code: "23505", message: "Предложение уже отправлено" } };
+    const offer = { id: uid("offer"), job_id: args._job_id, dispatcher_id: user.id, proposed_hourly_rate: args._proposed_hourly_rate, proposed_workers: args._proposed_workers, message: args._message || "", status: "pending", created_at: new Date().toISOString() };
     db.dispatcher_offers.push(offer); saveDb(db); return { data: offer, error: null };
   }
   if (name === "client_select_dispatcher_offer") {
     const offer = db.dispatcher_offers.find((o) => o.id === args._offer_id);
     if (!offer) return { data: null, error: { message: "Отклик не найден" } };
     const job = db.jobs.find((j) => j.id === offer.job_id);
-    if (job) { job.dispatcher_id = offer.dispatcher_id; job.status = "active"; job.hourly_rate = offer.proposed_hourly_rate; job.workers_needed = offer.proposed_workers; }
-    offer.status = "accepted"; saveDb(db); return { data: job || null, error: null };
+    if (!job || job.status !== "open" || job.dispatcher_id) return { data: null, error: { message: "unavailable" } };
+    job.dispatcher_id = offer.dispatcher_id; job.status = "active";
+    job.hourly_rate = offer.proposed_hourly_rate; job.workers_needed = offer.proposed_workers;
+    db.dispatcher_offers.filter((o) => o.job_id === offer.job_id).forEach((o) => { o.status = o.id === offer.id ? "accepted" : "rejected"; });
+    saveDb(db); return { data: job, error: null };
   }
   if (name === "accept_job_response") {
     const response = db.job_responses.find((r) => r.id === args._response_id);
@@ -265,8 +287,12 @@ async function rpc(name: string, args: Record<string, any> = {}) {
   }
   if (name === "dispatcher_finish_job" || name === "dispatcher_complete_job" || name === "dispatcher_review_worker") return { data: {}, error: null };
   if (name === "create_direct_conversation") {
-    const existing = db.conversations.find((c) => c.title === args._title);
-    if (existing) return { data: existing.id, error: null };
+    if (!user || !args._other_user_id) return { data: null, error: { message: "invalid_participant" } };
+    const existing = db.conversation_participants
+      .filter((p) => p.user_id === user.id)
+      .map((p) => p.conversation_id)
+      .find((conversationId) => db.conversation_participants.some((p) => p.conversation_id === conversationId && p.user_id === args._other_user_id));
+    if (existing) return { data: existing, error: null };
     const id = uid("conversation");
     db.conversations.push({ id, title: args._title || "Чат", created_at: new Date().toISOString() });
     if (user) db.conversation_participants.push({ id: uid("participant"), conversation_id: id, user_id: user.id, last_read_at: null, created_at: new Date().toISOString() });
@@ -339,7 +365,23 @@ export const supabase = {
   functions: {
     async invoke(name: string, _options?: any) {
       if (name === "vapid-public-key") return { data: { publicKey: "" }, error: null };
-      if (name === "smart-search-jobs") return { data: { jobs: [] }, error: null };
+      if (name === "smart-search-jobs") {
+        const query = String(_options?.body?.query || "").trim().toLowerCase();
+        const jobs = Array.isArray(_options?.body?.jobs) ? _options.body.jobs : [];
+        const tokens = query.split(/\s+/).filter(Boolean);
+        const ranked = !tokens.length ? jobs.map((j: any) => j.id) : jobs.map((job: any, index: number) => {
+          const haystack = [job.title, job.description, job.address, job.metro].filter(Boolean).join(" ").toLowerCase();
+          const score = tokens.reduce((sum: number, token: string) => sum + (haystack.includes(token) ? 1 : 0), 0);
+          return { id: job.id, score, index };
+        }).filter((x: any) => x.score > 0).sort((a: any, b: any) => b.score - a.score || a.index - b.index).map((x: any) => x.id);
+        return { data: { job_ids: ranked }, error: null };
+      }
+      if (name === "moderate-content") return { data: { safe: true }, error: null };
+      if (name === "improve-job-description") {
+        const title = String(_options?.body?.title || "").trim();
+        const description = String(_options?.body?.description || "").trim();
+        return { data: { improved: description || ("Задача: " + title + ". Укажите объём работ, адрес, этаж, лифт и особенности объекта.") }, error: null };
+      }
       return { data: {}, error: null };
     },
   },
