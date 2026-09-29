@@ -1,63 +1,6 @@
 import { ReactNode } from "react";
 import { X } from "lucide-react";
-
-interface DesktopLayoutProps {
-  sidebar: ReactNode;
-  main: ReactNode;
-  detail?: ReactNode;
-  topBar?: ReactNode;
-  onCloseDetail?: () => void;
-  detailTitle?: string;
-}
-
-const DesktopLayout = ({
-  sidebar,
-  main,
-  detail,
-  topBar,
-  onCloseDetail,
-  detailTitle,
-}: DesktopLayoutProps) => {
-  return (
-    <div className="desktop-shell">
-      {sidebar}
-      <div className="desktop-content">
-        {topBar && <header className="desktop-topbar">{topBar}</header>}
-        <main className="desktop-main">
-          <div className="desktop-main-inner">{main}</div>
-        </main>
-      </div>
-      {detail && (
-        <aside className="desktop-detail">
-          {(onCloseDetail || detailTitle) && (
-            <div className="desktop-detail-header">
-              <span className="text-sm font-semibold text-foreground truncate">
-                {detailTitle || "Подробности"}
-              </span>
-              {onCloseDetail && (
-                <button
-                  onClick={onCloseDetail}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition"
-                  aria-label="Закрыть"
-                >
-                  <X size={18} />
-                </button>
-              )}
-            </div>
-          )}
-          <div className="desktop-detail-body">
-            <div className="gruzli-preview-frame">
-              <div className="gruzli-preview-chrome">
-                <span className="gruzli-window-dot" /><span className="gruzli-window-dot" /><span className="gruzli-window-dot" />
-                <span className="gruzli-preview-address">gruzli.app</span>
-              </div>
-              <div className="gruzli-preview-content">{detail}</div>
-            </div>
-          </div>
-        </aside>
-      )}
-    </div>
-  );
-};
-
+interface DesktopLayoutProps { sidebar:ReactNode; main:ReactNode; detail?:ReactNode; topBar?:ReactNode; onCloseDetail?:()=>void; detailTitle?:string; }
+const DesktopLayout=({sidebar,main,detail,topBar,onCloseDetail,detailTitle}:DesktopLayoutProps)=>(
+<div className="desktop-shell">{sidebar}<section className="desktop-workspace">{topBar&&<header className="desktop-topbar">{topBar}</header>}<div className={`desktop-body ${detail?"desktop-body--with-detail":""}`}><main className="desktop-main"><div className="desktop-main-inner">{main}</div></main>{detail&&<aside className="desktop-detail"><div className="desktop-detail-header"><div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[.08em] text-muted-foreground">Открыто</p><h3 className="truncate text-sm font-semibold text-foreground">{detailTitle||"Подробности"}</h3></div>{onCloseDetail&&<button type="button" onClick={onCloseDetail} aria-label="Закрыть" className="desktop-icon-button"><X size={17}/></button>}</div><div className="desktop-detail-body">{detail}</div></aside>}</div></section></div>);
 export default DesktopLayout;
