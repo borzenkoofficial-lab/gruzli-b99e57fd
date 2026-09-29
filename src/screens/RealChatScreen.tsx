@@ -827,7 +827,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       </AnimatePresence>
 
       {/* Input area */}
-      <div className="px-3 pt-2.5 pb-3 border-t border-white/80 bg-white/68 backdrop-blur-2xl">
+      <div className="native-surface px-3 pt-2.5 pb-[calc(0.75rem+env(safe-area-inset-bottom))] border-t border-white/80 bg-white/80 backdrop-blur-2xl">
         {uploading && <div className="text-center text-xs text-primary mb-2 animate-pulse">Загрузка файла...</div>}
 
         {replyTo && (
@@ -858,14 +858,14 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
               exit={{ opacity: 0 }}
               className="flex items-end gap-1.5"
             >
-              <button onClick={() => { setShowAttach(!showAttach); setShowEmoji(false); }} className="w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0 mb-0.5">
+              <button onClick={() => { setShowAttach(!showAttach); setShowEmoji(false); }} className="native-press w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0 mb-0.5">
                 <Paperclip size={20} />
               </button>
 
               <div className="flex-1 flex items-end bg-white/78 rounded-[20px] px-3 py-2 border border-white/90 shadow-[0_8px_24px_rgba(31,35,43,.055),inset_0_1px_0_rgba(255,255,255,.96)] backdrop-blur-xl gap-1">
                 <button
                   onClick={() => { setShowEmoji(!showEmoji); setShowAttach(false); }}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0"
+                  className="native-press w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0"
                 >
                   <Smile size={20} />
                 </button>
@@ -887,7 +887,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
                   onClick={handleSend}
                   disabled={sending}
                   whileTap={{ scale: 0.85 }}
-                  className="w-10 h-10 rounded-full bg-primary flex items-center justify-center disabled:opacity-40 transition-opacity shrink-0 mb-0.5"
+                  className="native-press w-10 h-10 rounded-full bg-primary flex items-center justify-center disabled:opacity-40 transition-opacity shrink-0 mb-0.5"
                 >
                   <Send size={18} className="text-primary-foreground ml-0.5" />
                 </motion.button>
@@ -895,7 +895,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
                 <motion.button
                   onClick={() => setIsRecording(true)}
                   whileTap={{ scale: 0.85 }}
-                  className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0 mb-0.5"
+                  className="native-press w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0 mb-0.5"
                 >
                   <Mic size={18} className="text-primary-foreground" />
                 </motion.button>
