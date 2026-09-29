@@ -131,15 +131,33 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     }
   };
 
-  const handleClaimRequest = async (jobId: string) => {
-    const { error } = await supabase.rpc("dispatcher_claim_job", { _job_id: jobId });
-    if (error) {
-      toast.error(error.message.includes("unavailable") ? "Заказ уже взял другой диспетчер" : "Не удалось взять заказ");
+  const handleClaimRequest = async (job: Tables<"jobs">) => {
+    const rateInput = window.prompt("Предложите заказчику ставку за одного грузчика (₽/час):", String(job.hourly_rate || 300));
+    if (rateInput === null) return;
+    const rate = Number(rateInput);
+    if (!Number.isFinite(rate) || rate < 0) {
+      toast.error("Укажите корректную ставку");
       return;
     }
-    setOpenRequests((prev) => prev.filter((j) => j.id !== jobId));
-    await fetchMyJobs();
-    toast.success("Заказ принят · он добавлен в ваш кабинет");
+    const workersInput = window.prompt("Сколько грузчиков вы готовы организовать?", String(job.workers_needed || 1));
+    if (workersInput === null) return;
+    const workers = Number(workersInput);
+    if (!Number.isInteger(workers) || workers < 1) {
+      toast.error("Укажите корректное количество грузчиков");
+      return;
+    }
+    const message = window.prompt("Комментарий заказчику (необязательно):", "") || "";
+    const { error } = await supabase.rpc("dispatcher_submit_offer", {
+      _job_id: job.id,
+      _proposed_hourly_rate: rate,
+      _proposed_workers: workers,
+      _message: message,
+    });
+    if (error) {
+      toast.error(error.message.includes("unavailable") ? "Заказ уже недоступен" : "Не удалось отправить предложение");
+      return;
+    }
+    toast.success("Предложение отправлено заказчику");
   };
 
   const handleDeleteJob = async (jobId: string) => {
@@ -630,8 +648,8 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                           </div>
                           <span className="shrink-0 text-sm font-extrabold text-foreground">{job.hourly_rate} ₽/ч</span>
                         </div>
-                        <button onClick={() => handleClaimRequest(job.id)} className="mt-3 w-full rounded-2xl bg-foreground py-3 text-xs font-bold text-background active:scale-[.98] transition-transform">
-                          ВЗЯТЬ В РАБОТУ
+                        <button onClick={() => handleClaimRequest(job)} className="mt-3 w-full rounded-2xl bg-foreground py-3 text-xs font-bold text-background active:scale-[.98] transition-transform">
+                          ПРЕДЛОЖИТЬ УСЛОВИЯ
                         </button>
                       </motion.div>
                     ))}
