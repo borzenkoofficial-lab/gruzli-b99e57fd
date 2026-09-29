@@ -267,7 +267,7 @@ const DispatcherDocumentsModal = ({ open, onClose }: Props) => {
         status: "active",
       });
       if (error) throw error;
-      await supabase.from("jobs").update({ requires_contract: true }).eq("id", jobId);
+      await supabase.rpc("dispatcher_update_job", { _job_id: jobId, _requires_contract: true });
       toast.success("Договор создан");
       fetchAll();
     } catch (e: any) { toast.error(e?.message || "Ошибка"); }
