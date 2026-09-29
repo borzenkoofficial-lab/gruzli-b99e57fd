@@ -251,7 +251,7 @@ const OrdersScreen = () => {
 
     if (!user) return;
     const channel = supabase
-      .channel("my-orders")
+      .channel(`my-orders-${user.id}-${role || "unknown"}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "jobs", filter: `client_id=eq.${user.id}` },
