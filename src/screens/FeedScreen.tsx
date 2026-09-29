@@ -513,7 +513,13 @@ const SwipeableJobCard = ({
     const threshold = 110;
     const direction = info.offset.x > threshold ? 1 : info.offset.x < -threshold ? -1 : 0;
 
-    if (direction === 0) return;
+    if (direction === 0) {
+      // Cancelled/short drags must not block the next tap.
+      window.requestAnimationFrame(() => {
+        didDrag.current = false;
+      });
+      return;
+    }
 
     swipeCommitted.current = true;
     didDrag.current = true;
