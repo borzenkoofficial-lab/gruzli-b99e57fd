@@ -392,6 +392,11 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         )}
 
         <div className="pb-6 native-surface">
+          {isDemo && (
+            <div className="px-5 pt-3">
+              <DemoRoleSwitcher role={role} onSwitch={switchDemoRole} />
+            </div>
+          )}
           {/* Header */}
           <div className="px-5 safe-top pb-3 flex items-center justify-between">
             <div className="gruzli-page-enter gruzli-profile-title"><span>GRUZLI / 04</span><h1>Профиль</h1></div>
