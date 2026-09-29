@@ -105,7 +105,7 @@ const DesktopSidebar = ({
       <Icon
         size={19}
         strokeWidth={isActive ? 2.2 : 1.7}
-        className={isActive ? "text-primary" : ""}
+        className={isActive ? "text-[#8a6b00]" : ""}
       />
       <span className="flex-1 truncate">{label}</span>
       {badge ? <Badge count={badge} /> : null}
