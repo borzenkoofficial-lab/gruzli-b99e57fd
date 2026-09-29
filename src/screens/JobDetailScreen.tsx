@@ -99,7 +99,7 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
   };
 
   return (
-    <div className="gruzli-job-detail app-scroll min-h-screen bg-background pb-36 native-surface">
+    <div className="gruzli-job-detail min-h-full bg-background native-surface">
       <div className="sticky top-0 z-40 flex items-center gap-3 border-b border-border/60 bg-background/85 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+10px)] backdrop-blur-2xl">
         <button onClick={onBack} aria-label="Назад" className="native-press grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-border bg-card shadow-sm">
           <ArrowLeft size={18} />
