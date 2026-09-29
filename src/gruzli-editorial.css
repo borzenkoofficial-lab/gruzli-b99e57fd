@@ -1935,3 +1935,190 @@ body,
     pointer-events:none;
   }
 }
+
+
+/* ============================================================
+   DIGITAL SYSTEM — SECOND PASS
+   Shared treatment for cabinet / orders / chats / profile / details.
+   ============================================================ */
+
+.app-scroll{
+  background:transparent!important;
+}
+
+/* Every screen inherits the same editorial rhythm. */
+.app-shell .app-scroll > *,
+.app-shell .app-scroll main,
+.app-shell .app-scroll section{
+  --tw-ring-color:rgba(17,18,20,.08);
+}
+
+/* Screen-level white surfaces become paper/editorial sheets. */
+.app-shell .bg-card,
+.app-shell [class*="bg-card"]{
+  background:rgba(255,255,255,.78)!important;
+  border-color:rgba(17,18,20,.09)!important;
+}
+
+/* Reduce "mobile SaaS dashboard" feeling without touching semantic layout. */
+.app-shell .rounded-3xl{
+  border-radius:24px!important;
+}
+.app-shell .rounded-2xl{
+  border-radius:18px!important;
+}
+.app-shell .rounded-xl{
+  border-radius:14px!important;
+}
+
+/* Editorial section labels */
+.app-shell .uppercase.tracking-wider,
+.app-shell .uppercase.tracking-wide{
+  letter-spacing:.13em!important;
+}
+
+/* Buttons */
+.app-shell button{
+  transition:
+    transform .22s var(--gd-ease),
+    box-shadow .22s ease,
+    border-color .22s ease,
+    background-color .22s ease,
+    color .22s ease!important;
+}
+.app-shell button:active{
+  transform:scale(.975);
+}
+.app-shell button.bg-foreground,
+.app-shell button[class*="bg-primary"]{
+  background:#111214!important;
+  color:#fff!important;
+  box-shadow:0 9px 24px rgba(17,18,20,.12);
+}
+.app-shell button.bg-foreground:hover,
+.app-shell button[class*="bg-primary"]:hover{
+  box-shadow:0 14px 32px rgba(17,18,20,.17);
+}
+
+/* Cabinet / orders data cards */
+.app-shell [class*="shadow-"]{
+  --tw-shadow-color:rgba(20,22,25,.055);
+}
+.app-shell .border-border{
+  border-color:rgba(17,18,20,.095)!important;
+}
+
+/* Make list rows feel like editorial entries. */
+.app-shell [role="button"]{
+  transition:background .22s ease,border-color .22s ease,transform .22s var(--gd-ease);
+}
+.app-shell [role="button"]:hover{
+  background:rgba(255,255,255,.92);
+}
+
+/* Profile hero / avatar stage */
+.app-shell img{
+  image-rendering:auto;
+}
+.app-shell .bg-surface-3{
+  background:#f0f0ee!important;
+  border-color:rgba(17,18,20,.08)!important;
+}
+
+/* Chat list */
+.app-shell .gruzli-chat-item{
+  border-bottom:1px solid rgba(17,18,20,.08);
+  background:transparent;
+}
+.app-shell .gruzli-chat-item:hover{
+  background:rgba(255,255,255,.7);
+}
+
+/* Job detail */
+.gruzli-job-detail,
+.gruzli-job-detail-screen{
+  background:transparent!important;
+}
+.gruzli-job-detail .bg-card,
+.gruzli-job-detail-screen .bg-card{
+  background:rgba(255,255,255,.82)!important;
+  border-color:rgba(17,18,20,.09)!important;
+}
+
+/* Desktop sidebar becomes a clean editorial index. */
+.desktop-sidebar nav a,
+.desktop-sidebar nav button{
+  border-radius:10px!important;
+  font-size:12px!important;
+  letter-spacing:-.01em;
+}
+.desktop-sidebar nav a:hover,
+.desktop-sidebar nav button:hover{
+  background:rgba(17,18,20,.045)!important;
+}
+.desktop-sidebar [aria-current="page"],
+.desktop-sidebar .active{
+  background:#111214!important;
+  color:#fff!important;
+}
+
+/* Desktop content cards */
+.desktop-main-inner .rounded-3xl,
+.desktop-main-inner .rounded-2xl,
+.desktop-main-inner .rounded-xl{
+  border-color:rgba(17,18,20,.09)!important;
+}
+
+/* Detail panel gets the same paper/glass language. */
+.desktop-detail{
+  background:rgba(255,255,255,.70)!important;
+  border-left:1px solid rgba(17,18,20,.09)!important;
+  backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px);
+}
+.desktop-detail-header{
+  background:rgba(255,255,255,.78)!important;
+  border-bottom:1px solid rgba(17,18,20,.08)!important;
+}
+
+/* Modals: less generic, more product-editorial. */
+.fixed.inset-0.z-\[100\] > div,
+.fixed.inset-0.z-\[90\] > div{
+  border-color:rgba(17,18,20,.10)!important;
+  box-shadow:0 30px 100px rgba(17,18,20,.18)!important;
+}
+
+/* Yellow micro-accent */
+.app-shell .text-yellow-500,
+.app-shell .text-yellow-600{
+  color:#9a7000!important;
+}
+.app-shell .bg-yellow-400,
+.app-shell .bg-yellow-500{
+  background:#f2bd16!important;
+}
+
+/* Premium glass hover */
+.gruzli-editorial-glass{
+  background:rgba(255,255,255,.66)!important;
+  border:1px solid rgba(17,18,20,.09)!important;
+  box-shadow:0 18px 60px rgba(20,22,25,.07),inset 0 1px 0 rgba(255,255,255,.95);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+}
+
+/* Stagger utility for future screens */
+.gruzli-editorial-stagger > *{
+  animation:gd-card-enter .48s var(--gd-ease) both;
+}
+.gruzli-editorial-stagger > *:nth-child(2){animation-delay:.04s}
+.gruzli-editorial-stagger > *:nth-child(3){animation-delay:.08s}
+.gruzli-editorial-stagger > *:nth-child(4){animation-delay:.12s}
+.gruzli-editorial-stagger > *:nth-child(5){animation-delay:.16s}
+.gruzli-editorial-stagger > *:nth-child(6){animation-delay:.20s}
+
+@media(min-width:768px){
+  .desktop-main-inner{
+    animation:gd-card-enter .45s var(--gd-ease) both;
+  }
+}
