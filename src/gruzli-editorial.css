@@ -4940,3 +4940,222 @@ body,
   .gruzli-settings-section-intro{padding-top:8px}
   .gruzli-settings-section-intro h2{font-size:34px}
 }
+
+
+/* ─────────────────────────────────────────────────────────────
+   GRUZLI 2026 UI SYSTEM — final consistency layer
+   One visual language for auth, app, overlays, forms and feedback.
+   ───────────────────────────────────────────────────────────── */
+
+:root{
+  --gruzli-ink:#17181b;
+  --gruzli-ink-2:#34353a;
+  --gruzli-muted:#77787e;
+  --gruzli-line:#e5e5e8;
+  --gruzli-paper:#f6f6f7;
+  --gruzli-card:#ffffff;
+  --gruzli-yellow:#f2c400;
+  --gruzli-yellow-soft:#fff5c7;
+  --gruzli-danger:#d94848;
+  --gruzli-success:#258a5a;
+  --gruzli-radius-sm:12px;
+  --gruzli-radius-md:16px;
+  --gruzli-radius-lg:20px;
+  --gruzli-ease:cubic-bezier(.22,1,.36,1);
+}
+
+/* Never let legacy theme classes fragment the product identity. */
+html.light,html.theme-midnight,html.theme-emerald,html.theme-crimson,html.theme-amber{
+  --background:0 0% 96.8%;
+  --foreground:222 18% 10%;
+  --card:0 0% 100%;
+  --card-foreground:222 18% 10%;
+  --card-hover:0 0% 98%;
+  --popover:0 0% 100%;
+  --popover-foreground:222 18% 10%;
+  --primary:43 96% 48%;
+  --primary-foreground:222 18% 8%;
+  --secondary:0 0% 93%;
+  --secondary-foreground:222 12% 28%;
+  --muted:0 0% 93%;
+  --muted-foreground:220 8% 43%;
+  --accent:0 0% 94%;
+  --accent-foreground:222 18% 10%;
+  --border:220 10% 87%;
+  --input:220 10% 87%;
+  --ring:43 96% 48%;
+  --surface-1:0 0% 96.8%;
+  --surface-2:0 0% 100%;
+  --surface-3:0 0% 97%;
+  --surface-4:220 10% 89%;
+  --bubble-own:43 96% 91%;
+  --bubble-other:0 0% 100%;
+  --sidebar-background:0 0% 99%;
+  --sidebar-foreground:222 18% 10%;
+  --sidebar-primary:43 96% 48%;
+  --sidebar-primary-foreground:222 18% 8%;
+  --sidebar-accent:0 0% 95%;
+  --sidebar-accent-foreground:222 18% 10%;
+  --sidebar-border:220 10% 89%;
+  --sidebar-ring:43 96% 48%;
+}
+
+/* Auth / splash */
+.gruzli-auth-shell,
+.gruzli-auth-shell *{
+  -webkit-font-smoothing:antialiased;
+}
+.gruzli-auth-shell{
+  background:
+    radial-gradient(700px 360px at 50% -120px,rgba(255,255,255,.98),transparent 72%),
+    linear-gradient(180deg,#f9f9fa 0%,#f3f3f4 100%)!important;
+}
+.gruzli-auth-shell .bg-foreground{
+  background:var(--gruzli-ink)!important;
+  color:#fff!important;
+}
+.gruzli-auth-shell button{
+  min-height:46px;
+  border-radius:14px;
+}
+.gruzli-auth-shell input,
+.gruzli-auth-shell textarea,
+.gruzli-auth-shell select{
+  min-height:48px;
+  border-radius:14px!important;
+  border:1px solid var(--gruzli-line)!important;
+  background:rgba(255,255,255,.92)!important;
+  box-shadow:0 1px 0 rgba(20,24,32,.02),0 8px 24px rgba(20,24,32,.025);
+  transition:border-color .18s var(--gruzli-ease),box-shadow .18s var(--gruzli-ease),transform .18s var(--gruzli-ease);
+}
+.gruzli-auth-shell input:focus,
+.gruzli-auth-shell textarea:focus,
+.gruzli-auth-shell select:focus{
+  outline:none;
+  border-color:rgba(239,183,20,.7)!important;
+  box-shadow:0 0 0 4px rgba(239,183,20,.12),0 8px 24px rgba(20,24,32,.035);
+}
+.gruzli-auth-shell .border-border{border-color:var(--gruzli-line)!important;}
+.gruzli-auth-shell .bg-card{background:rgba(255,255,255,.96)!important;}
+.gruzli-auth-shell [class*="rounded-3xl"]{border-radius:24px!important;}
+.gruzli-auth-shell [class*="rounded-2xl"]{border-radius:18px!important;}
+
+/* Unified action language */
+.gruzli-cta,
+button.bg-primary,
+button.bg-foreground{
+  min-height:46px;
+  border-radius:14px!important;
+  font-weight:700;
+  transition:transform .16s var(--gruzli-ease),box-shadow .16s var(--gruzli-ease),background .16s ease,opacity .16s ease!important;
+}
+.gruzli-cta:hover,
+button.bg-primary:hover,
+button.bg-foreground:hover{
+  box-shadow:0 10px 24px rgba(20,24,32,.12);
+}
+.gruzli-cta:active,
+button.bg-primary:active,
+button.bg-foreground:active{
+  transform:scale(.985);
+}
+.gruzli-cta--accent{
+  background:var(--gruzli-yellow)!important;
+  color:var(--gruzli-ink)!important;
+}
+.gruzli-cta--dark{
+  background:var(--gruzli-ink)!important;
+  color:#fff!important;
+}
+
+/* All Radix dialogs/popovers use the same product geometry. */
+[data-radix-dialog-overlay],
+[role="dialog"] + [data-radix-dialog-overlay]{
+  background:rgba(17,18,21,.34)!important;
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+[role="dialog"]{
+  max-width:min(92vw,520px);
+  border:1px solid rgba(229,229,232,.95)!important;
+  border-radius:22px!important;
+  background:rgba(255,255,255,.97)!important;
+  box-shadow:0 30px 90px rgba(20,24,32,.18),0 4px 18px rgba(20,24,32,.06)!important;
+  overflow:hidden;
+}
+[role="dialog"] input,
+[role="dialog"] textarea,
+[role="dialog"] select{
+  min-height:46px;
+  border-radius:13px!important;
+}
+[role="dialog"] button{
+  border-radius:13px!important;
+}
+[role="dialog"] [data-radix-dialog-title]{
+  letter-spacing:-.03em;
+}
+
+/* Toasts: compact, quiet, non-blocking. */
+[data-radix-toast-viewport]{
+  z-index:200!important;
+  width:min(calc(100vw - 24px),390px)!important;
+  padding:12px!important;
+  gap:8px!important;
+}
+[data-radix-toast-root]{
+  min-height:48px;
+  padding:11px 14px!important;
+  border-radius:15px!important;
+  border:1px solid #e4e4e7!important;
+  background:rgba(255,255,255,.96)!important;
+  color:var(--gruzli-ink)!important;
+  box-shadow:0 16px 40px rgba(20,24,32,.12)!important;
+  backdrop-filter:blur(18px);
+}
+[data-radix-toast-root][data-state="open"]{
+  animation-duration:.28s!important;
+}
+[data-radix-toast-root][data-swipe="end"]{
+  transition:transform .18s var(--gruzli-ease)!important;
+}
+
+/* Loading / skeleton language */
+.gruzli-skeleton,
+[class*="animate-pulse"]{
+  animation-duration:1.7s!important;
+}
+.gruzli-skeleton{
+  background:linear-gradient(90deg,#eeeeef 25%,#f8f8f9 50%,#eeeeef 75%);
+  background-size:200% 100%;
+  animation:gruzli-skeleton 1.5s ease-in-out infinite;
+}
+@keyframes gruzli-skeleton{
+  from{background-position:200% 0}
+  to{background-position:-200% 0}
+}
+
+/* Page transitions: one subtle motion system, no competing effects. */
+.gruzli-page-enter{
+  animation:gruzli-page-in .24s var(--gruzli-ease) both;
+}
+@keyframes gruzli-page-in{
+  from{opacity:0;transform:translateY(5px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* Sheets and full-screen mobile detail screens */
+@media(max-width:767px){
+  [role="dialog"]{
+    width:calc(100vw - 20px)!important;
+    max-height:min(88svh,760px);
+    border-radius:22px!important;
+  }
+  [data-radix-dialog-content]{
+    margin-top:auto;
+  }
+}
+
+/* Remove legacy neon/3D visual artifacts everywhere. */
+[class*="glow"],[class*="shimmer"]{filter:none!important;}
+[style*="hsl(228 22% 6%)"]{box-shadow:0 8px 24px rgba(20,24,32,.12)!important;}
