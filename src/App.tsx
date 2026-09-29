@@ -87,11 +87,6 @@ const AppRoutes = () => {
       <Suspense fallback={<div className="flex items-center justify-center h-screen"><div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" /></div>}>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/feed" element={<Navigate to="/" replace />} />
-          <Route path="/orders" element={<Index />} />
-          <Route path="/chats" element={<Index />} />
-          <Route path="/kartoteka" element={<Index />} />
-          <Route path="/profile" element={<Index />} />
           <Route path="/auth" element={<Navigate to="/" replace />} />
           <Route path="/job/:jobId" element={<Index />} />
           <Route path="/admin" element={<AdminPage />} />
