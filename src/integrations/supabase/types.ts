@@ -1399,6 +1399,7 @@ export type Database = {
           _job_id: string
           _metro?: string | null
           _quick_minimum?: boolean | null
+          _requires_contract?: boolean | null
           _start_time?: string | null
           _status?: string | null
           _title?: string | null
