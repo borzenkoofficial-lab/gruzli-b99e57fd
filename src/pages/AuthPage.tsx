@@ -272,7 +272,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
               <span className="text-base font-extrabold text-foreground tracking-tight">Gruzli</span>
             </div>
             <button
-              onClick={() => props.onDemoLogin ? props.onDemoLogin() : setMode("login")}
+              onClick={() => setMode("login")}
               className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-full border border-border"
             >
               Войти
@@ -364,6 +364,16 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
               {isLastSlide ? "Создать аккаунт" : "Далее"}
               <ChevronRight size={16} />
             </button>
+
+            {props.onDemoLogin && (
+              <button
+                type="button"
+                onClick={props.onDemoLogin}
+                className="w-full py-3 rounded-2xl border border-border bg-card text-foreground text-sm font-semibold active:bg-muted transition-colors"
+              >
+                Открыть демо-версию · 3 роли
+              </button>
+            )}
 
             <button
               onClick={() => setSecurityOpen(true)}
