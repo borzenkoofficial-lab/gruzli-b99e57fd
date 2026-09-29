@@ -127,20 +127,6 @@ const DesktopSidebar = ({
         </div>
       </div>
 
-      {/* CTA: dispatcher creates job, worker opens premium */}
-      {isDispatcher ? (
-        <div className="px-3 pb-2">
-          <motion.button
-            whileTap={{ scale: 0.97 }}
-            onClick={() => onCreateJob?.()}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold shadow-md hover:opacity-95 transition"
-          >
-            <Plus size={18} strokeWidth={2.4} />
-            Новая заявка
-          </motion.button>
-        </div>
-      ) : null}
-
       {/* Primary nav */}
       <div className="px-3 mt-2">
         <p className="px-3 mb-1.5 text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold">
