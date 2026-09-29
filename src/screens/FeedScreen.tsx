@@ -10,6 +10,7 @@ import { useRespondToJob } from "@/hooks/useRespondToJob";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
+import MetroBadge from "@/components/MetroBadge";
 import EnablePushButton from "@/components/EnablePushButton";
 import { MaxChannelBanner } from "@/components/MaxChannelBanner";
 import CategorySubscriptionModal from "@/components/CategorySubscriptionModal";
@@ -687,7 +688,7 @@ const SwipeableJobCard = ({
               <span className="gruzli-order-route-dot" />
               <div>
                 <span className="gruzli-order-scene-label">ЛОКАЦИЯ</span>
-                <strong>{job.metro || job.address || "Москва"}</strong>
+                {job.metro ? <MetroBadge value={job.metro} /> : <strong>{job.address || "Москва"}</strong>}
               </div>
             </div>
             <div className="gruzli-order-time">
