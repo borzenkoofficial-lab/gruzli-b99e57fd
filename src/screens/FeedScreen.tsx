@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 import EnablePushButton from "@/components/EnablePushButton";
+import GruzliMockupRail from "@/components/GruzliMockupRail";
 import { MaxChannelBanner } from "@/components/MaxChannelBanner";
 import CategorySubscriptionModal from "@/components/CategorySubscriptionModal";
 import {
@@ -71,7 +72,7 @@ const DEMO_JOBS: Tables<"jobs">[] = [
 ];
 
 const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: FeedScreenProps) => {
-  const { user } = useAuth();
+  const { user, role } = useAuth();
   const { respondAndOpenChat } = useRespondToJob(onOpenChat);
   const [jobs, setJobs] = useState<Tables<"jobs">[]>([]);
   const [dispatcherNames, setDispatcherNames] = useState<Record<string, string>>({});
@@ -315,6 +316,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
           <div className="gruzli-feed-earnings-arrow">↗</div>
         </div>
       </header>
+      <GruzliMockupRail role={role} />
 
       <EnablePushButton />
 
