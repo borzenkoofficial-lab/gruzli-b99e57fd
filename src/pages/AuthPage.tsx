@@ -421,7 +421,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
             </div>
             <span className="text-xs font-bold text-foreground tracking-tight uppercase">Gruzli</span>
             <span className="ml-auto text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
-              {mode === "login" ? "Шаг 01" : "Шаг 01 / 02"}
+              {mode === "login" ? "Вход" : "Регистрация"}
             </span>
           </div>
 
@@ -459,7 +459,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
                   type="button"
                   onClick={() => setRole(r.id)}
                   className={`p-4 rounded-2xl text-center transition-colors ${
-                    role === r.id ? "gradient-primary text-primary-foreground" : "neu-card text-foreground"
+                    role === r.id ? "gruzli-role-selected text-foreground" : "neu-card text-foreground"
                   }`}
                 >
                   <r.icon size={24} className="mx-auto mb-2" />
