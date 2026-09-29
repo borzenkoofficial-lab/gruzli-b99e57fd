@@ -5695,3 +5695,55 @@ button.bg-foreground:active{
     animation:none!important;
   }
 }
+
+
+/* Swipe-responsive light: the card appears to illuminate the paper beneath it. */
+.gruzli-card-follow-light{
+  background:
+    radial-gradient(
+      170px 120px at 50% 50%,
+      rgba(242,196,0,.34),
+      rgba(242,196,0,.10) 38%,
+      transparent 72%
+    );
+  mix-blend-mode:multiply;
+  filter:blur(18px);
+  transition:opacity .18s ease;
+}
+
+.gruzli-job-card{
+  transform-style:preserve-3d;
+}
+
+.gruzli-job-card:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  opacity:0;
+  background:
+    linear-gradient(105deg,transparent 18%,rgba(255,255,255,.28) 45%,transparent 62%);
+  background-size:220% 100%;
+  transition:opacity .35s ease,background-position .7s cubic-bezier(.22,1,.36,1);
+}
+
+.gruzli-job-card:hover:after{
+  opacity:.55;
+  background-position:100% 0;
+}
+
+@media (hover:none){
+  .gruzli-job-card:after{
+    display:none;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .gruzli-card-follow-light{
+    display:none;
+  }
+  .gruzli-job-card:after{
+    display:none;
+  }
+}
