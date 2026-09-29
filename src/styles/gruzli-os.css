@@ -30,3 +30,22 @@
 @media(max-width:700px){
   .gruzli-glass{backdrop-filter:blur(16px) saturate(120%);-webkit-backdrop-filter:blur(16px) saturate(120%)}
 }
+
+
+/* Existing shell surfaces inherit the glass language without changing layout or data flow. */
+.desktop-sidebar,
+.desktop-topbar,
+.desktop-detail,
+.bottom-nav-pill{
+  background: hsl(var(--card) / .72);
+  border-color: hsl(var(--border) / .72);
+  backdrop-filter: blur(18px) saturate(120%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+}
+.desktop-sidebar{box-shadow:8px 0 32px hsl(var(--background) / .08)}
+.desktop-topbar{box-shadow:0 8px 28px hsl(var(--background) / .05)}
+.desktop-detail{box-shadow:-8px 0 32px hsl(var(--background) / .06)}
+.bottom-nav-pill{box-shadow:0 14px 36px rgba(0,0,0,.10)}
+@media(prefers-reduced-transparency:reduce){
+  .desktop-sidebar,.desktop-topbar,.desktop-detail,.bottom-nav-pill{backdrop-filter:none;-webkit-backdrop-filter:none;background:hsl(var(--card))}
+}
