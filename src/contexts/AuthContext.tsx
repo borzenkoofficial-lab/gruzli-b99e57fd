@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from "
 import { supabase } from "@/integrations/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
-type AppRole = "worker" | "dispatcher" | "admin";
+type AppRole = "client" | "worker" | "dispatcher" | "admin";
 
 interface AuthContextType {
   user: User | null;
@@ -37,7 +37,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       supabase.rpc("get_user_role", { _user_id: userId }),
       supabase.from("profiles").select("*").eq("user_id", userId).single(),
     ]);
+    const metadataRole = user?.user_metadata?.role as AppRole | undefined;
     if (roleRes.data) setRole(roleRes.data as AppRole);
+    else if (metadataRole && ["client", "worker", "dispatcher", "admin"].includes(metadataRole)) setRole(metadataRole);
     if (profileRes.data) setProfile(profileRes.data);
   };
 
