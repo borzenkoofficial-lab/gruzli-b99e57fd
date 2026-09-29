@@ -58,16 +58,16 @@ const SwipeableChatItem = ({
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index < 8 ? index * 0.03 : 0, type: "spring", stiffness: 400, damping: 30 }}
-      className="relative overflow-hidden"
+      className="relative overflow-hidden native-list-item"
     >
       <motion.div
         className="absolute right-0 top-0 bottom-0 flex items-stretch gap-0 z-0"
         style={{ opacity: actionsOpacity }}
       >
-        <button onClick={() => { close(); onBlock(); }} className="flex items-center justify-center w-16 bg-muted/80 text-foreground">
+        <button onClick={() => { close(); onBlock(); }} className="native-press flex items-center justify-center w-16 bg-muted/80 text-foreground">
           <Ban size={18} />
         </button>
-        <button onClick={() => { close(); onDelete(); }} className="flex items-center justify-center w-16 bg-destructive text-destructive-foreground">
+        <button onClick={() => { close(); onDelete(); }} className="native-press flex items-center justify-center w-16 bg-destructive text-destructive-foreground">
           <Trash2 size={18} />
         </button>
       </motion.div>
@@ -80,7 +80,7 @@ const SwipeableChatItem = ({
         dragElastic={0.1}
         onDragEnd={handleDragEnd}
         onClick={() => !swiped && onOpen()}
-        className="relative z-10 flex items-center gap-3 px-3.5 py-3.5 cursor-pointer active:bg-white/50 transition-colors bg-white/58 border-b border-white/70 backdrop-blur-xl"
+        className="native-surface native-press relative z-10 flex items-center gap-3 px-3.5 py-3.5 cursor-pointer active:bg-white/50 transition-colors bg-white/58 border-b border-white/70 backdrop-blur-xl"
       >
         <div className="relative shrink-0">
           {conv.isCommunity ? (
