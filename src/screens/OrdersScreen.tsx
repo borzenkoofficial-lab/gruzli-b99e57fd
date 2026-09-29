@@ -286,97 +286,67 @@ const OrdersScreen = () => {
   }, [user?.id]);
 
   const confirmJob = async (responseId: string) => {
-    const { error } = await supabase
-      .from("job_responses")
-      .update({ worker_status: "confirmed" })
-      .eq("id", responseId);
-
+    const { data, error } = await supabase.rpc("worker_update_response_status", {
+      _response_id: responseId,
+      _next_status: "confirmed",
+    });
     if (error) {
-      toast.error("Ошибка подтверждения");
+      toast.error(error.code === "P0001" ? "Заказ нельзя подтвердить в текущем статусе" : "Ошибка подтверждения");
       return;
     }
-
-    setJobs((prev) =>
-      prev.map((j) => (j.responseId === responseId ? { ...j, workerStatus: "confirmed" } : j))
-    );
+    setJobs((prev) => prev.map((j) => (j.responseId === responseId ? { ...j, workerStatus: data?.worker_status || "confirmed" } : j)));
     if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-    toast.success("🎉 Заказ подтверждён!");
+    toast.success("Заказ подтверждён");
   };
 
   const setWorkerStatus = async (responseId: string, status: string) => {
-    const updateData: any = { worker_status: status };
-
-    // When arriving ("arrived"), start the work timer
-    if (status === "arrived") {
-      updateData.work_started_at = new Date().toISOString();
-    }
-
-    const { error } = await supabase
-      .from("job_responses")
-      .update(updateData)
-      .eq("id", responseId);
-
+    const { data, error } = await supabase.rpc("worker_update_response_status", {
+      _response_id: responseId,
+      _next_status: status,
+    });
     if (error) {
-      toast.error("Ошибка обновления статуса");
+      toast.error(error.code === "P0001" ? "Сначала выполните предыдущий шаг" : "Ошибка обновления статуса");
       return;
     }
-
     setJobs((prev) =>
       prev.map((j) => (j.responseId === responseId
-        ? { ...j, workerStatus: status, workStartedAt: status === "arrived" ? new Date().toISOString() : j.workStartedAt }
+        ? {
+            ...j,
+            workerStatus: data?.worker_status || status,
+            workStartedAt: data?.work_started_at ?? j.workStartedAt,
+            workFinishedAt: data?.work_finished_at ?? j.workFinishedAt,
+            hoursWorked: data?.hours_worked ?? j.hoursWorked,
+            earned: data?.earned ?? j.earned,
+          }
         : j))
     );
     if (navigator.vibrate) navigator.vibrate(50);
     const step = STATUS_STEPS.find((s) => s.key === status);
-    toast.success(`${step?.emoji} ${step?.label}`);
+    toast.success(step?.label || "Статус обновлён");
   };
 
   const finishWork = async (job: AcceptedJob) => {
-    const now = new Date();
-    const startedAt = job.workStartedAt ? new Date(job.workStartedAt) : now;
-    const hoursWorked = Math.max(0.5, Math.round(((now.getTime() - startedAt.getTime()) / 3600000) * 10) / 10);
-    const earned = Math.round(hoursWorked * job.hourlyRate);
-
-    const { error } = await supabase
-      .from("job_responses")
-      .update({
-        worker_status: "completed",
-        work_finished_at: now.toISOString(),
-        hours_worked: hoursWorked,
-        earned,
-      } as any)
-      .eq("id", job.responseId);
-
+    const { data, error } = await supabase.rpc("worker_update_response_status", {
+      _response_id: job.responseId,
+      _next_status: "completed",
+    });
     if (error) {
-      toast.error("Ошибка завершения");
+      toast.error(error.code === "P0001" ? "Сначала нужно прибыть на объект" : "Ошибка завершения");
       return;
     }
 
-    // Update profile stats without resetting existing totals.
-    // Read current values first, then apply the increment.
-    const { data: currentProfile } = await supabase
-      .from("profiles")
-      .select("completed_orders, total_earned")
-      .eq("user_id", user!.id)
-      .single();
-
-    if (currentProfile) {
-      await supabase
-        .from("profiles")
-        .update({
-          completed_orders: (currentProfile.completed_orders || 0) + 1,
-          total_earned: ((currentProfile as any).total_earned || 0) + earned,
-        } as any)
-        .eq("user_id", user!.id);
-    }
-
-    // Move from active to completed
-    const completedJob = { ...job, workerStatus: "completed", workFinishedAt: now.toISOString(), hoursWorked, earned };
+    const completedJob = {
+      ...job,
+      workerStatus: "completed",
+      workFinishedAt: data?.work_finished_at || new Date().toISOString(),
+      hoursWorked: data?.hours_worked ?? job.hoursWorked,
+      earned: data?.earned ?? job.earned,
+    };
     setJobs((prev) => prev.filter((j) => j.responseId !== job.responseId));
     setCompletedJobs((prev) => [completedJob, ...prev]);
 
     if (navigator.vibrate) navigator.vibrate([100, 50, 200]);
-    toast.success(`🎉 Заказ завершён! Заработано: ${earned} ₽`);
+    toast.success(`Заказ завершён. Заработано: ${Number(completedJob.earned || 0).toLocaleString("ru-RU")} ₽`);
   };
 
   if (loading) {
