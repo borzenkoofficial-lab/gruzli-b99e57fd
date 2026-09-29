@@ -60,6 +60,13 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   // Profile edit state
   const [fullName, setFullName] = useState(profile?.full_name || "");
   const [phone, setPhone] = useState(profile?.phone || "");
+  const [city, setCity] = useState((user?.user_metadata?.city as string) || "");
+  const [workStatus, setWorkStatus] = useState((user?.user_metadata?.work_status as string) || "available");
+  const [workType, setWorkType] = useState((user?.user_metadata?.work_type as string) || "loader");
+  const [experience, setExperience] = useState((user?.user_metadata?.experience as string) || "");
+  const [rate, setRate] = useState((user?.user_metadata?.hourly_rate as string) || "");
+  const [about, setAbout] = useState((user?.user_metadata?.about as string) || "");
+  const [workRadius, setWorkRadius] = useState((user?.user_metadata?.work_radius as string) || "25");
   const [saving, setSaving] = useState(false);
   const [profileErrors, setProfileErrors] = useState<Record<string, string>>({});
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -130,6 +137,20 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
     setProfileErrors({});
     setSaving(true);
     const { error } = await supabase.from("profiles").update({ full_name: result.data.full_name, phone: result.data.phone || "" }).eq("user_id", user!.id);
+    if (!error) {
+      const { error: metadataError } = await supabase.auth.updateUser({
+        data: {
+          city: city.trim(),
+          work_status: workStatus,
+          work_type: workType,
+          experience: experience.trim(),
+          hourly_rate: rate.trim(),
+          about: about.trim(),
+          work_radius: workRadius,
+        },
+      });
+      if (metadataError) toast.error("Основные данные сохранены, но рабочие настройки не обновились");
+    }
     setSaving(false);
     if (error) toast.error("Не удалось сохранить");
     else toast.success("Профиль обновлён");
@@ -309,6 +330,54 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
 
           <InputField label="Имя" value={fullName} onChange={setFullName} error={profileErrors.full_name} placeholder="Ваше имя" />
           <InputField label="Телефон" value={phone} onChange={setPhone} error={profileErrors.phone} placeholder="+7 (999) 123-45-67" type="tel" />
+
+          <div className="gruzli-settings-profile-work mb-5">
+            <div className="gruzli-settings-profile-section-label">WORK PROFILE / 01</div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Город</label>
+                <input value={city} onChange={e=>setCity(e.target.value)} placeholder="Москва" className="w-full bg-surface-1 border border-border rounded-2xl py-3 px-4 text-sm outline-none" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Опыт</label>
+                <input value={experience} onChange={e=>setExperience(e.target.value)} placeholder="5 лет" className="w-full bg-surface-1 border border-border rounded-2xl py-3 px-4 text-sm outline-none" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Рабочая специализация</label>
+              <select value={workType} onChange={e=>setWorkType(e.target.value)} className="w-full bg-surface-1 border border-border rounded-2xl py-3 px-4 text-sm outline-none">
+                <option value="loader">Грузчик</option>
+                <option value="driver_loader">Водитель + грузчик</option>
+                <option value="dispatcher">Диспетчер</option>
+                <option value="brigadier">Бригадир</option>
+              </select>
+            </div>
+            <div className="mt-3">
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Статус</label>
+              <select value={workStatus} onChange={e=>setWorkStatus(e.target.value)} className="w-full bg-surface-1 border border-border rounded-2xl py-3 px-4 text-sm outline-none">
+                <option value="available">Готов к работе</option>
+                <option value="busy">Занят</option>
+                <option value="pause">Временно не работаю</option>
+              </select>
+            </div>
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Ставка / час</label>
+                <input value={rate} onChange={e=>setRate(e.target.value.replace(/[^0-9]/g,""))} inputMode="numeric" placeholder="650" className="w-full bg-surface-1 border border-border rounded-2xl py-3 px-4 text-sm outline-none" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Радиус, км</label>
+                <select value={workRadius} onChange={e=>setWorkRadius(e.target.value)} className="w-full bg-surface-1 border border-border rounded-2xl py-3 px-4 text-sm outline-none">
+                  <option value="10">10 км</option><option value="25">25 км</option><option value="50">50 км</option><option value="100">100 км</option>
+                </select>
+              </div>
+            </div>
+            <div className="mt-3">
+              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">О себе для заказчиков</label>
+              <textarea value={about} onChange={e=>setAbout(e.target.value)} maxLength={300} rows={4} placeholder="Опыт, специализация, готовность к выездам..." className="w-full bg-surface-1 border border-border rounded-2xl py-3 px-4 text-sm outline-none resize-none" />
+              <div className="text-[10px] text-muted-foreground text-right mt-1">{about.length}/300</div>
+            </div>
+          </div>
 
           <div className="mb-4">
             <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Email</label>
