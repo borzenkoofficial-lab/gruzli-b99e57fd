@@ -623,7 +623,7 @@ const SwipeableJobCard = ({
 
         {/* Editorial meta row */}
         <div className="gruzli-order-meta-top flex items-center justify-between gap-3 mb-3">
-          <span className="gruzli-order-kicker">${isLiveOrder ? "LIVE / " : isOfficial ? "OFFICIAL / " : "ЗАЯВКА / "}{String(index + 1).padStart(2, "0")}</span>
+          <span className="gruzli-order-kicker">{isLiveOrder ? "LIVE / " : isOfficial ? "OFFICIAL / " : "ЗАЯВКА / "}{String(index + 1).padStart(2, "0")}</span>
           <span className="gruzli-order-open">ОТКРЫТЬ ↗</span>
         </div>
         <div className="gruzli-card-swipe-hint" aria-hidden="true"><span><ArrowLeft size={9}/> пропустить</span><i/> <span>взять <ArrowRight size={9}/></span></div>
@@ -797,8 +797,8 @@ const SwipeableJobCard = ({
                 <span className="text-xs text-muted-foreground font-semibold">₽</span>
               </div>
             </div>
-            <p className="text-[10.5px] text-muted-foreground mt-0.5">
-              {job.hourly_rate} ₽/час × {job.duration_hours || 4}ч
+            <p className="text-[10.5px] text-muted-foreground mt-0.5 flex items-center gap-1.5">
+              <span>{job.hourly_rate} ₽/час</span><span className="opacity-30">·</span><span>{job.duration_hours || 4} ч смена</span>
             </p>
           </div>
         </div>
