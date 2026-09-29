@@ -1096,36 +1096,3 @@ html, body {
   html,body,#root,.app-shell{background:#f7f7f8!important;}
   .bottom-nav-wrapper{background:#f7f7f8!important;background:transparent!important;}
 }
-
-
-/* MOBILE PERFORMANCE MODE — the app shell owns scrolling; child screens stay static. */
-@media(max-width:767px){
-  /* Avoid compositor-heavy global transitions on touch devices. */
-  button,a,[role="button"],summary{
-    transition:none!important;
-  }
-  .native-press{
-    transition:transform 110ms ease,opacity 110ms ease!important;
-  }
-  /* Framer Motion may inject inline transitions/transforms; mobile should render these surfaces without interpolation. */
-  .app-shell [data-framer-appear],
-  .app-shell [style*="transform"],
-  .app-shell [style*="opacity"]{
-    transition:none!important;
-  }
-  /* Backdrop blur is expensive on iOS Safari, especially over long scrolling surfaces. */
-  .app-shell [class*="backdrop-blur"],
-  .app-shell [class*="backdrop-filter"]{
-    -webkit-backdrop-filter:none!important;
-    backdrop-filter:none!important;
-  }
-  /* Keep visual hierarchy with opaque/light surfaces instead of GPU-heavy blur. */
-  .app-shell .bg-background\/95{background:hsl(var(--background))!important;}
-  .app-shell .bg-black\/40{background:rgba(0,0,0,.42)!important;}
-  .app-scroll{scroll-behavior:auto!important;}
-}
-
-@media(max-width:767px){
-  .native-surface{transform:none!important;backface-visibility:visible!important;contain:layout!important;}
-  .skeleton-shimmer,.btn-shimmer::after{animation:none!important;}
-}
