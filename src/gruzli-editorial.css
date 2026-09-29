@@ -4850,3 +4850,29 @@ body,
 @media(prefers-reduced-motion:reduce){
   .gruzli-settings-subpage *{scroll-behavior:auto!important}
 }
+
+
+.gruzli-settings-profile-work{
+  padding:18px;
+  border:1px solid rgba(20,21,24,.07);
+  border-radius:24px;
+  background:rgba(255,255,255,.58);
+  box-shadow:0 14px 36px rgba(20,21,24,.045),inset 0 1px 0 #fff;
+}
+.gruzli-settings-profile-section-label{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:14px;
+  font-size:7px;font-weight:850;letter-spacing:.16em;color:#8b8d91;
+}
+.gruzli-settings-profile-section-label:before{
+  content:"";width:18px;height:2px;background:#f2bd16;display:block;
+}
+.gruzli-settings-profile-work input:focus,
+.gruzli-settings-profile-work textarea:focus,
+.gruzli-settings-profile-work select:focus{
+  border-color:rgba(242,189,22,.65)!important;
+  box-shadow:0 0 0 3px rgba(242,189,22,.11)!important;
+}
+@media(max-width:420px){
+  .gruzli-settings-profile-work{padding:15px}
+}
