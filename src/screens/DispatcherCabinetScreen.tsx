@@ -546,20 +546,11 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
         </div>
       </div>
 
-      {/* Community button */}
-      <div className="px-4 pb-3">
-        <button
-          onClick={onOpenCommunity}
-          className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border active:bg-surface-1 transition-all"
-        >
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0">
-            <Users size={18} className="text-primary" />
-          </div>
-          <div className="flex-1 text-left">
-            <p className="text-sm font-bold text-foreground">Сообщество диспетчеров</p>
-            <p className="text-[11px] text-muted-foreground">Общий чат · советы · обсуждения</p>
-          </div>
-          <ChevronDown size={16} className="text-muted-foreground -rotate-90 shrink-0" />
+      {/* Cabinet shortcuts */}
+      <div className="px-5 pb-4">
+        <button onClick={onOpenCommunity} className="w-full flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 active:bg-muted">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-muted"><Users size={18}/></span>
+          <span className="flex-1 text-left"><b className="block text-sm">Сообщество диспетчеров</b><small className="text-[11px] text-muted-foreground">Общий чат и рабочие обсуждения</small></span><ChevronDown size={16} className="-rotate-90 text-muted-foreground"/>
         </button>
       </div>
 
@@ -741,7 +732,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: Math.min(i, 6) * 0.04 }}
-                      className="relative rounded-2xl p-4 border border-white/10 backdrop-blur-2xl backdrop-saturate-150 bg-white/5 shadow-[0_8px_32px_-8px_hsl(0_0%_0%/0.4)] overflow-hidden"
+                      className="relative rounded-2xl p-4 border border-border bg-card shadow-sm overflow-hidden"
                       style={{ backgroundImage: 'linear-gradient(135deg, hsl(0 0% 100% / 0.08), hsl(0 0% 100% / 0.02))' }}
                     >
                       <div className="flex items-start justify-between mb-2">
@@ -777,14 +768,14 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                         <span className="flex items-center gap-1"><Users size={11} /> {job.workers_needed} чел.</span>
                       </div>
 
-                      <div className="rounded-xl px-3 py-2.5 mb-3 border border-white/10 bg-white/5 backdrop-blur-xl">
+                      <div className="rounded-xl px-3 py-2.5 mb-3 border border-border bg-muted/40">
                         <div className="flex items-center justify-between gap-2">
                           <span className="text-xs text-muted-foreground">Оплата</span>
                           <div className="flex items-center gap-1.5">
                             <button
                               onClick={() => handleAdjustRate(job, -50)}
                               disabled={adjustingId === job.id || (job.hourly_rate || 0) <= 0}
-                              className="w-8 h-8 rounded-lg border border-white/10 bg-white/10 backdrop-blur-md flex items-center justify-center active:scale-95 disabled:opacity-40 transition-all"
+                              className="w-8 h-8 rounded-lg border border-border bg-muted flex items-center justify-center active:scale-95 disabled:opacity-40 transition-all"
                               title="Понизить на 50 ₽"
                             >
                               <Minus size={14} className="text-foreground" />
