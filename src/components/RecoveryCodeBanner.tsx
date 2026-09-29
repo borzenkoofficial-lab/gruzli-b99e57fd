@@ -94,7 +94,7 @@ export const RecoveryCodeBanner = ({ userId, onClose }: RecoveryCodeBannerProps)
           <button
             onClick={onClose}
             disabled={!code}
-            className="w-full py-3 rounded-xl gradient-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+            className="w-full py-3 rounded-xl bg-foreground text-background text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50"
           >
             <CheckCircle2 size={16} />
             Я сохранил код
