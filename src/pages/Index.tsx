@@ -245,6 +245,56 @@ const Index = () => {
     startTransition(() => setTab(t));
   };
 
+  // Native-style edge swipe back for mobile detail screens.
+  // Only starts from the left edge, so feed/job swipe gestures are not intercepted.
+  useEffect(() => {
+    if (!isMobile) return;
+    let startX = 0;
+    let startY = 0;
+    let tracking = false;
+
+    const onTouchStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      if (!t || t.clientX > 28) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest("input, textarea, select, button")) return;
+      startX = t.clientX;
+      startY = t.clientY;
+      tracking = true;
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      if (!tracking) return;
+      tracking = false;
+      const t = e.changedTouches[0];
+      if (!t) return;
+      const dx = t.clientX - startX;
+      const dy = Math.abs(t.clientY - startY);
+      if (dx < 72 || dy > 90) return;
+
+      if (openChatId) return setOpenChatId(null);
+      if (viewProfileUserId) return setViewProfileUserId(null);
+      if (showSettings) return setShowSettings(false);
+      if (showNotifications) return setShowNotifications(false);
+      if (showPremium) return setShowPremium(false);
+      if (showCompany) return setShowCompany(false);
+      if (showChannel) return setShowChannel(false);
+      if (showCreateJob) return setShowCreateJob(false);
+      if (viewResponsesJob) return setViewResponsesJob(null);
+      if (showCommunity) return setShowCommunity(false);
+      if (showCabinet) return setShowCabinet(false);
+      if (showSupportChat) return setShowSupportChat(false);
+      if (viewJobDetail) return setViewJobDetail(null);
+      if (viewContractId) return setViewContractId(null);
+    };
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [isMobile, openChatId, viewProfileUserId, showSettings, showNotifications, showPremium, showCompany, showChannel, showCreateJob, viewResponsesJob, showCommunity, showCabinet, showSupportChat, viewJobDetail, viewContractId]);
+
   // --- Detail panel content for desktop ---
   const getDetailPanel = () => {
     const panel = (() => {
