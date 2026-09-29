@@ -281,33 +281,28 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
   return (
     <div className="gruzli-mobile-feed app-scroll">
       {/* Header */}
-      <header className="gruzli-mobile-hero px-5 safe-top pb-3 flex items-center justify-between">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Заявки</h1>
-          <div className="flex items-center gap-1.5 mt-1">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full rounded-full bg-online opacity-75 animate-ping" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-online" />
-            </span>
-            <p className="text-[11px] text-muted-foreground">
-              <span className="text-foreground font-semibold">{nearbyCount}</span> активных сейчас
-            </p>
+      <header className="gruzli-feed-hero px-5 safe-top pb-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="gruzli-feed-eyebrow">GRUZLI / WORK</span>
+              <span className="gruzli-feed-live"><i /> LIVE</span>
+            </div>
+            <h1 className="gruzli-feed-title">Работа<br /><span>рядом.</span></h1>
+            <p className="gruzli-feed-subtitle"><b>{nearbyCount}</b> заявок доступны прямо сейчас</p>
           </div>
+          <div className="gruzli-feed-mark"><img src={gruzliLogo} alt="Gruzli" loading="lazy" /></div>
         </div>
-        <div className="relative shrink-0">
-          <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-foreground/20 to-online/10 blur-md opacity-60" />
-          <img src={gruzliLogo} alt="Gruzli" className="relative h-10 w-10 rounded-xl object-cover ring-1 ring-border" loading="lazy" />
+        <div className="gruzli-feed-earnings">
+          <div><span>Средний заказ</span><strong>{avgJobPay ? Math.round(avgJobPay).toLocaleString("ru-RU") : "—"} ₽</strong></div>
+          <div className="gruzli-feed-earnings-divider" />
+          <div><span>Сегодня можно</span><strong>{avgDailyEarnings ? `~${avgDailyEarnings.toLocaleString("ru-RU")} ₽` : "—"}</strong></div>
+          <div className="gruzli-feed-earnings-arrow">↗</div>
         </div>
       </header>
 
       {/* Swipe hint chip */}
-      <div className="px-5 mt-1.5">
-        <div className="gruzli-mobile-hint inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-card/60 border border-border text-[10.5px] text-muted-foreground">
-          <ArrowLeft size={10} className="text-destructive" /> Пропустить
-          <span className="opacity-30">·</span>
-          <ArrowRight size={10} className="text-online" /> Беру
-        </div>
-      </div>
+      <div className="px-5 mt-1"><div className="gruzli-feed-swipe-note"><ArrowLeft size={11} /> свайп — пропустить <span /> <ArrowRight size={11} /> свайп — взять</div></div>
 
       <EnablePushButton />
 
@@ -378,10 +373,10 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
       {/* Category chips (subscription-aware) */}
       <section className="gruzli-mobile-section !px-5 !pt-1">
         <div className="gruzli-mobile-section-title">
-          <h2>Категории</h2>
+          <h2>Что ищем?</h2>
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
-              Ваши категории
+              фильтр работы
             </span>
             {subscribed && subscribed.length < CATEGORIES.length && (
               <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-online/15 text-online font-semibold">
@@ -713,7 +708,7 @@ const SwipeableJobCard = ({
         )}
 
         {/* Tags */}
-        <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+        <div className="gruzli-order-tags flex items-center gap-1.5 mb-2 flex-wrap">
           {(() => {
             const cat = getCategory(classifyJob(job));
             return (
@@ -759,7 +754,7 @@ const SwipeableJobCard = ({
         </div>
 
         {/* Title */}
-        <div className="flex items-start justify-between gap-3">
+        <div className="gruzli-order-heading flex items-start justify-between gap-3">
           <h3 className="text-[17px] font-bold text-foreground leading-[1.14] tracking-[-0.025em] pr-1">{job.title}</h3>
           <div className="shrink-0 text-right">
             <div className="text-[16px] font-extrabold tracking-[-0.02em] text-foreground">{job.hourly_rate.toLocaleString("ru-RU")} ₽</div>
@@ -797,7 +792,7 @@ const SwipeableJobCard = ({
         )}
 
         {/* Pay block */}
-        <div className="mt-4 relative rounded-2xl bg-white/60 border border-white/90 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,.9)]">
+        <div className="gruzli-order-pay mt-4 relative rounded-2xl bg-white/60 border border-white/90 overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,.9)]">
           <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-online/60" />
           <div className="px-3.5 py-3">
             <div className="flex items-center justify-between gap-2">
@@ -819,7 +814,7 @@ const SwipeableJobCard = ({
         </div>
 
         {/* Meta info chips */}
-        <div className="flex items-center gap-1.5 mt-3 flex-wrap">
+        <div className="gruzli-order-meta flex items-center gap-1.5 mt-3 flex-wrap">
           {job.address && (
             <MetaChip icon={MapPin} text={job.address} />
           )}
@@ -838,7 +833,7 @@ const SwipeableJobCard = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/70">
+        <div className="gruzli-order-footer flex items-center justify-between mt-4 pt-3 border-t border-border/70">
           <div className="flex flex-col">
             <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Ставка</span>
             <span className="text-base font-bold text-foreground leading-tight">{job.hourly_rate} ₽<span className="text-xs text-muted-foreground font-medium">/час</span></span>
