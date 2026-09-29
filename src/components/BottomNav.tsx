@@ -1,5 +1,4 @@
 import { memo } from "react";
-import { motion } from "framer-motion";
 import { Home, ClipboardList, MessageCircle, User, FolderOpen } from "lucide-react";
 
 interface BottomNavProps {
@@ -53,9 +52,8 @@ const BottomNav = memo(({ active, onNavigate, isDispatcher, isClient, unreadMess
           const isActive = active === tab.id;
           const Icon = tab.icon;
           return (
-            <motion.button
+            <button
               key={tab.id}
-              whileTap={{ scale: 0.94 }}
               onClick={() => onNavigate(tab.id)}
               role="tab"
               aria-selected={isActive}
@@ -79,7 +77,7 @@ const BottomNav = memo(({ active, onNavigate, isDispatcher, isClient, unreadMess
               >
                 {tab.label}
               </span>
-            </motion.button>
+            </button>
           );
         })}
       </div>
