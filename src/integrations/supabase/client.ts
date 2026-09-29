@@ -256,34 +256,77 @@ async function rpc(name: string, args: Record<string, any> = {}) {
     db.dispatcher_offers.push(offer); saveDb(db); return { data: offer, error: null };
   }
   if (name === "client_select_dispatcher_offer") {
-    const offer = db.dispatcher_offers.find((o) => o.id === args._offer_id);
-    if (!offer) return { data: null, error: { message: "Отклик не найден" } };
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    const offer = db.dispatcher_offers.find((o) => o.id === args._offer_id && o.status === "pending");
+    if (!offer) return { data: null, error: { code: "P0002", message: "Предложение уже недоступно" } };
     const job = db.jobs.find((j) => j.id === offer.job_id);
-    if (!job || job.status !== "open" || job.dispatcher_id) return { data: null, error: { message: "unavailable" } };
+    if (!job || job.client_id !== user.id) return { data: null, error: { code: "42501", message: "Нет доступа к заказу" } };
+    if (job.status !== "open" || job.dispatcher_id) return { data: null, error: { code: "P0001", message: "К заказу уже назначен диспетчер" } };
     job.dispatcher_id = offer.dispatcher_id; job.status = "active";
     job.hourly_rate = offer.proposed_hourly_rate; job.workers_needed = offer.proposed_workers;
     db.dispatcher_offers.filter((o) => o.job_id === offer.job_id).forEach((o) => { o.status = o.id === offer.id ? "accepted" : "rejected"; });
     saveDb(db); return { data: job, error: null };
   }
   if (name === "accept_job_response") {
-    const response = db.job_responses.find((r) => r.id === args._response_id);
-    if (response) response.status = "accepted";
-    saveDb(db); return { data: { accepted: true, filled: false, response_id: args._response_id }, error: null };
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    const response = db.job_responses.find((r) => r.id === args._response_id && r.status === "pending");
+    if (!response) return { data: null, error: { code: "P0002", message: "Отклик уже обработан" } };
+    const job = db.jobs.find((j) => j.id === response.job_id);
+    if (!job || job.dispatcher_id !== user.id) return { data: null, error: { code: "42501", message: "Нет доступа к отклику" } };
+    const acceptedCount = db.job_responses.filter((r) => r.job_id === job.id && r.status === "accepted").length;
+    const limit = Math.max(1, Number(job.workers_needed) || 1);
+    if (acceptedCount >= limit) return { data: null, error: { code: "P0002", message: "Лимит грузчиков уже достигнут" } };
+    response.status = "accepted";
+    const nextCount = acceptedCount + 1;
+    const filled = nextCount >= limit;
+    if (filled) {
+      job.status = "filled";
+      db.job_responses.filter((r) => r.job_id === job.id && r.status === "pending").forEach((r) => { r.status = "rejected"; });
+    }
+    saveDb(db);
+    return { data: { accepted: true, filled, accepted_count: nextCount, workers_needed: limit, auto_rejected: filled ? db.job_responses.filter((r) => r.job_id === job.id && r.status === "rejected").length : 0, response_id: response.id }, error: null };
   }
   if (name === "worker_update_response_status") {
-    const response = db.job_responses.find((r) => r.id === args._response_id);
-    if (response) response.worker_status = args._next_status;
-    saveDb(db); return { data: response || { worker_status: args._next_status }, error: null };
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    const response = db.job_responses.find((r) => r.id === args._response_id && r.worker_id === user.id && r.status === "accepted");
+    if (!response) return { data: null, error: { code: "42501", message: "Нет доступа к назначенному заказу" } };
+    const allowed = ["confirmed", "en_route", "late", "arrived", "finishing", "completed"];
+    if (!allowed.includes(args._next_status)) return { data: null, error: { code: "22023", message: "Недопустимый статус" } };
+    const transitions: Record<string, string[]> = {
+      accepted: ["confirmed"], confirmed: ["en_route", "late"], en_route: ["arrived", "late"],
+      late: ["en_route", "arrived"], arrived: ["finishing", "completed"], finishing: ["completed"],
+    };
+    const current = response.worker_status || "accepted";
+    if (!transitions[current]?.includes(args._next_status)) return { data: null, error: { code: "P0001", message: "Сначала выполните предыдущий шаг" } };
+    const now = new Date().toISOString();
+    response.worker_status = args._next_status;
+    if (args._next_status === "arrived") response.work_started_at = response.work_started_at || now;
+    if (args._next_status === "completed") {
+      response.work_finished_at = now;
+      const started = response.work_started_at ? new Date(response.work_started_at).getTime() : Date.now();
+      response.hours_worked = Math.max(0, Math.round(((Date.now() - started) / 3600000) * 100) / 100);
+      const job = db.jobs.find((j) => j.id === response.job_id);
+      response.earned = response.hours_worked * Number(job?.hourly_rate || 0);
+      const otherActive = db.job_responses.some((r) => r.job_id === response.job_id && r.id !== response.id && r.status === "accepted" && r.worker_status !== "completed");
+      if (!otherActive && job) job.status = "completed";
+    }
+    saveDb(db); return { data: response, error: null };
   }
   if (name === "worker_withdraw_response") {
-    const response = db.job_responses.find((r) => r.id === args._response_id);
-    if (response) response.status = "withdrawn";
-    saveDb(db); return { data: response || null, error: null };
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    const response = db.job_responses.find((r) => r.id === args._response_id && r.worker_id === user.id && r.status === "pending");
+    if (!response) return { data: null, error: { code: "P0001", message: "Этот отклик уже нельзя отозвать" } };
+    response.status = "withdrawn";
+    saveDb(db); return { data: response, error: null };
   }
   if (name === "dispatcher_reject_job_response") {
-    const response = db.job_responses.find((r) => r.id === args._response_id);
-    if (response) response.status = "rejected";
-    saveDb(db); return { data: response || null, error: null };
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    const response = db.job_responses.find((r) => r.id === args._response_id && r.status === "pending");
+    if (!response) return { data: null, error: { code: "P0001", message: "Этот отклик уже нельзя отклонить" } };
+    const job = db.jobs.find((j) => j.id === response.job_id);
+    if (!job || job.dispatcher_id !== user.id) return { data: null, error: { code: "42501", message: "Нет доступа к отклику" } };
+    response.status = "rejected";
+    saveDb(db); return { data: response, error: null };
   }
   if (name === "dispatcher_finish_job" || name === "dispatcher_complete_job" || name === "dispatcher_review_worker") return { data: {}, error: null };
   if (name === "create_direct_conversation") {
