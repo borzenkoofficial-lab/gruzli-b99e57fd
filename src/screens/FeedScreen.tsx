@@ -389,7 +389,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
         ) : filtered.length === 0 ? (
           <EmptyState hasJobs={jobs.length > 0} onReset={resetAll} />
         ) : (
-          <AnimatePresence mode="popLayout">
+          <AnimatePresence mode="sync">
             {filtered.map((job, i) => (
               <SwipeableJobCard
                 key={job.id}
