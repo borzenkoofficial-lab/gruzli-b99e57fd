@@ -464,7 +464,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
                 >
                   <r.icon size={24} className="mx-auto mb-2" />
                   <p className="text-sm font-bold">{r.label}</p>
-                  <p className={`text-[11px] mt-0.5 ${role === r.id ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{r.desc}</p>
+                  <p className={`text-[11px] mt-0.5 ${role === r.id ? "text-background/70" : "text-muted-foreground"}`}>{r.desc}</p>
                 </button>
               ))}
             </div>
@@ -472,7 +472,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
             {/* Full name */}
             <div className="mt-4">
               <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">ФИО</label>
-              <div className="neu-inset rounded-xl px-4 py-3">
+              <div className="bg-white border border-border shadow-sm rounded-xl px-4 py-3">
                 <input
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
@@ -486,7 +486,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
             {/* Birth date */}
             <div className="mt-3">
               <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Дата рождения</label>
-              <div className="neu-inset rounded-xl px-4 py-3 flex items-center gap-2">
+              <div className="bg-white border border-border shadow-sm rounded-xl px-4 py-3 flex items-center gap-2">
                 <Calendar size={16} className="text-muted-foreground shrink-0" />
                 <input
                   type="date"
@@ -503,7 +503,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
         {/* Email or Phone — icon stays static so input does NOT remount on each keystroke */}
         <div>
           <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Email или номер телефона</label>
-          <div className="neu-inset rounded-xl px-4 py-3 flex items-center gap-2">
+          <div className="bg-white border border-border shadow-sm rounded-xl px-4 py-3 flex items-center gap-2">
             <Phone size={16} className="text-muted-foreground shrink-0" />
             <input
               type="text"
@@ -524,7 +524,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
         {/* Password — keep input mounted, toggle visibility via -webkit-text-security so the keyboard stays open */}
         <div>
           <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Пароль</label>
-          <div className="neu-inset rounded-xl px-4 py-3 flex items-center">
+          <div className="bg-white border border-border shadow-sm rounded-xl px-4 py-3 flex items-center">
             <input
               type="text"
               value={password}
@@ -564,7 +564,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
         <button
           type="submit"
           disabled={loading || (mode === "register" && !allLegalAccepted)}
-          className="w-full py-4 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50"
+          className="w-full py-4 rounded-2xl bg-foreground text-background text-background text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50"
         >
           {loading ? (
             <Loader2 size={18} className="animate-spin" />
