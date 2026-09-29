@@ -122,7 +122,7 @@ const Index = () => {
     }
     const id = window.setTimeout(run, 700);
     return () => window.clearTimeout(id);
-  }, []);
+  }, [role]);
 
   useEffect(() => {
     const handler = () => setTab("feed");
@@ -478,7 +478,7 @@ const Index = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -2 }}
                     transition={{ duration: 0.12, ease: "easeOut" }}
-                    className=""
+                    className="native-surface"
                   >
                     {tab === "orders" && <OrdersScreen />}
                     {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} onOpenCommunity={() => setShowCommunity(true)} />}
