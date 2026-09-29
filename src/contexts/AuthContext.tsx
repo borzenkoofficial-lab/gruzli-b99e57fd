@@ -96,7 +96,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const effectiveRole = demoMode ? "worker" : role;
-  const effectiveProfile = demoMode ? { full_name: "Демо-грузчик", role: "worker" } : profile;
+  const effectiveProfile = demoMode ? {
+    full_name: "Демо-грузчик",
+    role: "worker",
+    rating: 4.96,
+    completed_orders: 128,
+    total_earned: 186400,
+    balance: 12450,
+    is_premium: true,
+    premium_until: "2026-12-31T23:59:59Z",
+    skills: ["Переезды", "Разгрузка", "Демонтаж"],
+  } : profile;
 
   return (
     <AuthContext.Provider value={{ user, session, role: effectiveRole, profile: effectiveProfile, loading, signOut }}>
