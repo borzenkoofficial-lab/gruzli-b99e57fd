@@ -130,21 +130,8 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
       setLoading(false);
       return;
     }
-    if (requiresContract) {
-      const { error: contractErr } = await supabase.from("job_contracts").insert({
-        job_id: createdJob.id,
-        dispatcher_id: user.id,
-        title: contractTitle.trim() || "Договор подряда",
-        body: contractBody.trim(),
-        status: "issued",
-        dispatcher_signed_at: new Date().toISOString(),
-      });
-      if (contractErr) {
-        console.error(contractErr);
-        toast.warning("Заявка создана, но договор не сохранён");
-      }
-    }
-
+    // Contract creation is intentionally deferred until a dispatcher is assigned.
+    // job_contracts requires dispatcher_id, while a new client request has none yet.
     toast.success(isClient ? "Запрос отправлен диспетчерам" : "Заявка создана!");
     onCreated();
     setLoading(false);
