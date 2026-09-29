@@ -5546,3 +5546,152 @@ button.bg-foreground:active{
   .gruzli-job-card{transition:none}
   .gruzli-job-card:hover{transform:none}
 }
+
+
+/* ==========================================================================
+   GRUZLI — LIVING EDITORIAL CANVAS
+   Animated paper / blueprint atmosphere behind the existing mockup cards.
+   ========================================================================== */
+
+.gruzli-mobile-feed{
+  position:relative;
+  isolation:isolate;
+  background:
+    radial-gradient(520px 360px at 88% 8%,rgba(242,196,0,.075),transparent 68%),
+    radial-gradient(460px 340px at 4% 42%,rgba(110,120,135,.055),transparent 72%),
+    linear-gradient(180deg,#f7f7f6 0%,#f4f4f3 48%,#f7f7f6 100%);
+}
+
+.gruzli-mobile-feed:before{
+  content:"";
+  position:fixed;
+  z-index:-3;
+  inset:0;
+  pointer-events:none;
+  opacity:.48;
+  background-image:
+    linear-gradient(rgba(30,32,36,.028) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(30,32,36,.028) 1px,transparent 1px);
+  background-size:44px 44px;
+  mask-image:linear-gradient(to bottom,black,rgba(0,0,0,.7) 55%,transparent 100%);
+}
+
+.gruzli-mobile-feed:after{
+  content:"";
+  position:fixed;
+  z-index:-2;
+  width:440px;
+  height:440px;
+  top:90px;
+  right:-190px;
+  border:1px solid rgba(23,24,27,.055);
+  border-radius:50%;
+  box-shadow:
+    0 0 0 46px rgba(23,24,27,.018),
+    0 0 0 94px rgba(23,24,27,.012),
+    0 0 0 158px rgba(23,24,27,.008);
+  pointer-events:none;
+  animation:gruzli-orbit-drift 22s ease-in-out infinite alternate;
+}
+
+.gruzli-feed-hero{
+  position:relative;
+  overflow:hidden;
+}
+
+.gruzli-feed-hero:before{
+  content:"";
+  position:absolute;
+  width:240px;
+  height:240px;
+  right:-90px;
+  top:-110px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(242,196,0,.14),rgba(242,196,0,.025) 44%,transparent 72%);
+  filter:blur(2px);
+  pointer-events:none;
+  animation:gruzli-light-breathe 7s ease-in-out infinite;
+}
+
+.gruzli-feed-hero:after{
+  content:"";
+  position:absolute;
+  left:0;
+  right:20px;
+  bottom:0;
+  height:1px;
+  background:linear-gradient(90deg,rgba(23,24,27,.12),rgba(23,24,27,.035),transparent);
+  pointer-events:none;
+}
+
+.gruzli-mobile-feed > .px-5.space-y-3{
+  position:relative;
+}
+
+.gruzli-mobile-feed > .px-5.space-y-3:before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  left:-20px;
+  right:-20px;
+  top:-20px;
+  bottom:-40px;
+  background:
+    radial-gradient(260px 180px at 15% 10%,rgba(242,196,0,.035),transparent 70%),
+    radial-gradient(300px 220px at 88% 62%,rgba(40,45,55,.025),transparent 70%);
+  pointer-events:none;
+}
+
+.gruzli-mobile-section{
+  position:relative;
+}
+
+.gruzli-mobile-section:after{
+  content:"01 / FEED";
+  position:absolute;
+  right:20px;
+  bottom:4px;
+  font-size:6px;
+  line-height:1;
+  font-weight:900;
+  letter-spacing:.2em;
+  color:rgba(23,24,27,.13);
+  pointer-events:none;
+}
+
+.gruzli-job-card{
+  --card-glow:rgba(242,196,0,.08);
+  will-change:transform;
+}
+
+.gruzli-job-card:before{
+  animation:gruzli-card-grid-shift 16s linear infinite;
+}
+
+.gruzli-job-card:hover{
+  --card-glow:rgba(242,196,0,.13);
+}
+
+@keyframes gruzli-orbit-drift{
+  0%{transform:translate3d(0,0,0) rotate(0deg)}
+  100%{transform:translate3d(-28px,34px,0) rotate(7deg)}
+}
+
+@keyframes gruzli-light-breathe{
+  0%,100%{transform:scale(.92);opacity:.68}
+  50%{transform:scale(1.08);opacity:1}
+}
+
+@keyframes gruzli-card-grid-shift{
+  0%{background-position:0 0,0 0,0 0,0 0,0 0}
+  50%{background-position:5px 0,-4px 3px,12px 0,0 0,0 0}
+  100%{background-position:0 0,0 0,24px 0,0 0,0 0}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .gruzli-mobile-feed:after,
+  .gruzli-feed-hero:before,
+  .gruzli-job-card:before{
+    animation:none!important;
+  }
+}
