@@ -431,7 +431,7 @@ const OrdersScreen = () => {
   const finishing = jobs.filter((j) => j.workerStatus === "finishing");
 
   return (
-    <div className="gruzli-orders-screen app-scroll native-surface">
+    <div className="gruzli-orders-screen native-surface">
       <header className="px-5 safe-top pb-4"><div><p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Gruzli</p>
         <h1 className="text-[29px] font-extrabold text-foreground tracking-[-.045em] leading-none">Мои заказы</h1></div>
         <p className="text-xs text-muted-foreground mt-1">Заявки, на которые вас выбрали</p>
