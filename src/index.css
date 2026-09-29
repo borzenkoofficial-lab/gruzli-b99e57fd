@@ -1091,6 +1091,31 @@ html, body {
   }
 }
 
+/* Swipe performance: freeze decorative loops while a job card is under direct manipulation. */
+.is-swipe-dragging .animate-ping,
+.is-swipe-dragging .btn-shimmer::after {
+  animation-play-state: paused !important;
+}
+.is-swipe-dragging .btn-shimmer::after {
+  display: none !important;
+}
+
+/* Chat surfaces stay flat and predictable on touch devices. */
+@media (max-width: 767px) {
+  .gruzli-chat-detail,
+  .gruzli-chat-detail * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  .gruzli-chat-detail .backdrop-blur-sm,
+  .gruzli-chat-detail .backdrop-blur-md,
+  .gruzli-chat-detail .backdrop-blur-lg,
+  .gruzli-chat-detail .backdrop-blur-xl,
+  .gruzli-chat-detail .backdrop-blur-2xl {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
 /* Standalone/PWA: the home-indicator area uses the same app canvas, never a white block. */
 @media all and (display-mode: standalone){
   html,body,#root,.app-shell{background:#f7f7f8!important;}
