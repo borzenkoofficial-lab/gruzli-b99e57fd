@@ -2641,3 +2641,61 @@ body,
   flex:0 0 auto!important;
   transform:none!important;
 }
+
+
+/* Feed layout stabilization v2 */
+.gruzli-mobile-feed{
+  overflow-x:hidden!important;
+}
+.gruzli-mobile-feed .gruzli-feed-hero{
+  isolation:isolate;
+}
+.gruzli-mobile-feed .gruzli-feed-hero > *{
+  position:relative!important;
+  z-index:1!important;
+}
+.gruzli-mobile-feed .gruzli-feed-earnings{
+  transform:none!important;
+  will-change:auto!important;
+}
+.gruzli-mobile-feed .gruzli-feed-swipe-note{
+  transform:none!important;
+  will-change:auto!important;
+}
+.gruzli-mobile-feed .gruzli-order-heading,
+.gruzli-mobile-feed .gruzli-order-scene,
+.gruzli-mobile-feed .gruzli-order-pay,
+.gruzli-mobile-feed .gruzli-order-meta,
+.gruzli-mobile-feed .gruzli-order-footer{
+  position:relative!important;
+  transform:none;
+}
+.gruzli-mobile-feed .gruzli-order-index{
+  pointer-events:none!important;
+}
+.gruzli-mobile-feed .gruzli-order-accent{
+  pointer-events:none!important;
+}
+@media(max-width:480px){
+  .gruzli-mobile-feed .gruzli-feed-hero{
+    padding-top:18px!important;
+    padding-bottom:14px!important;
+  }
+  .gruzli-mobile-feed .gruzli-feed-title{
+    font-size:clamp(40px,12vw,54px)!important;
+  }
+  .gruzli-mobile-feed .gruzli-feed-earnings{
+    grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr) 16px!important;
+    gap:9px!important;
+    margin-top:18px!important;
+    padding:12px 10px!important;
+  }
+  .gruzli-mobile-feed .gruzli-feed-earnings strong{
+    font-size:16px!important;
+  }
+  .gruzli-mobile-feed .gruzli-feed-swipe-note{
+    max-width:100%!important;
+    overflow:hidden!important;
+    white-space:nowrap!important;
+  }
+}
