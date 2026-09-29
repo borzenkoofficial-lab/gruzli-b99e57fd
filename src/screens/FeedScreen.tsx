@@ -97,14 +97,27 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
 
 
   const fetchJobs = async () => {
-    setLoading(true);
-    const { data } = await supabase
+    // Keep the already-rendered feed visible during pull-to-refresh/realtime refresh.
+    // The initial loading skeleton is driven by the initial useState(true) only.
+    const { data, error } = await supabase
       .from("jobs")
       .select("*")
       .eq("status", "active")
       .order("created_at", { ascending: false });
+
+    // On transient network errors preserve the current feed instead of flashing empty.
+    if (error) {
+      setLoading(false);
+      return;
+    }
+
     const demoMode = localStorage.getItem("gruzli_demo_worker") === "1";
     const feedJobs = data && data.length > 0 ? data : (demoMode ? DEMO_JOBS : []);
+    setJobs(feedJobs);
+    if (feedJobs.length === 0) {
+      setDispatcherNames({});
+      setWorkersFound({});
+    }
     if (feedJobs.length > 0) {
       setJobs(feedJobs);
       const dispatcherIds = [...new Set(feedJobs.map((j) => j.dispatcher_id).filter((id): id is string => Boolean(id)))];
