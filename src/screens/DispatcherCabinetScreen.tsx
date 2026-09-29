@@ -514,7 +514,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   ];
 
   return (
-    <div className="h-full w-full overflow-y-auto overflow-x-hidden bg-background overscroll-contain native-surface" style={{ WebkitOverflowScrolling: "touch", paddingBottom: "calc(var(--bottom-nav-height, 76px) + env(safe-area-inset-bottom, 0px) + 16px)" }}>
+    <div className="gruzli-dispatcher-cabinet-scroll h-full w-full overflow-y-auto overflow-x-hidden bg-background overscroll-contain native-surface" style={{ WebkitOverflowScrolling: "touch", paddingBottom: "calc(var(--bottom-nav-height, 76px) + env(safe-area-inset-bottom, 0px) + 16px)" }}>
       {/* Dispatcher cabinet hero */}
       <div className="px-5 safe-top pb-4">
         <div className="flex items-center gap-3">
