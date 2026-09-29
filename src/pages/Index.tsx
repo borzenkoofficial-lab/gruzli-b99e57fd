@@ -461,9 +461,11 @@ const Index = () => {
     const wrapSuspense = (node: React.ReactNode) => (
       <>
         {renderMobileBackButton}
-        <ErrorBoundary>
-          <Suspense fallback={<ScreenSkeleton />}>{node}</Suspense>
-        </ErrorBoundary>
+        <div className="mobile-screen-scroll">
+          <ErrorBoundary>
+            <Suspense fallback={<ScreenSkeleton />}>{node}</Suspense>
+          </ErrorBoundary>
+        </div>
       </>
     );
 
