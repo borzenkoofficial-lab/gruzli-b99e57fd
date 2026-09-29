@@ -111,13 +111,13 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
   const isOfficial = job.is_official;
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="gruzli-job-detail app-scroll min-h-screen bg-background pb-28">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 safe-top pb-4">
-        <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
+      <div className="flex items-center gap-3 px-5 safe-top pb-4">
+        <button onClick={onBack} className="w-11 h-11 rounded-2xl bg-white/72 border border-white/90 flex items-center justify-center shadow-[0_10px_28px_rgba(31,35,43,.07)] backdrop-blur-xl active:scale-95 transition-all">
           <ArrowLeft size={18} className="text-foreground" />
         </button>
-        <h2 className="text-base font-bold text-foreground flex-1">Детали заказа</h2>
+        <div className="flex-1 min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Заказ</p><h2 className="text-[17px] font-extrabold tracking-[-.03em] text-foreground truncate">Детали заказа</h2></div>
       </div>
 
       <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="px-5">
@@ -145,7 +145,7 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
           </div>
         )}
 
-        <div className="flex items-start justify-between mb-3">
+        <div className="relative overflow-hidden rounded-[26px] border border-white/90 bg-white/72 p-5 mb-4 shadow-[0_22px_55px_rgba(31,35,43,.085),inset_0_1px_0_rgba(255,255,255,.98)] backdrop-blur-2xl">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-1.5">
               {job.urgent && (
@@ -154,7 +154,7 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
                 </span>
               )}
             </div>
-            <h1 className="text-lg font-bold text-foreground">{job.title}</h1>
+            <h1 className="text-[25px] leading-[1.04] font-extrabold tracking-[-.045em] text-foreground">{job.title}</h1>
             {isOfficial ? (
               <div className="flex items-center gap-1.5 mt-1.5">
                 <div className="w-4 h-4 rounded-full bg-yellow-400 flex items-center justify-center overflow-hidden">
@@ -176,11 +176,11 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
         </div>
 
         {/* Earnings */}
-        <div className="bg-surface-1 border border-border rounded-xl px-4 py-3 mb-4">
+        <div className="relative overflow-hidden rounded-[22px] border border-white/90 bg-white/78 px-4 py-4 mb-4 shadow-[0_16px_42px_rgba(31,35,43,.065),inset_0_1px_0_rgba(255,255,255,.96)] backdrop-blur-2xl">
           <div className="flex items-center gap-2">
             <Wallet size={16} className="text-primary" />
             <span className="text-sm text-muted-foreground">Ты получишь</span>
-            <span className="text-2xl font-extrabold text-bg-foreground ml-auto">{totalPay.toLocaleString("ru-RU")} ₽</span>
+            <span className="text-[28px] leading-none font-extrabold tracking-[-.045em] text-foreground ml-auto">{totalPay.toLocaleString("ru-RU")} ₽</span>
           </div>
           <p className="text-xs text-muted-foreground mt-1">{job.hourly_rate} ₽/час × {job.duration_hours || 4}ч</p>
         </div>
@@ -254,13 +254,13 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
 
 
         {/* Details */}
-        <div className="space-y-3 mb-6">
+        <div className="space-y-2.5 mb-6">
           {[
             job.address && { icon: MapPin, label: "Адрес", value: job.address },
             job.start_time && { icon: Clock, label: "Дата и время", value: new Date(job.start_time).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) },
             { icon: Users, label: "Грузчиков", value: `${job.workers_needed || 1} человек` },
           ].filter(Boolean).map((detail: any) => (
-            <div key={detail.label} className="flex items-center gap-3 p-3.5 bg-card rounded-2xl">
+            <div key={detail.label} className="flex items-center gap-3 p-3.5 bg-white/68 border border-white/85 rounded-[18px] shadow-[0_10px_28px_rgba(31,35,43,.045)] backdrop-blur-xl">
               <div className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center flex-shrink-0">
                 <detail.icon size={15} className="text-primary" />
               </div>
@@ -273,11 +273,11 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="sticky bottom-3 z-30 flex gap-2 rounded-[22px] border border-white/90 bg-white/72 p-2 shadow-[0_18px_45px_rgba(31,35,43,.14),inset_0_1px_0_rgba(255,255,255,.96)] backdrop-blur-2xl">
           <button
             onClick={handleRespond}
             disabled={responding || responded}
-            className={`flex-1 py-3.5 rounded-2xl text-sm font-bold active:scale-[0.98] transition-all ${
+            className={`flex-1 min-h-[50px] py-3.5 rounded-[16px] text-sm font-bold active:scale-[0.98] transition-all ${
               responded
                 ? isAccepted
                   ? "bg-online/20 text-online"
