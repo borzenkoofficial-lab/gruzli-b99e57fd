@@ -151,7 +151,7 @@ const OrdersScreen = () => {
       return;
     }
 
-    const dispatcherIds = [...new Set(jobsData.map((j) => j.dispatcher_id))];
+    const dispatcherIds = [...new Set(jobsData.map((j) => j.dispatcher_id).filter((id): id is string => Boolean(id)))];
     const { data: profiles } = await supabase
       .from("profiles_public" as any)
       .select("user_id, full_name")
@@ -169,7 +169,7 @@ const OrdersScreen = () => {
         startTime: j.start_time,
         hourlyRate: j.hourly_rate,
         durationHours: Number(j.duration_hours) || 1,
-        dispatcherName: nameMap[j.dispatcher_id] || "Диспетчер",
+        dispatcherName: j.dispatcher_id ? (nameMap[j.dispatcher_id] || "Диспетчер") : "Ищем диспетчера",
         workerStatus: resp.worker_status,
         workStartedAt: (resp as any).work_started_at,
         workFinishedAt: (resp as any).work_finished_at,
