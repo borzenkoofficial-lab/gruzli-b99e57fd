@@ -373,7 +373,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         <div className="pb-6">
           {/* Header */}
           <div className="px-5 safe-top pb-3 flex items-center justify-between">
-            <h1 className="text-xl font-bold text-foreground">Профиль</h1>
+            <div className="gruzli-profile-title"><span>GRUZLI / 04</span><h1>Профиль</h1></div>
             <div className="flex items-center gap-2">
               <button onClick={onOpenNotifications} aria-label="Уведомления" className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center active:scale-95 transition-transform">
                 <Bell size={18} className="text-muted-foreground" />
@@ -865,7 +865,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         </div>
       )}
 
-      {/* Bank Card — Worker */}
+      {/* 05 / WALLET — Worker */}
       <div className="px-5 pb-5">
         <BankCard
           balance={profile?.balance || 0}
