@@ -153,6 +153,7 @@ MessageBubble.displayName = "MessageBubble";
 
 const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessagesRead }: RealChatScreenProps) => {
   const { user } = useAuth();
+  const isDemo = user?.id?.startsWith("demo-") === true;
   const [messages, setMessages] = useState<Message[]>([]);
   const [senderNames, setSenderNames] = useState<Record<string, string>>({});
   const [text, setText] = useState("");
@@ -218,7 +219,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const [otherAvatarUrl, setOtherAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user || !conversationId) return;
+    if (!user || !conversationId || isDemo) return;
     const fetchOther = async () => {
       const { data: parts } = await supabase
         .from("conversation_participants").select("user_id")
@@ -274,6 +275,23 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   useEffect(() => { adjustTextarea(); }, [text, adjustTextarea]);
 
   const fetchMessages = async () => {
+    if (isDemo) {
+      const now = new Date();
+      const otherId = conversationId.includes("dispatcher") ? "demo-dispatcher" : conversationId.includes("worker") ? "demo-worker" : "demo-official";
+      const otherName = conversationId.includes("dispatcher") ? "Анна Петрова" : conversationId.includes("worker") ? "Алексей Морозов" : "Gruzli Official";
+      setOtherUserId(otherId);
+      setResolvedTitle(otherName);
+      setSenderNames({ [otherId]: otherName, [user?.id || "demo"]: profileNameForDemo(user?.id) });
+      setMessages([
+        { id: `demo-msg-${conversationId}-1`, conversation_id: conversationId, sender_id: otherId, text: "Привет! Хотел уточнить детали заказа.", message_type: "text", created_at: new Date(now.getTime() - 18 * 60000).toISOString() },
+        { id: `demo-msg-${conversationId}-2`, conversation_id: conversationId, sender_id: user?.id || "demo", text: "Да, конечно. Заказ подтверждён, всё готово.", message_type: "text", created_at: new Date(now.getTime() - 16 * 60000).toISOString() },
+        { id: `demo-msg-${conversationId}-3`, conversation_id: conversationId, sender_id: otherId, text: "Отлично. Тогда остаёмся на связи.", message_type: "text", created_at: new Date(now.getTime() - 14 * 60000).toISOString() },
+      ]);
+      setLoading(false);
+      setTimeout(() => scrollToBottom(false), 50);
+      return;
+    }
+
     const [convRes, msgsRes] = await Promise.all([
       supabase.from("conversations").select("job_id").eq("id", conversationId).single(),
       supabase.from("messages").select("*").eq("conversation_id", conversationId).order("created_at", { ascending: true }),
@@ -369,6 +387,21 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
 
   const handleSend = async () => {
     if (!text.trim() || !user || sendLockRef.current) return;
+    if (isDemo) {
+      const msgText = text.trim();
+      setText("");
+      const demoMsg: Message = {
+        id: `demo-local-${Date.now()}`,
+        conversation_id: conversationId,
+        sender_id: user.id,
+        text: msgText,
+        message_type: "text",
+        created_at: new Date().toISOString(),
+      };
+      appendMessage(demoMsg);
+      setTimeout(() => scrollToBottom(), 30);
+      return;
+    }
     const msgText = text.trim();
     const replyId = replyTo?.id ?? null;
     const optimisticId = `optimistic-${crypto.randomUUID()}`;
@@ -909,3 +942,4 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
 };
 
 export default RealChatScreen;
+const profileNameForDemo = (id?: string) => id?.includes("client") ? "Сергей Волков" : id?.includes("dispatcher") ? "Анна Петрова" : id?.includes("worker") ? "Алексей Морозов" : "Сергей";
