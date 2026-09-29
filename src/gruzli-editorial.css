@@ -1422,3 +1422,36 @@ button{ -webkit-tap-highlight-color:transparent; }
     box-shadow:0 18px 46px rgba(31,35,43,.07),inset 0 1px 0 rgba(255,255,255,.96)!important;
   }
 }
+
+@media(max-width:767px){
+  .gruzli-feed-hero{position:relative;padding-top:8px;}
+  .gruzli-feed-eyebrow{font-size:9px;font-weight:800;letter-spacing:.16em;color:#8a8b91;}
+  .gruzli-feed-live{display:inline-flex;align-items:center;gap:5px;font-size:8px;font-weight:800;letter-spacing:.12em;color:#4b4c51;padding:4px 7px;border-radius:999px;background:rgba(255,255,255,.7);border:1px solid rgba(255,255,255,.95);}
+  .gruzli-feed-live i{width:5px;height:5px;border-radius:50%;background:#38b36b;box-shadow:0 0 0 3px rgba(56,179,107,.1);}
+  .gruzli-feed-title{margin:0;font-size:39px!important;line-height:.9!important;letter-spacing:-.065em!important;font-weight:850!important;}
+  .gruzli-feed-title span{color:#8b8c91;}
+  .gruzli-feed-subtitle{margin-top:11px;font-size:11px;color:#85868c;}
+  .gruzli-feed-subtitle b{color:#191a1d;font-weight:800;}
+  .gruzli-feed-mark{width:52px;height:52px;border-radius:18px;padding:5px;background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.95);box-shadow:0 14px 34px rgba(31,35,43,.09),inset 0 1px 0 #fff;backdrop-filter:blur(20px);}
+  .gruzli-feed-mark img{width:100%;height:100%;border-radius:13px;object-fit:cover;}
+  .gruzli-feed-earnings{display:grid;grid-template-columns:1fr 1px 1fr 20px;align-items:center;gap:12px;margin-top:20px;padding:13px 14px;border-radius:19px;background:linear-gradient(135deg,rgba(255,255,255,.92),rgba(255,255,255,.62));border:1px solid rgba(255,255,255,.96);box-shadow:0 18px 42px rgba(31,35,43,.065),inset 0 1px 0 #fff;backdrop-filter:blur(24px);}
+  .gruzli-feed-earnings span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:#8b8c91;}
+  .gruzli-feed-earnings strong{display:block;margin-top:3px;font-size:16px;letter-spacing:-.035em;font-weight:850;color:#191a1d;}
+  .gruzli-feed-earnings-divider{width:1px;height:25px;background:#e3e3e6;}
+  .gruzli-feed-earnings-arrow{font-size:20px;font-weight:800;text-align:right;color:#c8a600;}
+  .gruzli-feed-swipe-note{display:flex;align-items:center;gap:5px;width:max-content;padding:5px 9px;border-radius:999px;color:#96979c;background:rgba(255,255,255,.48);border:1px solid rgba(255,255,255,.78);font-size:9px;font-weight:650;letter-spacing:.01em;}
+  .gruzli-feed-swipe-note span{width:3px;height:3px;border-radius:50%;background:#d2d2d5;margin:0 2px;}
+  .gruzli-order-card{border-radius:24px!important;padding:16px!important;background:linear-gradient(145deg,rgba(255,255,255,.94),rgba(255,255,255,.68))!important;border-color:rgba(255,255,255,.96)!important;box-shadow:0 20px 52px rgba(31,35,43,.075),inset 0 1px 0 #fff!important;}
+  .gruzli-order-card:before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(300px 120px at 100% 0,rgba(255,221,65,.10),transparent 70%);opacity:0;transition:opacity .25s ease;}
+  .gruzli-order-card:active:before{opacity:1;}
+  .gruzli-order-heading h3{font-size:19px!important;line-height:1.08!important;letter-spacing:-.035em!important;font-weight:800!important;}
+  .gruzli-order-heading>div:last-child>div:first-child{font-size:18px!important;font-weight:850!important;}
+  .gruzli-order-tags span{border-radius:999px!important;}
+  .gruzli-order-pay{margin-top:16px!important;border-radius:18px!important;background:rgba(248,248,249,.7)!important;border-color:#ececef!important;box-shadow:none!important;}
+  .gruzli-order-pay:after{content:"";position:absolute;right:-24px;top:-34px;width:110px;height:110px;border-radius:50%;background:rgba(244,196,0,.08);filter:blur(10px);}
+  .gruzli-order-pay strong{font-weight:850;}
+  .gruzli-order-meta{gap:6px!important;}
+  .gruzli-order-meta>span{min-height:27px;padding:0 9px!important;border-radius:999px!important;background:rgba(241,241,243,.72)!important;border-color:#e7e7ea!important;}
+  .gruzli-order-footer{border-color:#e8e8eb!important;}
+  .gruzli-order-footer .btn-shimmer{min-height:46px!important;padding:0 19px!important;border-radius:15px!important;background:#191a1d!important;box-shadow:0 10px 24px rgba(25,26,29,.16)!important;}
+}
