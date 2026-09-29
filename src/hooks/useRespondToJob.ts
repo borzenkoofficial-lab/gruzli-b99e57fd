@@ -48,7 +48,12 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
         }
       }
 
-      // 2. Find or create conversation with this dispatcher
+      // 2. Find or create conversation with the assigned dispatcher.
+      // Open requests without a dispatcher are not worker-respondable.
+      if (!job.dispatcher_id) {
+        toast.error("Сейчас заявка ожидает выбора диспетчера.");
+        return false;
+      }
       const { data: dispProfile } = await supabase
         .from("profiles_public" as any)
         .select("full_name")
