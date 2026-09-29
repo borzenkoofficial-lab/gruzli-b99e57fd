@@ -71,7 +71,7 @@ const AppRoutes = () => {
     }
   }, [user]);
 
-  if (loading || (!splashDone && !isConsentRoute)) {
+  if (!demoWorkerMode && (loading || (!splashDone && !isConsentRoute))) {
     return <SplashScreen onFinished={handleSplashFinished} />;
   }
 
