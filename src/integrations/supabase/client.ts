@@ -106,7 +106,7 @@ class QueryBuilder implements PromiseLike<{ data: any; error: any; count?: numbe
 
   select(columns = "*", options?: { count?: "exact"; head?: boolean }) {
     this.selected = columns;
-    this.operation = "select";
+    if (this.operation === "select") this.operation = "select";
     this.wantCount = options?.count === "exact";
     this.head = options?.head === true;
     return this;
