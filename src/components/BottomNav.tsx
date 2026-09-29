@@ -46,7 +46,9 @@ const BottomNav = memo(({ active, onNavigate, isDispatcher, isClient, unreadMess
   const tabs = isClient ? clientTabs : isDispatcher ? dispatcherTabs : workerTabs;
 
   return (
-    <button type="button" className="gruzli-os-mini-trigger" onClick={() => window.dispatchEvent(new Event("gruzli-open-os"))} aria-label="Открыть Gruzli OS"><Command size={16}/></button>\n    <nav className="bottom-nav-wrapper" role="navigation" aria-label="Основная навигация">
+    <>
+      <button type="button" className="gruzli-os-mini-trigger" onClick={() => window.dispatchEvent(new Event("gruzli-open-os"))} aria-label="Открыть Gruzli OS"><Command size={16}/></button>
+      <nav className="bottom-nav-wrapper" role="navigation" aria-label="Основная навигация">
       <div className="bottom-nav-pill native-surface" role="tablist" aria-label="Разделы Gruzli">
         {tabs.map((tab) => {
           const isActive = active === tab.id;
