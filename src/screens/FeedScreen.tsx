@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import {
-  MapPin, Clock, Users, Wallet, ArrowRight, Ban,
+  MapPin, Clock, Users, ArrowRight, Ban,
   Search, X, Sparkles, Loader2, TrendingUp, Check, ArrowLeft, Hourglass, SlidersHorizontal,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -416,33 +416,6 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
     </div>
   );
 };
-
-// ─── Stat Card ───────────────────────────────────────────
-const StatCard = ({
-  icon: Icon, label, value, accent,
-}: { icon: typeof MapPin; label: string; value: string; accent: string }) => (
-  <div className="relative rounded-2xl bg-gradient-to-br from-border via-border to-transparent p-[1px] overflow-hidden">
-    <div className="relative rounded-2xl bg-card px-3.5 py-3 h-full">
-      <div className="flex items-start gap-2.5">
-        <div className="shrink-0 h-8 w-8 rounded-lg bg-surface-3 border border-border flex items-center justify-center">
-          <Icon size={14} className="text-foreground/80" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-[10.5px] text-muted-foreground leading-tight">{label}</p>
-          <motion.p
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="text-base font-bold text-foreground mt-0.5 truncate"
-          >
-            {value}
-          </motion.p>
-        </div>
-      </div>
-      <div className={`absolute inset-x-3 bottom-1.5 h-px bg-gradient-to-r ${accent}`} />
-    </div>
-  </div>
-);
 
 // ─── Skeleton ────────────────────────────────────────────
 const JobSkeleton = ({ delay = 0 }: { delay?: number }) => (
