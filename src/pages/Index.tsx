@@ -41,6 +41,18 @@ const SupportChatScreen = lazy(() => import("@/screens/SupportChatScreen"));
 const ContractScreen = lazy(() => import("@/screens/ContractScreen"));
 const PullToRefresh = lazy(() => import("@/components/PullToRefresh"));
 
+/**
+ * Warm the primary app surfaces after first paint.
+ * This keeps navigation instant without loading the whole application up front.
+ */
+const warmPrimaryScreens = () => {
+  void import("@/screens/FeedScreen");
+  void import("@/screens/OrdersScreen");
+  void import("@/screens/RealChatsScreen");
+  void import("@/screens/ProfileScreen");
+  void import("@/screens/KartotekaScreen");
+};
+
 const Index = () => {
   const { role, user } = useAuth();
   const isClient = role === "client";
@@ -85,6 +97,16 @@ const Index = () => {
     return () => { cancelled = true; };
   }, []);
   const [tab, setTab] = useState("feed");
+
+  useEffect(() => {
+    const run = () => warmPrimaryScreens();
+    if ("requestIdleCallback" in window) {
+      const id = (window as any).requestIdleCallback(run, { timeout: 1200 });
+      return () => (window as any).cancelIdleCallback?.(id);
+    }
+    const id = window.setTimeout(run, 700);
+    return () => window.clearTimeout(id);
+  }, []);
 
   useEffect(() => {
     const handler = () => setTab("feed");
@@ -433,7 +455,14 @@ const Index = () => {
             ) : (
               <div className="app-scroll">
                 <AnimatePresence mode="wait">
-                  <motion.div key={tab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
+                  <motion.div
+                    key={tab}
+                    initial={{ opacity: 0, y: 3 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -2 }}
+                    transition={{ duration: 0.12, ease: "easeOut" }}
+                    className="native-surface"
+                  >
                     {tab === "orders" && <OrdersScreen />}
                     {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} onOpenCommunity={() => setShowCommunity(true)} />}
                     {tab === "kartoteka" && <KartotekaScreen />}
