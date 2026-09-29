@@ -1,7 +1,7 @@
 import { useState, forwardRef, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Users, Building2, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Phone, Lock, Fingerprint, ShieldCheck, X, Calendar, Sparkles, Wallet, ChevronRight } from "lucide-react";
+import { User, Users, Building2, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Phone, Lock, ShieldCheck, X, Calendar, Sparkles, Wallet, ChevronRight } from "lucide-react";
 import { LegalCheckboxes } from "@/components/LegalDocuments";
 import { ForgotPasswordModal } from "@/components/ForgotPasswordModal";
 import { RecoveryCodeBanner } from "@/components/RecoveryCodeBanner";
@@ -24,9 +24,9 @@ const SecurityModal = forwardRef<HTMLDivElement, { open: boolean; onClose: () =>
   if (!open) return null;
 
   const features = [
-    { icon: Lock, title: "Тройное шифрование", desc: "Все данные защищены тремя уровнями шифрования: AES-256, RSA и TLS 1.3. Даже при перехвате данные невозможно расшифровать." },
-    { icon: Fingerprint, title: "Многофакторная проверка", desc: "Каждый аккаунт проходит верификацию через email и телефон. Подозрительные входы блокируются автоматически." },
-    { icon: ShieldCheck, title: "Защита в реальном времени", desc: "Система мониторинга 24/7 отслеживает аномалии и предотвращает несанкционированный доступ к вашим данным." },
+    { icon: Lock, title: "Защита аккаунта", desc: "Авторизация и доступ к данным проходят через защищённую инфраструктуру Gruzli." },
+    { icon: ShieldCheck, title: "Контроль доступа", desc: "Роли клиента, диспетчера и грузчика разделены, а критические действия проверяются сервером." },
+    { icon: Fingerprint, title: "Восстановление доступа", desc: "Для аккаунта предусмотрены безопасные сценарии восстановления и смены пароля." },
   ];
 
   return (
@@ -77,7 +77,7 @@ const SecurityModal = forwardRef<HTMLDivElement, { open: boolean; onClose: () =>
             </div>
 
             <div className="mt-4 pt-3 border-t border-border/50 text-center">
-              <p className="text-[10px] text-muted-foreground">Ваши данные в безопасности с <span className="font-bold text-foreground">PRO.SC</span></p>
+              <p className="text-[10px] text-muted-foreground">Безопасность — часть архитектуры Gruzli</p>
             </div>
           </motion.div>
         </motion.div>
@@ -371,7 +371,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
             >
               <Shield size={12} className="text-foreground" />
               <span className="text-[10px] text-muted-foreground tracking-wide">
-                Защищено <span className="font-bold text-foreground">PRO.SC</span>
+                Безопасность Gruzli
               </span>
             </button>
             <SecurityModal open={securityOpen} onClose={() => setSecurityOpen(false)} />
