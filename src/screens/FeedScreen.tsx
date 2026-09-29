@@ -498,6 +498,7 @@ const SwipeableJobCard = ({
   const bgRight = useTransform(x, [0, 150], [0, 1]);
   const didDrag = useRef(false);
   const swipeCommitted = useRef(false);
+  const [swipeExitDirection, setSwipeExitDirection] = useState<1 | -1>(-1);
 
   const handleDragStart = () => {
     didDrag.current = false;
@@ -516,6 +517,7 @@ const SwipeableJobCard = ({
 
     swipeCommitted.current = true;
     didDrag.current = true;
+    setSwipeExitDirection(direction as 1 | -1);
 
     // Finish the gesture visually before the card is removed from the feed.
     x.set(direction * Math.max(window.innerWidth * 1.15, 520));
@@ -551,7 +553,7 @@ const SwipeableJobCard = ({
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: -260, scale: 0.98, transition: { duration: 0.18, ease: "easeOut" } }}
+      exit={{ opacity: 0, x: swipeExitDirection * 260, scale: 0.98, transition: { duration: 0.18, ease: "easeOut" } }}
       transition={{ delay: index < 5 ? index * 0.04 : 0, duration: 0.3 }}
       className="relative"
     >
