@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { Loader2 } from "lucide-react";
+import { ArrowDown, Loader2 } from "lucide-react";
 
 interface PullToRefreshProps {
   onRefresh: () => Promise<void>;
@@ -11,6 +11,7 @@ const THRESHOLD = 72;
 const PullToRefresh = ({ onRefresh, children }: PullToRefreshProps) => {
   const [refreshing, setRefreshing] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const indicatorRef = useRef<HTMLDivElement>(null);
   const startY = useRef(0);
   const pulling = useRef(false);
   const distance = useRef(0);
@@ -37,6 +38,14 @@ const PullToRefresh = ({ onRefresh, children }: PullToRefreshProps) => {
     // Do not translate the whole page. Native overscroll is allowed to show a small indicator,
     // while the content itself stays anchored, preventing the "cut off" viewport effect.
     distance.current = delta;
+    const indicator = indicatorRef.current;
+    if (indicator) {
+      const progress = Math.min(1, delta / THRESHOLD);
+      indicator.style.opacity = String(Math.min(1, delta / 24));
+      indicator.style.transform = `translate(-50%, ${Math.min(44, delta * 0.45)}px)`;
+      indicator.dataset.ready = delta >= THRESHOLD ? "true" : "false";
+      indicator.style.setProperty("--pull-progress", String(progress));
+    }
   }, [refreshing]);
 
   const handleTouchEnd = useCallback(async () => {
@@ -44,6 +53,11 @@ const PullToRefresh = ({ onRefresh, children }: PullToRefreshProps) => {
     pulling.current = false;
     const shouldRefresh = distance.current >= THRESHOLD;
     distance.current = 0;
+    if (indicatorRef.current) {
+      indicatorRef.current.style.opacity = "0";
+      indicatorRef.current.style.transform = "translate(-50%, 0)";
+      indicatorRef.current.dataset.ready = "false";
+    }
     if (!shouldRefresh || refreshing) return;
     setRefreshing(true);
     try {
@@ -64,11 +78,15 @@ const PullToRefresh = ({ onRefresh, children }: PullToRefreshProps) => {
       >
         {children}
       </div>
-      {refreshing && (
-        <div className="pull-refresh-indicator" aria-label="Обновление">
-          <Loader2 size={18} className="animate-spin" />
-        </div>
-      )}
+      <div
+        ref={indicatorRef}
+        className="pull-refresh-indicator"
+        data-ready="false"
+        aria-label={refreshing ? "Обновление" : "Потяните вниз для обновления"}
+        aria-hidden={!refreshing}
+      >
+        {refreshing ? <Loader2 size={18} className="animate-spin" /> : <ArrowDown size={18} />}
+      </div>
     </div>
   );
 };
