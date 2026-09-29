@@ -173,22 +173,23 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   };
 
   const handleDeleteJob = async (jobId: string) => {
-    const { error } = await supabase.from("jobs").delete().eq("id", jobId);
+    const { error } = await supabase.rpc("dispatcher_cancel_job", { _job_id: jobId });
     if (error) {
-      toast.error("Ошибка удаления");
+      toast.error(error.message.includes("workers_already_assigned")
+        ? "Нельзя закрыть заказ: грузчики уже назначены"
+        : "Не удалось закрыть заказ");
     } else {
       setMyJobs((prev) => prev.filter((j) => j.id !== jobId));
-      toast.success("Заявка удалена");
+      toast.success("Заказ закрыт");
     }
   };
 
   const handleCloseJob = async (jobId: string) => {
-    const { error } = await supabase
-      .from("jobs")
-      .update({ status: "closed" })
-      .eq("id", jobId);
+    const { error } = await supabase.rpc("dispatcher_cancel_job", { _job_id: jobId });
     if (error) {
-      toast.error("Не удалось закрыть заявку");
+      toast.error(error.message.includes("workers_already_assigned")
+        ? "Нельзя закрыть заказ: грузчики уже назначены"
+        : "Не удалось закрыть заказ");
       return;
     }
     setMyJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status: "closed" } : j)));
