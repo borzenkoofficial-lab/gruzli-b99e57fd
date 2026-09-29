@@ -3981,3 +3981,106 @@ body,
   .gruzli-worker-id-info strong{font-size:19px}
   .gruzli-worker-id-top>span:last-child{font-size:5px}
 }
+
+
+/* Profile v4 — one editorial document, not a stack of cards */
+.gruzli-profile-screen{
+  --profile-gap:18px;
+}
+.gruzli-profile-screen>.px-5.pb-5{
+  margin-bottom:0;
+}
+.gruzli-worker-dashboard,
+.gruzli-earnings-mockup,
+.gruzli-work-history,
+.gruzli-profile-menu button{
+  border-color:rgba(17,18,20,.085);
+}
+.gruzli-worker-dashboard{
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.9),rgba(247,247,245,.78));
+}
+.gruzli-worker-dashboard-head h2,
+.gruzli-earnings-head h2{
+  font-size:18px;
+  letter-spacing:-.045em;
+}
+.gruzli-worker-dashboard-grid>div{
+  min-height:56px;
+}
+.gruzli-worker-dashboard-grid strong{
+  font-variant-numeric:tabular-nums;
+}
+.gruzli-worker-dashboard-calendar{
+  background:rgba(17,18,20,.018);
+}
+.gruzli-earnings-mockup{
+  border-color:rgba(255,255,255,.09);
+  box-shadow:0 24px 60px rgba(17,18,20,.15),inset 0 1px 0 rgba(255,255,255,.1);
+}
+.gruzli-earnings-tabs button{
+  cursor:pointer;
+  transition:background .2s ease,color .2s ease,transform .2s ease;
+}
+.gruzli-earnings-tabs button:active{
+  transform:scale(.94);
+}
+.gruzli-earnings-meta span{
+  display:inline-flex;
+  align-items:baseline;
+  gap:3px;
+}
+.gruzli-work-history-empty{
+  min-height:76px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+.gruzli-wallet-section-head{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:0 0 9px;
+  padding:0 2px;
+}
+.gruzli-wallet-section-head>span{
+  color:#a0a1a5;
+  font-size:6.5px;
+  font-weight:900;
+  letter-spacing:.16em;
+}
+.gruzli-wallet-section-head>i{
+  flex:1;
+  height:1px;
+  background:rgba(17,18,20,.07);
+}
+.gruzli-wallet-section-head>b{
+  color:#77797e;
+  font-size:6px;
+  font-weight:850;
+  letter-spacing:.1em;
+}
+.gruzli-profile-screen .gruzli-profile-section-head{
+  padding-top:2px;
+}
+.gruzli-profile-screen .gruzli-profile-section-head h2{
+  font-weight:850;
+}
+.gruzli-profile-screen .gruzli-profile-section-head>span:last-child{
+  white-space:nowrap;
+}
+.gruzli-profile-menu button{
+  min-height:52px;
+  transition:transform .22s cubic-bezier(.22,1,.36,1),background .22s ease,box-shadow .22s ease;
+}
+.gruzli-profile-menu button:hover{
+  transform:translateX(2px);
+  background:rgba(255,255,255,.88)!important;
+  box-shadow:0 10px 26px rgba(17,18,20,.055),inset 0 1px 0 #fff;
+}
+@media(max-width:390px){
+  .gruzli-profile-screen{--profile-gap:14px}
+  .gruzli-wallet-section-head>b{display:none}
+  .gruzli-worker-dashboard-grid>div{min-height:52px}
+}
