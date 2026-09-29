@@ -45,12 +45,28 @@ const PullToRefresh = lazy(() => import("@/components/PullToRefresh"));
  * Warm the primary app surfaces after first paint.
  * This keeps navigation instant without loading the whole application up front.
  */
-const warmPrimaryScreens = () => {
+const warmPrimaryScreens = (role: string | null) => {
+  // Preload only the screens that can actually appear in the current role.
+  // This keeps the first interaction fast without downloading the whole app.
   void import("@/screens/FeedScreen");
-  void import("@/screens/OrdersScreen");
   void import("@/screens/RealChatsScreen");
   void import("@/screens/ProfileScreen");
-  void import("@/screens/KartotekaScreen");
+
+  if (role === "worker") {
+    void import("@/screens/OrdersScreen");
+    void import("@/screens/KartotekaScreen");
+  } else if (role === "dispatcher") {
+    void import("@/screens/KartotekaScreen");
+  } else if (role === "client") {
+    void import("@/screens/OrdersScreen");
+  }
+};
+
+const preloadTab = (tab: string) => {
+  if (tab === "orders") void import("@/screens/OrdersScreen");
+  if (tab === "chats") void import("@/screens/RealChatsScreen");
+  if (tab === "kartoteka") void import("@/screens/KartotekaScreen");
+  if (tab === "profile") void import("@/screens/ProfileScreen");
 };
 
 const Index = () => {
@@ -99,7 +115,7 @@ const Index = () => {
   const [tab, setTab] = useState("feed");
 
   useEffect(() => {
-    const run = () => warmPrimaryScreens();
+    const run = () => warmPrimaryScreens(role);
     if ("requestIdleCallback" in window) {
       const id = (window as any).requestIdleCallback(run, { timeout: 1200 });
       return () => (window as any).cancelIdleCallback?.(id);
@@ -232,6 +248,7 @@ const Index = () => {
   };
 
   const handleNavigate = (t: string) => {
+    preloadTab(t);
     if (t === "chats") resetMessages();
     if (t === "feed" && !isDispatcher) resetJobs();
     setTab(t);
