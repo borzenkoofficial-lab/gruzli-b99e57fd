@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
 import { toast } from "sonner";
-import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import BottomNav from "@/components/BottomNav";
 import DesktopSidebar from "@/components/DesktopSidebar";
@@ -61,8 +61,6 @@ const Index = () => {
   useIsMobile();
   const isMobile = true;
   const { jobId: routeJobId } = useParams<{ jobId?: string }>();
-  const location = useLocation();
-  const navigate = useNavigate();
   const [supportUserId, setSupportUserId] = useState<string | null>(null);
   const SUPPORT_NAME = "Gruzli Official";
 
@@ -98,19 +96,7 @@ const Index = () => {
 
     return () => { cancelled = true; };
   }, []);
-  const pathTab = (() => {
-    const path = location.pathname;
-    if (path === "/chats") return "chats";
-    if (path === "/kartoteka") return "kartoteka";
-    if (path === "/orders") return "orders";
-    if (path === "/profile") return "profile";
-    return "feed";
-  })();
-  const [tab, setTab] = useState(pathTab);
-
-  useEffect(() => {
-    setTab(pathTab);
-  }, [pathTab]);
+  const [tab, setTab] = useState("feed");
 
   useEffect(() => {
     const run = () => warmPrimaryScreens();
@@ -248,21 +234,7 @@ const Index = () => {
   const handleNavigate = (t: string) => {
     if (t === "chats") resetMessages();
     if (t === "feed" && !isDispatcher) resetJobs();
-
-    const routes: Record<string, string> = {
-      feed: "/",
-      orders: "/orders",
-      chats: "/chats",
-      kartoteka: "/kartoteka",
-      profile: "/profile",
-    };
-
-    const target = routes[t] || "/";
-    if (location.pathname !== target) {
-      navigate(target);
-    } else {
-      setTab(t);
-    }
+    setTab(t);
   };
 
   // --- Detail panel content for desktop ---
@@ -489,7 +461,7 @@ const Index = () => {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -2 }}
                     transition={{ duration: 0.12, ease: "easeOut" }}
-                    className="native-surface"
+                    className=""
                   >
                     {tab === "orders" && <OrdersScreen />}
                     {tab === "chats" && <RealChatsScreen onOpenChat={handleOpenChat} onOpenChannel={() => setShowChannel(true)} onOpenCommunity={() => setShowCommunity(true)} />}
