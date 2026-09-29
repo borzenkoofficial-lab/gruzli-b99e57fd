@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { BriefcaseBusiness, Command, FolderOpen, LayoutDashboard, MessageCircle, Users, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import "./gruzli-os.css";
+import "../gruzli-os.css";
 
 type Props = { onClose: () => void };
 
