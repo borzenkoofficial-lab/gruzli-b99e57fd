@@ -1332,3 +1332,26 @@ button{ -webkit-tap-highlight-color:transparent; }
     -webkit-backdrop-filter:blur(22px);
   }
 }
+
+@media(max-width:767px){
+  .gruzli-kartoteka-screen,
+  .gruzli-profile-screen{
+    padding-bottom:94px;
+  }
+  .gruzli-kartoteka-screen [class*="rounded-2xl"],
+  .gruzli-profile-screen [class*="rounded-2xl"]{
+    transition:transform .18s ease,box-shadow .18s ease;
+  }
+  .gruzli-kartoteka-screen button:active,
+  .gruzli-profile-screen button:active{
+    transform:scale(.992);
+  }
+  .gruzli-kartoteka-screen .bg-surface-1,
+  .gruzli-profile-screen .bg-surface-1{
+    background:rgba(245,245,247,.72)!important;
+    border-color:rgba(255,255,255,.9)!important;
+  }
+  .gruzli-profile-screen .profile-premium-action{
+    box-shadow:0 16px 38px rgba(31,35,43,.09);
+  }
+}
