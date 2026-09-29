@@ -455,7 +455,7 @@ const Index = () => {
           </Suspense>
         </ErrorBoundary>
         
-        <BottomNav active={tab} onNavigate={handleNavigate} isDispatcher={isDispatcher} unreadMessages={unreadMessages} newJobsCount={newJobsCount} />
+        <BottomNav active={tab} onNavigate={handleNavigate} isDispatcher={isDispatcher} isClient={isClient} unreadMessages={unreadMessages} newJobsCount={newJobsCount} />
         <AnnouncementModal />
       </div>
     );
