@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import {
   MapPin, Clock, Users, Wallet, ArrowRight, Ban, UserPlus, Train,
-  Search, X, Sparkles, Loader2, TrendingUp, Check, ArrowLeft, SlidersHorizontal,
+  Search, X, Sparkles, Loader2, TrendingUp, Check, ArrowLeft, Hourglass, SlidersHorizontal,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -231,7 +231,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
       return 0;
     });
 
-  const nearbyCount = jobs.length;
+  const nearbyCount = filtered.length;
   // Реалистичный средний заработок за день: ~3 заявки в день из доступных,
   // берём средний чек по активным заявкам и умножаем на 3.
   const avgJobPay = jobs.length > 0
@@ -461,7 +461,7 @@ const EmptyState = ({ hasJobs, onReset }: { hasJobs: boolean; onReset: () => voi
     </h3>
     <p className="text-xs text-muted-foreground mt-1.5 max-w-[260px] mx-auto">
       {hasJobs
-        ? "Попробуй изменить фильтры или сбросить поиск"
+        ? "Измените настройки категорий или сбросьте поиск"
         : "Диспетчеры ещё не разместили заказы. Загляни позже."}
     </p>
     {hasJobs && (
