@@ -107,7 +107,7 @@ const KartotekaScreen = () => {
     );
   }
 
-  return (\n    <div className="gruzli-kartoteka-screen gruzli-document-screen app-scroll">
+  return (\n    <div className="gruzli-kartoteka-screen gruzli-document-screen app-scroll native-surface">
       {/* Header */}
       <div className="px-5 safe-top pb-2">
         <div className="flex items-center justify-between">
@@ -120,7 +120,7 @@ const KartotekaScreen = () => {
           </div>
           <button
             onClick={() => setShowForm(true)}
-            className="w-11 h-11 rounded-[16px] bg-foreground flex items-center justify-center tap-scale shadow-[0_10px_24px_rgba(31,35,43,.14)]"
+            className="w-11 h-11 rounded-[16px] bg-foreground flex items-center justify-center native-press tap-scale shadow-[0_10px_24px_rgba(31,35,43,.14)]"
           >
             <Plus size={18} className="text-primary-foreground" />
           </button>
@@ -153,7 +153,7 @@ const KartotekaScreen = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Поиск по ФИО, телефону..."
-              className="w-full min-h-[48px] bg-white/72 border border-white/90 rounded-[16px] py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none shadow-[0_10px_28px_rgba(31,35,43,.055)] backdrop-blur-xl"
+              className="native-surface w-full min-h-[48px] bg-white/72 border border-white/90 rounded-[16px] py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none shadow-[0_10px_28px_rgba(31,35,43,.055)] backdrop-blur-xl"
             />
             {search && (
               <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -216,7 +216,7 @@ const KartotekaScreen = () => {
       {loading ? (
         <div className="px-5 space-y-3 pt-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-card border border-border rounded-2xl p-4 animate-pulse">
+            <div key={i} className="native-list-item bg-card border border-border rounded-2xl p-4 animate-pulse>
               <div className="flex gap-3">
                 <div className="w-14 h-14 rounded-xl bg-muted" />
                 <div className="flex-1 space-y-2">
@@ -253,7 +253,7 @@ const KartotekaScreen = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.03 }}
                 onClick={() => setViewEntry(entry)}
-                className="w-full bg-white/68 border border-white/90 rounded-[20px] p-3.5 text-left active:scale-[.995] transition-all shadow-[0_14px_36px_rgba(31,35,43,.055)] backdrop-blur-xl"
+                className="native-list-item w-full bg-white/68 border border-white/90 rounded-[20px] p-3.5 text-left native-press active:scale-[.995] transition-all shadow-[0_14px_36px_rgba(31,35,43,.055)] backdrop-blur-xl"
               >
                 <div className="flex items-start gap-3">
                   {entry.photo_url ? (
@@ -314,7 +314,7 @@ const EntryDetail = ({ entry, isOwner, onBack, onEdit, onDelete }: EntryDetailPr
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   return (
-    <div className="gruzli-kartoteka-detail min-h-screen bg-background pb-8">
+    <div className="gruzli-kartoteka-detail min-h-screen bg-background pb-8 native-surface">
       <div className="flex items-center gap-3 px-4 safe-top pb-4">
         <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
           <ArrowLeft size={18} className="text-foreground" />
