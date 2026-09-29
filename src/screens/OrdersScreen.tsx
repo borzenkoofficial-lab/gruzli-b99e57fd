@@ -34,6 +34,7 @@ const OrdersScreen = () => {
   const [jobs, setJobs] = useState<AcceptedJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [completedJobs, setCompletedJobs] = useState<AcceptedJob[]>([]);
+  const [clientOffers, setClientOffers] = useState<Record<string, any[]>>({});
 
   const fetchAcceptedJobs = async () => {
     setLoading(true);
@@ -68,6 +69,19 @@ const OrdersScreen = () => {
         .eq("client_id", user.id)
         .order("created_at", { ascending: false });
 
+      const clientJobIds = (clientJobs || []).map((j) => j.id);
+      if (clientJobIds.length) {
+        const { data: offers } = await supabase.from("dispatcher_offers").select("*").in("job_id", clientJobIds).eq("status", "pending").order("created_at", { ascending: false });
+        const dispatcherIds = [...new Set((offers || []).map((o: any) => o.dispatcher_id))];
+        const { data: dispatcherProfiles } = dispatcherIds.length
+          ? await supabase.from("profiles_public" as any).select("user_id, full_name, avatar_url, rating, completed_orders, verified").in("user_id", dispatcherIds)
+          : { data: [] as any[] };
+        const profileById: Record<string, any> = {};
+        (dispatcherProfiles as any[] || []).forEach((p) => { profileById[p.user_id] = p; });
+        const grouped: Record<string, any[]> = {};
+        (offers || []).forEach((o: any) => { grouped[o.job_id] ||= []; grouped[o.job_id].push({ ...o, profile: profileById[o.dispatcher_id] }); });
+        setClientOffers(grouped);
+      } else setClientOffers({});
       const mapped: AcceptedJob[] = (clientJobs || []).map((j) => ({
         responseId: j.id,
         jobId: j.id,
@@ -374,6 +388,33 @@ const OrdersScreen = () => {
                 <div><span className="text-muted-foreground">Адрес</span><p className="font-bold mt-0.5">{job.address || "—"}</p></div>
                 <div><span className="text-muted-foreground">Ставка</span><p className="font-bold mt-0.5">{job.hourlyRate} ₽/ч</p></div>
               </div>
+              {job.workerStatus === "open" && (clientOffers[job.jobId] || []).length > 0 && (
+                <div className="mt-4 space-y-2 border-t border-border pt-4">
+                  <p className="text-xs font-extrabold uppercase tracking-wider">Предложения диспетчеров · {clientOffers[job.jobId].length}</p>
+                  {clientOffers[job.jobId].map((offer: any) => (
+                    <div key={offer.id} className="rounded-2xl border border-border bg-background p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-bold">{offer.profile?.full_name || "Диспетчер Gruzli"}</p>
+                          <p className="text-[11px] text-muted-foreground">★ {Number(offer.profile?.rating || 0).toFixed(1)} · {offer.profile?.completed_orders || 0} заказов {offer.profile?.verified ? "· Проверен" : ""}</p>
+                        </div>
+                        <p className="text-sm font-extrabold">{offer.proposed_hourly_rate} ₽/ч</p>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">Организует грузчиков: {offer.proposed_workers}</p>
+                      {offer.message && <p className="mt-2 text-xs">{offer.message}</p>}
+                      <button
+                        onClick={async () => {
+                          const { error } = await supabase.rpc("client_select_dispatcher_offer", { _offer_id: offer.id });
+                          if (error) { toast.error(error.message.includes("unavailable") ? "Заказ уже назначен или предложение недоступно" : "Не удалось выбрать диспетчера"); return; }
+                          toast.success("Диспетчер выбран");
+                          await fetchAcceptedJobs();
+                        }}
+                        className="mt-3 w-full rounded-xl bg-foreground py-3 text-xs font-bold text-background active:scale-[.98] transition-transform"
+                      >ВЫБРАТЬ ДИСПЕТЧЕРА</button>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="mt-4 pt-3 border-t border-border text-xs text-muted-foreground">{job.dispatcherName}</div>
             </motion.div>
           ))}
