@@ -89,13 +89,12 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
       return;
     }
     setWithdrawing(true);
-    const { error } = await supabase
-      .from("job_responses")
-      .update({ status: "withdrawn" })
-      .eq("id", responseId);
+    const { error } = await supabase.rpc("worker_withdraw_response", {
+      _response_id: responseId,
+    });
     setWithdrawing(false);
     if (error) {
-      toast.error("Не удалось отозвать отклик");
+      toast.error(error.code === "P0001" ? "Этот отклик уже нельзя отозвать" : "Не удалось отозвать отклик");
       return;
     }
     setResponseId(null);
