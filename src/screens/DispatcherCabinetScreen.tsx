@@ -429,16 +429,15 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     });
   };
 
-  const finishJob = async (jobId: string, workers: WorkerInfo[]) => {
+  const finishJob = async (jobId: string, _workers: WorkerInfo[]) => {
     setFinishingJobs((prev) => new Set(prev).add(jobId));
-    for (const w of workers) {
-      if (w.workerStatus !== "completed") {
-        await supabase.from("job_responses").update({ worker_status: "finishing" } as any).eq("id", w.responseId);
-      }
+    const { error } = await supabase.rpc("dispatcher_finish_job", { _job_id: jobId });
+    if (error) {
+      toast.error(error.code === "P0001" ? "Не все грузчики завершили работу" : "Не удалось завершить этап заказа");
+    } else {
+      toast.success("Заказ переводится в завершение. Грузчики получили уведомление.");
+      await fetchData();
     }
-    await supabase.from("jobs").update({ status: "finishing" }).eq("id", jobId);
-    toast.success("⏹ Заказ завершается. Грузчики получили уведомление.");
-    await fetchData();
     setFinishingJobs((prev) => { const n = new Set(prev); n.delete(jobId); return n; });
   };
 
@@ -467,13 +466,18 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     const expense = parseInt(expensePerWorker) || 0;
     const income = parseInt(dispatcherIncome) || 0;
 
-    await supabase.from("jobs").update({
-      status: "completed",
-      expense_per_worker: expense,
-      dispatcher_income: income,
-    } as any).eq("id", expenseModal.jobId);
+    const { error } = await supabase.rpc("dispatcher_complete_job", {
+      _job_id: expenseModal.jobId,
+      _expense_per_worker: expense,
+      _dispatcher_income: income,
+    });
 
-    toast.success("✅ Заказ завершён!");
+    if (error) {
+      toast.error(error.code === "P0001" ? "Нельзя закрыть заказ: есть незавершённые грузчики" : "Не удалось завершить заказ");
+      return;
+    }
+
+    toast.success("Заказ завершён");
     setExpenseModal(null);
     setExpensePerWorker("");
     setDispatcherIncome("");
