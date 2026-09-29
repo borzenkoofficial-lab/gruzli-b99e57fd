@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 
 interface SplashScreenProps {
   onFinished: () => void;
   minDuration?: number;
 }
 
-const SplashScreen = ({ onFinished, minDuration = 1200 }: SplashScreenProps) => {
+const SplashScreen = ({ onFinished, minDuration = 650 }: SplashScreenProps) => {
   const isReturning = !!localStorage.getItem("gruzli_returning");
-  const duration = isReturning ? 450 : minDuration;
+  const duration = isReturning ? 220 : minDuration;
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
@@ -20,69 +19,20 @@ const SplashScreen = ({ onFinished, minDuration = 1200 }: SplashScreenProps) => 
         setTimeout(onFinished, 350);
       }, duration),
     );
-    return () => timers.forEach(clearTimeout);
-  }, [duration, onFinished]);
-
-  return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          key="splash"
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.4, ease: "easeInOut" }}
-          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden bg-background"
-        >
-          {/* Hairline divider above wordmark */}
-          <motion.div
-            initial={{ scaleX: 0, opacity: 0 }}
-            animate={{ scaleX: 1, opacity: 1 }}
-            transition={{ delay: 0.15, duration: 0.6, ease: "easeOut" }}
-            className="absolute top-1/2 -translate-y-[62px] w-20 h-[2px] bg-[#f2c400] rounded-full origin-center"
-          />
-
-          {/* Wordmark */}
-          <div className="relative z-10 flex flex-col items-center">
-            <motion.h1
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="text-[42px] leading-none font-extrabold tracking-[-0.05em] text-foreground"
-            >
-              Gruzli
-            </motion.h1>
-
-            <motion.p
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.45, duration: 0.5, ease: "easeOut" }}
-              className="mt-3 text-[13px] tracking-[0.02em] text-muted-foreground font-normal"
-            >
-              приветствует
-            </motion.p>
-          </div>
-
-          {/* Minimal progress line */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7, duration: 0.4 }}
-            className="absolute bottom-[13%] w-24 h-[2px] rounded-full bg-foreground/10 overflow-hidden"
-          >
-            <motion.div
-              initial={{ x: "-100%" }}
-              animate={{ x: "100%" }}
-              transition={{
-                duration: 1.4,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-              className="h-full w-1/2 bg-[#f2c400]"
-            />
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    return (
+    <div
+      className={`gruzli-splash fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden bg-background ${visible ? "is-visible" : "is-hidden"}`}
+      aria-label="Gruzli"
+    >
+      <div className="absolute top-1/2 -translate-y-[62px] w-20 h-[2px] bg-[#f2c400] rounded-full" />
+      <div className="relative z-10 flex flex-col items-center">
+        <h1 className="text-[42px] leading-none font-extrabold tracking-[-0.05em] text-foreground">Gruzli</h1>
+        <p className="mt-3 text-[13px] tracking-[0.02em] text-muted-foreground font-normal">приветствует</p>
+      </div>
+      <div className="absolute bottom-[13%] w-24 h-[2px] rounded-full bg-foreground/10 overflow-hidden">
+        <div className="gruzli-splash-progress h-full w-1/2 bg-[#f2c400]" />
+      </div>
+    </div>
   );
 };
 
