@@ -291,7 +291,8 @@ const OrdersScreen = () => {
   };
 
   if (loading) {
-    return (\n    <div className="gruzli-orders-screen app-scroll">
+    return (
+    <div className="gruzli-orders-screen app-scroll">
         <div className="px-5 safe-top pb-4">
           <h1 className="text-lg font-bold text-foreground">Мои заказы</h1>
         </div>
@@ -307,9 +308,9 @@ const OrdersScreen = () => {
   const finishing = jobs.filter((j) => j.workerStatus === "finishing");
 
   return (
-    <div className="app-scroll">
-      <header className="px-5 safe-top pb-4">
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Мои заказы</h1>
+    <div className="gruzli-orders-screen app-scroll">
+      <header className="px-5 safe-top pb-4"><div><p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Gruzli</p>
+        <h1 className="text-[29px] font-extrabold text-foreground tracking-[-.045em] leading-none">Мои заказы</h1></div>
         <p className="text-xs text-muted-foreground mt-1">Заявки, на которые вас выбрали</p>
       </header>
 
