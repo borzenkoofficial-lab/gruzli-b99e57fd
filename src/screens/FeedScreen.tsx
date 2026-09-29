@@ -294,7 +294,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
   };
 
   return (
-    <div className="gruzli-mobile-feed app-scroll">
+    <div className="gruzli-mobile-feed app-scroll gruzli-page-enter">
       {/* Header */}
       <header className="gruzli-feed-hero px-5 safe-top pb-4">
         <div className="flex items-start justify-between gap-4">
