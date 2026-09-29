@@ -870,60 +870,6 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         ) : <div className="gruzli-work-history-empty">Завершённые заказы появятся здесь после первой выполненной смены.</div>}
       </div>
 
-      {/* Worker Live Card — availability + reputation + workload */}
-      <div className="px-5 mb-4">
-        <motion.div
-          className="gruzli-worker-live-card"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: .45 }}
-        >
-          <div className="gruzli-worker-live-top">
-            <div className="gruzli-worker-live-status">
-              <span className="gruzli-worker-live-dot" />
-              <span>{activeDays >= 5 ? "ГОТОВ К РАБОТЕ" : "ГРАФИК НАСТРОЕН"}</span>
-            </div>
-            <span className="gruzli-worker-live-code">WORKER / {shortId}</span>
-          </div>
-
-          <div className="gruzli-worker-live-main">
-            <div>
-              <p className="gruzli-worker-live-kicker">РАБОЧИЙ ПРОФИЛЬ</p>
-              <div className="gruzli-worker-live-number">
-                {profile?.rating || "5.00"}
-                <Star size={17} className="fill-yellow-400 text-yellow-400" />
-              </div>
-              <p className="gruzli-worker-live-caption">
-                рейтинг · {profile?.completed_orders || 0} выполненных заказов
-              </p>
-            </div>
-            <div className="gruzli-worker-live-ring">
-              <span>{profileCompletion}%</span>
-              <small>профиль</small>
-            </div>
-          </div>
-
-          <div className="gruzli-worker-live-grid">
-            <div>
-              <span>ДНИ</span>
-              <strong>{activeDays}/7</strong>
-            </div>
-            <div>
-              <span>ЗАКАЗОВ</span>
-              <strong>{weeklyStats.orders}</strong>
-            </div>
-            <div>
-              <span>ЧАСОВ</span>
-              <strong>{weeklyStats.hours}</strong>
-            </div>
-            <div>
-              <span>НЕДЕЛЯ</span>
-              <strong>{weeklyStats.earned.toLocaleString("ru-RU")} ₽</strong>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-
       {/* Premium card */}
       {!profile?.is_premium ? (
         <div className="mx-5 mb-4">
@@ -954,33 +900,6 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           </div>
         </div>
       )}
-
-      {/* Stats */}
-      <div className="px-5 pb-3">
-        <div className="flex gap-1.5 bg-surface-1 border border-border rounded-2xl p-1.5">
-          {(["today", "week", "month"] as const).map((p) => (
-            <button key={p} onClick={() => setStatsPeriod(p)} className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${statsPeriod === p ? "bg-foreground text-primary-foreground" : "text-muted-foreground"}`}>
-              {p === "today" ? "Сегодня" : p === "week" ? "Неделя" : "Месяц"}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="px-5 pb-5">
-        <div className="grid grid-cols-3 gap-3">
-          {[
-            { icon: Briefcase, label: "Заказов", value: stats.orders.toString() },
-            { icon: Wallet, label: "Заработано", value: stats.earned },
-            { icon: Calendar, label: "Часов", value: stats.hours },
-          ].map((stat, i) => (
-            <motion.div key={stat.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }} className="bg-white/68 border border-white/90 rounded-[20px] p-3 text-center shadow-[0_12px_32px_rgba(31,35,43,.05)] backdrop-blur-xl">
-              <stat.icon size={18} className="text-primary mx-auto mb-2" />
-              <p className="text-sm font-bold text-foreground">{stat.value}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{stat.label}</p>
-            </motion.div>
-          ))}
-        </div>
-      </div>
 
       {/* Worker Top-Up Modal */}
       {showTopUp && (
