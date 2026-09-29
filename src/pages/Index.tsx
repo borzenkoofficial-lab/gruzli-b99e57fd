@@ -557,7 +557,7 @@ const Index = () => {
       unreadNotifications={0}
       onOpenNotifications={() => setShowNotifications(true)}
       onCreateJob={() => setShowCreateJob(true)}
-      showCreateJob={isDispatcher}
+      showCreateJob={false}
     />
   );
 
