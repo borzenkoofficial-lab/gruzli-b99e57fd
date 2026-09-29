@@ -133,7 +133,7 @@ const ContractScreen = ({ contractId, onBack }: ContractScreenProps) => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 pb-32">
+      <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] overscroll-contain touch-pan-y">
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-2xl p-4 space-y-3">
           <div>
             <h2 className="text-base font-bold text-foreground">{contract.title}</h2>
