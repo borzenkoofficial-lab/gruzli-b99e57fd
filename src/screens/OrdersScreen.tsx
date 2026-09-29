@@ -80,6 +80,15 @@ const OrdersScreen = () => {
       }
 
       const clientJobIds = (clientJobs || []).map((j) => j.id);
+      let dispatcherNameMap: Record<string, string> = {};
+      const assignedDispatcherIds = [...new Set((clientJobs || []).map((j) => j.dispatcher_id).filter(Boolean))] as string[];
+      if (assignedDispatcherIds.length) {
+        const { data: assignedProfiles } = await supabase
+          .from("profiles_public" as any)
+          .select("user_id, full_name")
+          .in("user_id", assignedDispatcherIds);
+        (assignedProfiles as any[] || []).forEach((p) => { dispatcherNameMap[p.user_id] = p.full_name; });
+      }
       if (clientJobIds.length) {
         const { data: offers, error: offersError } = await supabase.from("dispatcher_offers").select("*").in("job_id", clientJobIds).eq("status", "pending").order("created_at", { ascending: false });
         if (offersError) {
@@ -104,7 +113,7 @@ const OrdersScreen = () => {
         startTime: j.start_time,
         hourlyRate: j.hourly_rate,
         durationHours: Number(j.duration_hours) || 1,
-        dispatcherName: j.dispatcher_id ? "Диспетчер назначен" : "Ищем диспетчера",
+        dispatcherName: j.dispatcher_id ? (dispatcherNameMap[j.dispatcher_id] || "Диспетчер назначен") : "Ищем диспетчера",
         workerStatus: j.status || "open",
         workStartedAt: null,
         workFinishedAt: null,
@@ -240,9 +249,19 @@ const OrdersScreen = () => {
   useEffect(() => {
     fetchAcceptedJobs();
 
-    if (!user || role === "client") return;
+    if (!user) return;
     const channel = supabase
       .channel("my-orders")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "jobs", filter: `client_id=eq.${user.id}` },
+        () => fetchAcceptedJobs()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "dispatcher_offers" },
+        () => { if (role === "client") fetchAcceptedJobs(); }
+      )
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "job_responses", filter: `worker_id=eq.${user.id}` },
