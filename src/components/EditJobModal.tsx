@@ -47,24 +47,20 @@ export default function EditJobModal({ job, open, onClose, onSaved }: EditJobMod
     }
     setLoading(true);
 
-    const { data, error } = await supabase
-      .from("jobs")
-      .update({
-        title: title.trim(),
-        description: description.trim(),
-        hourly_rate: parseInt(hourlyRate),
-        duration_hours: parseFloat(durationHours) || 4,
-        workers_needed: parseInt(workersNeeded) || 2,
-        address: address.trim(),
-        metro: metro.trim(),
-        start_time: startTime ? new Date(startTime).toISOString() : null,
-        urgent,
-        quick_minimum: quickMinimum,
-        status: "active",
-      })
-      .eq("id", job.id)
-      .select()
-      .single();
+    const { data, error } = await supabase.rpc("dispatcher_update_job", {
+      _job_id: job.id,
+      _title: title.trim(),
+      _description: description.trim(),
+      _hourly_rate: parseInt(hourlyRate),
+      _duration_hours: parseFloat(durationHours) || 4,
+      _workers_needed: parseInt(workersNeeded) || 2,
+      _address: address.trim(),
+      _metro: metro.trim(),
+      _start_time: startTime ? new Date(startTime).toISOString() : null,
+      _urgent: urgent,
+      _quick_minimum: quickMinimum,
+      _status: "active",
+    });
 
     setLoading(false);
 
