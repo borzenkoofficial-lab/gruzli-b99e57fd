@@ -98,6 +98,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   const [editingJob, setEditingJob] = useState<Tables<"jobs"> | null>(null);
   const [adjustingId, setAdjustingId] = useState<string | null>(null);
   const [myCategory, setMyCategory] = useState<MyJobsCategory>("open");
+  const [openRequests, setOpenRequests] = useState<Tables<"jobs">[]>([]);
 
   const fetchMyJobs = async () => {
     if (!user) return;
@@ -106,6 +107,15 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
       .select("*")
       .eq("dispatcher_id", user.id)
       .order("created_at", { ascending: false });
+
+    const { data: requestData } = await supabase
+      .from("jobs")
+      .select("*")
+      .is("dispatcher_id", null)
+      .eq("status", "open")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    setOpenRequests(requestData || []);
 
     if (jobsData && jobsData.length > 0) {
       const jobIds = jobsData.map(j => j.id);
@@ -119,6 +129,17 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     } else {
       setMyJobs([]);
     }
+  };
+
+  const handleClaimRequest = async (jobId: string) => {
+    const { error } = await supabase.rpc("dispatcher_claim_job", { _job_id: jobId });
+    if (error) {
+      toast.error(error.message.includes("unavailable") ? "Заказ уже взял другой диспетчер" : "Не удалось взять заказ");
+      return;
+    }
+    setOpenRequests((prev) => prev.filter((j) => j.id !== jobId));
+    await fetchMyJobs();
+    toast.success("Заказ принят · он добавлен в ваш кабинет");
   };
 
   const handleDeleteJob = async (jobId: string) => {
@@ -588,6 +609,36 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
             ];
             return (
             <>
+              {/* Client requests waiting for a dispatcher */}
+              {openRequests.length > 0 && (
+                <div className="px-4 pb-4">
+                  <div className="mb-2 flex items-end justify-between">
+                    <div>
+                      <p className="text-[10px] font-bold uppercase tracking-[.16em] text-muted-foreground">GRUZLI / INBOX</p>
+                      <h2 className="text-lg font-extrabold text-foreground">Новые запросы</h2>
+                    </div>
+                    <span className="text-[11px] font-bold text-muted-foreground">{openRequests.length}</span>
+                  </div>
+                  <div className="space-y-2.5">
+                    {openRequests.map((job) => (
+                      <motion.div key={job.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-border bg-card p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="text-[10px] font-bold uppercase tracking-[.14em] text-muted-foreground">ЗАКАЗ / {job.id.slice(0, 6).toUpperCase()}</p>
+                            <h3 className="mt-1 text-sm font-extrabold text-foreground">{job.title}</h3>
+                            <p className="mt-1 text-xs text-muted-foreground">{job.address || "Адрес уточняется"} · {job.workers_needed || 1} чел.</p>
+                          </div>
+                          <span className="shrink-0 text-sm font-extrabold text-foreground">{job.hourly_rate} ₽/ч</span>
+                        </div>
+                        <button onClick={() => handleClaimRequest(job.id)} className="mt-3 w-full rounded-2xl bg-foreground py-3 text-xs font-bold text-background active:scale-[.98] transition-transform">
+                          ВЗЯТЬ В РАБОТУ
+                        </button>
+                      </motion.div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Create job CTA */}
               {onCreateJob && (
                 <div className="px-4 pb-3">
