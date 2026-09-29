@@ -3327,3 +3327,25 @@ body,
   .gruzli-worker-live-grid > div{padding:0 5px}
   .gruzli-worker-passport-body{grid-template-columns:1fr;gap:12px}
 }
+
+
+.gruzli-worker-dossier{overflow:hidden;position:relative;border:1px solid rgba(17,18,20,.1);border-radius:26px;padding:15px;color:#fff;background:radial-gradient(220px 150px at 100% 0%,rgba(242,189,22,.17),transparent 70%),linear-gradient(145deg,#17181b,#242529 58%,#303136);box-shadow:0 22px 55px rgba(17,18,20,.15),inset 0 1px 0 rgba(255,255,255,.08)}
+.gruzli-worker-dossier-head{display:flex;justify-content:space-between;gap:10px;padding-bottom:11px;border-bottom:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4);font-size:7px;font-weight:850;letter-spacing:.15em}
+.gruzli-worker-dossier-head span:last-child{color:#f2bd16}
+.gruzli-worker-dossier-identity{display:flex;align-items:center;gap:12px;margin-top:16px}
+.gruzli-worker-dossier-avatar{width:58px;height:58px;flex:0 0 58px;border-radius:18px;object-fit:cover;border:1px solid rgba(255,255,255,.14)}
+.gruzli-worker-dossier-avatar-fallback{display:grid;place-items:center;background:#f2bd16;color:#17181b;font-size:18px;font-weight:850}
+.gruzli-worker-dossier-identity h3{margin:0;color:#fff;font-size:18px;line-height:1.05;font-weight:850;letter-spacing:-.045em}
+.gruzli-worker-dossier-identity svg{color:#f2bd16}
+.gruzli-worker-dossier-identity p{margin:5px 0 0;color:rgba(255,255,255,.38);font-size:7px;font-weight:750;letter-spacing:.14em}
+.gruzli-worker-dossier-rating{display:grid;grid-template-columns:.8fr .8fr 1.25fr;margin-top:17px;padding:12px 0;border-top:1px solid rgba(255,255,255,.08);border-bottom:1px solid rgba(255,255,255,.08)}
+.gruzli-worker-dossier-rating>div{min-width:0;padding:0 10px;border-right:1px solid rgba(255,255,255,.08)}
+.gruzli-worker-dossier-rating>div:first-child{padding-left:0}.gruzli-worker-dossier-rating>div:last-child{padding-right:0;border:0}
+.gruzli-worker-dossier-rating span{display:block;color:rgba(255,255,255,.34);font-size:6px;font-weight:850;letter-spacing:.13em}
+.gruzli-worker-dossier-rating strong{display:flex;align-items:center;gap:4px;margin-top:5px;color:#fff;font-size:12px;font-weight:850;white-space:nowrap}
+.gruzli-worker-dossier-rating strong svg{color:#f2bd16;fill:#f2bd16}
+.gruzli-worker-dossier-skills{display:flex;flex-wrap:wrap;gap:5px;margin-top:13px}.gruzli-worker-dossier-skills span{padding:6px 8px;border:1px solid rgba(255,255,255,.1);border-radius:999px;background:rgba(255,255,255,.045);color:rgba(255,255,255,.68);font-size:8px;font-weight:650}
+.gruzli-worker-dossier-actions{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:14px}.gruzli-worker-dossier-actions button{min-height:39px;border-radius:13px;font-size:10px;font-weight:800}
+.gruzli-worker-dossier-primary{display:flex;align-items:center;justify-content:center;gap:7px;border:0;background:#f2bd16;color:#17181b}
+.gruzli-worker-dossier-secondary{display:flex;align-items:center;justify-content:center;gap:6px;min-width:62px;padding:0 13px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.05);color:rgba(255,255,255,.78)}
+@media(max-width:390px){.gruzli-worker-dossier{padding:13px;border-radius:22px}.gruzli-worker-dossier-avatar{width:52px;height:52px;flex-basis:52px}.gruzli-worker-dossier-identity h3{font-size:16px}.gruzli-worker-dossier-rating>div{padding:0 6px}.gruzli-worker-dossier-rating strong{font-size:10px}}
