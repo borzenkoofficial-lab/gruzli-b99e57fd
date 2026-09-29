@@ -18,18 +18,18 @@ import type { Tables } from "@/integrations/supabase/types";
 import { supabase } from "@/integrations/supabase/client";
 
 // Lazy load all screens
-const FeedScreen = lazy(() => import("@/screens/FeedScreen"));
+import FeedScreen from "@/screens/FeedScreen";
 const JobDetailScreen = lazy(() => import("@/screens/JobDetailScreen"));
-const OrdersScreen = lazy(() => import("@/screens/OrdersScreen"));
-const ProfileScreen = lazy(() => import("@/screens/ProfileScreen"));
+import OrdersScreen from "@/screens/OrdersScreen";
+import ProfileScreen from "@/screens/ProfileScreen";
 
 const CreateJobScreen = lazy(() => import("@/screens/CreateJobScreen"));
 const JobResponsesScreen = lazy(() => import("@/screens/JobResponsesScreen"));
-const RealChatsScreen = lazy(() => import("@/screens/RealChatsScreen"));
+import RealChatsScreen from "@/screens/RealChatsScreen";
 const RealChatScreen = lazy(() => import("@/screens/RealChatScreen"));
 const ChannelScreen = lazy(() => import("@/screens/ChannelScreen"));
 const DispatchersScreen = lazy(() => import("@/screens/DispatchersScreen"));
-const KartotekaScreen = lazy(() => import("@/screens/KartotekaScreen"));
+import KartotekaScreen from "@/screens/KartotekaScreen";
 const SettingsScreen = lazy(() => import("@/screens/SettingsScreen"));
 const UserProfileScreen = lazy(() => import("@/screens/UserProfileScreen"));
 const NotificationsScreen = lazy(() => import("@/screens/NotificationsScreen"));
@@ -60,13 +60,6 @@ const warmPrimaryScreens = (role: string | null) => {
   } else if (role === "client") {
     void import("@/screens/OrdersScreen");
   }
-};
-
-const preloadTab = (tab: string) => {
-  if (tab === "orders") void import("@/screens/OrdersScreen");
-  if (tab === "chats") void import("@/screens/RealChatsScreen");
-  if (tab === "kartoteka") void import("@/screens/KartotekaScreen");
-  if (tab === "profile") void import("@/screens/ProfileScreen");
 };
 
 const Index = () => {
@@ -248,7 +241,6 @@ const Index = () => {
   };
 
   const handleNavigate = (t: string) => {
-    preloadTab(t);
     if (t === "chats") resetMessages();
     if (t === "feed" && !isDispatcher) resetJobs();
     startTransition(() => setTab(t));
