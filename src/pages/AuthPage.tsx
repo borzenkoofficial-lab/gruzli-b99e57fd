@@ -1,7 +1,7 @@
 import { useState, forwardRef, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Users, Building2, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Phone, Lock, ShieldCheck, X, Calendar, Sparkles, Wallet, ChevronRight } from "lucide-react";
+import { User, Users, Building2, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Phone, Lock, ShieldCheck, Fingerprint, X, Calendar, Sparkles, Wallet, ChevronRight } from "lucide-react";
 import { LegalCheckboxes } from "@/components/LegalDocuments";
 import { ForgotPasswordModal } from "@/components/ForgotPasswordModal";
 import { RecoveryCodeBanner } from "@/components/RecoveryCodeBanner";
@@ -57,7 +57,7 @@ const SecurityModal = forwardRef<HTMLDivElement, { open: boolean; onClose: () =>
                 <Shield size={18} className="text-foreground" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-foreground">PRO.SC</h3>
+                <h3 className="text-sm font-bold text-foreground">Gruzli</h3>
                 <p className="text-[11px] text-muted-foreground">Система защиты данных</p>
               </div>
             </div>
@@ -105,8 +105,8 @@ const onboardingSlides = [
   {
     icon: ShieldCheck,
     title: "Безопасность",
-    headline: "Под защитой PRO.SC",
-    desc: "Верифицированные пользователи, рейтинги и многоуровневое шифрование данных. Только надёжные сделки.",
+    headline: "Под защитой Gruzli",
+    desc: "Верифицированные пользователи, рейтинги и контроль доступа, верификация и серверные проверки. Только надёжные сделки.",
     accent: "03",
   },
 ];
@@ -242,7 +242,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
 
     return (
       <div
-        className="gruzli-auth-shell bg-background overflow-hidden flex flex-col relative"
+        className="gruzli-auth-shell gruzli-page-enter bg-background overflow-hidden flex flex-col relative"
         style={{ height: "calc(var(--vh, 1vh) * 100)" }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
@@ -291,7 +291,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
                 className="w-full"
               >
                 {/* Big visual card */}
-                <div className="relative w-full aspect-[4/3] rounded-[28px] bg-white/72 border border-white/90 overflow-hidden mb-7 shadow-[0_24px_60px_rgba(31,35,43,.09),inset_0_1px_0_rgba(255,255,255,.98)] backdrop-blur-2xl">
+                <div className="relative w-full aspect-[4/3] rounded-[28px] bg-white border border-border overflow-hidden mb-7 shadow-sm">
                   {/* Decorative concentric circles */}
                   <div className="absolute inset-0 flex items-center justify-center">
                     {[1, 0.7, 0.45, 0.25].map((s, i) => (
