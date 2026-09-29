@@ -356,7 +356,7 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ delay: Math.min(i, 6) * 0.04 }}
-                      className="bg-card border border-border rounded-2xl p-4"
+                      className="bg-card border border-border rounded-2xl shadow-sm p-4"
                     >
                       <div className="flex items-center gap-3 mb-3">
                         <div className="relative">
