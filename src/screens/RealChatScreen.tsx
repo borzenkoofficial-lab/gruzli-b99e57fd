@@ -184,6 +184,34 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   senderNamesRef.current = senderNames;
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // iOS Safari can resize the visual viewport independently when its keyboard opens.
+  // Keep the chat shell tied to that visible area and re-anchor messages after resize.
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const shell = scrollRef.current?.closest(".gruzli-chat-detail") as HTMLElement | null;
+    if (!shell) return;
+
+    const updateViewport = () => {
+      shell.style.setProperty("--chat-visual-height", `${Math.round(viewport.height)}px`);
+      requestAnimationFrame(() => {
+        if (document.activeElement === textareaRef.current) scrollToBottom(false);
+      });
+    };
+
+    updateViewport();
+    viewport.addEventListener("resize", updateViewport);
+    viewport.addEventListener("scroll", updateViewport);
+    window.addEventListener("orientationchange", updateViewport);
+    return () => {
+      viewport.removeEventListener("resize", updateViewport);
+      viewport.removeEventListener("scroll", updateViewport);
+      window.removeEventListener("orientationchange", updateViewport);
+      shell.style.removeProperty("--chat-visual-height");
+    };
+  }, [scrollToBottom]);
+
   const appendMessage = useCallback((message: Message) => {
     setMessages((prev) => (prev.some((item) => item.id === message.id) ? prev : [...prev, message]));
   }, []);
