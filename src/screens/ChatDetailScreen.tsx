@@ -18,7 +18,7 @@ const ChatDetailScreen = ({ chat, onBack }: ChatDetailScreenProps) => {
   );
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="gruzli-page-enter flex flex-col h-screen bg-background">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 safe-top pb-4">
         <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
