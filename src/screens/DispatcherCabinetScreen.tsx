@@ -326,7 +326,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
       .channel("dispatcher-cabinet")
       .on("postgres_changes", { event: "*", schema: "public", table: "job_responses" }, () => refreshAll())
       .on("postgres_changes", { event: "*", schema: "public", table: "jobs", filter: `dispatcher_id=eq.${user.id}` }, () => fetchMyJobs())
-      .on("postgres_changes", { event: "*", schema: "public", table: "dispatcher_offers", filter: `dispatcher_id=eq.${user.id}` }, () => fetchMyJobs())
+      .on("postgres_changes", { event: "*", schema: "public", table: "dispatcher_offers", filter: `dispatcher_id=eq.${user.id}` }, () => refreshAll())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user?.id]);
