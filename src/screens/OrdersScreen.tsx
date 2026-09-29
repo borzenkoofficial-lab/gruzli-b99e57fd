@@ -36,7 +36,29 @@ const OrdersScreen = () => {
   const [completedJobs, setCompletedJobs] = useState<AcceptedJob[]>([]);
 
   const fetchAcceptedJobs = async () => {
-    if (!user) return;
+    setLoading(true);
+    if (!user) {
+      const demoMode = localStorage.getItem("gruzli_demo_worker") === "1";
+      if (demoMode) {
+        setJobs([{
+          responseId: "demo-response-1", jobId: "demo-job-1", title: "Переезд квартиры · Сокольники",
+          address: "Москва, ул. Стромынка, 18", startTime: "2026-09-30T10:00:00+03:00",
+          hourlyRate: 900, durationHours: 5, dispatcherName: "Алексей", workerStatus: "confirmed",
+          workStartedAt: null, workFinishedAt: null, hoursWorked: null, earned: null,
+        }]);
+        setCompletedJobs([{
+          responseId: "demo-response-0", jobId: "demo-job-0", title: "Разгрузка фуры · Химки",
+          address: "Химки, Ленинградское шоссе, 23", startTime: null, hourlyRate: 750, durationHours: 4,
+          dispatcherName: "Мария", workerStatus: "completed", workStartedAt: null, workFinishedAt: null,
+          hoursWorked: 4, earned: 3000,
+        }]);
+      } else {
+        setJobs([]);
+        setCompletedJobs([]);
+      }
+      setLoading(false);
+      return;
+    }
     setLoading(true);
 
     const { data: responses } = await supabase
@@ -254,17 +276,8 @@ const OrdersScreen = () => {
       return;
     }
 
-    // Update profile stats
-    await supabase
-      .from("profiles")
-      .update({
-        completed_orders: (0 as any), // Will use RPC
-        total_earned: (0 as any),
-      } as any)
-      .eq("user_id", user!.id);
-
-    // Use direct SQL-like update via rpc or manual increment
-    // Actually, let's just increment manually
+    // Update profile stats without resetting existing totals.
+    // Read current values first, then apply the increment.
     const { data: currentProfile } = await supabase
       .from("profiles")
       .select("completed_orders, total_earned")
