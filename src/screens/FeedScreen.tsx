@@ -75,6 +75,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
   const { respondAndOpenChat } = useRespondToJob(onOpenChat);
   const [jobs, setJobs] = useState<Tables<"jobs">[]>([]);
   const [dispatcherNames, setDispatcherNames] = useState<Record<string, string>>({});
+  const [workersFound, setWorkersFound] = useState<Record<string, number>>({});
   const [respondedJobs, setRespondedJobs] = useState<Set<string>>(new Set());
   const [skippedJobs, setSkippedJobs] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -131,6 +132,31 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
           }
           setDispatcherNames(map);
         }
+      }
+
+      // Live staffing: how many workers have already responded to each order.
+      const jobIds = feedJobs.map((j) => j.id);
+      if (jobIds.length > 0) {
+        const { data: liveResponses } = await supabase
+          .from("job_responses")
+          .select("job_id")
+          .in("job_id", jobIds);
+
+        const counts: Record<string, number> = {};
+        (liveResponses || []).forEach((r) => {
+          counts[r.job_id] = (counts[r.job_id] || 0) + 1;
+        });
+
+        if (demoMode) {
+          Object.assign(counts, {
+            "demo-job-1": 1,
+            "demo-job-2": 3,
+            "demo-job-3": 2,
+            "demo-job-4": 0,
+            "demo-job-5": 1,
+          });
+        }
+        setWorkersFound(counts);
       }
     }
 
@@ -540,6 +566,13 @@ const SwipeableJobCard = ({
   }, [job.created_at]);
 
   const isOfficial = (job as any).is_official;
+  const workersNeeded = Math.max(1, Number(job.workers_needed) || 1);
+  const workersReady = Math.min(workersNeeded, workersFound[job.id] || 0);
+  const staffingProgress = Math.round((workersReady / workersNeeded) * 100);
+  // Three visual languages rotate through the feed:
+  // passport = editorial document, live = staffing dashboard, official = branded order.
+  const cardVariant = isOfficial ? "official" : (job.urgent || index % 3 === 1 ? "live" : "passport");
+  const isLiveOrder = cardVariant === "live";
 
   // Top accent bar color
   const accentClass = isOfficial
@@ -599,6 +632,8 @@ const SwipeableJobCard = ({
             ? "border-yellow-400/40"
             : isBot
             ? "border-destructive/25 opacity-70 bg-card"
+            : isLiveOrder
+            ? "border-foreground/15 bg-card"
             : "border-border hover:border-foreground/20 bg-card"
         }`}
       >
@@ -616,7 +651,7 @@ const SwipeableJobCard = ({
 
         {/* Editorial meta row */}
         <div className="gruzli-order-meta-top flex items-center justify-between gap-3 mb-3">
-          <span className="gruzli-order-kicker">ЗАЯВКА / {String(index + 1).padStart(2, "0")}</span>
+          <span className="gruzli-order-kicker">${isLiveOrder ? "LIVE / " : isOfficial ? "OFFICIAL / " : "ЗАЯВКА / "}{String(index + 1).padStart(2, "0")}</span>
           <span className="gruzli-order-open">ОТКРЫТЬ ↗</span>
         </div>
 
@@ -703,6 +738,71 @@ const SwipeableJobCard = ({
             </button>
           </div>
         </div>
+
+        {/* Live Order — staffing is a first-class visual, not hidden in metadata. */}
+        {isLiveOrder && (
+          <div
+            className="mt-3.5 rounded-[18px] overflow-hidden border border-foreground/10"
+            style={{
+              background: "linear-gradient(135deg, #191a1d 0%, #25262a 62%, #303136 100%)",
+              boxShadow: "0 12px 28px rgba(17,18,20,.13)",
+            }}
+          >
+            <div className="px-3.5 pt-3 pb-2.5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-yellow-300 opacity-60 animate-ping" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-yellow-300" />
+                  </span>
+                  <span className="text-[8px] font-extrabold tracking-[.16em] text-white/55 uppercase">LIVE ORDER</span>
+                </div>
+                <span className="text-[9px] font-bold text-white/45">{staffingProgress}%</span>
+              </div>
+
+              <div className="mt-2.5 flex items-end justify-between gap-3">
+                <div>
+                  <div className="text-[19px] leading-none font-extrabold tracking-[-.04em] text-white">
+                    {workersReady} <span className="text-white/35">/</span> {workersNeeded}
+                  </div>
+                  <div className="mt-1 text-[9px] font-medium text-white/50">
+                    грузчиков уже есть · нужно {workersNeeded}
+                  </div>
+                </div>
+                <span className="rounded-full border border-white/10 bg-white/8 px-2 py-1 text-[8px] font-bold text-white/65">
+                  {workersReady >= workersNeeded ? "КОМАНДА СОБРАНА" : "ИДЁТ НАБОР"}
+                </span>
+              </div>
+
+              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: String(staffingProgress) + "%" }}
+                  transition={{ duration: .7, ease: "easeOut" }}
+                  className="h-full rounded-full bg-gradient-to-r from-yellow-400 to-yellow-200"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between border-t border-white/10 px-3.5 py-2.5">
+              <div className="flex items-center">
+                {Array.from({ length: Math.min(workersReady, 4) }).map((_, workerIndex) => (
+                  <span
+                    key={workerIndex}
+                    className="grid h-6 w-6 place-items-center rounded-full border border-[#191a1d] bg-white/15 text-[8px] font-bold text-white/75"
+                    style={{ marginLeft: workerIndex === 0 ? 0 : -6 }}
+                  >
+                    {workerIndex + 1}
+                  </span>
+                ))}
+                {workersReady === 0 && (
+                  <span className="text-[9px] text-white/40">Пока никто не откликнулся</span>
+                )}
+              </div>
+              <span className="text-[9px] font-semibold text-white/45">обновляется в реальном времени</span>
+            </div>
+          </div>
+        )}
 
         {job.description && (
           <p className="gruzli-order-description">{job.description}</p>
