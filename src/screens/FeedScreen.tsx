@@ -398,6 +398,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
                 job={job}
                 index={i}
                 responded={respondedJobs.has(job.id)}
+                workersFound={workersFound}
                 dispatcherName={job.dispatcher_id ? (dispatcherNames[job.dispatcher_id] || "Диспетчер") : "Ищем диспетчера"}
                 onRespond={() => handleRespond(job.id)}
                 onSkip={() => setSkippedJobs((prev) => new Set(prev).add(job.id))}
@@ -475,6 +476,7 @@ interface SwipeableJobCardProps {
   job: Tables<"jobs"> & { is_bot?: boolean };
   index: number;
   responded: boolean;
+  workersFound: Record<string, number>;
   dispatcherName: string;
   onRespond: () => void;
   onSkip: () => void;
@@ -486,7 +488,7 @@ const getInitials = (name: string) =>
   name.trim().split(/\s+/).slice(0, 2).map((p) => p[0]?.toUpperCase() || "").join("") || "?";
 
 const SwipeableJobCard = ({
-  job, index, responded, dispatcherName, onRespond, onSkip, onOpenProfile, onTap,
+  job, index, responded, workersFound, dispatcherName, onRespond, onSkip, onOpenProfile, onTap,
 }: SwipeableJobCardProps) => {
   const x = useMotionValue(0);
   const bgLeft = useTransform(x, [-150, 0], [1, 0]);
