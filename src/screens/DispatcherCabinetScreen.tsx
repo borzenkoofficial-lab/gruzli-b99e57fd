@@ -99,6 +99,11 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   const [adjustingId, setAdjustingId] = useState<string | null>(null);
   const [myCategory, setMyCategory] = useState<MyJobsCategory>("open");
   const [openRequests, setOpenRequests] = useState<Tables<"jobs">[]>([]);
+  const [offerJob, setOfferJob] = useState<Tables<"jobs"> | null>(null);
+  const [offerRate, setOfferRate] = useState("");
+  const [offerWorkers, setOfferWorkers] = useState("");
+  const [offerMessage, setOfferMessage] = useState("");
+  const [offerSubmitting, setOfferSubmitting] = useState(false);
 
   const fetchMyJobs = async () => {
     if (!user) return;
@@ -131,33 +136,40 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     }
   };
 
-  const handleClaimRequest = async (job: Tables<"jobs">) => {
-    const rateInput = window.prompt("Предложите заказчику ставку за одного грузчика (₽/час):", String(job.hourly_rate || 300));
-    if (rateInput === null) return;
-    const rate = Number(rateInput);
-    if (!Number.isFinite(rate) || rate < 0) {
-      toast.error("Укажите корректную ставку");
+  const handleClaimRequest = (job: Tables<"jobs">) => {
+    setOfferJob(job);
+    setOfferRate(String(job.hourly_rate || 300));
+    setOfferWorkers(String(job.workers_needed || 1));
+    setOfferMessage("");
+  };
+
+  const handleSubmitOffer = async () => {
+    if (!offerJob) return;
+    const rate = Number(offerRate);
+    const workers = Number(offerWorkers);
+    if (!Number.isFinite(rate) || rate <= 0) {
+      toast.error("Укажите ставку больше 0 ₽/час");
       return;
     }
-    const workersInput = window.prompt("Сколько грузчиков вы готовы организовать?", String(job.workers_needed || 1));
-    if (workersInput === null) return;
-    const workers = Number(workersInput);
     if (!Number.isInteger(workers) || workers < 1) {
-      toast.error("Укажите корректное количество грузчиков");
+      toast.error("Укажите количество грузчиков");
       return;
     }
-    const message = window.prompt("Комментарий заказчику (необязательно):", "") || "";
+    setOfferSubmitting(true);
     const { error } = await supabase.rpc("dispatcher_submit_offer", {
-      _job_id: job.id,
+      _job_id: offerJob.id,
       _proposed_hourly_rate: rate,
       _proposed_workers: workers,
-      _message: message,
+      _message: offerMessage.trim() || null,
     });
+    setOfferSubmitting(false);
     if (error) {
       toast.error(error.message.includes("unavailable") ? "Заказ уже недоступен" : "Не удалось отправить предложение");
       return;
     }
     toast.success("Предложение отправлено заказчику");
+    setOfferJob(null);
+    await fetchMyJobs();
   };
 
   const handleDeleteJob = async (jobId: string) => {
@@ -608,6 +620,40 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
         </div>
       </div>
 
+      <AnimatePresence>
+        {offerJob && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-3">
+            <motion.div initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 24, opacity: 0 }} className="w-full max-w-md rounded-3xl bg-background border border-border shadow-2xl p-5">
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[.14em] text-muted-foreground">GRUZLI / OFFER</p>
+                  <h3 className="text-lg font-extrabold text-foreground">Предложение заказчику</h3>
+                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{offerJob.title}</p>
+                </div>
+                <button onClick={() => setOfferJob(null)} className="w-9 h-9 rounded-xl border border-border text-muted-foreground">×</button>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="text-xs font-semibold text-foreground">Ставка, ₽/час
+                  <input value={offerRate} onChange={(e) => setOfferRate(e.target.value)} inputMode="numeric" className="mt-1.5 w-full rounded-2xl border border-border bg-card px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
+                </label>
+                <label className="text-xs font-semibold text-foreground">Грузчиков
+                  <input value={offerWorkers} onChange={(e) => setOfferWorkers(e.target.value)} inputMode="numeric" className="mt-1.5 w-full rounded-2xl border border-border bg-card px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
+                </label>
+              </div>
+              <label className="block mt-3 text-xs font-semibold text-foreground">Комментарий
+                <textarea value={offerMessage} onChange={(e) => setOfferMessage(e.target.value)} rows={3} placeholder="Например: организую 3 грузчиков к 10:00" className="mt-1.5 w-full resize-none rounded-2xl border border-border bg-card px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
+              </label>
+              <div className="flex gap-2 mt-4">
+                <button onClick={() => setOfferJob(null)} disabled={offerSubmitting} className="flex-1 rounded-2xl border border-border py-3 text-sm font-bold">Отмена</button>
+                <button onClick={handleSubmitOffer} disabled={offerSubmitting} className="flex-1 rounded-2xl bg-foreground text-background py-3 text-sm font-bold flex items-center justify-center gap-2">
+                  {offerSubmitting && <Loader2 size={15} className="animate-spin" />} Отправить
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -654,18 +700,6 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                       </motion.div>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {/* Create job CTA */}
-              {onCreateJob && (
-                <div className="px-4 pb-3">
-                  <button
-                    onClick={onCreateJob}
-                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl bg-foreground text-primary-foreground font-bold text-sm tap-scale"
-                  >
-                    <Plus size={18} /> Создать заявку
-                  </button>
                 </div>
               )}
 
