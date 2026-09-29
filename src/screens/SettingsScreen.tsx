@@ -304,7 +304,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   const ScrollWrapper = ({ children, title, goBack }: { children: React.ReactNode; title: string; goBack: () => void }) => (
     <div className="gruzli-settings-subpage flex flex-col h-full">
       <Header title={title} onBack={goBack} />
-      <div className="flex-1 overflow-y-auto overscroll-contain pb-28">{children}</div>
+      <div className="flex-1 overflow-y-auto overscroll-contain pb-28 app-scroll">{children}</div>
     </div>
   );
 
@@ -835,10 +835,10 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
 
   // Main settings menu
   return (
-    <div className="gruzli-settings-screen flex flex-col h-full">
+    <div className="gruzli-settings-screen flex flex-col h-full native-surface">
       <div className="gruzli-settings-hero">
         <div className="gruzli-settings-hero-top">
-          <button onClick={onBack} className="gruzli-settings-back"><ArrowLeft size={18} /></button>
+          <button onClick={onBack} className="gruzli-settings-back native-press"><ArrowLeft size={18} /></button>
           <span>GRUZLI / 06</span>
           <div className="gruzli-settings-status"><i /> SYSTEM</div>
         </div>
@@ -848,7 +848,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
           <p>Профиль, уведомления, безопасность и параметры приложения.</p>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto overscroll-contain pb-28">
+      <div className="flex-1 overflow-y-auto overscroll-contain pb-28 app-scroll">
         {/* Account */}
         <div className="gruzli-settings-group">
           <MenuItem icon={User} label="Профиль" desc="" onClick={() => setSection("profile")} />
