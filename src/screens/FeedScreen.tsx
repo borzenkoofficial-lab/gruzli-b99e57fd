@@ -493,7 +493,6 @@ const SwipeableJobCard = ({
   const bgRight = useTransform(x, [0, 150], [0, 1]);
   const didDrag = useRef(false);
   const swipeCommitted = useRef(false);
-  const [swipeExitDirection, setSwipeExitDirection] = useState<1 | -1>(-1);
   const [isDragging, setIsDragging] = useState(false);
 
   const handleDragStart = () => {
@@ -520,8 +519,6 @@ const SwipeableJobCard = ({
 
     swipeCommitted.current = true;
     didDrag.current = true;
-    setSwipeExitDirection(direction as 1 | -1);
-
     // Finish the gesture visually before the card is removed from the feed.
     x.set(direction * Math.max(window.innerWidth * 1.15, 520));
 
