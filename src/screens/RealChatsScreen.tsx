@@ -146,6 +146,7 @@ interface RealChatsScreenProps {
 
 const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealChatsScreenProps) => {
   const { user } = useAuth();
+  const isDemo = user?.id?.startsWith("demo-") === true;
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [communityId, setCommunityId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -155,6 +156,18 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
 
   const fetchConversations = useCallback(async () => {
     if (!user) return;
+
+    if (isDemo) {
+      const now = new Date();
+      setConversations([
+        { id: "demo-chat-dispatcher", title: "Анна Петрова", is_group: false, lastMessage: "Сергей, завтра в 10:00 начинаем.", lastTime: now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }), lastTimestamp: now.toISOString(), otherName: "Анна Петрова", otherAvatarUrl: null, unreadCount: 2, otherLastSeen: now.toISOString() },
+        { id: "demo-chat-worker", title: "Алексей Морозов", is_group: false, lastMessage: "Грузчики подтверждены, всё в силе.", lastTime: "14:32", lastTimestamp: new Date(now.getTime() - 4 * 60000).toISOString(), otherName: "Алексей Морозов", otherAvatarUrl: null, unreadCount: 1, otherLastSeen: now.toISOString() },
+        { id: "demo-chat-gruzli", title: "Gruzli Official", is_group: true, lastMessage: "Добро пожаловать в Gruzli.", lastTime: "Вчера", lastTimestamp: new Date(now.getTime() - 86400000).toISOString(), otherName: "Gruzli Official", otherAvatarUrl: null, unreadCount: 0, otherLastSeen: null, isCommunity: true },
+      ]);
+      setCommunityId("demo-community");
+      setLoading(false);
+      return;
+    }
 
     const { data: participations } = await supabase
       .from("conversation_participants")
@@ -311,7 +324,7 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [user, fetchConversations]);
+  }, [user, fetchConversations, isDemo]);
 
   const filtered = conversations.filter((c) =>
     c.otherName.toLowerCase().includes(search.toLowerCase())
