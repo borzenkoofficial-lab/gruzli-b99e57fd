@@ -1335,6 +1335,33 @@ html, body {
     overflow:hidden;
   }
 
+
+  /* One vertical scroll owner on mobile. Nested desktop-oriented scroll roots
+     become content when rendered inside the mobile shell. */
+  .mobile-screen-scroll .gruzli-orders-screen.app-scroll,
+  .mobile-screen-scroll .gruzli-settings-screen .app-scroll,
+  .mobile-screen-scroll .gruzli-settings-subpage .app-scroll,
+  .mobile-screen-scroll .gruzli-dispatcher-cabinet-scroll,
+  .pull-refresh-scroll .gruzli-dispatcher-cabinet-scroll {
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+    overscroll-behavior:auto!important;
+    -webkit-overflow-scrolling:auto!important;
+  }
+
+  .mobile-screen-scroll .gruzli-orders-screen.app-scroll {
+    flex:none!important;
+    padding-bottom:calc(var(--bottom-nav-total) + env(safe-area-inset-bottom,0px) + 24px)!important;
+  }
+
+  .mobile-screen-scroll .gruzli-settings-screen .app-scroll,
+  .mobile-screen-scroll .gruzli-settings-subpage .app-scroll {
+    flex:none!important;
+    padding-bottom:24px!important;
+  }
+
   /* Full-screen mobile detail surfaces are their own scroll owner.
      This prevents body/root clipping while keeping the app shell fixed. */
   .mobile-screen-scroll {
