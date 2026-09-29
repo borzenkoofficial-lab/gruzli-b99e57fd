@@ -1404,6 +1404,10 @@ export type Database = {
         Args: { _rating: number; _response_id: string; _text?: string | null }
         Returns: Json
       }
+      dispatcher_cancel_job: {
+        Args: { _job_id: string }
+        Returns: Json
+      }
       create_direct_conversation: {
         Args: { _other_user_id: string; _title?: string }
         Returns: string
