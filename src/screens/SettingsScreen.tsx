@@ -765,11 +765,22 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
 
   // Main settings menu
   return (
-    <div className="flex flex-col h-full">
-      <Header title="Настройки" onBack={onBack} />
+    <div className="gruzli-settings-screen flex flex-col h-full">
+      <div className="gruzli-settings-hero">
+        <div className="gruzli-settings-hero-top">
+          <button onClick={onBack} className="gruzli-settings-back"><ArrowLeft size={18} /></button>
+          <span>GRUZLI / 06</span>
+          <div className="gruzli-settings-status"><i /> SYSTEM</div>
+        </div>
+        <div className="gruzli-settings-hero-copy">
+          <span>CONTROL CENTER</span>
+          <h1>Настройки</h1>
+          <p>Профиль, уведомления, безопасность и параметры приложения.</p>
+        </div>
+      </div>
       <div className="flex-1 overflow-y-auto overscroll-contain pb-28">
-        {/* Account section */}
-        <div className="mx-5 bg-card border border-border rounded-2xl px-4 py-1 mb-3">
+        {/* Account */}
+        <div className="gruzli-settings-group">
           <MenuItem icon={User} label="Профиль" desc="" onClick={() => setSection("profile")} />
           <div className="h-px bg-border ml-[52px]" />
           {role === "worker" && onOpenPremium && (
@@ -781,8 +792,8 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
           <MenuItem icon={BadgeCheck} label="Верификация" desc="" onClick={() => setSection("verification")} badge={profile?.verified ? "✓" : ""} />
         </div>
 
-        {/* General section */}
-        <div className="mx-5 bg-card border border-border rounded-2xl px-4 py-1 mb-3">
+        {/* General */}
+        <div className="gruzli-settings-group">
           <MenuItem icon={Bell} label="Уведомления" desc="" onClick={() => setSection("notifications")} />
           <div className="h-px bg-border ml-[52px]" />
           <MenuItem icon={Shield} label="Безопасность" desc="" onClick={() => setSection("security")} />
@@ -792,15 +803,15 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
           <MenuItem icon={Globe} label="Язык" desc="" onClick={() => setSection("language")} badge={language === "ru" ? "RU" : "EN"} />
         </div>
 
-        {/* Data section */}
-        <div className="mx-5 bg-card border border-border rounded-2xl px-4 py-1 mb-3">
+        {/* Data */}
+        <div className="gruzli-settings-group">
           <MenuItem icon={HardDrive} label="Данные и хранилище" desc="" onClick={() => setSection("storage")} />
           <div className="h-px bg-border ml-[52px]" />
           <MenuItem icon={Ban} label="Заблокированные" desc="" onClick={() => setSection("blocked")} />
         </div>
 
-        {/* About & share section */}
-        <div className="mx-5 bg-card border border-border rounded-2xl px-4 py-1 mb-3">
+        {/* App */}
+        <div className="gruzli-settings-group">
           <MenuItem icon={Share2} label="Поделиться" desc="" onClick={handleShareApp} />
           <div className="h-px bg-border ml-[52px]" />
           <MenuItem icon={Star} label="Оценить приложение" desc="" onClick={handleRateApp} />
@@ -808,8 +819,8 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
           <MenuItem icon={Info} label="О приложении" desc="" onClick={() => setSection("about")} />
         </div>
 
-        {/* Logout */}
-        <div className="mx-5 bg-card border border-border rounded-2xl px-4 py-1 mb-3">
+        {/* Session */}
+        <div className="gruzli-settings-group gruzli-settings-danger">
           <MenuItem icon={LogOut} label="Выйти" desc="" onClick={signOut} destructive />
         </div>
 
@@ -817,6 +828,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
           <p className="text-[11px] text-muted-foreground">Gruzli v1.0.0 beta</p>
           <p className="text-[10px] text-yellow-500/70">⚠️ Бета-версия — возможны ошибки</p>
         </div>
+      <div className="gruzli-settings-footer"><b>GRUZLI</b><span>v1.0.0 beta · CONTROL CENTER</span></div>
       </div>
     </div>
   );
