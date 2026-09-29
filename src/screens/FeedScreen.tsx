@@ -15,6 +15,7 @@ import { MaxChannelBanner } from "@/components/MaxChannelBanner";
 import CategorySubscriptionModal from "@/components/CategorySubscriptionModal";
 import {
   CATEGORIES,
+  getCategory,
   classifyJob,
   loadSubscribedCategories,
   type CategoryKey,
@@ -709,23 +710,12 @@ const SwipeableJobCard = ({
           </div>
         </div>
 
-        {/* Meta info chips */}
+        {/* Compact metadata — details already shown in the visual scene above. */}
         <div className="gruzli-order-meta flex items-center gap-1.5 mt-3 flex-wrap">
-          {job.address && (
+          <MetaChip icon={Clock} text={`${job.duration_hours || 4} ч работы`} />
+          {job.address && job.metro && job.address !== job.metro && (
             <MetaChip icon={MapPin} text={job.address} />
           )}
-          {job.metro && (
-            <MetaChip icon={Train} text={job.metro} />
-          )}
-          {job.start_time && (
-            <MetaChip
-              icon={Clock}
-              text={new Date(job.start_time).toLocaleString("ru-RU", {
-                day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
-              })}
-            />
-          )}
-          <MetaChip icon={Users} text={`${job.workers_needed} чел.`} />
         </div>
 
         {/* Footer */}
