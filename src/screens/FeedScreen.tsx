@@ -372,7 +372,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
           <h2>Заявки</h2>
           <button
             onClick={() => setSubModalOpen(true)}
-            className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-[11.5px] font-semibold text-foreground/80 shadow-sm hover:text-foreground transition-colors tap-scale"
+            className="native-press flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-[11.5px] font-semibold text-foreground/80 shadow-sm hover:text-foreground transition-colors tap-scale"
           >
             <SlidersHorizontal size={13} />
             Настроить
@@ -565,7 +565,7 @@ const SwipeableJobCard = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: swipeExitDirection * 260, scale: 0.98, transition: { duration: 0.18, ease: "easeOut" } }}
       transition={{ delay: index < 5 ? index * 0.04 : 0, duration: 0.3 }}
-      className="relative"
+      className="relative native-list-item"
     >
       {/* Swipe backgrounds */}
       <motion.div
@@ -613,7 +613,7 @@ const SwipeableJobCard = ({
         onDragEnd={handleDragEnd}
         onClick={handleTap}
         whileTap={{ scale: 0.985 }}
-        className={`gruzli-job-card relative z-10 rounded-2xl border p-4 cursor-pointer transition-colors overflow-hidden ${
+        className={`gruzli-job-card native-surface relative z-10 rounded-2xl border p-4 cursor-pointer transition-colors overflow-hidden ${
           isOfficial
             ? "border-yellow-400/40"
             : isBot
@@ -841,7 +841,7 @@ const SwipeableJobCard = ({
             <motion.button
               whileTap={{ scale: 0.93 }}
               onClick={(e) => { e.stopPropagation(); onRespond(); }}
-              className="btn-shimmer flex min-h-[44px] items-center justify-center gap-2 px-5 rounded-[14px] text-[13px] font-bold bg-foreground text-background shadow-[0_8px_20px_-6px_hsl(var(--foreground)/0.42)] hover:shadow-[0_10px_24px_-6px_hsl(var(--foreground)/0.5)] transition-all"
+              className="btn-shimmer native-press flex min-h-[44px] items-center justify-center gap-2 px-5 rounded-[14px] text-[13px] font-bold bg-foreground text-background shadow-[0_8px_20px_-6px_hsl(var(--foreground)/0.42)] hover:shadow-[0_10px_24px_-6px_hsl(var(--foreground)/0.5)] transition-all"
             >
               Беру!
               <ArrowRight size={13} />
