@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, memo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, CheckCheck, Clock3, MoreVertical, Trash2, Ban, BellOff, Smile, Reply as ReplyIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -249,6 +249,10 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   }, [user, conversationId, otherUserId]);
 
   const presenceInfo = formatLastSeen(otherLastSeen);
+
+  // Build the reply lookup once per message update instead of scanning the full history
+  // for every bubble during render (avoids quadratic work in long conversations).
+  const messageById = useMemo(() => new Map(messages.map((message) => [message.id, message])), [messages]);
 
   const scrollToBottom = useCallback((smooth = true) => {
     requestAnimationFrame(() => {
@@ -778,7 +782,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
             // Build reply preview if this message replies to another one
             let replyPreview: ReplyPreview | null = null;
             if (msg.reply_to_id) {
-              const original = messages.find((m) => m.id === msg.reply_to_id);
+              const original = messageById.get(msg.reply_to_id);
               if (original) {
                 let txt = "Сообщение";
                 if (original.message_type === "voice") txt = "🎤 Голосовое сообщение";
