@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import {
-  MapPin, Clock, Users, Wallet, ArrowRight, Ban, UserPlus, Train,
+  MapPin, Clock, Users, Wallet, ArrowRight, Ban,
   Search, X, Sparkles, Loader2, TrendingUp, Check, ArrowLeft, Hourglass, SlidersHorizontal,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +14,6 @@ import EnablePushButton from "@/components/EnablePushButton";
 import { MaxChannelBanner } from "@/components/MaxChannelBanner";
 import CategorySubscriptionModal from "@/components/CategorySubscriptionModal";
 import {
-  CATEGORIES,
   getCategory,
   classifyJob,
   loadSubscribedCategories,
