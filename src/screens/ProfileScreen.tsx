@@ -801,6 +801,75 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         </motion.div>
       </div>
 
+      <div className="px-5 pb-5">
+        <div className="gruzli-worker-dashboard">
+          <div className="gruzli-worker-dashboard-head">
+            <div><span className="gruzli-worker-dashboard-index">01 / WORK PROFILE</span><h2>Рабочий профиль</h2></div>
+            <span className="gruzli-worker-dashboard-live"><i /> LIVE</span>
+          </div>
+          <div className="gruzli-worker-dashboard-grid">
+            <div><span>РЕЙТИНГ</span><strong>{profile?.rating || "5.00"}</strong><small>из 5.0</small></div>
+            <div><span>ЗАКАЗОВ</span><strong>{profile?.completed_orders || 0}</strong><small>завершено</small></div>
+            <div><span>ДОСТУПНО</span><strong>{activeDays}/7</strong><small>дней</small></div>
+            <div><span>ПРОФИЛЬ</span><strong>{profileCompletion}%</strong><small>заполнено</small></div>
+          </div>
+          <div className="gruzli-worker-dashboard-calendar">
+            <div className="gruzli-worker-calendar-head"><span>ДОСТУПНОСТЬ</span><span>{activeDays} активных дней</span></div>
+            <div className="gruzli-worker-calendar-days">
+              {["ПН","ВТ","СР","ЧТ","ПТ","СБ","ВС"].map((day, i) => (
+                <button key={day} onClick={() => { const next = [...availability]; next[i] = !next[i]; saveAvailability(next); }} className={availability[i] ? "is-active" : ""}>
+                  <span>{day}</span><i />
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-5 pb-5">
+        <div className="gruzli-earnings-mockup">
+          <div className="gruzli-earnings-head">
+            <div><span>02 / PERFORMANCE</span><h2>Доход и загрузка</h2></div>
+            <div className="gruzli-earnings-tabs">
+              {(["today","week","month"] as const).map((period) => (
+                <button key={period} onClick={() => setStatsPeriod(period)} className={statsPeriod === period ? "is-active" : ""}>{period === "today" ? "ДЕНЬ" : period === "week" ? "НЕД" : "МЕС"}</button>
+              ))}
+            </div>
+          </div>
+          <div className="gruzli-earnings-main">
+            <div>
+              <span>ЗАРАБОТАНО</span>
+              <strong>{(statsPeriod === "week" ? weeklyStats.earned : statsPeriod === "month" ? monthlyStats.earned : 0).toLocaleString("ru-RU")} ₽</strong>
+            </div>
+            <div className="gruzli-earnings-ring">
+              <strong>{statsPeriod === "week" ? weeklyStats.orders : statsPeriod === "month" ? monthlyStats.orders : 0}</strong><span>заказов</span>
+            </div>
+          </div>
+          <div className="gruzli-earnings-meta">
+            <span><b>{statsPeriod === "week" ? weeklyStats.hours : statsPeriod === "month" ? monthlyStats.hours : 0}</b> ч. работы</span>
+            <span><b>{activeDays}</b> дней доступен</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-5 pb-5">
+        <div className="gruzli-profile-section-head">
+          <div><span className="gruzli-profile-section-index">03</span><h2 className="text-sm font-bold text-foreground">История работы</h2></div>
+          <span className="text-[9px] uppercase tracking-[.12em] text-muted-foreground">{transactions.length} записей</span>
+        </div>
+        {transactions.length > 0 ? (
+          <div className="gruzli-work-history">
+            {transactions.slice(0, 5).map((tx, index) => (
+              <div key={tx.date + tx.description + index} className="gruzli-work-history-row">
+                <span className="gruzli-work-history-index">{String(index + 1).padStart(2, "0")}</span>
+                <div className="gruzli-work-history-main"><strong>{tx.description}</strong><span>{tx.date}</span></div>
+                <b>+{tx.amount.toLocaleString("ru-RU")} ₽</b>
+              </div>
+            ))}
+          </div>
+        ) : <div className="gruzli-work-history-empty">Завершённые заказы появятся здесь после первой выполненной смены.</div>}
+      </div>
+
       {/* Worker Live Card — availability + reputation + workload */}
       <div className="px-5 mb-4">
         <motion.div
