@@ -31,7 +31,7 @@ interface Review {
 const AdminButton = () => {
   const navigate = useNavigate();
   return (
-    <button onClick={() => navigate("/admin")} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border tap-scale transition-colors">
+    <button onClick={() => navigate("/admin")} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border native-list-item tap-scale transition-colors">
       <ShieldCheck size={18} className="text-primary" />
       <span className="text-sm font-medium text-foreground flex-1 text-left">Админ-панель</span>
       <ChevronRight size={16} className="text-muted-foreground" />
@@ -305,12 +305,12 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           </div>
           <div className="px-5 space-y-2">
             <AdminButton />
-            <button onClick={onOpenSettings} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border tap-scale transition-colors">
+            <button onClick={onOpenSettings} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border native-list-item tap-scale transition-colors">
               <Settings size={18} className="text-muted-foreground" />
               <span className="text-sm font-medium text-foreground flex-1 text-left">Настройки</span>
               <ChevronRight size={16} className="text-muted-foreground" />
             </button>
-            <button onClick={signOut} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border tap-scale transition-colors">
+            <button onClick={signOut} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border native-list-item tap-scale transition-colors">
               <LogOut size={18} className="text-destructive" />
               <span className="text-sm font-medium text-destructive flex-1 text-left">Выйти</span>
               <ChevronRight size={16} className="text-muted-foreground" />
@@ -370,15 +370,15 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           </div>
         )}
 
-        <div className="pb-6">
+        <div className="pb-6 native-surface">
           {/* Header */}
           <div className="px-5 safe-top pb-3 flex items-center justify-between">
             <div className="gruzli-page-enter gruzli-profile-title"><span>GRUZLI / 04</span><h1>Профиль</h1></div>
             <div className="flex items-center gap-2">
-              <button onClick={onOpenNotifications} aria-label="Уведомления" className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center active:scale-95 transition-transform">
+              <button onClick={onOpenNotifications} aria-label="Уведомления" className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center native-press active:scale-95 transition-transform">
                 <Bell size={18} className="text-muted-foreground" />
               </button>
-              <button onClick={onOpenSettings} aria-label="Настройки" className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center active:scale-95 transition-transform">
+              <button onClick={onOpenSettings} aria-label="Настройки" className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center native-press active:scale-95 transition-transform">
                 <Settings size={18} className="text-muted-foreground" />
               </button>
             </div>
@@ -567,7 +567,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
           {/* Quick metrics */}
           <div className="mx-5 mb-3 grid grid-cols-2 gap-2.5">
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card border border-border rounded-2xl p-4">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card border border-border rounded-2xl p-4 native-surface">
               <div className="flex items-center gap-2 mb-1.5">
                 <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Trophy size={14} className="text-primary" />
@@ -577,7 +577,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
               <p className="text-xl font-extrabold text-foreground">{weekProfit.toLocaleString("ru-RU")} ₽</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">{weeklyStats.orders} заказ.</p>
             </motion.div>
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }} className="bg-card border border-border rounded-2xl p-4">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }} className="bg-card border border-border rounded-2xl p-4 native-surface">
               <div className="flex items-center gap-2 mb-1.5">
                 <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Briefcase size={14} className="text-primary" />
@@ -592,7 +592,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           {/* Verification CTA */}
           {!profile?.verified && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mx-5 mb-3">
-              <div className="bg-card border border-border rounded-2xl p-4">
+              <div className="bg-card border border-border rounded-2xl p-4 native-surface">
                 <div className="flex items-center gap-3">
                   <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
                     <Shield size={20} className="text-primary" />
@@ -609,7 +609,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
           {/* Rating breakdown */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }} className="mx-5 mb-3">
-            <div className="bg-card border border-border rounded-2xl p-4">
+            <div className="bg-card border border-border rounded-2xl p-4 native-surface">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <Star size={15} className="text-primary fill-primary" />
@@ -959,17 +959,17 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
       {/* Menu */}
       <div className="px-5 space-y-2">
-        <button onClick={() => onOpenSupport?.()} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border tap-scale transition-colors">
+        <button onClick={() => onOpenSupport?.()} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border native-list-item tap-scale transition-colors">
           <Headphones size={18} className="text-primary" />
           <span className="text-sm font-medium text-foreground flex-1 text-left">Тех. поддержка</span>
           <ChevronRight size={16} className="text-muted-foreground" />
         </button>
-        <button onClick={onOpenSettings} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border tap-scale transition-colors">
+        <button onClick={onOpenSettings} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border native-list-item tap-scale transition-colors">
           <Settings size={18} className="text-muted-foreground" />
           <span className="text-sm font-medium text-foreground flex-1 text-left">Настройки</span>
           <ChevronRight size={16} className="text-muted-foreground" />
         </button>
-        <button onClick={signOut} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border tap-scale transition-colors">
+        <button onClick={signOut} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border native-list-item tap-scale transition-colors">
           <LogOut size={18} className="text-destructive" />
           <span className="text-sm font-medium text-destructive flex-1 text-left">Выйти</span>
           <ChevronRight size={16} className="text-muted-foreground" />
