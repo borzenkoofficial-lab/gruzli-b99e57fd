@@ -24,7 +24,16 @@ const AdminPage = lazy(() => import("./pages/AdminPage"));
 const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const AppRoutes = () => {
   const { user, loading, role } = useAuth();
