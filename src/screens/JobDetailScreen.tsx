@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, MapPin, Clock, Users, Zap, MessageCircle, User, Wallet, UserPlus, Check, ShieldCheck, X, ShieldAlert, ChevronDown, AlignLeft } from "lucide-react";
+import {
+  ArrowLeft, MapPin, Clock, Users, Zap, MessageCircle, UserPlus,
+  Check, ShieldCheck, X, ShieldAlert, ChevronDown, AlignLeft, Wallet,
+  CalendarDays, Navigation, CircleDollarSign
+} from "lucide-react";
 import { useRespondToJob } from "@/hooks/useRespondToJob";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,30 +33,21 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
   const [dispatcherName, setDispatcherName] = useState("Диспетчер");
 
   useEffect(() => {
-    const fetchName = async () => {
-      const { data } = await supabase
-        .from("profiles_public" as any)
-        .select("full_name")
-        .eq("user_id", job.dispatcher_id)
-        .single();
-      if (data) setDispatcherName((data as any).full_name || "Диспетчер");
-    };
-    fetchName();
+    let cancelled = false;
+    (async () => {
+      if (!job.dispatcher_id) return;
+      const { data } = await supabase.from("profiles_public" as any).select("full_name").eq("user_id", job.dispatcher_id).single();
+      if (!cancelled && data) setDispatcherName((data as any).full_name || "Диспетчер");
+    })();
+    return () => { cancelled = true; };
   }, [job.dispatcher_id]);
 
-  // Check if current user already responded
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
-        .from("job_responses")
-        .select("id, status")
-        .eq("job_id", job.id)
-        .eq("worker_id", user.id)
-        .maybeSingle();
-      if (cancelled) return;
-      if (data) {
+      const { data } = await supabase.from("job_responses").select("id, status").eq("job_id", job.id).eq("worker_id", user.id).maybeSingle();
+      if (!cancelled && data) {
         setResponseId(data.id);
         setResponseStatus(data.status);
       }
@@ -61,23 +56,24 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
   }, [user, job.id]);
 
   const totalPay = job.hourly_rate * (Number(job.duration_hours) || 4);
+  const hasPending = responseStatus === "pending";
+  const isAccepted = responseStatus === "accepted";
+  const responded = !!responseId && responseStatus !== "withdrawn" && responseStatus !== "rejected";
+  const isOfficial = job.is_official;
+  const dateLabel = job.start_time
+    ? new Date(job.start_time).toLocaleString("ru-RU", { day: "numeric", month: "long" })
+    : "Сегодня";
+  const timeLabel = job.start_time
+    ? new Date(job.start_time).toLocaleString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+    : "Уточняется";
 
   const handleRespond = async () => {
     if (responding) return;
     setResponding(true);
     const success = await respondAndOpenChat(job);
     if (success) {
-      // Refresh response state
-      const { data } = await supabase
-        .from("job_responses")
-        .select("id, status")
-        .eq("job_id", job.id)
-        .eq("worker_id", user!.id)
-        .maybeSingle();
-      if (data) {
-        setResponseId(data.id);
-        setResponseStatus(data.status);
-      }
+      const { data } = await supabase.from("job_responses").select("id, status").eq("job_id", job.id).eq("worker_id", user!.id).maybeSingle();
+      if (data) { setResponseId(data.id); setResponseStatus(data.status); }
     }
     setResponding(false);
   };
@@ -89,9 +85,7 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
       return;
     }
     setWithdrawing(true);
-    const { error } = await supabase.rpc("worker_withdraw_response", {
-      _response_id: responseId,
-    });
+    const { error } = await supabase.rpc("worker_withdraw_response", { _response_id: responseId });
     setWithdrawing(false);
     if (error) {
       toast.error(error.code === "P0001" ? "Этот отклик уже нельзя отозвать" : "Не удалось отозвать отклик");
@@ -103,226 +97,158 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
     toast.success("Отклик отозван");
   };
 
-  const hasPending = responseStatus === "pending";
-  const isAccepted = responseStatus === "accepted";
-  const responded = !!responseId && responseStatus !== "withdrawn" && responseStatus !== "rejected";
-
-  const isOfficial = job.is_official;
-
   return (
-    <div className="gruzli-job-detail app-scroll gruzli-page-enter min-h-screen bg-background pb-32 native-surface">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-5 safe-top pb-4">
-        <button onClick={onBack} className="native-press w-11 h-11 rounded-2xl bg-white border border-border flex items-center justify-center shadow-sm transition-all">
-          <ArrowLeft size={18} className="text-foreground" />
+    <div className="gruzli-job-detail app-scroll min-h-screen bg-background pb-36 native-surface">
+      <div className="sticky top-0 z-40 flex items-center gap-3 border-b border-border/60 bg-background/85 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+10px)] backdrop-blur-2xl">
+        <button onClick={onBack} aria-label="Назад" className="native-press grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-border bg-card shadow-sm">
+          <ArrowLeft size={18} />
         </button>
-        <div className="flex-1 min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Заказ</p><h2 className="text-[17px] font-extrabold tracking-[-.03em] text-foreground truncate">Детали заказа</h2></div>
+        <div className="min-w-0 flex-1">
+          <p className="text-[9px] font-extrabold uppercase tracking-[.16em] text-muted-foreground">GRUZLI / ORDER</p>
+          <p className="truncate text-[15px] font-extrabold tracking-[-.02em]">Детали заявки</p>
+        </div>
+        <span className="rounded-full border border-border bg-card px-2.5 py-1 text-[9px] font-bold text-muted-foreground">
+          {isOfficial ? "OFFICIAL" : "ОТКРЫТА"}
+        </span>
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="px-5">
-        {/* Official Gruzli banner */}
+      <motion.main initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .22 }} className="mx-auto w-full max-w-2xl px-4 pt-4">
         {isOfficial && (
-          <div
-            className="mb-4 rounded-2xl p-4 border border-yellow-400/40 flex items-center gap-3"
-            style={{
-              background: "linear-gradient(135deg, hsl(45 95% 55% / 0.18), hsl(38 90% 50% / 0.08))",
-              boxShadow: "0 8px 24px -8px hsl(45 90% 55% / 0.35)",
-            }}
-          >
-            <div className="w-12 h-12 rounded-xl bg-yellow-400 flex items-center justify-center overflow-hidden flex-shrink-0 border-2 border-yellow-500">
-              <img src={gruzliLogo} alt="Gruzli" className="w-full h-full object-cover" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-bold text-yellow-700 dark:text-yellow-300">Официальная заявка</span>
-                <ShieldCheck size={14} className="text-yellow-500" />
+          <div className="mb-3 flex items-center gap-3 rounded-2xl border border-yellow-400/35 bg-yellow-400/10 p-3">
+            <img src={gruzliLogo} alt="Gruzli" className="h-10 w-10 rounded-xl object-cover" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 text-[12px] font-extrabold text-yellow-700 dark:text-yellow-300">
+                Официальная заявка <ShieldCheck size={13} />
               </div>
-              <p className="text-[11.5px] text-yellow-700/80 dark:text-yellow-300/70 leading-tight mt-0.5">
-                От команды Gruzli — гарантированная оплата
-              </p>
+              <p className="mt-0.5 text-[10px] text-muted-foreground">Публикация от команды Gruzli</p>
             </div>
           </div>
         )}
 
-        <div className="relative overflow-hidden rounded-[26px] border border-white/90 bg-white/72 p-5 mb-4 shadow-[0_22px_55px_rgba(31,35,43,.085),inset_0_1px_0_rgba(255,255,255,.98)] backdrop-blur-2xl">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1.5">
-              {job.urgent && (
-                <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-destructive/20 text-destructive text-[11px] font-semibold">
-                  <Zap size={10} /> Срочно
-                </span>
-              )}
-            </div>
-            <h1 className="text-[25px] leading-[1.04] font-extrabold tracking-[-.045em] text-foreground">{job.title}</h1>
-            {isOfficial ? (
-              <div className="flex items-center gap-1.5 mt-1.5">
-                <div className="w-4 h-4 rounded-full bg-yellow-400 flex items-center justify-center overflow-hidden">
-                  <img src={gruzliLogo} alt="Gruzli" className="w-full h-full object-cover" />
-                </div>
-                <span className="text-xs font-semibold text-yellow-600 dark:text-yellow-400">Gruzli</span>
-                <Check size={11} strokeWidth={3} className="text-yellow-500" />
+        <section className="overflow-hidden rounded-[28px] border border-border/70 bg-card shadow-sm">
+          <div className="relative p-5 pb-4">
+            <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-primary/10 blur-3xl" />
+            <div className="relative">
+              <div className="mb-3 flex flex-wrap items-center gap-1.5">
+                {job.urgent && <span className="inline-flex items-center gap-1 rounded-lg bg-destructive/12 px-2.5 py-1 text-[10px] font-bold text-destructive"><Zap size={10} /> СРОЧНО</span>}
+                {job.quick_minimum && <span className="rounded-lg border border-online/20 bg-online/10 px-2.5 py-1 text-[10px] font-bold text-online">БЫСТРАЯ МИНИМАЛКА</span>}
+                <span className="rounded-lg border border-border bg-muted/60 px-2.5 py-1 text-[10px] font-bold text-muted-foreground">№ {job.id.slice(0, 6).toUpperCase()}</span>
               </div>
-            ) : (
-              <button
-                onClick={() => onOpenProfile?.(job.dispatcher_id)}
-                className="native-press flex items-center gap-1.5 mt-1.5"
-              >
-                <UserPlus size={12} className="text-primary" />
-                <span className="text-xs text-primary font-medium">{dispatcherName}</span>
+              <h1 className="max-w-xl text-[29px] font-extrabold leading-[1.03] tracking-[-.05em] text-foreground">{job.title}</h1>
+              <button onClick={() => !isOfficial && onOpenProfile?.(job.dispatcher_id)} className="native-press mt-3 flex items-center gap-2 text-left">
+                <span className="grid h-9 w-9 place-items-center rounded-full bg-foreground text-[10px] font-extrabold text-background">
+                  {isOfficial ? <img src={gruzliLogo} alt="" className="h-full w-full rounded-full object-cover" /> : dispatcherName.slice(0, 1)}
+                </span>
+                <span>
+                  <span className="block text-[9px] font-bold uppercase tracking-[.12em] text-muted-foreground">Диспетчер</span>
+                  <span className="flex items-center gap-1 text-[12px] font-bold">{isOfficial ? "Gruzli" : dispatcherName} {isOfficial && <Check size={11} className="text-primary" />}</span>
+                </span>
+                {!isOfficial && <UserPlus size={13} className="ml-1 text-primary" />}
               </button>
-            )}
+            </div>
           </div>
-        </div>
 
-        {/* Earnings */}
-        <div className="relative overflow-hidden rounded-[22px] border border-white/90 bg-white/78 px-4 py-4 mb-4 shadow-[0_16px_42px_rgba(31,35,43,.065),inset_0_1px_0_rgba(255,255,255,.96)] backdrop-blur-2xl">
-          <div className="flex items-center gap-2">
-            <Wallet size={16} className="text-primary" />
-            <span className="text-sm text-muted-foreground">Ты получишь</span>
-            <span className="text-[28px] leading-none font-extrabold tracking-[-.045em] text-foreground ml-auto">{totalPay.toLocaleString("ru-RU")} ₽</span>
+          <div className="grid grid-cols-2 border-t border-border/70">
+            <div className="p-4">
+              <p className="text-[9px] font-extrabold uppercase tracking-[.13em] text-muted-foreground">ЗАРАБОТОК</p>
+              <div className="mt-1 flex items-baseline gap-1">
+                <span className="text-[27px] font-extrabold tracking-[-.05em]">{totalPay.toLocaleString("ru-RU")}</span>
+                <span className="text-xs font-bold text-muted-foreground">₽</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground">{job.hourly_rate.toLocaleString("ru-RU")} ₽/ч × {job.duration_hours || 4} ч</p>
+            </div>
+            <div className="border-l border-border/70 p-4">
+              <p className="text-[9px] font-extrabold uppercase tracking-[.13em] text-muted-foreground">КОМАНДА</p>
+              <div className="mt-1 flex items-baseline gap-1">
+                <span className="text-[27px] font-extrabold tracking-[-.05em]">{job.workers_needed || 1}</span>
+                <span className="text-xs font-bold text-muted-foreground">чел.</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground">Нужно на объект</p>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-1">{job.hourly_rate} ₽/час × {job.duration_hours || 4}ч</p>
-        </div>
+        </section>
+
+        <section className="mt-3 rounded-[24px] border border-border/70 bg-card p-4 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <div>
+              <p className="text-[9px] font-extrabold uppercase tracking-[.14em] text-muted-foreground">КОГДА И ГДЕ</p>
+              <h2 className="mt-1 text-[15px] font-extrabold">Выход на объект</h2>
+            </div>
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/10 text-primary"><Navigation size={16} /></div>
+          </div>
+          <div className="relative pl-8">
+            <div className="absolute bottom-4 left-[11px] top-4 w-px bg-border" />
+            <div className="relative mb-4 flex gap-3">
+              <span className="absolute -left-8 top-1 grid h-6 w-6 place-items-center rounded-full border-4 border-card bg-primary" />
+              <div><p className="text-[9px] font-bold uppercase tracking-[.1em] text-muted-foreground">МЕСТО</p><p className="text-[14px] font-bold">{job.address || job.metro || "Москва"}</p>{job.metro && job.address && job.metro !== job.address && <p className="text-[10px] text-muted-foreground">{job.metro}</p>}</div>
+            </div>
+            <div className="relative flex gap-3">
+              <span className="absolute -left-8 top-1 grid h-6 w-6 place-items-center rounded-full border-4 border-card bg-foreground" />
+              <div><p className="text-[9px] font-bold uppercase tracking-[.1em] text-muted-foreground">ВЫХОД</p><p className="text-[14px] font-bold">{dateLabel} · {timeLabel}</p><p className="text-[10px] text-muted-foreground">{job.duration_hours || 4} часа работы</p></div>
+            </div>
+          </div>
+        </section>
 
         {job.description && (
-          <div className="gruzli-job-detail-description relative mb-5 rounded-2xl border border-border bg-card/60 p-4 pl-5 overflow-hidden">
-            <span aria-hidden className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-2xl" />
-            <div className="flex items-center gap-1.5 mb-2">
-              <AlignLeft size={13} className="text-primary" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Описание</span>
-            </div>
-            <p className="text-[15px] text-foreground leading-relaxed whitespace-pre-wrap break-words">
-              {job.description}
-            </p>
-          </div>
+          <section className="mt-3 rounded-[24px] border border-border/70 bg-card p-5 shadow-sm">
+            <div className="mb-3 flex items-center gap-2"><AlignLeft size={15} className="text-primary" /><h2 className="text-[14px] font-extrabold">Что нужно сделать</h2></div>
+            <p className="whitespace-pre-wrap break-words text-[14px] leading-6 text-foreground/90">{job.description}</p>
+          </section>
         )}
 
-        {/* Safety / anti-fraud tip for workers */}
+        <section className="mt-3 grid grid-cols-2 gap-3">
+          <div className="rounded-[22px] border border-border/70 bg-card p-4">
+            <CalendarDays size={16} className="text-primary" />
+            <p className="mt-3 text-[9px] font-bold uppercase tracking-[.12em] text-muted-foreground">Дата</p>
+            <p className="mt-1 text-[13px] font-bold">{dateLabel}</p>
+          </div>
+          <div className="rounded-[22px] border border-border/70 bg-card p-4">
+            <CircleDollarSign size={16} className="text-primary" />
+            <p className="mt-3 text-[9px] font-bold uppercase tracking-[.12em] text-muted-foreground">Ставка</p>
+            <p className="mt-1 text-[13px] font-bold">{job.hourly_rate.toLocaleString("ru-RU")} ₽/час</p>
+          </div>
+        </section>
+
         {!isOfficial && !safetyDismissed && (
-          <div
-            className="mb-5 rounded-2xl border border-amber-500/30 overflow-hidden"
-            style={{
-              background:
-                "linear-gradient(135deg, hsl(38 95% 55% / 0.12), hsl(20 90% 50% / 0.04))",
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setSafetyOpen((v) => !v)}
-              className="native-press w-full flex items-center gap-3 p-3.5 text-left"
-            >
-              <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center flex-shrink-0">
-                <ShieldAlert size={16} className="text-amber-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-bold text-foreground">Как не нарваться на мошенников</p>
-                <p className="text-[11px] text-muted-foreground">3 простых правила безопасности</p>
-              </div>
-              <ChevronDown
-                size={16}
-                className={`text-muted-foreground transition-transform ${safetyOpen ? "rotate-180" : ""}`}
-              />
+          <section className="mt-3 overflow-hidden rounded-[22px] border border-amber-500/25 bg-amber-500/5">
+            <button type="button" onClick={() => setSafetyOpen(v => !v)} className="native-press flex w-full items-center gap-3 p-4 text-left">
+              <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-amber-500/30 bg-amber-500/10"><ShieldAlert size={16} className="text-amber-500" /></div>
+              <div className="min-w-0 flex-1"><p className="text-[12px] font-bold">Безопасность сделки</p><p className="text-[10px] text-muted-foreground">Проверьте условия до выхода</p></div>
+              <ChevronDown size={15} className={`text-muted-foreground transition-transform ${safetyOpen ? "rotate-180" : ""}`} />
             </button>
-            {safetyOpen && (
-              <div className="px-4 pb-4 pt-1 space-y-2.5">
-                {[
-                  "Проверяйте рейтинг и отзывы диспетчера перед откликом.",
-                  "Если не уверены — попросите аванс до начала работы.",
-                  "Договоритесь с диспетчером, чтобы клиент перевёл оплату напрямую вам.",
-                ].map((tip, i) => (
-                  <div key={i} className="flex gap-2.5">
-                    <div className="w-5 h-5 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-[10px] font-bold text-amber-500">{i + 1}</span>
-                    </div>
-                    <p className="text-[12.5px] text-foreground/90 leading-snug flex-1">{tip}</p>
-                  </div>
-                ))}
-                <button
-                  onClick={() => {
-                    localStorage.setItem("job_safety_tip_dismissed", "1");
-                    setSafetyDismissed(true);
-                  }}
-                  className="text-[11px] text-muted-foreground hover:text-foreground active:opacity-70 mt-1"
-                >
-                  Больше не показывать
-                </button>
-              </div>
-            )}
-          </div>
+            {safetyOpen && <div className="space-y-2 border-t border-amber-500/15 px-4 pb-4 pt-3">{[
+              "Проверьте рейтинг и отзывы диспетчера.",
+              "До выхода согласуйте ставку, время и адрес.",
+              "Не передавайте документы и деньги неизвестным лицам."
+            ].map((tip, i) => <div key={i} className="flex gap-2.5 text-[11px] leading-5"><span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-amber-500/10 text-[9px] font-bold text-amber-600">{i + 1}</span><span>{tip}</span></div>)}
+              <button onClick={() => { localStorage.setItem("job_safety_tip_dismissed", "1"); setSafetyDismissed(true); }} className="mt-1 text-[10px] font-semibold text-muted-foreground">Больше не показывать</button>
+            </div>}
+          </section>
         )}
-
-
-        {/* Details */}
-        <div className="space-y-2.5 mb-6">
-          {[
-            job.address && { icon: MapPin, label: "Адрес", value: job.address },
-            job.start_time && { icon: Clock, label: "Дата и время", value: new Date(job.start_time).toLocaleString("ru-RU", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) },
-            { icon: Users, label: "Грузчиков", value: `${job.workers_needed || 1} человек` },
-          ].filter(Boolean).map((detail: any) => (
-            <div key={detail.label} className="flex items-center gap-3 p-3.5 bg-white/68 border border-white/85 rounded-[18px] shadow-[0_10px_28px_rgba(31,35,43,.045)] backdrop-blur-xl">
-              <div className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center flex-shrink-0">
-                <detail.icon size={15} className="text-primary" />
-              </div>
-              <div>
-                <p className="text-[11px] text-muted-foreground">{detail.label}</p>
-                <p className="text-sm text-foreground font-medium">{detail.value}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Actions */}
-        <div className="native-surface sticky bottom-3 z-30 flex gap-2 rounded-[22px] border border-white/90 bg-white/72 p-2 shadow-[0_18px_45px_rgba(31,35,43,.14),inset_0_1px_0_rgba(255,255,255,.96)] backdrop-blur-2xl">
-          <button
-            onClick={handleRespond}
-            disabled={responding || responded}
-            className={`native-press gruzli-job-detail-action flex-1 min-h-[50px] py-3.5 rounded-[16px] text-sm font-bold active:scale-[0.98] transition-all ${
-              responded
-                ? isAccepted
-                  ? "bg-online/20 text-online"
-                  : "bg-primary/15 text-primary"
-                : "bg-foreground text-primary-foreground"
-            }`}
-            style={!responded ? {
-              boxShadow: '6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%), 0 4px 20px hsl(230 60% 58% / 0.35)',
-            } : {}}
-          >
-            {responding
-              ? "Отправка..."
-              : isAccepted
-                ? "✓ Вы выбраны"
-                : hasPending
-                  ? "✓ Отклик отправлен"
-                  : "Откликнуться"}
-          </button>
-          {hasPending && (
-            <button
-              onClick={handleWithdraw}
-              disabled={withdrawing}
-              className="px-4 py-3.5 rounded-2xl bg-card border border-destructive/40 text-destructive text-sm font-bold flex items-center gap-1.5 active:scale-[0.98] transition-all disabled:opacity-50"
-              title="Отозвать отклик"
-            >
-              <X size={14} /> {withdrawing ? "..." : "Отозвать"}
-            </button>
-          )}
-        </div>
 
         {!isOfficial && (
-          <button
-            onClick={() => setReportOpen(true)}
-            className="mt-4 w-full py-3 rounded-2xl bg-card border border-destructive/30 text-destructive text-[13px] font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
-          >
-            <ShieldAlert size={14} /> Пожаловаться на мошенников
+          <button onClick={() => setReportOpen(true)} className="native-press mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/25 bg-destructive/5 py-3 text-[11px] font-bold text-destructive">
+            <ShieldAlert size={13} /> Пожаловаться на заявку
           </button>
         )}
-      </motion.div>
+      </motion.main>
 
-      <ReportFraudModal
-        open={reportOpen}
-        onClose={() => setReportOpen(false)}
-        jobId={job.id}
-        dispatcherId={job.dispatcher_id}
-      />
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 px-4 pb-[calc(env(safe-area-inset-bottom)+12px)]">
+        <div className="pointer-events-auto mx-auto flex max-w-2xl items-center gap-2 rounded-[24px] border border-border bg-background/90 p-2 shadow-[0_-8px_35px_rgba(0,0,0,.12)] backdrop-blur-2xl">
+          {responded ? (
+            <div className={`flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-[17px] text-[13px] font-extrabold ${isAccepted ? "bg-online/15 text-online" : "bg-primary/12 text-primary"}`}>
+              <Check size={16} strokeWidth={3} /> {isAccepted ? "Вы выбраны" : "Отклик отправлен"}
+            </div>
+          ) : (
+            <button onClick={handleRespond} disabled={responding} className="native-press min-h-[52px] flex-1 rounded-[17px] bg-foreground px-5 text-[14px] font-extrabold text-background shadow-lg disabled:opacity-60">
+              {responding ? "Отправляем..." : "Откликнуться на заявку"}
+            </button>
+          )}
+          {hasPending && <button onClick={handleWithdraw} disabled={withdrawing} className="native-press grid h-[52px] w-[52px] shrink-0 place-items-center rounded-[17px] border border-destructive/25 bg-card text-destructive disabled:opacity-50" aria-label="Отозвать отклик"><X size={17} /></button>}
+        </div>
+      </div>
+
+      <ReportFraudModal open={reportOpen} onClose={() => setReportOpen(false)} jobId={job.id} dispatcherId={job.dispatcher_id} />
     </div>
   );
 };
