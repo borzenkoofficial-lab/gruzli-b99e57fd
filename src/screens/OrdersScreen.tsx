@@ -63,15 +63,29 @@ const OrdersScreen = () => {
     setLoading(true);
 
     if (role === "client") {
-      const { data: clientJobs } = await supabase
+      const { data: clientJobs, error: clientJobsError } = await supabase
         .from("jobs")
         .select("*")
         .eq("client_id", user.id)
         .order("created_at", { ascending: false });
 
+      if (clientJobsError) {
+        console.error("Failed to load client jobs", clientJobsError);
+        toast.error("Не удалось загрузить ваши заявки");
+        setClientOffers({});
+        setJobs([]);
+        setCompletedJobs([]);
+        setLoading(false);
+        return;
+      }
+
       const clientJobIds = (clientJobs || []).map((j) => j.id);
       if (clientJobIds.length) {
-        const { data: offers } = await supabase.from("dispatcher_offers").select("*").in("job_id", clientJobIds).eq("status", "pending").order("created_at", { ascending: false });
+        const { data: offers, error: offersError } = await supabase.from("dispatcher_offers").select("*").in("job_id", clientJobIds).eq("status", "pending").order("created_at", { ascending: false });
+        if (offersError) {
+          console.error("Failed to load dispatcher offers", offersError);
+          setClientOffers({});
+        }
         const dispatcherIds = [...new Set((offers || []).map((o: any) => o.dispatcher_id))];
         const { data: dispatcherProfiles } = dispatcherIds.length
           ? await supabase.from("profiles_public" as any).select("user_id, full_name, avatar_url").in("user_id", dispatcherIds)
