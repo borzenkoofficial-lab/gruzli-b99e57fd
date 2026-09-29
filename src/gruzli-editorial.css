@@ -4501,3 +4501,172 @@ body,
     animation-duration:.01ms!important;
   }
 }
+
+
+/* ==========================================================================
+   GRUZLI SETTINGS — CONTROL CENTER
+   ========================================================================== */
+.gruzli-settings-screen{
+  background:
+    radial-gradient(520px 260px at 85% -2%,rgba(255,255,255,.98),transparent 70%),
+    linear-gradient(180deg,#f8f8f7 0%,#f0f0f1 100%);
+  color:#17181b;
+}
+.gruzli-settings-hero{
+  position:relative;
+  overflow:hidden;
+  padding:10px 20px 24px;
+  border-bottom:1px solid rgba(214,215,218,.8);
+}
+.gruzli-settings-hero:before{
+  content:"";
+  position:absolute;
+  width:260px;height:260px;
+  right:-90px;top:-130px;
+  border:1px solid rgba(20,21,24,.06);
+  border-radius:50%;
+  box-shadow:0 0 0 34px rgba(20,21,24,.018),0 0 0 70px rgba(20,21,24,.012);
+  pointer-events:none;
+}
+.gruzli-settings-hero-top{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-height:42px;
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.16em;
+  color:#777a80;
+}
+.gruzli-settings-back{
+  width:40px;height:40px;
+  display:grid;place-items:center;
+  border-radius:14px;
+  border:1px solid rgba(20,21,24,.08);
+  background:rgba(255,255,255,.72);
+  box-shadow:0 8px 20px rgba(20,21,24,.05),inset 0 1px 0 #fff;
+}
+.gruzli-settings-hero-top>span{color:#17181b}
+.gruzli-settings-status{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+.gruzli-settings-status i{
+  width:5px;height:5px;border-radius:50%;
+  background:#f2bd16;
+  box-shadow:0 0 0 4px rgba(242,189,22,.12);
+}
+.gruzli-settings-hero-copy{
+  position:relative;
+  z-index:1;
+  padding-top:23px;
+}
+.gruzli-settings-hero-copy>span{
+  display:block;
+  margin-bottom:8px;
+  font-size:8px;
+  font-weight:800;
+  letter-spacing:.18em;
+  color:#8a8c91;
+}
+.gruzli-settings-hero-copy h1{
+  margin:0;
+  font-size:42px;
+  line-height:.9;
+  letter-spacing:-.065em;
+  font-weight:850;
+}
+.gruzli-settings-hero-copy p{
+  max-width:330px;
+  margin:12px 0 0;
+  font-size:11px;
+  line-height:1.5;
+  color:#777a80;
+}
+.gruzli-settings-screen .flex-1.overflow-y-auto{
+  padding-top:18px;
+}
+.gruzli-settings-group{
+  position:relative;
+  margin:0 20px 12px;
+  padding:6px 10px;
+  border:1px solid rgba(255,255,255,.96);
+  border-radius:23px;
+  background:rgba(255,255,255,.72);
+  box-shadow:0 16px 40px rgba(24,26,31,.055),inset 0 1px 0 #fff;
+  backdrop-filter:blur(22px) saturate(1.15);
+  -webkit-backdrop-filter:blur(22px) saturate(1.15);
+}
+.gruzli-settings-group:before{
+  content:"";
+  position:absolute;
+  left:0;top:15px;bottom:15px;
+  width:2px;
+  background:#f2bd16;
+  border-radius:0 2px 2px 0;
+  opacity:.9;
+}
+.gruzli-settings-group>button{
+  min-height:61px;
+  padding:10px 4px!important;
+  border-radius:15px;
+  transition:transform .18s ease,background .18s ease;
+}
+.gruzli-settings-group>button:active{background:rgba(242,189,22,.08)}
+.gruzli-settings-group>div{
+  background:rgba(216,217,219,.55)!important;
+}
+.gruzli-settings-group>button>div:first-child{
+  width:38px!important;height:38px!important;
+  border-radius:13px!important;
+  background:#f0f0ef!important;
+  border:1px solid rgba(20,21,24,.045);
+}
+.gruzli-settings-group>button>div:first-child svg{
+  width:16px;height:16px;
+  color:#4c4e53!important;
+}
+.gruzli-settings-group>button p{
+  font-size:13px!important;
+  letter-spacing:-.01em;
+}
+.gruzli-settings-group>button>svg{
+  color:#a0a2a6;
+}
+.gruzli-settings-danger{
+  margin-top:18px;
+}
+.gruzli-settings-danger:before{
+  background:#d94a4a;
+}
+.gruzli-settings-danger>button>div:first-child{
+  background:rgba(217,74,74,.07)!important;
+}
+.gruzli-settings-footer{
+  padding:16px 20px 28px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  color:#a0a2a6;
+  font-size:8px;
+  font-weight:750;
+  letter-spacing:.13em;
+}
+.gruzli-settings-footer b{color:#2a2b2f;font-size:10px}
+@media(min-width:768px){
+  .gruzli-settings-screen{max-width:820px;margin:0 auto}
+  .gruzli-settings-hero{padding-left:28px;padding-right:28px}
+  .gruzli-settings-group{margin-left:28px;margin-right:28px}
+  .gruzli-settings-group>button:hover{
+    background:rgba(242,189,22,.055);
+    transform:translateX(2px);
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  .gruzli-settings-group>button{transition:none}
+}
