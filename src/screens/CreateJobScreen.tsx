@@ -86,6 +86,11 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
     e?.preventDefault();
     if (!user) return;
 
+    if (!isClient) {
+      toast.error("Создавать заявки может только заказчик");
+      return;
+    }
+
     setLoading(true);
 
     // AI moderation check
@@ -105,61 +110,27 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
       }
     }
 
-    if (!isClient) {
-      const { error: feeError } = await supabase.rpc("deduct_balance", {
-        _user_id: user.id,
-        _amount: JOB_POSTING_FEE,
-      });
-      if (feeError) {
-        const msg = (feeError.message || "").toLowerCase();
-        if (msg.includes("insufficient")) {
-          toast.error(`Недостаточно средств. Нужно ${JOB_POSTING_FEE} ₽`);
-        } else {
-          toast.error("Ошибка списания");
-        }
-        setLoading(false);
-        return;
-      }
-    }
+    const { data: createdJob, error } = await supabase.rpc("client_create_job", {
+      _title: title.trim(),
+      _description: description.trim(),
+      _hourly_rate: parseFloat(hourlyRate),
+      _start_time: startTime ? new Date(startTime).toISOString() : null,
+      _duration_hours: parseFloat(durationHours) || 4,
+      _address: address.trim(),
+      _metro: metro.trim(),
+      _workers_needed: parseInt(workersNeeded) || 2,
+      _urgent: urgent,
+      _quick_minimum: quickMinimum,
+      _requires_contract: requiresContract,
+    });
 
-    let createdJob: any = null;
-    let error: any = null;
-
-    if (isClient) {
-      const result = await supabase.rpc("client_create_job", {
-        _title: title.trim(),
-        _description: description.trim(),
-        _hourly_rate: parseFloat(hourlyRate),
-        _start_time: startTime ? new Date(startTime).toISOString() : null,
-        _duration_hours: parseFloat(durationHours) || 4,
-        _address: address.trim(),
-        _metro: metro.trim(),
-        _workers_needed: parseInt(workersNeeded) || 2,
-        _urgent: urgent,
-        _quick_minimum: quickMinimum,
-        _requires_contract: requiresContract,
-      });
-      createdJob = result.data;
-      error = result.error;
-    } else {
-      const result = await supabase.from("jobs").insert({
-        dispatcher_id: user.id,
-        title: title.trim(),
-        description: description.trim(),
-        hourly_rate: parseInt(hourlyRate),
-        start_time: startTime ? new Date(startTime).toISOString() : null,
-        duration_hours: parseFloat(durationHours) || 4,
-        address: address.trim(),
-        metro: metro.trim(),
-        workers_needed: parseInt(workersNeeded) || 2,
-        urgent,
-        quick_minimum: quickMinimum,
-        requires_contract: requiresContract,
-      }).select().single();
-      createdJob = result.data;
-      error = result.error;
+    if (error || !createdJob) {
+      console.error("client_create_job failed", error);
+      toast.error(error?.message || "Не удалось создать заявку");
+      setLoading(false);
+      return;
     }
-    if (requiresContract && createdJob) {
+    if (requiresContract) {
       const { error: contractErr } = await supabase.from("job_contracts").insert({
         job_id: createdJob.id,
         dispatcher_id: user.id,
