@@ -243,16 +243,30 @@ async function rpc(name: string, args: Record<string, any> = {}) {
   if (name === "get_weekly_completed_jobs") return { data: 0, error: null };
   if (name === "get_support_user_id") return { data: "demo-support", error: null };
   if (name === "client_create_job") {
-    const job = { id: uid("job"), title: args._title, description: args._description, address: args._address, metro: args._metro, duration_hours: args._duration_hours, hourly_rate: args._hourly_rate, workers_needed: args._workers_needed, start_time: args._start_time, status: "open", client_id: user?.id, dispatcher_id: null, created_at: new Date().toISOString() };
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    const title = String(args._title || "").trim();
+    const address = String(args._address || "").trim();
+    const rate = Number(args._hourly_rate);
+    const duration = Number(args._duration_hours);
+    const workers = Number(args._workers_needed);
+    if (!title || !address || !Number.isFinite(rate) || rate <= 0 || !Number.isFinite(duration) || duration <= 0 || !Number.isInteger(workers) || workers < 1 || workers > 100) {
+      return { data: null, error: { code: "22023", message: "Проверьте название, адрес, ставку, длительность и количество грузчиков" } };
+    }
+    const job = { id: uid("job"), title, description: String(args._description || "").trim(), address, metro: args._metro || null, duration_hours: duration, hourly_rate: rate, workers_needed: workers, start_time: args._start_time || null, status: "open", client_id: user.id, dispatcher_id: null, created_at: new Date().toISOString() };
     db.jobs.push(job); saveDb(db); return { data: job, error: null };
   }
   if (name === "dispatcher_submit_offer") {
-    if (!user) return { data: null, error: { message: "Не авторизован" } };
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
     const job = db.jobs.find((j) => j.id === args._job_id);
-    if (!job || job.status !== "open" || job.dispatcher_id) return { data: null, error: { message: "unavailable" } };
+    if (!job || job.status !== "open" || job.dispatcher_id) return { data: null, error: { code: "P0001", message: "Заказ уже недоступен" } };
+    const rate = Number(args._proposed_hourly_rate);
+    const workers = Number(args._proposed_workers);
+    if (!Number.isFinite(rate) || rate <= 0 || !Number.isInteger(workers) || workers < 1 || workers > 100) {
+      return { data: null, error: { code: "22023", message: "Проверьте ставку и количество грузчиков" } };
+    }
     const duplicate = db.dispatcher_offers.find((o) => o.job_id === args._job_id && o.dispatcher_id === user.id && o.status === "pending");
     if (duplicate) return { data: null, error: { code: "23505", message: "Предложение уже отправлено" } };
-    const offer = { id: uid("offer"), job_id: args._job_id, dispatcher_id: user.id, proposed_hourly_rate: args._proposed_hourly_rate, proposed_workers: args._proposed_workers, message: args._message || "", status: "pending", created_at: new Date().toISOString() };
+    const offer = { id: uid("offer"), job_id: args._job_id, dispatcher_id: user.id, proposed_hourly_rate: rate, proposed_workers: workers, message: String(args._message || "").trim(), status: "pending", created_at: new Date().toISOString() };
     db.dispatcher_offers.push(offer); saveDb(db); return { data: offer, error: null };
   }
   if (name === "client_select_dispatcher_offer") {
