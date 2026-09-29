@@ -25,7 +25,7 @@ const ProgressBar = ({ current, total }: { current: number; total: number }) => 
     {Array.from({ length: total }).map((_, i) => (
       <div key={i} className="flex-1 h-1 rounded-full overflow-hidden bg-muted/30">
         <motion.div
-          className="h-full rounded-full bg-primary"
+          className="h-full rounded-full bg-foreground"
           initial={{ width: 0 }}
           animate={{ width: i <= current ? "100%" : "0%" }}
           transition={{ duration: 0.4, ease: "easeOut" }}
@@ -42,9 +42,9 @@ const WelcomeStep = ({ isDispatcher }: { isDispatcher: boolean }) => (
       initial={{ scale: 0 }}
       animate={{ scale: 1 }}
       transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
-      className="w-24 h-24 rounded-3xl bg-primary/10 flex items-center justify-center mb-6"
+      className="w-24 h-24 rounded-3xl bg-[#fff5c7] border border-[#f2c400]/25 flex items-center justify-center mb-6"
     >
-      <span className="text-5xl font-extrabold text-primary">G</span>
+      <span className="text-5xl font-extrabold text-foreground">G</span>
     </motion.div>
     <motion.h1
       initial={{ opacity: 0, y: 20 }}
@@ -155,8 +155,8 @@ const UIGuideStep = ({ isDispatcher }: { isDispatcher: boolean }) => {
               transition={{ delay: 0.5 + i * 0.12 }}
               className="flex flex-col items-center gap-1"
             >
-              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                <item.icon size={16} className="text-primary" />
+              <div className="w-9 h-9 rounded-xl bg-[#fff5c7] border border-[#f2c400]/25 flex items-center justify-center">
+                <item.icon size={16} className="text-foreground" />
               </div>
               <span className="text-[9px] font-semibold text-foreground">{item.label}</span>
             </motion.div>
@@ -173,7 +173,7 @@ const UIGuideStep = ({ isDispatcher }: { isDispatcher: boolean }) => {
             transition={{ delay: 0.7 + i * 0.12 }}
             className="flex items-start gap-3 p-3 rounded-xl bg-muted/20 border border-border/50"
           >
-            <item.icon size={16} className="text-primary shrink-0 mt-0.5" />
+            <item.icon size={16} className="text-foreground shrink-0 mt-0.5" />
             <span className="text-xs text-muted-foreground text-left leading-relaxed">{item.text}</span>
           </motion.div>
         ))}
@@ -189,9 +189,9 @@ const NotificationsStep = ({ isDispatcher }: { isDispatcher: boolean }) => (
       initial={{ scale: 0 }}
       animate={{ scale: 1 }}
       transition={{ type: "spring", stiffness: 200, damping: 15 }}
-      className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-5"
+      className="w-20 h-20 rounded-full bg-[#fff5c7] border border-[#f2c400]/25 flex items-center justify-center mb-5"
     >
-      <Bell size={36} className="text-primary" />
+      <Bell size={36} className="text-foreground" />
     </motion.div>
 
     <motion.h2
@@ -243,7 +243,7 @@ const NotificationsStep = ({ isDispatcher }: { isDispatcher: boolean }) => (
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.9 }}
-        className="bg-primary/5 border border-primary/20 rounded-2xl p-4"
+        className="bg-[#fffaf0] border border-[#f2c400]/20 rounded-2xl p-4"
       >
         <div className="flex items-start gap-2">
           <span className="text-lg">💡</span>
@@ -282,9 +282,9 @@ const AddToHomeStep = () => {
         initial={{ scale: 0, rotate: -20 }}
         animate={{ scale: 1, rotate: 0 }}
         transition={{ type: "spring", stiffness: 200, damping: 15 }}
-        className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-5"
+        className="w-20 h-20 rounded-full bg-[#fff5c7] border border-[#f2c400]/25 flex items-center justify-center mb-5"
       >
-        <Smartphone size={36} className="text-primary" />
+        <Smartphone size={36} className="text-foreground" />
       </motion.div>
 
       <motion.h2
@@ -317,7 +317,7 @@ const AddToHomeStep = () => {
           >
             <span className="text-sm">🤖</span>
             <span className="text-xs font-bold text-foreground">Android — Chrome</span>
-            {platform === "android" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-semibold">Ваше устройство</span>}
+            {platform === "android" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-foreground font-semibold">Ваше устройство</span>}
           </motion.div>
           <div className="space-y-1.5">
             {androidSteps.map((s, i) => (
@@ -345,7 +345,7 @@ const AddToHomeStep = () => {
           >
             <span className="text-sm">🍎</span>
             <span className="text-xs font-bold text-foreground">iPhone — Safari</span>
-            {platform === "ios" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-semibold">Ваше устройство</span>}
+            {platform === "ios" && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-foreground font-semibold">Ваше устройство</span>}
           </motion.div>
           <div className="space-y-1.5">
             {iosSteps.map((s, i) => (
@@ -398,7 +398,7 @@ const CelebrationStep = ({ onStart, isDispatcher }: { onStart: () => void; isDis
         transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.2 }}
         className="absolute inset-0 flex items-center justify-center"
       >
-        <PartyPopper size={56} className="text-primary" />
+        <PartyPopper size={56} className="text-foreground" />
       </motion.div>
     </div>
 
@@ -427,7 +427,7 @@ const CelebrationStep = ({ onStart, isDispatcher }: { onStart: () => void; isDis
       transition={{ delay: 0.8, type: "spring" }}
       whileTap={{ scale: 0.95 }}
       onClick={onStart}
-      className="w-full max-w-xs py-4 rounded-2xl bg-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-2"
+      className="w-full max-w-xs py-4 rounded-2xl bg-foreground text-foreground-foreground text-sm font-bold flex items-center justify-center gap-2"
     >
       {isDispatcher ? "Создать первый заказ" : "Смотреть заказы"}
       <ChevronRight size={18} />
@@ -542,7 +542,7 @@ const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
           )}
           <button
             onClick={goNext}
-            className="flex-1 py-3.5 rounded-2xl bg-foreground text-primary-foreground text-sm font-bold flex items-center justify-center gap-1 active:scale-95 transition-transform"
+            className="flex-1 py-3.5 rounded-2xl bg-foreground text-foreground-foreground text-sm font-bold flex items-center justify-center gap-1 active:scale-95 transition-transform"
           >
             Далее
             <ChevronRight size={16} />
