@@ -714,6 +714,73 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
     );
   }
 
+  // ─── CLIENT PROFILE ───
+  if (role === "client") {
+    const clientOrders = Number(profile?.completed_orders || 0);
+    return (
+      <div className="gruzli-profile-screen pb-8">
+        {isDemo && <div className="px-5 pt-3"><DemoRoleSwitcher role={role} onSwitch={switchDemoRole} /></div>}
+        <div className="px-5 safe-top pt-2 pb-4 flex items-center justify-between">
+          <div>
+            <span className="text-[9px] font-bold uppercase tracking-[.16em] text-muted-foreground">GRUZLI / CLIENT</span>
+            <h1 className="mt-1 text-[28px] leading-none font-extrabold tracking-[-.045em]">Аккаунт</h1>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center"><Bell size={18} className="text-muted-foreground"/></button>
+            <button onClick={onOpenSettings} className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center"><Settings size={18} className="text-muted-foreground"/></button>
+          </div>
+        </div>
+
+        <div className="px-5 mb-4">
+          <div className="relative overflow-hidden rounded-[28px] bg-[#181818] text-white p-5 min-h-[190px]">
+            <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full border border-white/10" />
+            <div className="absolute right-5 bottom-5 h-20 w-20 rounded-full border border-[#f2c400]/30" />
+            <div className="relative flex items-start gap-4">
+              <AvatarWithUpload profile={profile} user={user} editable />
+              <div className="min-w-0 flex-1">
+                <span className="text-[9px] uppercase tracking-[.18em] text-white/45">CLIENT ID</span>
+                <h2 className="mt-1 text-xl font-extrabold truncate">{profile?.full_name || "Заказчик"}</h2>
+                <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold">
+                  <Building2 size={11} className="text-[#f2c400]"/> ЗАКАЗЧИК
+                </div>
+              </div>
+            </div>
+            <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between border-t border-white/10 pt-3">
+              <div><span className="block text-[8px] uppercase tracking-[.16em] text-white/40">ACCOUNT</span><strong className="text-sm tracking-wider">{shortId}</strong></div>
+              <div className="text-right"><span className="block text-[8px] uppercase tracking-[.16em] text-white/40">ЗАКАЗОВ</span><strong className="text-lg">{clientOrders}</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-5 space-y-3">
+          <div className="rounded-[24px] border border-border bg-card p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div><span className="text-[9px] font-bold uppercase tracking-[.16em] text-muted-foreground">01 / ORDERS</span><h2 className="text-base font-extrabold mt-1">Мои заказы</h2></div>
+              <span className="rounded-full bg-muted px-2.5 py-1 text-[10px] font-bold">{clientOrders}</span>
+            </div>
+            <button onClick={onOpenCabinet} className="w-full flex items-center gap-3 rounded-2xl bg-[#f2c400] px-4 py-3.5 text-left text-black">
+              <Plus size={18}/><span className="flex-1 text-sm font-extrabold">Создать новый заказ</span><ChevronRight size={16}/>
+            </button>
+          </div>
+
+          <div className="rounded-[24px] border border-border bg-card overflow-hidden">
+            {[
+              {icon: MessageSquare,label:"Чаты с диспетчерами",action:onOpenSupport},
+              {icon: ShieldCheck,label:"Безопасность аккаунта",action:onOpenSettings},
+              {icon: Headphones,label:"Поддержка Gruzli",action:()=>onOpenSupport?.()},
+            ].map(({icon:Icon,label,action})=>(
+              <button key={label} onClick={action} className="w-full flex items-center gap-3 px-4 py-4 border-b last:border-0 border-border/60 text-left active:bg-muted/50">
+                <span className="grid h-9 w-9 place-items-center rounded-xl bg-muted"><Icon size={17}/></span>
+                <span className="flex-1 text-sm font-semibold">{label}</span><ChevronRight size={16} className="text-muted-foreground"/>
+              </button>
+            ))}
+          </div>
+          <button onClick={signOut} className="w-full rounded-2xl border border-border bg-card px-4 py-3.5 text-sm font-bold text-destructive">Выйти из аккаунта</button>
+        </div>
+      </div>
+    );
+  }
+
   // ─── WORKER PROFILE ───
   const statsData = {
     today: { orders: profile?.completed_orders || 0, earned: `${((profile as any)?.total_earned || 0).toLocaleString("ru-RU")} ₽`, hours: `${monthlyStats.hours}ч` },
