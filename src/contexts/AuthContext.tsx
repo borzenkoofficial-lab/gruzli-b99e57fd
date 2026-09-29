@@ -80,6 +80,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setDemoMode(false);
   };
 
+  const demoUser: User = { id: "demo-worker", email: "demo@gruzli.local", user_metadata: { role: "worker", full_name: "Демо-грузчик" } };
+  const effectiveUser = demoMode ? demoUser : user;
+  const effectiveSession = demoMode ? { user: demoUser, access_token: "demo-token" } : session;
   const effectiveRole = demoMode ? "worker" : role;
   const effectiveProfile = demoMode ? {
     full_name: "Демо-грузчик", role: "worker", rating: 4.96, completed_orders: 128,
@@ -87,5 +90,5 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     premium_until: "2026-12-31T23:59:59Z", skills: ["Переезды","Разгрузка","Демонтаж"],
   } : profile;
 
-  return <AuthContext.Provider value={{ user, session, role: effectiveRole, profile: effectiveProfile, loading, signOut }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user: effectiveUser, session: effectiveSession, role: effectiveRole, profile: effectiveProfile, loading, signOut }}>{children}</AuthContext.Provider>;
 };
