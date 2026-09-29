@@ -515,52 +515,35 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
 
   return (
     <div className="h-full w-full overflow-y-auto overflow-x-hidden bg-background overscroll-contain native-surface" style={{ WebkitOverflowScrolling: "touch", paddingBottom: "calc(var(--bottom-nav-height, 76px) + env(safe-area-inset-bottom, 0px) + 16px)" }}>
-      {/* Header */}
-      <div className="px-4 safe-top pb-2">
+      {/* Dispatcher cabinet hero */}
+      <div className="px-5 safe-top pb-4">
         <div className="flex items-center gap-3">
-          {!embedded && (
-            <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 transition-all">
-              <ArrowLeft size={18} className="text-foreground" />
-            </button>
-          )}
-          <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">Кабинет диспетчера</h1>
-            <p className="text-[11px] text-muted-foreground">Заявки · заказы · финансы</p>
+          {!embedded && <button onClick={onBack} className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-border bg-card active:bg-muted"><ArrowLeft size={18}/></button>}
+          <div className="min-w-0 flex-1">
+            <span className="text-[9px] font-bold uppercase tracking-[.17em] text-muted-foreground">GRUZLI / DISPATCH</span>
+            <h1 className="mt-1 text-[28px] leading-none font-extrabold tracking-[-.045em]">Кабинет</h1>
           </div>
+          <button onClick={onOpenCommunity} className="grid h-11 w-11 place-items-center rounded-2xl border border-border bg-card"><Users size={18}/></button>
         </div>
       </div>
 
-      <EnablePushButton />
-
-      {/* Quick Stats Banner */}
-      <div className="px-4 pb-3">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl overflow-hidden"
-          style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(220 65% 45%))" }}
-        >
-          <div className="px-4 py-4">
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <p className="text-primary-foreground/60 text-[10px] font-medium uppercase tracking-wider">Активных заказов</p>
-                <p className="text-primary-foreground text-3xl font-extrabold">{activeJobs.length}</p>
-              </div>
-              <div className="w-px h-10 bg-primary-foreground/20" />
-              <div className="flex-1">
-                <p className="text-primary-foreground/60 text-[10px] font-medium uppercase tracking-wider">За неделю</p>
-                <p className="text-primary-foreground text-lg font-bold">{weeklyStats.profit >= 0 ? "+" : ""}{weeklyStats.profit.toLocaleString("ru-RU")} ₽</p>
-                <p className="text-primary-foreground/50 text-[10px]">{weeklyStats.jobs} заказов</p>
-              </div>
-              <div className="w-px h-10 bg-primary-foreground/20" />
-              <div className="flex-1 text-right">
-                <p className="text-primary-foreground/60 text-[10px] font-medium uppercase tracking-wider">За месяц</p>
-                <p className="text-primary-foreground text-lg font-bold">{monthlyStats.profit >= 0 ? "+" : ""}{monthlyStats.profit.toLocaleString("ru-RU")} ₽</p>
-                <p className="text-primary-foreground/50 text-[10px]">{monthlyStats.jobs} заказов</p>
-              </div>
+      <div className="px-5 pb-4">
+        <div className="relative overflow-hidden rounded-[28px] bg-[#181818] p-5 text-white">
+          <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full border border-white/10"/>
+          <div className="absolute right-6 bottom-5 h-16 w-16 rounded-full border border-[#f2c400]/30"/>
+          <div className="relative">
+            <span className="text-[9px] font-bold uppercase tracking-[.18em] text-white/45">DISPATCHER WORKSPACE</span>
+            <div className="mt-2 flex items-end justify-between gap-4">
+              <div><strong className="text-4xl font-extrabold tracking-[-.05em]">{activeJobs.length}</strong><span className="ml-2 text-xs text-white/50">активных</span></div>
+              <div className="text-right"><span className="block text-[8px] uppercase tracking-[.14em] text-white/40">ПРИБЫЛЬ · 7 ДНЕЙ</span><strong className="text-lg">{weeklyStats.profit >= 0 ? "+" : ""}{weeklyStats.profit.toLocaleString("ru-RU")} ₽</strong></div>
+            </div>
+            <div className="mt-5 grid grid-cols-2 gap-2 border-t border-white/10 pt-3">
+              <div><span className="block text-[8px] uppercase tracking-[.13em] text-white/40">ЗАКАЗОВ</span><strong className="text-sm">{weeklyStats.jobs} за неделю</strong></div>
+              <div className="text-right"><span className="block text-[8px] uppercase tracking-[.13em] text-white/40">МЕСЯЦ</span><strong className="text-sm">{monthlyStats.profit >= 0 ? "+" : ""}{monthlyStats.profit.toLocaleString("ru-RU")} ₽</strong></div>
             </div>
           </div>
-        </motion.div>
+          <div className="absolute bottom-0 left-0 h-1 w-full bg-[#f2c400]"/>
+        </div>
       </div>
 
       {/* Community button */}
