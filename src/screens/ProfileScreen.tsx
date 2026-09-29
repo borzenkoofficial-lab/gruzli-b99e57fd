@@ -695,6 +695,10 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
     month: { orders: monthlyStats.orders, earned: `${monthlyStats.earned.toLocaleString("ru-RU")} ₽`, hours: `${monthlyStats.hours}ч` },
   };
   const stats = statsData[statsPeriod];
+  const activeDays = availability.filter(Boolean).length;
+  const profileCompletion = Math.min(100, Math.round(
+    ([profile?.full_name, profile?.avatar_url, userSkills.length, profile?.phone, profile?.rating].filter(Boolean).length / 5) * 100
+  ));
 
   return (
     <div className="gruzli-profile-screen app-scroll">
@@ -749,6 +753,60 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Worker Live Card — availability + reputation + workload */}
+      <div className="px-5 mb-4">
+        <motion.div
+          className="gruzli-worker-live-card"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: .45 }}
+        >
+          <div className="gruzli-worker-live-top">
+            <div className="gruzli-worker-live-status">
+              <span className="gruzli-worker-live-dot" />
+              <span>{activeDays >= 5 ? "ГОТОВ К РАБОТЕ" : "ГРАФИК НАСТРОЕН"}</span>
+            </div>
+            <span className="gruzli-worker-live-code">WORKER / {shortId}</span>
+          </div>
+
+          <div className="gruzli-worker-live-main">
+            <div>
+              <p className="gruzli-worker-live-kicker">РАБОЧИЙ ПРОФИЛЬ</p>
+              <div className="gruzli-worker-live-number">
+                {profile?.rating || "5.00"}
+                <Star size={17} className="fill-yellow-400 text-yellow-400" />
+              </div>
+              <p className="gruzli-worker-live-caption">
+                рейтинг · {profile?.completed_orders || 0} выполненных заказов
+              </p>
+            </div>
+            <div className="gruzli-worker-live-ring">
+              <span>{profileCompletion}%</span>
+              <small>профиль</small>
+            </div>
+          </div>
+
+          <div className="gruzli-worker-live-grid">
+            <div>
+              <span>ДНИ</span>
+              <strong>{activeDays}/7</strong>
+            </div>
+            <div>
+              <span>ЗАКАЗОВ</span>
+              <strong>{weeklyStats.orders}</strong>
+            </div>
+            <div>
+              <span>ЧАСОВ</span>
+              <strong>{weeklyStats.hours}</strong>
+            </div>
+            <div>
+              <span>НЕДЕЛЯ</span>
+              <strong>{weeklyStats.earned.toLocaleString("ru-RU")} ₽</strong>
+            </div>
+          </div>
+        </motion.div>
       </div>
 
       {/* Premium card */}
@@ -903,8 +961,11 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
       {/* Skills — editable */}
       <div className="px-5 pb-5">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-bold text-foreground">Навыки</h2>
+        <div className="gruzli-profile-section-head">
+          <div>
+            <span className="gruzli-profile-section-index">02</span>
+            <h2 className="text-sm font-bold text-foreground">Навыки</h2>
+          </div>
           <button onClick={() => setEditingSkills(!editingSkills)} className="text-xs text-primary font-semibold">
             {editingSkills ? "Готово" : "Редактировать"}
           </button>
@@ -932,6 +993,31 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
               </button>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Worker Passport */}
+      <div className="px-5 pb-5">
+        <div className="gruzli-worker-passport">
+          <div className="gruzli-worker-passport-head">
+            <span>GRUZLI / WORKER PASSPORT</span>
+            <span>03</span>
+          </div>
+          <div className="gruzli-worker-passport-body">
+            <div>
+              <span className="gruzli-worker-passport-label">СПЕЦИАЛИЗАЦИЯ</span>
+              <strong>{userSkills.length ? userSkills.slice(0, 2).join(" · ") : "Переезды · Погрузка"}</strong>
+            </div>
+            <div>
+              <span className="gruzli-worker-passport-label">СТАТУС</span>
+              <strong>{activeDays >= 5 ? "Регулярно доступен" : "По графику"}</strong>
+            </div>
+          </div>
+          <div className="gruzli-worker-passport-footer">
+            <span>ID {shortId}</span>
+            <span>{profile?.is_premium ? "PREMIUM" : "STANDARD"}</span>
+            <span>{profile?.rating || "5.00"} ★</span>
+          </div>
         </div>
       </div>
 
