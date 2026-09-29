@@ -494,10 +494,12 @@ const SwipeableJobCard = ({
   const didDrag = useRef(false);
   const swipeCommitted = useRef(false);
   const [swipeExitDirection, setSwipeExitDirection] = useState<1 | -1>(-1);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleDragStart = () => {
     didDrag.current = false;
     swipeCommitted.current = false;
+    setIsDragging(true);
   };
   const handleDrag = (_: any, info: PanInfo) => {
     if (Math.abs(info.offset.x) > 5) didDrag.current = true;
@@ -509,7 +511,7 @@ const SwipeableJobCard = ({
     const direction = info.offset.x > threshold ? 1 : info.offset.x < -threshold ? -1 : 0;
 
     if (direction === 0) {
-      // Cancelled/short drags must not block the next tap.
+      setIsDragging(false);
       window.requestAnimationFrame(() => {
         didDrag.current = false;
       });
@@ -524,6 +526,7 @@ const SwipeableJobCard = ({
     x.set(direction * Math.max(window.innerWidth * 1.15, 520));
 
     window.setTimeout(() => {
+      setIsDragging(false);
       if (direction > 0) onRespond();
       else onSkip();
     }, 120);
@@ -559,7 +562,7 @@ const SwipeableJobCard = ({
 
   return (
     <motion.div
-      className="relative native-list-item"
+      className={`relative native-list-item ${isDragging ? "is-swipe-dragging" : ""}`}
     >
       {/* Swipe backgrounds */}
       <motion.div
@@ -745,11 +748,9 @@ const SwipeableJobCard = ({
               </div>
 
               <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: String(staffingProgress) + "%" }}
-                  transition={{ duration: .7, ease: "easeOut" }}
+                <div
                   className="h-full rounded-full bg-gradient-to-r from-yellow-400 to-yellow-200"
+                  style={{ width: staffingProgress + "%" }}
                 />
               </div>
             </div>
