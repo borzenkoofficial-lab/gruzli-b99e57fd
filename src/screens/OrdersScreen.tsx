@@ -351,7 +351,7 @@ const OrdersScreen = () => {
 
   if (loading) {
     return (
-    <div className="gruzli-orders-screen app-scroll">
+    <div className="gruzli-orders-screen app-scroll gruzli-page-enter">
         <div className="px-5 safe-top pb-4">
           <h1 className="text-lg font-bold text-foreground">Мои заказы</h1>
         </div>
@@ -364,7 +364,7 @@ const OrdersScreen = () => {
 
   if (role === "client") {
     return (
-      <div className="gruzli-orders-screen app-scroll">
+      <div className="gruzli-orders-screen app-scroll gruzli-page-enter">
         <header className="px-5 safe-top pb-4">
           <p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Gruzli / CLIENT</p>
           <h1 className="text-[29px] font-extrabold text-foreground tracking-[-.045em] leading-none">Мои заявки</h1>
