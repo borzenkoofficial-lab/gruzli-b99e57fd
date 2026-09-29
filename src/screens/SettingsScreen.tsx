@@ -79,7 +79,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
 
   // Theme state
-  const [theme, setTheme] = useState<string>(() => localStorage.getItem("theme") || "dark");
+  const [theme, setTheme] = useState<string>("light");
 
   // Language state
   const [language, setLanguage] = useState(() => localStorage.getItem("app_language") || "ru");
@@ -178,15 +178,15 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
     toast.info("Обратитесь в поддержку для удаления аккаунта");
   };
 
-  const toggleTheme = (newTheme: string) => {
-    setTheme(newTheme);
+  const toggleTheme = (_newTheme: string) => {
+    // Gruzli uses one product-wide visual language. Keep the legacy theme
+    // setting only as a compatibility value for older sessions.
     const el = document.documentElement;
-    // Remove all theme classes
     el.classList.remove("light", "theme-midnight", "theme-emerald", "theme-crimson", "theme-amber");
-    // Apply the right class
-    if (newTheme === "light") el.classList.add("light");
-    else if (newTheme !== "dark") el.classList.add(newTheme);
-    localStorage.setItem("theme", newTheme);
+    el.classList.add("light");
+    setTheme("light");
+    localStorage.setItem("theme", "light");
+    toast.success("Оформление Gruzli обновлено");
   };
 
   const changeLanguage = (lang: string) => {
@@ -513,58 +513,52 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
 
   // Appearance section
   if (section === "appearance") {
-    const themes = [
-      { id: "dark", label: "Тёмная", colors: ["#121212", "#1a1a1a", "#ffffff"] },
-      { id: "light", label: "Светлая", colors: ["#f7f7f7", "#ffffff", "#171717"] },
-      { id: "theme-midnight", label: "Midnight", colors: ["#0d1526", "#1a2744", "#3b82f6"] },
-      { id: "theme-emerald", label: "Emerald", colors: ["#0a1a14", "#112e22", "#0d9668"] },
-      { id: "theme-crimson", label: "Crimson", colors: ["#1a0f0f", "#2a1717", "#d6336c"] },
-      { id: "theme-amber", label: "Amber", colors: ["#171008", "#241a0e", "#f59e0b"] },
-    ];
-
     return (
       <ScrollWrapper title="Оформление" goBack={() => setSection("main")}>
         <div className="px-5 space-y-4">
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Тема</p>
-            <div className="grid grid-cols-3 gap-3">
-              {themes.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => toggleTheme(t.id)}
-                  className={`relative rounded-2xl overflow-hidden transition-all ${
-                    theme === t.id ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
-                  }`}
-                >
-                  {/* Mini preview */}
-                  <div className="aspect-[3/4] flex flex-col" style={{ background: t.colors[0] }}>
-                    {/* Fake top bar */}
-                    <div className="h-3 mx-2 mt-2 rounded-full" style={{ background: t.colors[1] }} />
-                    {/* Fake cards */}
-                    <div className="flex-1 px-2 py-1.5 space-y-1.5">
-                      <div className="h-5 rounded-lg" style={{ background: t.colors[1] }} />
-                      <div className="h-5 rounded-lg" style={{ background: t.colors[1] }} />
-                      <div className="h-3 w-2/3 rounded-md" style={{ background: t.colors[2], opacity: 0.3 }} />
-                    </div>
-                    {/* Fake accent dot */}
-                    <div className="flex justify-center pb-2">
-                      <div className="w-4 h-1.5 rounded-full" style={{ background: t.colors[2] }} />
-                    </div>
-                  </div>
-                  {/* Label */}
-                  <div className="py-2 text-center" style={{ background: t.colors[0] }}>
-                    <span className="text-[11px] font-semibold" style={{ color: t.colors[2] }}>{t.label}</span>
-                  </div>
-                  {/* Check */}
-                  {theme === t.id && (
-                    <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
-                      <Check size={12} className="text-primary-foreground" />
-                    </div>
-                  )}
-                </button>
-              ))}
+          <div className="bg-card border border-border rounded-2xl p-5">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-[#fff5c7] flex items-center justify-center shrink-0">
+                <Palette size={21} className="text-[#8a6b00]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-foreground">Единый стиль Gruzli</h3>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  Светлая бумажная основа, графитовая типографика и жёлтый акцент используются во всём приложении.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 overflow-hidden rounded-2xl border border-[#e5e5e8] bg-[#f6f6f7]">
+              <div className="h-8 border-b border-[#e5e5e8] bg-white flex items-center gap-1.5 px-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#d7d7da]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#d7d7da]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[#d7d7da]" />
+              </div>
+              <div className="p-3 space-y-2">
+                <div className="h-3 w-24 rounded-full bg-[#17181b]" />
+                <div className="h-14 rounded-xl bg-white border border-[#e5e5e8]" />
+                <div className="flex gap-2">
+                  <div className="h-8 flex-1 rounded-lg bg-white border border-[#e5e5e8]" />
+                  <div className="h-8 w-20 rounded-lg bg-[#f2c400]" />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-center justify-between rounded-xl bg-[#fff5c7] px-3.5 py-3">
+              <div>
+                <p className="text-xs font-bold text-[#5e4b00]">Светлая тема</p>
+                <p className="text-[11px] text-[#7a670f] mt-0.5">Стандарт Gruzli</p>
+              </div>
+              <div className="w-6 h-6 rounded-full bg-[#f2c400] flex items-center justify-center">
+                <Check size={14} className="text-[#17181b]" />
+              </div>
             </div>
           </div>
+
+          <p className="text-[11px] text-muted-foreground text-center px-5">
+            Персональные цветовые темы отключены, чтобы интерфейс и навигация оставались одинаковыми для всех экранов.
+          </p>
         </div>
       </ScrollWrapper>
     );
