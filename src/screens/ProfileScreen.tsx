@@ -755,6 +755,52 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         </div>
       </div>
 
+      {/* Worker identity mockup — physical-style Gruzli ID */}
+      <div className="px-5 mb-5">
+        <motion.div
+          className="gruzli-worker-id-mockup"
+          initial={{ opacity: 0, y: 14, rotateX: 7 }}
+          animate={{ opacity: 1, y: 0, rotateX: 0 }}
+          transition={{ duration: .55, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div className="gruzli-worker-id-glow" />
+          <div className="gruzli-worker-id-top">
+            <span>GRUZLI</span>
+            <span>WORKER ID / 2026</span>
+          </div>
+
+          <div className="gruzli-worker-id-body">
+            <div className="gruzli-worker-id-photo-wrap">
+              <AvatarWithUpload profile={profile} user={user} editable />
+              <span className="gruzli-worker-id-chip">01</span>
+            </div>
+            <div className="gruzli-worker-id-info">
+              <span className="gruzli-worker-id-label">ИСПОЛНИТЕЛЬ</span>
+              <strong>{profile?.full_name || "Пользователь"}</strong>
+              <span className="gruzli-worker-id-role">ГРУЗЧИК · {profile?.is_premium ? "PREMIUM" : "STANDARD"}</span>
+              <div className="gruzli-worker-id-meta">
+                <span><b>{profile?.rating || "5.00"}</b> рейтинг</span>
+                <span><b>{profile?.completed_orders || 0}</b> заказов</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="gruzli-worker-id-bottom">
+            <div>
+              <span>ID</span>
+              <strong>{shortId}</strong>
+            </div>
+            <div className="gruzli-worker-id-bars" aria-hidden="true">
+              <i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i />
+            </div>
+            <div className="gruzli-worker-id-status">
+              <span />
+              ONLINE
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
       {/* Worker Live Card — availability + reputation + workload */}
       <div className="px-5 mb-4">
         <motion.div
