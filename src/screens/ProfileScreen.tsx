@@ -279,8 +279,8 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         <VerifiedPopup open={showVerified} onClose={() => setShowVerified(false)} />
         <div>
           <div className="px-5 safe-top pb-2 flex items-center justify-between">
-            <h1 className="text-xl font-bold text-foreground">Профиль</h1>
-            <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center">
+            <div><p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Gruzli</p><h1 className="text-[29px] font-extrabold text-foreground tracking-[-.045em] leading-none">Профиль</h1></div>
+            <button onClick={onOpenNotifications} className="w-11 h-11 rounded-[16px] bg-white/72 border border-white/90 flex items-center justify-center shadow-sm backdrop-blur-xl">
               <Bell size={18} className="text-muted-foreground" />
             </button>
           </div>
@@ -769,7 +769,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           </button>
         </div>
       ) : (
-        <div className="mx-5 mb-4 bg-card border border-yellow-500/20 rounded-2xl p-4">
+        <div className="mx-5 mb-4 bg-white/68 border border-yellow-500/20 rounded-[20px] p-4 shadow-[0_14px_36px_rgba(31,35,43,.055)] backdrop-blur-xl">
           <div className="flex items-center gap-3">
             <Crown size={18} className="text-yellow-500" />
             <div className="flex-1">
@@ -800,7 +800,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             { icon: Wallet, label: "Заработано", value: stats.earned },
             { icon: Calendar, label: "Часов", value: stats.hours },
           ].map((stat, i) => (
-            <motion.div key={stat.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }} className="bg-card border border-border rounded-2xl p-3 text-center">
+            <motion.div key={stat.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }} className="bg-white/68 border border-white/90 rounded-[20px] p-3 text-center shadow-[0_12px_32px_rgba(31,35,43,.05)] backdrop-blur-xl">
               <stat.icon size={18} className="text-primary mx-auto mb-2" />
               <p className="text-sm font-bold text-foreground">{stat.value}</p>
               <p className="text-[10px] text-muted-foreground mt-0.5">{stat.label}</p>
