@@ -1,8 +1,9 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import type { User, Session } from "@supabase/supabase-js";
 
 type AppRole = "client" | "worker" | "dispatcher" | "admin";
+type User = { id: string; email?: string; phone?: string | null; user_metadata: Record<string, any> };
+type Session = { user: User; access_token: string };
 
 interface AuthContextType {
   user: User | null;
@@ -14,12 +15,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType>({
-  user: null,
-  session: null,
-  role: null,
-  profile: null,
-  loading: true,
-  signOut: async () => {},
+  user: null, session: null, role: null, profile: null, loading: true, signOut: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -44,37 +40,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          setTimeout(() => fetchRoleAndProfile(session.user.id), 0);
-        } else {
-          setRole(null);
-          setProfile(null);
-        }
-        setLoading(false);
-      }
-    );
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchRoleAndProfile(session.user.id);
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+      if (nextSession?.user) setTimeout(() => fetchRoleAndProfile(nextSession.user.id), 0);
+      else { setRole(null); setProfile(null); }
       setLoading(false);
     });
 
-    // Listen for avatar updates to refresh profile without page reload
+    supabase.auth.getSession().then(({ data: { session: nextSession } }) => {
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+      if (nextSession?.user) fetchRoleAndProfile(nextSession.user.id);
+      setLoading(false);
+    });
+
     const handleAvatarUpdate = () => {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session?.user) fetchRoleAndProfile(session.user.id);
+      supabase.auth.getSession().then(({ data: { session: nextSession } }) => {
+        if (nextSession?.user) fetchRoleAndProfile(nextSession.user.id);
       });
     };
     window.addEventListener("profile-avatar-updated", handleAvatarUpdate);
-
     return () => {
       subscription.unsubscribe();
       window.removeEventListener("profile-avatar-updated", handleAvatarUpdate);
@@ -89,30 +75,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    setRole(null);
-    setProfile(null);
+    setUser(null); setSession(null); setRole(null); setProfile(null);
     localStorage.removeItem("gruzli_demo_worker");
     setDemoMode(false);
   };
 
   const effectiveRole = demoMode ? "worker" : role;
   const effectiveProfile = demoMode ? {
-    full_name: "Демо-грузчик",
-    role: "worker",
-    rating: 4.96,
-    completed_orders: 128,
-    total_earned: 186400,
-    balance: 12450,
-    is_premium: true,
-    premium_until: "2026-12-31T23:59:59Z",
-    skills: ["Переезды", "Разгрузка", "Демонтаж"],
+    full_name: "Демо-грузчик", role: "worker", rating: 4.96, completed_orders: 128,
+    total_earned: 186400, balance: 12450, is_premium: true,
+    premium_until: "2026-12-31T23:59:59Z", skills: ["Переезды","Разгрузка","Демонтаж"],
   } : profile;
 
-  return (
-    <AuthContext.Provider value={{ user, session, role: effectiveRole, profile: effectiveProfile, loading, signOut }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{ user, session, role: effectiveRole, profile: effectiveProfile, loading, signOut }}>{children}</AuthContext.Provider>;
 };
