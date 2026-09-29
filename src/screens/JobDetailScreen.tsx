@@ -110,10 +110,10 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
   const isOfficial = job.is_official;
 
   return (
-    <div className="gruzli-job-detail app-scroll min-h-screen bg-background pb-28">
+    <div className="gruzli-job-detail app-scroll gruzli-page-enter min-h-screen bg-background pb-28">
       {/* Header */}
       <div className="flex items-center gap-3 px-5 safe-top pb-4">
-        <button onClick={onBack} className="w-11 h-11 rounded-2xl bg-white/72 border border-white/90 flex items-center justify-center shadow-[0_10px_28px_rgba(31,35,43,.07)] backdrop-blur-xl active:scale-95 transition-all">
+        <button onClick={onBack} className="w-11 h-11 rounded-2xl bg-white border border-border flex items-center justify-center shadow-sm active:scale-95 transition-all">
           <ArrowLeft size={18} className="text-foreground" />
         </button>
         <div className="flex-1 min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Заказ</p><h2 className="text-[17px] font-extrabold tracking-[-.03em] text-foreground truncate">Детали заказа</h2></div>
