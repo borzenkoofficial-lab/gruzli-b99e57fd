@@ -186,7 +186,7 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
         </div>
 
         {job.description && (
-          <div className="relative mb-5 rounded-2xl border border-border bg-card/60 p-4 pl-5 overflow-hidden">
+          <div className="gruzli-job-detail-description relative mb-5 rounded-2xl border border-border bg-card/60 p-4 pl-5 overflow-hidden">
             <span aria-hidden className="absolute left-0 top-0 bottom-0 w-1 bg-primary rounded-l-2xl" />
             <div className="flex items-center gap-1.5 mb-2">
               <AlignLeft size={13} className="text-primary" />
@@ -277,7 +277,7 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
           <button
             onClick={handleRespond}
             disabled={responding || responded}
-            className={`flex-1 min-h-[50px] py-3.5 rounded-[16px] text-sm font-bold active:scale-[0.98] transition-all ${
+            className={`gruzli-job-detail-action flex-1 min-h-[50px] py-3.5 rounded-[16px] text-sm font-bold active:scale-[0.98] transition-all ${
               responded
                 ? isAccepted
                   ? "bg-online/20 text-online"
