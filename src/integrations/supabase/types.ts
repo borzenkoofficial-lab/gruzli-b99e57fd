@@ -1439,6 +1439,10 @@ export type Database = {
         Args: { _response_id: string }
         Returns: Json
       }
+      worker_submit_response: {
+        Args: { _job_id: string; _message?: string | null }
+        Returns: Database["public"]["Tables"]["job_responses"]["Row"]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
