@@ -512,12 +512,11 @@
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    scroll-behavior: smooth;
-    scroll-snap-type: y proximity;
+    scroll-behavior: auto;
     overscroll-behavior-y: contain;
     overflow-x: hidden;
+    touch-action: pan-y;
     -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
     /* Резервируем место под плавающую навигацию + safe-area, чтобы последний элемент не обрезался */
     padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 24px);
   }
@@ -527,10 +526,9 @@
   .bottom-nav-wrapper {
     position: fixed;
     /* Keep navigation in the visual viewport and above the home indicator. */
+    left: 50%;
     transform: translate3d(-50%, 0, 0);
     will-change: transform;
-    left: 50%;
-    transform: translateX(-50%);
     width: 100%;
     max-width: 32rem;
     bottom: 0;
@@ -799,6 +797,14 @@
 
 /* PWA standalone mode — honour iOS home-indicator safe area */
 @media all and (display-mode: standalone) {
+  .app-shell {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+
+  .app-scroll {
+    scroll-behavior: auto;
+  }
   .bottom-nav-wrapper {
     padding: 0 16px env(safe-area-inset-bottom, 0px) 16px;
   }
@@ -999,6 +1005,7 @@ html, body {
         28px
       );
       overscroll-behavior-y: contain;
+      touch-action: pan-y;
     }
 
     .bottom-nav-wrapper {
@@ -1024,12 +1031,6 @@ html, body {
     contain: layout paint style;
     content-visibility: auto;
     contain-intrinsic-size: 84px;
-  }
-
-  .native-surface {
-    contain: layout paint;
-    transform: translateZ(0);
-    backface-visibility: hidden;
   }
 
   @media (max-width: 767px) {
