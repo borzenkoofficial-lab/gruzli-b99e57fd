@@ -135,7 +135,7 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
                 <span className="rounded-lg border border-border bg-muted/60 px-2.5 py-1 text-[10px] font-bold text-muted-foreground">№ {job.id.slice(0, 6).toUpperCase()}</span>
               </div>
               <h1 className="max-w-xl text-[29px] font-extrabold leading-[1.03] tracking-[-.05em] text-foreground">{job.title}</h1>
-              <button onClick={() => !isOfficial && onOpenProfile?.(job.dispatcher_id)} className="native-press mt-3 flex items-center gap-2 text-left">
+              <button onClick={() => !isOfficial && job.dispatcher_id ? onOpenProfile?.(job.dispatcher_id) : undefined} className="native-press mt-3 flex items-center gap-2 text-left">
                 <span className="grid h-9 w-9 place-items-center rounded-full bg-foreground text-[10px] font-extrabold text-background">
                   {isOfficial ? <img src={gruzliLogo} alt="" className="h-full w-full rounded-full object-cover" /> : dispatcherName.slice(0, 1)}
                 </span>
@@ -248,7 +248,7 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
         </div>
       </div>
 
-      <ReportFraudModal open={reportOpen} onClose={() => setReportOpen(false)} jobId={job.id} dispatcherId={job.dispatcher_id} />
+      <ReportFraudModal open={reportOpen} onClose={() => setReportOpen(false)} jobId={job.id} dispatcherId={job.dispatcher_id ?? undefined} />
     </div>
   );
 };
