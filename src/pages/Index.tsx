@@ -122,6 +122,18 @@ const Index = () => {
     return () => window.removeEventListener("navigate-to-feed", handler);
   }, []);
 
+  // Gruzli OS delegates navigation to the existing application shell.
+  // No duplicate screen state is created inside the OS layer.
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const tab = (event as CustomEvent<{ tab?: string }>).detail?.tab;
+      if (!tab) return;
+      handleNavigate(tab);
+    };
+    window.addEventListener("gruzli-os-navigate", handler);
+    return () => window.removeEventListener("gruzli-os-navigate", handler);
+  }, [handleNavigate]);
+
   // Handle deep links: /?openChat=..., /?action=support, /?action=settings
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
