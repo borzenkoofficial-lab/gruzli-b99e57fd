@@ -201,3 +201,37 @@ grant execute on function public.worker_withdraw_response(uuid) to authenticated
 grant execute on function public.dispatcher_reject_job_response(uuid) to authenticated;
 grant execute on function public.dispatcher_finish_job(uuid) to authenticated;
 grant execute on function public.dispatcher_complete_job(uuid,numeric,numeric) to authenticated;
+
+
+create or replace function public.dispatcher_review_worker(
+  _response_id uuid,
+  _rating integer,
+  _text text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare v_user uuid:=auth.uid(); v_response public.job_responses%rowtype; v_job public.jobs%rowtype;
+begin
+  if v_user is null then raise exception 'not_authenticated' using errcode='42501'; end if;
+  if not exists (select 1 from public.user_roles where user_id=v_user and role='dispatcher') then
+    raise exception 'dispatcher_role_required' using errcode='42501';
+  end if;
+  if _rating < 1 or _rating > 5 then raise exception 'invalid_rating' using errcode='22023'; end if;
+  select * into v_response from public.job_responses where id=_response_id for update;
+  if not found then raise exception 'response_not_found' using errcode='P0002'; end if;
+  select * into v_job from public.jobs where id=v_response.job_id for update;
+  if not found or v_job.dispatcher_id<>v_user then raise exception 'not_job_dispatcher' using errcode='42501'; end if;
+  if v_response.worker_status <> 'completed' then raise exception 'worker_not_completed' using errcode='P0001'; end if;
+  update public.job_responses
+    set dispatcher_review_rating=_rating,
+        dispatcher_review_text=nullif(trim(_text),'')
+    where id=_response_id;
+  return jsonb_build_object('response_id',_response_id,'rating',_rating);
+end;
+$$;
+
+revoke all on function public.dispatcher_review_worker(uuid,integer,text) from public, anon;
+grant execute on function public.dispatcher_review_worker(uuid,integer,text) to authenticated;
