@@ -80,7 +80,7 @@ const SwipeableChatItem = ({
         dragElastic={0.1}
         onDragEnd={handleDragEnd}
         onClick={() => !swiped && onOpen()}
-        className="relative z-10 flex items-center gap-3 px-4 py-3 cursor-pointer active:bg-muted/20 transition-colors bg-transparent"
+        className="relative z-10 flex items-center gap-3 px-3.5 py-3.5 cursor-pointer active:bg-white/50 transition-colors bg-white/58 border-b border-white/70 backdrop-blur-xl"
       >
         <div className="relative shrink-0">
           {conv.isCommunity ? (
@@ -320,27 +320,27 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
   return (\n    <div className="gruzli-chats-screen app-scroll">
       {/* Header */}
       <div className="px-5 safe-top pb-2 flex items-center justify-between">
-        <h1 className="text-[22px] font-bold text-foreground tracking-tight">Чаты</h1>
+        <div><p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Gruzli</p><h1 className="text-[29px] font-extrabold text-foreground tracking-[-.045em] leading-none">Чаты</h1></div>
       </div>
 
       {/* Search */}
-      <div className="px-4 pb-2">
+      <div className="px-5 pb-3">
         <div className="relative">
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Поиск..."
-            className="w-full bg-muted/50 rounded-xl py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none border-none focus:ring-1 focus:ring-primary/20 transition-all"
+            className="w-full min-h-[48px] bg-white/72 rounded-[16px] py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none border border-white/90 shadow-[0_10px_28px_rgba(31,35,43,.055),inset_0_1px_0_rgba(255,255,255,.96)] backdrop-blur-xl focus:ring-2 focus:ring-yellow-400/20 transition-all"
           />
         </div>
       </div>
 
       {/* Channel */}
-      <div className="px-4 pb-1">
+      <div className="px-5 pb-2">
         <button
           onClick={onOpenChannel}
-          className="w-full flex items-center gap-3 px-4 py-3 active:bg-muted/20 transition-colors"
+          className="w-full flex items-center gap-3 px-3.5 py-3 rounded-[20px] border border-white/90 bg-white/68 shadow-[0_12px_32px_rgba(31,35,43,.055)] backdrop-blur-xl active:scale-[.995] transition-all"
         >
           <div className="w-[52px] h-[52px] rounded-full flex items-center justify-center text-primary-foreground shrink-0 shadow-lg"
             style={{ background: "linear-gradient(135deg, #3b82f6, #6366f1)" }}
@@ -359,7 +359,7 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
           <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+        <div className="mx-5 mt-4 flex flex-col items-center justify-center py-16 text-muted-foreground rounded-[24px] border border-dashed border-[#dedee2] bg-white/55">
           <MessageCircle size={40} className="mb-3 opacity-30" />
           <p className="text-sm">
             {conversations.length === 0 ? "Нет чатов" : "Ничего не найдено"}
