@@ -654,9 +654,10 @@ export type Database = {
       job_templates: {
         Row: {
           address: string | null
+          client_id: string | null
           created_at: string
           description: string | null
-          dispatcher_id: string
+          dispatcher_id: string | null
           duration_hours: number | null
           hourly_rate: number
           id: string
@@ -671,9 +672,10 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          client_id?: string | null
           created_at?: string
           description?: string | null
-          dispatcher_id: string
+          dispatcher_id?: string | null
           duration_hours?: number | null
           hourly_rate?: number
           id?: string
@@ -688,9 +690,10 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          client_id?: string | null
           created_at?: string
           description?: string | null
-          dispatcher_id?: string
+          dispatcher_id?: string | null
           duration_hours?: number | null
           hourly_rate?: number
           id?: string
@@ -1364,6 +1367,26 @@ export type Database = {
       admin_update_balance: {
         Args: { _amount: number; _target_user_id: string }
         Returns: undefined
+      },
+      client_create_job: {
+        Args: {
+          _address: string
+          _description: string
+          _duration_hours: number
+          _hourly_rate: number
+          _metro: string
+          _quick_minimum?: boolean
+          _requires_contract?: boolean
+          _start_time: string
+          _title: string
+          _urgent?: boolean
+          _workers_needed: number
+        }
+        Returns: Database["public"]["Tables"]["jobs"]["Row"]
+      },
+      dispatcher_claim_job: {
+        Args: { _job_id: string }
+        Returns: Database["public"]["Tables"]["jobs"]["Row"]
       }
       create_direct_conversation: {
         Args: { _other_user_id: string; _title?: string }
