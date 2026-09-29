@@ -91,7 +91,7 @@ export const ForgotPasswordModal = ({ open, onClose }: ForgotPasswordModalProps)
               {success && (
                 <div className="bg-muted/40 rounded-xl p-3 border border-border">
                   <p className="text-[11px] text-muted-foreground mb-2">
-                    ⚠️ Новый код восстановления (старый больше не работает):
+                    Новый код восстановления (старый больше не работает):
                   </p>
                   <div className="flex items-center justify-between gap-2">
                     <code className="text-base font-bold text-foreground tracking-wider">{success}</code>
@@ -114,7 +114,7 @@ export const ForgotPasswordModal = ({ open, onClose }: ForgotPasswordModalProps)
 
               <button
                 onClick={handleClose}
-                className="w-full py-3 rounded-xl gradient-primary text-primary-foreground text-sm font-bold"
+                className="w-full py-3 rounded-xl bg-foreground text-background text-sm font-bold"
               >
                 Готово
               </button>
@@ -129,7 +129,7 @@ export const ForgotPasswordModal = ({ open, onClose }: ForgotPasswordModalProps)
                 <label className="text-[11px] font-semibold text-muted-foreground mb-1 block">
                   Телефон или email
                 </label>
-                <div className="neu-inset rounded-xl px-3 py-2.5 flex items-center gap-2">
+                <div className="bg-white border border-border shadow-sm rounded-xl px-3 py-2.5 flex items-center gap-2">
                   <Phone size={14} className="text-muted-foreground shrink-0" />
                   <input
                     value={identifier}
@@ -145,7 +145,7 @@ export const ForgotPasswordModal = ({ open, onClose }: ForgotPasswordModalProps)
                 <label className="text-[11px] font-semibold text-muted-foreground mb-1 block">
                   Код восстановления (10 символов)
                 </label>
-                <div className="neu-inset rounded-xl px-3 py-2.5 flex items-center gap-2">
+                <div className="bg-white border border-border shadow-sm rounded-xl px-3 py-2.5 flex items-center gap-2">
                   <KeyRound size={14} className="text-muted-foreground shrink-0" />
                   <input
                     value={code}
@@ -163,7 +163,7 @@ export const ForgotPasswordModal = ({ open, onClose }: ForgotPasswordModalProps)
                 <label className="text-[11px] font-semibold text-muted-foreground mb-1 block">
                   Новый пароль
                 </label>
-                <div className="neu-inset rounded-xl px-3 py-2.5 flex items-center gap-2">
+                <div className="bg-white border border-border shadow-sm rounded-xl px-3 py-2.5 flex items-center gap-2">
                   <Lock size={14} className="text-muted-foreground shrink-0" />
                   <input
                     type="password"
@@ -180,7 +180,7 @@ export const ForgotPasswordModal = ({ open, onClose }: ForgotPasswordModalProps)
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-xl gradient-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-3 rounded-xl bg-foreground text-background text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {loading ? <Loader2 size={16} className="animate-spin" /> : "Сбросить пароль"}
               </button>
