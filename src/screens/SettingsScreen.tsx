@@ -309,6 +309,14 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   );
 
   // Profile section
+  const SettingsSectionIntro = ({ kicker, title, text: description }: { kicker: string; title: string; text: string }) => (
+    <div className="gruzli-settings-section-intro">
+      <span>{kicker}</span>
+      <h2>{title}</h2>
+      <p>{description}</p>
+    </div>
+  );
+
   if (section === "profile") {
     const initials = (fullName || "?").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
     return (
