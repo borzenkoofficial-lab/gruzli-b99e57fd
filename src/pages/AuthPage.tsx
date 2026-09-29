@@ -1,7 +1,7 @@
 import { useState, forwardRef, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { User, Users, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Phone, Lock, Fingerprint, ShieldCheck, X, Calendar, Sparkles, Wallet, ChevronRight } from "lucide-react";
+import { User, Users, Building2, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Phone, Lock, Fingerprint, ShieldCheck, X, Calendar, Sparkles, Wallet, ChevronRight } from "lucide-react";
 import { LegalCheckboxes } from "@/components/LegalDocuments";
 import { ForgotPasswordModal } from "@/components/ForgotPasswordModal";
 import { RecoveryCodeBanner } from "@/components/RecoveryCodeBanner";
@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 
 type Mode = "welcome" | "login" | "register";
-type Role = "worker" | "dispatcher";
+type Role = "client" | "dispatcher" | "worker";
 
 /** Convert phone to a deterministic email for Supabase auth */
 const phoneToEmail = (phone: string) => {
@@ -113,7 +113,7 @@ const onboardingSlides = [
 
 const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props, _ref) => {
   const [mode, setMode] = useState<Mode>("welcome");
-  const [role, setRole] = useState<Role>("worker");
+  const [role, setRole] = useState<Role>("client");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -448,10 +448,11 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
         {mode === "register" && (
           <div>
             <p className="text-sm font-semibold text-foreground mb-2">Кто вы?</p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
               {([
+                { id: "client" as Role, label: "Заказать грузчиков", icon: Building2, desc: "Мне нужны люди" },
+                { id: "dispatcher" as Role, label: "Диспетчер", icon: Users, desc: "Управляю заказами" },
                 { id: "worker" as Role, label: "Грузчик", icon: User, desc: "Беру заказы" },
-                { id: "dispatcher" as Role, label: "Диспетчер", icon: Users, desc: "Размещаю заказы" },
               ]).map((r) => (
                 <button
                   key={r.id}
