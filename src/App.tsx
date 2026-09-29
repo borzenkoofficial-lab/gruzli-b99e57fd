@@ -14,6 +14,7 @@ import NewJobAlert from "@/components/NewJobAlert";
 import AppRatingModal from "@/components/AppRatingModal";
 import OnboardingTour from "@/components/OnboardingTour";
 import IncomingCallListener from "@/components/chat/IncomingCallListener";
+import GruzliOS from "@/components/GruzliOS";
 import type { Tables } from "@/integrations/supabase/types";
 
 import Index from "./pages/Index";
@@ -41,12 +42,19 @@ const AppRoutes = () => {
   // Temporary demo mode: lets us inspect the worker cabinet without Supabase authentication.
   // Remove this flag/flow before production release.
   const [demoWorkerMode, setDemoWorkerMode] = useState(() => localStorage.getItem("gruzli_demo_worker") === "1");
+  const [showGruzliOS, setShowGruzliOS] = useState(false);
   const [alertQueue, setAlertQueue] = useState<Tables<"jobs">[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return !localStorage.getItem("onboarding_completed");
   });
   useViewportHeight();
   usePresence();
+
+  useEffect(() => {
+    const open = () => setShowGruzliOS(true);
+    window.addEventListener("gruzli-open-os", open);
+    return () => window.removeEventListener("gruzli-open-os", open);
+  }, []);
 
   const handleNewJob = useCallback((job: Tables<"jobs">) => {
     setAlertQueue((q) => [...q, job]);
@@ -96,6 +104,7 @@ const AppRoutes = () => {
         </Routes>
       </Suspense>
       <AppRatingModal />
+      {showGruzliOS && <GruzliOS onClose={() => setShowGruzliOS(false)} />}
       <IncomingCallListener />
       {role === "worker" && (
         <NewJobAlert
