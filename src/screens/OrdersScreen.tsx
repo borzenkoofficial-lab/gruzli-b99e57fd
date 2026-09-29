@@ -74,7 +74,7 @@ const OrdersScreen = () => {
         const { data: offers } = await supabase.from("dispatcher_offers").select("*").in("job_id", clientJobIds).eq("status", "pending").order("created_at", { ascending: false });
         const dispatcherIds = [...new Set((offers || []).map((o: any) => o.dispatcher_id))];
         const { data: dispatcherProfiles } = dispatcherIds.length
-          ? await supabase.from("profiles_public" as any).select("user_id, full_name, avatar_url, rating, completed_orders, verified").in("user_id", dispatcherIds)
+          ? await supabase.from("profiles_public" as any).select("user_id, full_name, avatar_url").in("user_id", dispatcherIds)
           : { data: [] as any[] };
         const profileById: Record<string, any> = {};
         (dispatcherProfiles as any[] || []).forEach((p) => { profileById[p.user_id] = p; });
@@ -381,7 +381,7 @@ const OrdersScreen = () => {
                   <h3 className="text-base font-extrabold text-foreground mt-1">{job.title}</h3>
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-wider rounded-full border border-border px-2.5 py-1">
-                  {job.workerStatus === "open" ? "Ищем диспетчера" : "В работе"}
+                  {job.workerStatus === "open" ? "Ищем диспетчера" : job.workerStatus === "active" ? "Диспетчер выбран" : job.workerStatus === "finishing" ? "Завершается" : job.workerStatus === "closed" ? "Закрыт" : job.workerStatus === "completed" ? "Завершён" : "В работе"}
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-3 mt-4 text-xs">
@@ -396,7 +396,7 @@ const OrdersScreen = () => {
                       <div className="flex items-center justify-between gap-2">
                         <div>
                           <p className="text-sm font-bold">{offer.profile?.full_name || "Диспетчер Gruzli"}</p>
-                          <p className="text-[11px] text-muted-foreground">★ {Number(offer.profile?.rating || 0).toFixed(1)} · {offer.profile?.completed_orders || 0} заказов {offer.profile?.verified ? "· Проверен" : ""}</p>
+                          <p className="text-[11px] text-muted-foreground">Диспетчер Gruzli</p>
                         </div>
                         <p className="text-sm font-extrabold">{offer.proposed_hourly_rate} ₽/ч</p>
                       </div>
