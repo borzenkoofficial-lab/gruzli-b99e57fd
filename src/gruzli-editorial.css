@@ -5747,3 +5747,236 @@ button.bg-foreground:active{
     display:none;
   }
 }
+
+
+/* ===== GRUZLI PRODUCT POLISH / PASS 2 =====
+   Visual-only refinement: editorial hierarchy, tactile controls, calmer surfaces.
+   No business logic or layout contracts are changed. */
+
+:root{
+  --gruzli-yellow:#f0bd18;
+  --gruzli-yellow-deep:#b98500;
+  --gruzli-ink:#151619;
+  --gruzli-muted:#73767e;
+  --gruzli-line:#e6e6e9;
+  --gruzli-paper:#f5f5f6;
+}
+
+/* App canvas: subtle depth instead of a flat gray page. */
+.app-shell{
+  background:
+    radial-gradient(520px 300px at 50% -120px,rgba(255,255,255,.98),transparent 74%),
+    linear-gradient(180deg,#f8f8f9 0%,#f4f4f5 100%);
+}
+.app-shell:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  opacity:.34;
+  background-image:
+    linear-gradient(rgba(20,22,26,.018) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(20,22,26,.014) 1px,transparent 1px);
+  background-size:44px 44px;
+  mask-image:linear-gradient(to bottom,rgba(0,0,0,.6),transparent 72%);
+}
+.app-shell > *{position:relative;z-index:1;}
+
+/* Screen headers become compact editorial mastheads. */
+.app-scroll header{
+  position:relative;
+}
+.app-scroll header h1{
+  letter-spacing:-.045em!important;
+}
+.app-scroll header:after{
+  content:"";
+  display:block;
+  width:34px;
+  height:2px;
+  margin-top:12px;
+  border-radius:999px;
+  background:var(--gruzli-yellow);
+  opacity:.85;
+}
+
+/* Primary actions: physical, not generic Tailwind buttons. */
+.app-scroll button.bg-foreground,
+.app-scroll button.bg-primary,
+.gruzli-mobile-cta{
+  position:relative;
+  overflow:hidden;
+  isolation:isolate;
+  transition:transform .18s cubic-bezier(.22,1,.36,1),
+             box-shadow .18s ease,
+             background-color .18s ease;
+}
+.app-scroll button.bg-foreground:before,
+.app-scroll button.bg-primary:before,
+.gruzli-mobile-cta:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  background:linear-gradient(105deg,transparent 20%,rgba(255,255,255,.13) 50%,transparent 80%);
+  transform:translateX(-120%);
+  transition:transform .55s cubic-bezier(.22,1,.36,1);
+}
+.app-scroll button.bg-foreground:hover:before,
+.app-scroll button.bg-primary:hover:before,
+.gruzli-mobile-cta:hover:before{
+  transform:translateX(120%);
+}
+.app-scroll button.bg-foreground:active,
+.app-scroll button.bg-primary:active,
+.gruzli-mobile-cta:active{
+  transform:translateY(1px) scale(.985);
+}
+
+/* Cards: cleaner edge + an almost invisible paper highlight. */
+.app-scroll .rounded-3xl,
+.app-scroll .gruzli-mobile-card{
+  position:relative;
+  border-color:var(--gruzli-line)!important;
+  box-shadow:
+    0 1px 2px rgba(18,20,25,.025),
+    0 14px 38px rgba(18,20,25,.045)!important;
+}
+.app-scroll .rounded-3xl:after,
+.app-scroll .gruzli-mobile-card:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+/* Status chips: consistent semantic language. */
+.app-scroll [class*="rounded-full"][class*="border"]{
+  letter-spacing:.045em;
+}
+.gruzli-status-active{
+  background:#fff5c9;
+  border-color:#f1d46c;
+  color:#665100;
+}
+.gruzli-status-success{
+  background:#edf7ef;
+  border-color:#cfe8d4;
+  color:#2f6840;
+}
+.gruzli-status-neutral{
+  background:#f1f1f3;
+  border-color:#e1e1e4;
+  color:#66686f;
+}
+
+/* Inputs and search fields: one consistent product geometry. */
+.app-scroll input,
+.app-scroll textarea,
+.app-scroll select{
+  box-shadow:inset 0 1px 0 rgba(20,22,26,.025),0 2px 8px rgba(20,22,26,.018);
+  transition:border-color .16s ease,box-shadow .16s ease,background .16s ease;
+}
+.app-scroll input:focus,
+.app-scroll textarea:focus,
+.app-scroll select:focus{
+  border-color:rgba(216,164,0,.62)!important;
+  box-shadow:0 0 0 4px rgba(239,183,20,.10),0 3px 12px rgba(20,22,26,.035)!important;
+  outline:none;
+}
+
+/* Lists and rows: deliberate separators instead of nested boxes everywhere. */
+.app-scroll .divide-y > * + *,
+.app-scroll [class*="border-b"]{
+  border-color:#ececef!important;
+}
+.app-scroll .divide-y > *{
+  transition:background .16s ease;
+}
+.app-scroll .divide-y > *:hover{
+  background:rgba(248,248,249,.72);
+}
+
+/* Avatar treatment. */
+.app-scroll img[class*="rounded-full"]{
+  box-shadow:0 0 0 2px rgba(255,255,255,.92),0 4px 14px rgba(20,22,26,.09);
+}
+
+/* Dialogs: premium sheet on mobile, floating panel on desktop. */
+@media(max-width:767px){
+  [role="dialog"]{
+    border-radius:24px!important;
+    box-shadow:0 -10px 60px rgba(20,22,26,.16)!important;
+  }
+  [role="dialog"] > *{
+    max-width:100%;
+  }
+}
+
+/* Desktop: restore the editorial workspace feel without changing app structure. */
+@media(min-width:768px){
+  .desktop-main{
+    background:
+      radial-gradient(760px 380px at 74% 0%,rgba(255,255,255,.96),transparent 70%),
+      linear-gradient(180deg,#f8f8f9 0%,#f1f1f3 100%)!important;
+  }
+  .desktop-main-inner{
+    padding-top:38px;
+  }
+  .desktop-main-inner > *{
+    animation:gruzli-editorial-rise .42s cubic-bezier(.22,1,.36,1) both;
+  }
+  .desktop-sidebar{
+    background:rgba(250,250,251,.90)!important;
+  }
+}
+
+/* Feed/order cards get a restrained technical identity. */
+.gruzli-job-card{
+  border-color:#dedfe3!important;
+  box-shadow:
+    0 1px 2px rgba(18,20,25,.03),
+    0 18px 46px rgba(18,20,25,.055)!important;
+}
+.gruzli-job-card:hover{
+  border-color:#d8d9dd!important;
+}
+.gruzli-job-card .text-muted-foreground{
+  color:#74777e!important;
+}
+
+/* Tactile icon buttons without adding visual noise. */
+.app-scroll button[aria-label]{
+  transition:transform .16s cubic-bezier(.22,1,.36,1),
+             background-color .16s ease,
+             border-color .16s ease;
+}
+.app-scroll button[aria-label]:active{
+  transform:scale(.94);
+}
+
+/* Page entrance: one coherent motion language. */
+@keyframes gruzli-editorial-rise{
+  from{opacity:0;transform:translateY(8px);}
+  to{opacity:1;transform:translateY(0);}
+}
+@media(prefers-reduced-motion:reduce){
+  .desktop-main-inner > *{animation:none!important;}
+  .app-scroll button,
+  .app-scroll input,
+  .app-scroll textarea{transition:none!important;}
+}
+
+/* Small-screen spacing: preserve the product's breathing room. */
+@media(max-width:430px){
+  .app-scroll main,
+  .app-scroll section{
+    scroll-margin-top:18px;
+  }
+  .app-scroll .space-y-3 > * + .space-y-3{
+    margin-top:.8rem;
+  }
+}
