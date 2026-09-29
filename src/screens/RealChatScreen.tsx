@@ -612,13 +612,13 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const initials = resolvedTitle.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
   return (
-    <div className="app-shell">
+    <div className="gruzli-chat-detail app-shell">
       <audio ref={remoteAudioRef} autoPlay />
       <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
 
       {/* Header */}
-      <div className="relative z-40 flex items-center gap-2 px-2 safe-top pb-2.5 border-b border-border/30 bg-background/95 backdrop-blur-sm">
-        <button onClick={onBack} className="w-9 h-9 rounded-full flex items-center justify-center text-foreground active:bg-muted/50 transition-colors">
+      <div className="relative z-40 flex items-center gap-2 px-3 safe-top pb-2.5 border-b border-white/80 bg-white/78 backdrop-blur-2xl shadow-[0_8px_24px_rgba(31,35,43,.045)]">
+        <button onClick={onBack} className="w-10 h-10 rounded-[14px] flex items-center justify-center text-foreground bg-white/70 border border-white/90 shadow-sm active:scale-95 transition-all">
           <ArrowLeft size={20} />
         </button>
 
@@ -711,7 +711,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       </AnimatePresence>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 scrollbar-hide">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-4 scrollbar-hide bg-transparent">
         {linkedJob && (
           <div className="bubble-other rounded-2xl p-3 mb-3">
             <p className="text-[11px] text-muted-foreground mb-1">Заказ</p>
@@ -827,7 +827,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       </AnimatePresence>
 
       {/* Input area */}
-      <div className="px-3 pt-2 pb-3 border-t border-border/20">
+      <div className="px-3 pt-2.5 pb-3 border-t border-white/80 bg-white/68 backdrop-blur-2xl">
         {uploading && <div className="text-center text-xs text-primary mb-2 animate-pulse">Загрузка файла...</div>}
 
         {replyTo && (
@@ -862,7 +862,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
                 <Paperclip size={20} />
               </button>
 
-              <div className="flex-1 flex items-end bg-muted/40 rounded-3xl px-3 py-2 border border-border/30 gap-1">
+              <div className="flex-1 flex items-end bg-white/78 rounded-[20px] px-3 py-2 border border-white/90 shadow-[0_8px_24px_rgba(31,35,43,.055),inset_0_1px_0_rgba(255,255,255,.96)] backdrop-blur-xl gap-1">
                 <button
                   onClick={() => { setShowEmoji(!showEmoji); setShowAttach(false); }}
                   className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0"
