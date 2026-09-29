@@ -27,18 +27,21 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
         }
       }
 
-      // 1. Create application (job_response)
-      const { error: respError } = await supabase.from("job_responses").insert({
-        job_id: job.id,
-        worker_id: user.id,
-        message: `Здравствуйте! Откликнулся на заказ «${job.title}». Готов обсудить детали и условия.`,
+      // 1. Create application only through the server-side worker workflow.
+      // This prevents a worker from bypassing the dispatcher-first model with a direct table insert.
+      const responseMessage = `Здравствуйте! Откликнулся на заказ «${job.title}». Готов обсудить детали и условия.`;
+      const { data: createdResponse, error: respError } = await supabase.rpc("worker_submit_response", {
+        _job_id: job.id,
+        _message: responseMessage,
       });
       const isNewResponse = !respError;
 
       if (respError) {
         if (respError.code === "23505") {
-          // An existing response is not a new application; open the conversation without duplicating messages.
           toast.info("Вы уже откликнулись, открываем чат...");
+        } else if (respError.message?.includes("job_not_available")) {
+          toast.error("Заказ уже недоступен для отклика.");
+          return false;
         } else {
           toast.error("Не удалось отправить отклик. " + (respError.message || "Попробуйте ещё раз."));
           return false;
@@ -63,7 +66,7 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
       }
 
       // Only create the initial message and notification for a newly inserted response.
-      const responseMessage = `Здравствуйте! Откликнулся на ваш заказ «${job.title}». Готов обсудить детали и условия.`;
+      // Keep chat/notification behavior separate from the transactional response creation.
       if (isNewResponse) {
         const { error: messageError } = await supabase.from("messages").insert({
           conversation_id: conversationId,
