@@ -197,15 +197,15 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   };
 
   const handleRepublishJob = async (jobId: string) => {
-    const { error } = await supabase
-      .from("jobs")
-      .update({ status: "active" })
-      .eq("id", jobId);
-    if (error) {
+    const { data, error } = await supabase.rpc("dispatcher_update_job", {
+      _job_id: jobId,
+      _status: "active",
+    });
+    if (error || !data) {
       toast.error("Не удалось опубликовать заявку");
       return;
     }
-    setMyJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, status: "active" } : j)));
+    setMyJobs((prev) => prev.map((j) => (j.id === jobId ? { ...j, ...data } : j)));
     toast.success("Заявка снова опубликована");
   };
 
@@ -213,10 +213,11 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     const newRate = Math.max(0, (job.hourly_rate || 0) + delta);
     if (newRate === job.hourly_rate) return;
     setAdjustingId(job.id);
-    const { error } = await supabase
-      .from("jobs")
-      .update({ hourly_rate: newRate, status: "active" })
-      .eq("id", job.id);
+    const { error } = await supabase.rpc("dispatcher_update_job", {
+      _job_id: job.id,
+      _hourly_rate: newRate,
+      _status: "active",
+    });
     setAdjustingId(null);
     if (error) {
       toast.error("Не удалось изменить оплату");
