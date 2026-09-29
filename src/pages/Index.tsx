@@ -39,6 +39,7 @@ const DispatcherCommunityScreen = lazy(() => import("@/screens/DispatcherCommuni
 const SupportChatScreen = lazy(() => import("@/screens/SupportChatScreen"));
 const ContractScreen = lazy(() => import("@/screens/ContractScreen"));
 import PullToRefresh from "@/components/PullToRefresh";
+import GruzliOS from "@/components/GruzliOS";
 
 /**
  * Warm the primary app surfaces after first paint.
@@ -165,8 +166,9 @@ const Index = () => {
   const [showSupportChat, setShowSupportChat] = useState(false);
   const [viewJobDetail, setViewJobDetail] = useState<Tables<"jobs"> | null>(null);
   const [viewContractId, setViewContractId] = useState<string | null>(null);
+  const [showGruzliOS, setShowGruzliOS] = useState(false);
 
-  // Listen for global open-contract event from any screen
+  useEffect(() => {\n    const open = () => setShowGruzliOS(true);\n    window.addEventListener("gruzli-open-os", open);\n    return () => window.removeEventListener("gruzli-open-os", open);\n  }, []);\n\n  // Listen for global open-contract event from any screen
   useEffect(() => {
     const handler = (e: any) => {
       const id = e?.detail?.contractId;
@@ -557,7 +559,7 @@ const Index = () => {
         <ErrorBoundary>
           <Suspense fallback={<ScreenSkeleton />}>
             {tab === "feed" ? (
-              <PullToRefresh onRefresh={handlePullRefresh}>
+              {showGruzliOS && <GruzliOS onClose={() => setShowGruzliOS(false)} />}\n    <PullToRefresh onRefresh={handlePullRefresh}>
                 {isDispatcher ? (
                   <DispatcherCabinetScreen
                     embedded
