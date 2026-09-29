@@ -723,6 +723,11 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
   return (
     <div className="gruzli-profile-screen">
+      {isDemo && (
+        <div className="px-5 pt-3">
+          <DemoRoleSwitcher role={role} onSwitch={switchDemoRole} />
+        </div>
+      )}
       <div className="px-5 safe-top pb-2 flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground">Профиль</h1>
         <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center">
