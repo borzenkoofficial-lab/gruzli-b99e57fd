@@ -87,13 +87,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
   const [subscribed, setSubscribed] = useState<CategoryKey[] | null>(() => loadSubscribedCategories());
   const [subModalOpen, setSubModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (subscribed === null) {
-      const t = setTimeout(() => setSubModalOpen(true), 500);
-      return () => clearTimeout(t);
-    }
-  }, [subscribed]);
-
+  // Category preferences are opened only from the explicit "Настроить" control.
   const jobCategory = useMemo(() => {
     const m = new Map<string, CategoryKey>();
     jobs.forEach((j) => m.set(j.id, classifyJob(j)));
@@ -322,9 +316,6 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
         </div>
       </header>
 
-      {/* Swipe hint chip */}
-      <div className="px-5 mt-1"><div className="gruzli-feed-swipe-note"><ArrowLeft size={11} /> свайп — пропустить <span /> <ArrowRight size={11} /> свайп — взять</div></div>
-
       <EnablePushButton />
 
       <MaxChannelBanner />
@@ -373,22 +364,6 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
             <button onClick={clearSearch} className="text-[11px] font-semibold text-foreground">Сбросить</button>
           </div>
         )}
-      </div>
-
-      {/* Stats bar */}
-      <div className="px-5 mt-3 mb-4 grid grid-cols-2 gap-3">
-        <StatCard
-          icon={MapPin}
-          label="Заказов рядом"
-          value={nearbyCount.toLocaleString("ru-RU")}
-          accent="from-foreground/30 to-foreground/0"
-        />
-        <StatCard
-          icon={Wallet}
-          label="Средний доход/день"
-          value={`~${avgDailyEarnings.toLocaleString("ru-RU")} ₽`}
-          accent="from-online/40 to-online/0"
-        />
       </div>
 
       {/* Work preferences — categories are configured from one control. */}
@@ -678,6 +653,7 @@ const SwipeableJobCard = ({
           <span className="gruzli-order-kicker">${isLiveOrder ? "LIVE / " : isOfficial ? "OFFICIAL / " : "ЗАЯВКА / "}{String(index + 1).padStart(2, "0")}</span>
           <span className="gruzli-order-open">ОТКРЫТЬ ↗</span>
         </div>
+        <div className="gruzli-card-swipe-hint" aria-hidden="true"><span><ArrowLeft size={9}/> пропустить</span><i/> <span>взять <ArrowRight size={9}/></span></div>
 
         {/* Tags */}
         <div className="gruzli-order-tags flex items-center gap-1.5 mb-2 flex-wrap">
