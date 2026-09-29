@@ -672,7 +672,7 @@ const OrdersScreen = () => {
             <p className="text-xs text-muted-foreground/60 mt-1">Откликнитесь на заявки в ленте</p>
           </div>
         )}
-      </div>
+      </main>
     </div>
   );
 };
