@@ -160,14 +160,6 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
     window.dispatchEvent(new Event("navigate-to-feed"));
     toast.success(`Демо: ${nextRole === "worker" ? "Грузчик" : nextRole === "dispatcher" ? "Диспетчер" : "Заказчик"}`);
   };
-  const switchDemoRole = (nextRole: "worker" | "dispatcher" | "client") => {
-    localStorage.setItem("gruzli_demo_worker", "1");
-    localStorage.setItem("gruzli_demo_role", nextRole);
-    window.dispatchEvent(new Event("gruzli-demo-change"));
-    window.dispatchEvent(new Event("navigate-to-feed"));
-    toast.success(`Демо: ${nextRole === "worker" ? "Грузчик" : nextRole === "dispatcher" ? "Диспетчер" : "Заказчик"}`);
-  };
-
   const initials = (profile?.full_name || "").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
   const shortId = profile?.display_id || user?.id?.slice(0, 8).toUpperCase() || "—";
 
