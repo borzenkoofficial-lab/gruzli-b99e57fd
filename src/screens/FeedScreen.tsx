@@ -11,7 +11,6 @@ import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 import EnablePushButton from "@/components/EnablePushButton";
-import GruzliMockupRail from "@/components/GruzliMockupRail";
 import { MaxChannelBanner } from "@/components/MaxChannelBanner";
 import CategorySubscriptionModal from "@/components/CategorySubscriptionModal";
 import {
@@ -316,7 +315,6 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
           <div className="gruzli-feed-earnings-arrow">↗</div>
         </div>
       </header>
-      <GruzliMockupRail role={role} />
 
       <EnablePushButton />
 
