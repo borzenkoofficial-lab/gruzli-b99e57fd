@@ -337,6 +337,20 @@ const Index = () => {
     return () => window.removeEventListener("popstate", onPop);
   }, [isMobile, canGoBack, goBack]);
 
+  const renderMobileBackButton = canGoBack ? (
+    <button
+      type="button"
+      onClick={goBack}
+      aria-label="Назад"
+      className="fixed left-4 z-[100] grid h-10 w-10 place-items-center rounded-full border border-border bg-background/95 shadow-sm backdrop-blur-sm active:scale-95"
+      style={{ top: "calc(env(safe-area-inset-top, 0px) + 12px)" }}
+    >
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M15 18 9 12l6-6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </button>
+  ) : null;
+
   // --- Detail panel content for desktop ---
   const getDetailPanel = () => {
     const panel = (() => {
@@ -448,6 +462,13 @@ const Index = () => {
       <ErrorBoundary>
         <Suspense fallback={<ScreenSkeleton />}>{node}</Suspense>
       </ErrorBoundary>
+    );
+
+    const withBack = (node: React.ReactNode) => (
+      <>
+        {renderMobileBackButton}
+        {node}
+      </>
     );
 
     if (showNotifications) return wrapSuspense(<NotificationsScreen onBack={() => setShowNotifications(false)} />);
