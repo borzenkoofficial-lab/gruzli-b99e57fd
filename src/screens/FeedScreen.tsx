@@ -81,7 +81,6 @@ const DEMO_JOBS: Tables<"jobs">[] = [
 const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: FeedScreenProps) => {
   const { user } = useAuth();
   const { respondAndOpenChat } = useRespondToJob(onOpenChat);
-  const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
   const [jobs, setJobs] = useState<Tables<"jobs">[]>([]);
   const [dispatcherNames, setDispatcherNames] = useState<Record<string, string>>({});
   const [respondedJobs, setRespondedJobs] = useState<Set<string>>(new Set());
@@ -217,22 +216,8 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
   };
 
   // Counts per filter (for chip badges)
-  const counts = useMemo(() => {
-    const visible = jobs.filter((j) => !skippedJobs.has(j.id));
-    return {
-      all: visible.length,
-      urgent: visible.filter((j) => j.urgent).length,
-      quick: visible.filter((j) => j.quick_minimum).length,
-    };
-  }, [jobs, skippedJobs]);
-
   const filtered = jobs
     .filter((j) => !skippedJobs.has(j.id))
-    .filter((j) => {
-      if (activeFilter === "urgent") return j.urgent;
-      if (activeFilter === "quick") return j.quick_minimum;
-      return true;
-    })
     .filter((j) => {
       // Подписка на категории: если пользователь ещё не выбрал — показываем всё
       if (!subscribed) return true;
@@ -273,7 +258,6 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
   };
 
   const resetAll = () => {
-    setActiveFilter("all");
     clearSearch();
     setSkippedJobs(new Set());
   };
@@ -370,110 +354,19 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
         />
       </div>
 
-      {/* Category chips (subscription-aware) */}
-      <section className="gruzli-mobile-section !px-5 !pt-1">
-        <div className="gruzli-mobile-section-title">
-          <h2>Что ищем?</h2>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
-              фильтр работы
-            </span>
-            {subscribed && subscribed.length < CATEGORIES.length && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-online/15 text-online font-semibold">
-                {subscribed.length}/{CATEGORIES.length}
-              </span>
-            )}
-          </div>
+      {/* Work preferences — categories are configured from one control. */}
+      <section className="gruzli-mobile-section !px-5 !pt-2 !pb-2">
+        <div className="gruzli-mobile-section-title !mb-0">
+          <h2>Заявки</h2>
           <button
             onClick={() => setSubModalOpen(true)}
-            className="flex items-center gap-1 text-[11.5px] font-semibold text-foreground/80 hover:text-foreground transition-colors tap-scale"
+            className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-[11.5px] font-semibold text-foreground/80 shadow-sm hover:text-foreground transition-colors tap-scale"
           >
-            <SlidersHorizontal size={12} />
+            <SlidersHorizontal size={13} />
             Настроить
           </button>
         </div>
-        <div className="overflow-x-auto scrollbar-hide -mx-1 px-1">
-          <div className="flex gap-2">
-            {(() => {
-              const visible = jobs.filter(
-                (j) => !skippedJobs.has(j.id) &&
-                  (!subscribed || subscribed.includes(jobCategory.get(j.id) || "other"))
-              );
-              const chips: { key: CategoryKey | "all"; label: string; count: number; def?: typeof CATEGORIES[number] }[] = [
-                { key: "all", label: "Все", count: visible.length },
-                ...CATEGORIES
-                  .filter((c) => !subscribed || subscribed.includes(c.key))
-                  .map((c) => ({
-                    key: c.key,
-                    label: c.label,
-                    count: visible.filter((j) => (jobCategory.get(j.id) || "other") === c.key).length,
-                    def: c,
-                  })),
-              ];
-              return chips.map((chip) => {
-                const isActive = categoryFilter === chip.key;
-                const def = chip.def;
-                return (
-                  <motion.button
-                    key={chip.key}
-                    layout
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setCategoryFilter(chip.key as any)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12.5px] font-medium whitespace-nowrap transition-all duration-200 border ${
-                      isActive
-                        ? "text-background border-transparent shadow-[0_4px_16px_-4px_hsl(var(--foreground)/0.3)]"
-                        : "bg-card border-border text-muted-foreground hover:text-foreground hover:border-foreground/20"
-                    }`}
-                    style={
-                      isActive
-                        ? def
-                          ? { background: `linear-gradient(135deg, ${def.ring.replace("0.35", "0.95")}, ${def.ring.replace("0.35", "0.75")})` }
-                          : { background: "hsl(var(--foreground))" }
-                        : undefined
-                    }
-                  >
-                    {def ? <span className="text-[13px] leading-none">{def.emoji}</span> : <Sparkles size={12} />}
-                    <span>{chip.label}</span>
-                    <span className={`text-[10.5px] font-semibold ${isActive ? "opacity-80" : "opacity-60"}`}>
-                      · {chip.count}
-                    </span>
-                  </motion.button>
-                );
-              });
-            })()}
-          </div>
-        </div>
       </section>
-
-      {/* Quick filters */}
-      <div className="gruzli-feed-filters px-5 pb-4 overflow-x-auto scrollbar-hide">
-        <div className="flex gap-2 pr-1">
-          {filters.map((f) => {
-            const Icon = f.icon;
-            const isActive = activeFilter === f.key;
-            const count = counts[f.key];
-            return (
-              <motion.button
-                key={f.key}
-                layout
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setActiveFilter(f.key)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-all duration-200 ${
-                  isActive
-                    ? "bg-foreground text-background shadow-[0_4px_18px_-4px_hsl(var(--foreground)/0.35)]"
-                    : "bg-card border border-border text-muted-foreground hover:text-foreground hover:border-foreground/20"
-                }`}
-              >
-                <Icon size={13} />
-                <span>{f.label}</span>
-                <span className={`text-[10.5px] font-semibold ${isActive ? "opacity-70" : "opacity-60"}`}>
-                  · {count}
-                </span>
-              </motion.button>
-            );
-          })}
-        </div>
-      </div>
 
       {/* Job Cards */}
       <div className="px-5 space-y-3 pb-6">
