@@ -4,6 +4,7 @@ import { ArrowLeft, Zap, Clock, MapPin, Train, Users, FileText, Loader2, DollarS
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import MoscowMetroPicker from "@/components/MoscowMetroPicker";
 
 interface CreateJobScreenProps {
   onBack: () => void;
@@ -374,17 +375,8 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
                   </InputBox>
                 </Section>
 
-                <Section title="Станция метро" icon={Train}>
-                  <InputBox focused={focusedField === "metro"}>
-                    <input
-                      value={metro}
-                      onChange={(e) => setMetro(e.target.value)}
-                      onFocus={() => setFocusedField("metro")}
-                      onBlur={() => setFocusedField(null)}
-                      placeholder="Площадь Революции"
-                      className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none"
-                    />
-                  </InputBox>
+                <Section title="Станция метро" icon={Train} hint="Москва">
+                  <MoscowMetroPicker value={metro} onChange={setMetro} />
                 </Section>
               </motion.div>
             )}
