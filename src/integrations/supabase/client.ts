@@ -164,8 +164,19 @@ class QueryBuilder implements PromiseLike<{ data: any; error: any; count?: numbe
       }));
 
       if (this.operation === "insert" && this.table === "job_responses") {
+        const session = currentSession();
+        if (!session?.user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+        for (const item of incoming) {
+          const job = db.jobs.find((j) => j.id === item.job_id);
+          if (item.worker_id !== session.user.id) return { data: null, error: { code: "42501", message: "Нельзя отправлять отклик от имени другого пользователя" } };
+          if (!job || !["active", "open"].includes(job.status) || job.status === "filled" || job.status === "completed") {
+            return { data: null, error: { code: "P0001", message: "Заказ уже недоступен" } };
+          }
+          item.status = item.status || "pending";
+          item.worker_status = item.worker_status || null;
+        }
         const duplicate = incoming.find((item) => db[this.table].some((existing) =>
-          existing.job_id === item.job_id && existing.worker_id === item.worker_id
+          existing.job_id === item.job_id && existing.worker_id === item.worker_id && existing.status !== "withdrawn" && existing.status !== "rejected"
         ));
         if (duplicate) return { data: null, error: { code: "23505", message: "Вы уже откликнулись на этот заказ" } };
       }
