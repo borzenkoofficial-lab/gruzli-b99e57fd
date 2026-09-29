@@ -52,7 +52,7 @@ const VerifiedPopup = ({ open, onClose }: { open: boolean; onClose: () => void }
         className="relative bg-card border border-border rounded-3xl p-6 max-w-sm w-full text-center space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+        <div className="mx-auto w-16 h-16 rounded-full bg-[#fff5c7] border border-[#f2c400]/25 flex items-center justify-center">
           <BadgeCheck size={32} className="text-primary" />
         </div>
         <h3 className="text-lg font-bold text-foreground">Аккаунт верифицирован</h3>
@@ -373,7 +373,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         <div className="pb-6">
           {/* Header */}
           <div className="px-5 safe-top pb-3 flex items-center justify-between">
-            <div className="gruzli-profile-title"><span>GRUZLI / 04</span><h1>Профиль</h1></div>
+            <div className="gruzli-page-enter gruzli-profile-title"><span>GRUZLI / 04</span><h1>Профиль</h1></div>
             <div className="flex items-center gap-2">
               <button onClick={onOpenNotifications} aria-label="Уведомления" className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center active:scale-95 transition-transform">
                 <Bell size={18} className="text-muted-foreground" />
