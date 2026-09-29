@@ -60,7 +60,7 @@ const BottomNav = memo(({ active, onNavigate, isDispatcher, isClient, unreadMess
               role="tab"
               aria-selected={isActive}
               aria-label={`${tab.label}${tab.badge > 0 ? `, ${tab.badge} новых` : ""}`}
-              className={`relative flex min-w-0 flex-1 flex-col items-center gap-0.5 py-2.5 px-1 rounded-xl transition-all duration-200 ${
+              className={`native-press relative flex min-w-0 flex-1 flex-col items-center gap-0.5 py-2.5 px-1 rounded-xl transition-all duration-200 ${
                 isActive ? "bottom-nav-active" : ""
               }`}
             >
