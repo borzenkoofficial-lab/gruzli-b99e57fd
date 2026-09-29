@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, memo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, CheckCheck, Clock3, MoreVertical, Trash2, Ban, BellOff, Smile, Reply as ReplyIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -650,8 +650,8 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
 
       {/* Header */}
-      <div className="relative z-40 flex items-center gap-2 px-3 safe-top pb-2.5 border-b border-white/80 bg-white/78 backdrop-blur-2xl shadow-[0_8px_24px_rgba(31,35,43,.045)]">
-        <button onClick={onBack} className="w-10 h-10 rounded-[14px] flex items-center justify-center text-foreground bg-white/70 border border-white/90 shadow-sm active:scale-95 transition-all">
+      <div className="relative z-40 flex items-center gap-2 px-3 safe-top pb-2.5 border-b border-border bg-background">
+        <button onClick={onBack} className="w-10 h-10 rounded-[14px] flex items-center justify-center text-foreground bg-card border border-border active:bg-muted transition-colors">
           <ArrowLeft size={20} />
         </button>
 
@@ -704,14 +704,13 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
             <button onClick={() => setShowMenu(!showMenu)} className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors">
               <MoreVertical size={18} />
             </button>
-            <AnimatePresence>
-              {showMenu && (
+            {showMenu && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9, y: -4 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.9, y: -4 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-11 w-52 bg-card border border-border rounded-2xl shadow-lg z-50 overflow-hidden"
+                  className="absolute right-0 top-11 w-52 bg-card border border-border rounded-2xl shadow-md z-50 overflow-hidden"
                 >
                   <button onClick={handleMuteNotifications} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted/50 transition-colors">
                     <BellOff size={16} className="text-muted-foreground" /> Без звука
@@ -724,14 +723,12 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
                   </button>
                 </motion.div>
               )}
-            </AnimatePresence>
           </div>
         </div>
       </div>
 
       {/* Active call modal */}
-      <AnimatePresence>
-        {activeCall && user && otherUserId && (
+      {activeCall && user && otherUserId && (
           <CallModal
             conversationId={conversationId}
             selfUserId={user.id}
@@ -741,7 +738,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
             onClose={() => setActiveCall(null)}
           />
         )}
-      </AnimatePresence>
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-4 scrollbar-hide bg-transparent">
@@ -829,18 +825,15 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       </div>
 
       {/* Emoji / Sticker picker */}
-      <AnimatePresence>
-        {showEmoji && (
+      {showEmoji && (
           <div className="px-3 pb-1">
             <EmojiPicker onSelect={handleEmojiSelect} />
           </div>
         )}
-      </AnimatePresence>
 
       {/* Attach popup */}
-      <AnimatePresence>
-        {showAttach && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="absolute bottom-20 left-3 right-3 bg-card rounded-2xl p-4 z-50 border border-border shadow-lg">
+      {showAttach && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="absolute bottom-20 left-3 right-3 bg-card rounded-2xl p-4 z-50 border border-border shadow-md">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-semibold text-foreground">Прикрепить</span>
               <button onClick={() => setShowAttach(false)}><X size={16} className="text-muted-foreground" /></button>
@@ -857,10 +850,9 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
 
       {/* Input area */}
-      <div className="native-surface px-3 pt-2.5 pb-[calc(0.75rem+env(safe-area-inset-bottom))] border-t border-white/80 bg-white/80 backdrop-blur-2xl">
+      <div className="px-3 pt-2.5 pb-[calc(0.75rem+env(safe-area-inset-bottom))] border-t border-border bg-background">
         {uploading && <div className="text-center text-xs text-primary mb-2 animate-pulse">Загрузка файла...</div>}
 
         {replyTo && (
@@ -895,7 +887,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
                 <Paperclip size={20} />
               </button>
 
-              <div className="flex-1 flex items-end bg-white/78 rounded-[20px] px-3 py-2 border border-white/90 shadow-[0_8px_24px_rgba(31,35,43,.055),inset_0_1px_0_rgba(255,255,255,.96)] backdrop-blur-xl gap-1">
+              <div className="flex-1 flex items-end bg-card rounded-[18px] px-3 py-2 border border-border gap-1">
                 <button
                   onClick={() => { setShowEmoji(!showEmoji); setShowAttach(false); }}
                   className="native-press w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0"
@@ -916,26 +908,21 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
               </div>
 
               {text.trim() ? (
-                <motion.button
-                  onClick={handleSend}
+                <button onClick={handleSend}
                   disabled={sending}
-                  whileTap={{ scale: 0.85 }}
                   className="native-press w-10 h-10 rounded-full bg-primary flex items-center justify-center disabled:opacity-40 transition-opacity shrink-0 mb-0.5"
                 >
                   <Send size={18} className="text-primary-foreground ml-0.5" />
-                </motion.button>
+                </button>
               ) : (
-                <motion.button
-                  onClick={() => setIsRecording(true)}
-                  whileTap={{ scale: 0.85 }}
+                <button onClick={() => setIsRecording(true)}
                   className="native-press w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0 mb-0.5"
                 >
                   <Mic size={18} className="text-primary-foreground" />
-                </motion.button>
+                </button>
               )}
             </motion.div>
           )}
-        </AnimatePresence>
       </div>
     </div>
   );
