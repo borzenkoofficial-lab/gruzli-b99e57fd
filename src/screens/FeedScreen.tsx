@@ -497,14 +497,33 @@ const SwipeableJobCard = ({
   const bgLeft = useTransform(x, [-150, 0], [1, 0]);
   const bgRight = useTransform(x, [0, 150], [0, 1]);
   const didDrag = useRef(false);
+  const swipeCommitted = useRef(false);
 
-  const handleDragStart = () => { didDrag.current = false; };
+  const handleDragStart = () => {
+    didDrag.current = false;
+    swipeCommitted.current = false;
+  };
   const handleDrag = (_: any, info: PanInfo) => {
     if (Math.abs(info.offset.x) > 5) didDrag.current = true;
   };
   const handleDragEnd = (_: any, info: PanInfo) => {
-    if (info.offset.x > 100) onRespond();
-    else if (info.offset.x < -100) onSkip();
+    if (swipeCommitted.current) return;
+
+    const threshold = 110;
+    const direction = info.offset.x > threshold ? 1 : info.offset.x < -threshold ? -1 : 0;
+
+    if (direction === 0) return;
+
+    swipeCommitted.current = true;
+    didDrag.current = true;
+
+    // Finish the gesture visually before the card is removed from the feed.
+    x.set(direction * Math.max(window.innerWidth * 1.15, 520));
+
+    window.setTimeout(() => {
+      if (direction > 0) onRespond();
+      else onSkip();
+    }, 120);
   };
   const handleTap = () => {
     if (!didDrag.current) onTap?.();
@@ -532,7 +551,7 @@ const SwipeableJobCard = ({
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: -200, transition: { duration: 0.2 } }}
+      exit={{ opacity: 0, x: -260, scale: 0.98, transition: { duration: 0.18, ease: "easeOut" } }}
       transition={{ delay: index < 5 ? index * 0.04 : 0, duration: 0.3 }}
       className="relative"
     >
