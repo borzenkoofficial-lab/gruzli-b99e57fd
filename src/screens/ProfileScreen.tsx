@@ -709,52 +709,6 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         </button>
       </div>
 
-      {/* Premium profile hero */}
-      <div className="px-5 mt-2 mb-4">
-        <div className="relative overflow-hidden rounded-[26px] border border-white/90 bg-white/72 p-5 shadow-[0_22px_55px_rgba(31,35,43,.09),inset_0_1px_0_rgba(255,255,255,.98)] backdrop-blur-2xl">
-          <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-yellow-300/15 blur-3xl" />
-          <div className="pointer-events-none absolute -left-16 -bottom-24 h-44 w-44 rounded-full bg-white/80 blur-3xl" />
-          <div className="relative flex items-start gap-4">
-            <div className="relative shrink-0">
-              {profile?.is_premium && (
-                <div className="absolute -inset-[4px] rounded-full bg-gradient-to-tr from-yellow-300 via-amber-400 to-yellow-500 opacity-80" />
-              )}
-              <div className="relative rounded-full bg-white p-1 shadow-[0_8px_24px_rgba(31,35,43,.12)]">
-                <AvatarWithUpload profile={profile} user={user} editable />
-              </div>
-            </div>
-            <div className="min-w-0 flex-1 pt-0.5">
-              <div className="flex items-center gap-1.5">
-                <h2 className="min-w-0 truncate text-[20px] font-extrabold tracking-[-0.035em] text-foreground">{profile?.full_name || "Пользователь"}</h2>
-                {profile?.is_premium && <Crown size={16} className="shrink-0 fill-yellow-500 text-yellow-500" />}
-              </div>
-              <div className="mt-1 flex items-center gap-1.5">
-                <Star size={14} className="fill-yellow-400 text-yellow-400" />
-                <span className="text-sm font-extrabold text-foreground">{profile?.rating || "5.00"}</span>
-                <span className="text-xs text-muted-foreground">· {profile?.completed_orders || 0} заказов</span>
-              </div>
-              <div className="mt-2 flex items-center gap-1.5">
-                <span className="rounded-full bg-foreground px-2.5 py-1 text-[10px] font-bold text-background">Грузчик</span>
-                {profile?.is_premium && <span className="rounded-full bg-yellow-300/35 px-2.5 py-1 text-[10px] font-bold text-yellow-800">Premium</span>}
-              </div>
-            </div>
-          </div>
-          <div className="relative mt-5 border-t border-border/60 pt-4">
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Заработано за всё время</p>
-                <div className="mt-1 text-[30px] font-extrabold leading-none tracking-[-.05em] text-foreground">{((profile as any)?.total_earned || 0).toLocaleString("ru-RU")} ₽</div>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] text-muted-foreground">За неделю</p>
-                <p className="mt-0.5 text-sm font-extrabold text-foreground">{weeklyStats.earned.toLocaleString("ru-RU")} ₽</p>
-                <p className="text-[10px] text-muted-foreground">{weeklyStats.orders} заказов</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Worker identity mockup — physical-style Gruzli ID */}
       <div className="px-5 mb-5">
         <motion.div
@@ -869,37 +823,6 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           </div>
         ) : <div className="gruzli-work-history-empty">Завершённые заказы появятся здесь после первой выполненной смены.</div>}
       </div>
-
-      {/* Premium card */}
-      {!profile?.is_premium ? (
-        <div className="mx-5 mb-4">
-          <button onClick={onOpenPremium} className="w-full rounded-2xl overflow-hidden" style={{
-            background: "linear-gradient(135deg, hsl(43 96% 56%), hsl(38 92% 50%), hsl(25 95% 53%))",
-            boxShadow: "0 4px 20px hsl(38 92% 50% / 0.3)",
-          }}>
-            <div className="px-5 py-4 flex items-center gap-3">
-              <Crown size={24} className="text-white" />
-              <div className="flex-1 text-left">
-                <p className="text-white text-sm font-bold">Подключить Premium</p>
-                <p className="text-white/70 text-[11px]">Безлимитные заказы и приоритет</p>
-              </div>
-              <ChevronRight size={18} className="text-white/60" />
-            </div>
-          </button>
-        </div>
-      ) : (
-        <div className="mx-5 mb-4 bg-white/68 border border-yellow-500/20 rounded-[20px] p-4 shadow-[0_14px_36px_rgba(31,35,43,.055)] backdrop-blur-xl">
-          <div className="flex items-center gap-3">
-            <Crown size={18} className="text-yellow-500" />
-            <div className="flex-1">
-              <p className="text-sm font-bold text-foreground">Premium активен ✓</p>
-              <p className="text-[11px] text-muted-foreground">
-                До {profile?.premium_until ? new Date(profile.premium_until).toLocaleDateString("ru-RU") : "∞"}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Worker Top-Up Modal */}
       {showTopUp && (
@@ -1027,60 +950,6 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
               </button>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Worker Passport */}
-      <div className="px-5 pb-5">
-        <div className="gruzli-worker-passport">
-          <div className="gruzli-worker-passport-head">
-            <span>GRUZLI / WORKER PASSPORT</span>
-            <span>03</span>
-          </div>
-          <div className="gruzli-worker-passport-body">
-            <div>
-              <span className="gruzli-worker-passport-label">СПЕЦИАЛИЗАЦИЯ</span>
-              <strong>{userSkills.length ? userSkills.slice(0, 2).join(" · ") : "Переезды · Погрузка"}</strong>
-            </div>
-            <div>
-              <span className="gruzli-worker-passport-label">СТАТУС</span>
-              <strong>{activeDays >= 5 ? "Регулярно доступен" : "По графику"}</strong>
-            </div>
-          </div>
-          <div className="gruzli-worker-passport-footer">
-            <span>ID {shortId}</span>
-            <span>{profile?.is_premium ? "PREMIUM" : "STANDARD"}</span>
-            <span>{profile?.rating || "5.00"} ★</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Availability — persisted */}
-      <div className="px-5 pb-5">
-        <h2 className="text-sm font-bold text-foreground mb-3">Доступность</h2>
-        <div className="grid grid-cols-7 gap-2">
-          {["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"].map((day, i) => (
-            <button key={day} onClick={() => { const next = [...availability]; next[i] = !next[i]; saveAvailability(next); }} className={`py-2.5 rounded-xl text-center text-xs font-semibold transition-all ${availability[i] ? "bg-foreground text-primary-foreground" : "bg-card border border-border text-muted-foreground"}`}>
-              {day}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Leaderboard */}
-      <div className="px-5 pb-5">
-        <h2 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2"><Trophy size={14} className="text-primary" /> Топ грузчиков</h2>
-        <div className="bg-card border border-border rounded-2xl p-3 space-y-2">
-          {leaderboard.map((l, i) => (
-            <div key={l.name} className="flex items-center gap-3">
-              <span className={`w-6 text-center text-xs font-bold ${i < 3 ? "text-primary" : "text-muted-foreground"}`}>
-                {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `${i + 1}`}
-              </span>
-              <div className="w-8 h-8 rounded-full bg-card border border-border flex items-center justify-center text-[10px] font-semibold text-muted-foreground">{l.avatar}</div>
-              <span className="text-xs font-semibold text-foreground flex-1">{l.name}</span>
-              <span className="text-xs text-muted-foreground">{l.score} заказов</span>
-            </div>
-          ))}
         </div>
       </div>
 
