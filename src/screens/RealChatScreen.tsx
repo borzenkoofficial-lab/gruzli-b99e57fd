@@ -286,7 +286,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     window.addEventListener("orientationchange", updateViewport);
     return () => {
       viewport.removeEventListener("resize", updateViewport);
-      viewport.removeEventListener("scroll", updateViewport);
       window.removeEventListener("orientationchange", updateViewport);
       shell.style.removeProperty("--chat-visual-height");
     };
