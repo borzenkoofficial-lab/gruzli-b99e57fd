@@ -1427,6 +1427,25 @@ html, body {
     transition:transform 120ms ease;
   }
 
+  .gruzli-chat-detail.app-shell {
+    height:var(--chat-visual-height,100dvh)!important;
+    min-height:var(--chat-visual-height,100dvh)!important;
+    max-height:var(--chat-visual-height,100dvh)!important;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden!important;
+    padding-bottom:0!important;
+    overscroll-behavior:none;
+  }
+
+  .gruzli-chat-detail > .flex-1.min-h-0.overflow-y-auto {
+    flex:1 1 0%;
+    min-height:0;
+    overscroll-behavior-y:contain;
+    scroll-behavior:auto;
+    padding-bottom:max(1rem,env(safe-area-inset-bottom,0px));
+  }
+
   .gruzli-job-detail {
     min-height:100%;
     height:auto!important;
