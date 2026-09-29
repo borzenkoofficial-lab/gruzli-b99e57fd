@@ -20,6 +20,7 @@ interface DesktopSidebarProps {
   active: string;
   onNavigate: (tab: string) => void;
   isDispatcher?: boolean;
+  isClient?: boolean;
   unreadMessages?: number;
   newJobsCount?: number;
   onCreateJob?: () => void;
@@ -44,6 +45,7 @@ const DesktopSidebar = ({
   active,
   onNavigate,
   isDispatcher,
+  isClient,
   unreadMessages = 0,
   newJobsCount = 0,
   onCreateJob,
@@ -63,15 +65,21 @@ const DesktopSidebar = ({
     { id: "kartoteka", label: "Картотека", icon: FolderOpen, badge: 0 },
   ];
 
+  const clientTabs = [
+    { id: "feed", label: "Новый заказ", icon: Plus, badge: 0 },
+    { id: "orders", label: "Мои заказы", icon: ClipboardList, badge: 0 },
+    { id: "chats", label: "Сообщения", icon: MessageCircle, badge: unreadMessages },
+  ];
+
   const dispatcherTabs = [
     { id: "feed", label: "Мои заявки", icon: Briefcase, badge: 0 },
     { id: "chats", label: "Сообщения", icon: MessageCircle, badge: unreadMessages },
     { id: "kartoteka", label: "Картотека", icon: FolderOpen, badge: 0 },
   ];
 
-  const tabs = isDispatcher ? dispatcherTabs : workerTabs;
+  const tabs = isClient ? clientTabs : isDispatcher ? dispatcherTabs : workerTabs;
 
-  const fullName = profile?.full_name || (isDispatcher ? "Диспетчер" : "Грузчик");
+  const fullName = profile?.full_name || (isClient ? "Заказчик" : isDispatcher ? "Диспетчер" : "Грузчик");
   const initials =
     fullName
       .split(" ")
@@ -122,7 +130,7 @@ const DesktopSidebar = ({
         <div className="flex flex-col">
           <h1 className="text-base font-bold text-foreground tracking-[-.035em] leading-none">Gruzli</h1>
           <span className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
-            {isDispatcher ? "Диспетчер" : "Грузчик"}
+            {isClient ? "Заказчик" : isDispatcher ? "Диспетчер" : "Грузчик"}
           </span>
         </div>
       </div>
@@ -189,7 +197,7 @@ const DesktopSidebar = ({
               {fullName}
             </p>
             <p className="text-[11px] text-muted-foreground truncate">
-              {isDispatcher ? "Кабинет диспетчера" : "Профиль"}
+              {isClient ? "Кабинет заказчика" : isDispatcher ? "Кабинет диспетчера" : "Профиль"}
             </p>
           </div>
           <button
