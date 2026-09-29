@@ -156,7 +156,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="px-4 flex-1 overflow-y-auto pb-8 overscroll-contain">
+      <form onSubmit={handleSubmit} className="px-4 flex-1 min-h-0 overflow-y-auto pb-8 overscroll-contain touch-pan-y">
         <div className="space-y-5">
           {/* Title */}
           <Section title="Название" icon={FileText} hint="Кратко и понятно">
@@ -516,7 +516,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 pb-32">
+            <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] overscroll-contain touch-pan-y">
               {/* Job card preview — matches FeedScreen style */}
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
