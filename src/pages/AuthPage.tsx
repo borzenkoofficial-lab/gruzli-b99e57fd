@@ -242,7 +242,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
 
     return (
       <div
-        className="bg-background overflow-hidden flex flex-col relative"
+        className="gruzli-auth-shell bg-background overflow-hidden flex flex-col relative"
         style={{ height: "calc(var(--vh, 1vh) * 100)" }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
@@ -291,7 +291,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
                 className="w-full"
               >
                 {/* Big visual card */}
-                <div className="relative w-full aspect-[4/3] rounded-3xl bg-card border border-border overflow-hidden mb-7">
+                <div className="relative w-full aspect-[4/3] rounded-[28px] bg-white/72 border border-white/90 overflow-hidden mb-7 shadow-[0_24px_60px_rgba(31,35,43,.09),inset_0_1px_0_rgba(255,255,255,.98)] backdrop-blur-2xl">
                   {/* Decorative concentric circles */}
                   <div className="absolute inset-0 flex items-center justify-center">
                     {[1, 0.7, 0.45, 0.25].map((s, i) => (
@@ -319,7 +319,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
                     transition={{ delay: 0.15, type: "spring", damping: 15 }}
                     className="absolute inset-0 flex items-center justify-center"
                   >
-                    <div className="w-24 h-24 rounded-3xl bg-foreground text-background flex items-center justify-center shadow-2xl">
+                    <div className="w-24 h-24 rounded-[28px] bg-foreground text-background flex items-center justify-center shadow-[0_18px_38px_rgba(25,26,29,.18)]">
                       <Icon size={42} strokeWidth={1.6} />
                     </div>
                   </motion.div>
