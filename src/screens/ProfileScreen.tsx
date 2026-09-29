@@ -719,7 +719,10 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         >
           <div className="gruzli-worker-id-glow" />
           <div className="gruzli-worker-id-top">
-            <span>GRUZLI</span>
+            <div className="gruzli-worker-id-brand">
+              <span>GRUZLI</span>
+              <i />
+            </div>
             <span>WORKER ID / 2026</span>
           </div>
 
@@ -740,8 +743,8 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           </div>
 
           <div className="gruzli-worker-id-bottom">
-            <div>
-              <span>ID</span>
+            <div className="gruzli-worker-id-number">
+              <span>WORKER NUMBER</span>
               <strong>{shortId}</strong>
             </div>
             <div className="gruzli-worker-id-bars" aria-hidden="true">
