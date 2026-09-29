@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 import ReportFraudModal from "@/components/ReportFraudModal";
+import MetroBadge from "@/components/MetroBadge";
 
 interface JobDetailScreenProps {
   job: Tables<"jobs"> & { is_official?: boolean };
@@ -180,7 +181,7 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
             <div className="absolute bottom-4 left-[11px] top-4 w-px bg-border" />
             <div className="relative mb-4 flex gap-3">
               <span className="absolute -left-8 top-1 grid h-6 w-6 place-items-center rounded-full border-4 border-card bg-primary" />
-              <div><p className="text-[9px] font-bold uppercase tracking-[.1em] text-muted-foreground">МЕСТО</p><p className="text-[14px] font-bold">{job.address || job.metro || "Москва"}</p>{job.metro && job.address && job.metro !== job.address && <p className="text-[10px] text-muted-foreground">{job.metro}</p>}</div>
+              <div><p className="text-[9px] font-bold uppercase tracking-[.1em] text-muted-foreground">МЕСТО</p>{job.metro && <MetroBadge value={job.metro} className="mt-1" />}<p className="mt-1 text-[14px] font-bold">{job.address || (!job.metro ? "Москва" : "")}</p></div>
             </div>
             <div className="relative flex gap-3">
               <span className="absolute -left-8 top-1 grid h-6 w-6 place-items-center rounded-full border-4 border-card bg-foreground" />
