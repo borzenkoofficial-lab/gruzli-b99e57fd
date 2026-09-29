@@ -713,7 +713,8 @@ export type Database = {
           address: string | null
           created_at: string
           description: string | null
-          dispatcher_id: string
+          client_id: string | null
+          dispatcher_id: string | null
           dispatcher_income: number | null
           duration_hours: number | null
           expense_per_worker: number | null
@@ -739,7 +740,8 @@ export type Database = {
           address?: string | null
           created_at?: string
           description?: string | null
-          dispatcher_id: string
+          client_id?: string | null
+          dispatcher_id?: string | null
           dispatcher_income?: number | null
           duration_hours?: number | null
           expense_per_worker?: number | null
