@@ -696,8 +696,9 @@ const SwipeableJobCard = ({
             : "border-border hover:border-foreground/20 bg-card"
         }`}
       >
-        {/* Top accent bar */}
-        <div className={`absolute top-0 left-0 right-0 h-[3px] ${accentClass}`} />
+        {/* Editorial index + accent */}
+        <div className="gruzli-order-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</div>
+        <div className={`gruzli-order-accent ${accentClass}`} />
 
         {/* "Место занято" — corner badge, не перекрывает контент */}
         {isBot && (
@@ -706,6 +707,12 @@ const SwipeableJobCard = ({
             <span className="text-[10px] font-semibold text-destructive uppercase tracking-wide">Занято</span>
           </div>
         )}
+
+        {/* Editorial meta row */}
+        <div className="gruzli-order-meta-top flex items-center justify-between gap-3 mb-3">
+          <span className="gruzli-order-kicker">ЗАЯВКА / {String(index + 1).padStart(2, "0")}</span>
+          <span className="gruzli-order-open">ОТКРЫТЬ ↗</span>
+        </div>
 
         {/* Tags */}
         <div className="gruzli-order-tags flex items-center gap-1.5 mb-2 flex-wrap">
@@ -874,3 +881,109 @@ const MetaChip = ({ icon: Icon, text }: { icon: typeof MapPin; text: string }) =
 );
 
 export default FeedScreen;
+
+
+/* Feed order cards — editorial numbering and magazine geometry */
+.gruzli-job-card{
+  min-height:0;
+  border-radius:20px!important;
+  padding:18px!important;
+  isolation:isolate;
+}
+.gruzli-order-index{
+  position:absolute;
+  top:11px;
+  right:14px;
+  z-index:1;
+  font-size:34px;
+  line-height:1;
+  letter-spacing:-.07em;
+  font-weight:800;
+  color:rgba(17,18,20,.075);
+  pointer-events:none;
+}
+.gruzli-order-accent{
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:2px;
+  opacity:.9;
+}
+.gruzli-order-meta-top{
+  position:relative;
+  z-index:2;
+  padding-right:44px;
+}
+.gruzli-order-kicker{
+  font-size:8px;
+  line-height:1;
+  letter-spacing:.16em;
+  font-weight:800;
+  color:#8b8d92;
+}
+.gruzli-order-open{
+  font-size:8px;
+  letter-spacing:.10em;
+  font-weight:800;
+  color:#9a9ca1;
+  transition:color .2s ease,transform .2s ease;
+}
+.gruzli-job-card:hover .gruzli-order-open{
+  color:#111214;
+  transform:translateX(2px);
+}
+.gruzli-order-heading h3{
+  max-width:72%;
+  font-size:18px!important;
+  line-height:1.05!important;
+  letter-spacing:-.045em!important;
+  font-weight:780!important;
+}
+.gruzli-order-pay{
+  border-radius:16px!important;
+  background:rgba(248,248,247,.72)!important;
+  border-color:rgba(17,18,20,.08)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.95)!important;
+}
+.gruzli-order-pay .text-\[24px\]{
+  font-size:28px!important;
+  letter-spacing:-.06em!important;
+}
+.gruzli-order-meta{
+  padding-top:1px;
+}
+.gruzli-order-meta > span{
+  border-radius:999px!important;
+  padding:5px 9px!important;
+  background:rgba(255,255,255,.68)!important;
+  border-color:rgba(17,18,20,.09)!important;
+}
+.gruzli-order-footer{
+  border-color:rgba(17,18,20,.10)!important;
+}
+.gruzli-order-footer .btn-shimmer{
+  min-height:46px!important;
+  padding-left:20px!important;
+  padding-right:20px!important;
+  border-radius:13px!important;
+  background:#111214!important;
+  box-shadow:0 10px 22px rgba(17,18,20,.16)!important;
+}
+.gruzli-order-footer .btn-shimmer::after{
+  opacity:.18!important;
+}
+.gruzli-job-card::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  background:linear-gradient(115deg,rgba(255,255,255,.24),transparent 28%,transparent 72%,rgba(255,255,255,.12));
+  opacity:.7;
+  z-index:-1;
+}
+@media(max-width:390px){
+  .gruzli-order-index{font-size:29px;right:12px;}
+  .gruzli-order-heading h3{max-width:68%;font-size:17px!important;}
+}
