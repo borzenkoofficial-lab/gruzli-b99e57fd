@@ -39,7 +39,8 @@ const InputBox = ({ children, focused }: { children: React.ReactNode; focused?: 
 );
 
 const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
-  const { user, profile } = useAuth();
+  const { user, profile, role } = useAuth();
+  const isClient = role === "client";
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -62,7 +63,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
   );
 
   const balance = profile?.balance || 0;
-  const canAfford = balance >= JOB_POSTING_FEE;
+  const canAfford = isClient || balance >= JOB_POSTING_FEE;
   const totalCost = parseInt(hourlyRate || "0") * parseFloat(durationHours || "0") * parseInt(workersNeeded || "0");
 
   const handleShowPreview = () => {
@@ -104,43 +105,60 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
       }
     }
 
-    const { error: feeError } = await supabase.rpc("deduct_balance", {
-      _user_id: user.id,
-      _amount: JOB_POSTING_FEE,
-    });
-
-    if (feeError) {
-      const msg = (feeError.message || "").toLowerCase();
-      if (msg.includes("insufficient")) {
-        toast.error(`Недостаточно средств. Нужно ${JOB_POSTING_FEE} ₽`);
-      } else {
-        toast.error("Ошибка списания");
+    if (!isClient) {
+      const { error: feeError } = await supabase.rpc("deduct_balance", {
+        _user_id: user.id,
+        _amount: JOB_POSTING_FEE,
+      });
+      if (feeError) {
+        const msg = (feeError.message || "").toLowerCase();
+        if (msg.includes("insufficient")) {
+          toast.error(`Недостаточно средств. Нужно ${JOB_POSTING_FEE} ₽`);
+        } else {
+          toast.error("Ошибка списания");
+        }
+        setLoading(false);
+        return;
       }
-      setLoading(false);
-      return;
     }
 
-    const { data: createdJob, error } = await supabase.from("jobs").insert({
-      dispatcher_id: user.id,
-      title: title.trim(),
-      description: description.trim(),
-      hourly_rate: parseInt(hourlyRate),
-      start_time: startTime ? new Date(startTime).toISOString() : null,
-      duration_hours: parseFloat(durationHours) || 4,
-      address: address.trim(),
-      metro: metro.trim(),
-      workers_needed: parseInt(workersNeeded) || 2,
-      urgent,
-      quick_minimum: quickMinimum,
-      requires_contract: requiresContract,
-    }).select().single();
+    let createdJob: any = null;
+    let error: any = null;
 
-    if (error) {
-      toast.error("Ошибка создания заявки");
-      setLoading(false);
-      return;
+    if (isClient) {
+      const result = await supabase.rpc("client_create_job", {
+        _title: title.trim(),
+        _description: description.trim(),
+        _hourly_rate: parseFloat(hourlyRate),
+        _start_time: startTime ? new Date(startTime).toISOString() : null,
+        _duration_hours: parseFloat(durationHours) || 4,
+        _address: address.trim(),
+        _metro: metro.trim(),
+        _workers_needed: parseInt(workersNeeded) || 2,
+        _urgent: urgent,
+        _quick_minimum: quickMinimum,
+        _requires_contract: requiresContract,
+      });
+      createdJob = result.data;
+      error = result.error;
+    } else {
+      const result = await supabase.from("jobs").insert({
+        dispatcher_id: user.id,
+        title: title.trim(),
+        description: description.trim(),
+        hourly_rate: parseInt(hourlyRate),
+        start_time: startTime ? new Date(startTime).toISOString() : null,
+        duration_hours: parseFloat(durationHours) || 4,
+        address: address.trim(),
+        metro: metro.trim(),
+        workers_needed: parseInt(workersNeeded) || 2,
+        urgent,
+        quick_minimum: quickMinimum,
+        requires_contract: requiresContract,
+      }).select().single();
+      createdJob = result.data;
+      error = result.error;
     }
-
     if (requiresContract && createdJob) {
       const { error: contractErr } = await supabase.from("job_contracts").insert({
         job_id: createdJob.id,
@@ -156,7 +174,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
       }
     }
 
-    toast.success("Заявка создана!");
+    toast.success(isClient ? "Запрос отправлен диспетчерам" : "Заявка создана!");
     onCreated();
     setLoading(false);
   };
@@ -169,13 +187,14 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
           <ArrowLeft size={18} className="text-foreground" />
         </button>
         <div className="flex-1">
-          <h1 className="text-lg font-bold text-foreground">Новая заявка</h1>
-          <p className="text-[11px] text-muted-foreground -mt-0.5">Заполните детали работы</p>
+          <h1 className="text-lg font-bold text-foreground">{isClient ? "Заказать грузчиков" : "Новая заявка"}</h1>
+          <p className="text-[11px] text-muted-foreground -mt-0.5">{isClient ? "Опишите задачу — диспетчер соберёт команду" : "Заполните детали работы"}</p>
         </div>
-        <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-1.5">
+        {!isClient && (        <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-1.5">
           <DollarSign size={12} className="text-muted-foreground" />
           <span className={`text-xs font-bold ${canAfford ? "text-foreground" : "text-destructive"}`}>{balance} ₽</span>
         </div>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="px-4 flex-1 overflow-y-auto pb-8 overscroll-contain">
