@@ -1390,6 +1390,23 @@ export type Database = {
         Args: { _job_id: string }
         Returns: Database["public"]["Tables"]["jobs"]["Row"]
       }
+      dispatcher_update_job: {
+        Args: {
+          _address?: string | null
+          _description?: string | null
+          _duration_hours?: number | null
+          _hourly_rate?: number | null
+          _job_id: string
+          _metro?: string | null
+          _quick_minimum?: boolean | null
+          _start_time?: string | null
+          _status?: string | null
+          _title?: string | null
+          _urgent?: boolean | null
+          _workers_needed?: number | null
+        }
+        Returns: Database["public"]["Tables"]["jobs"]["Row"]
+      }
       dispatcher_complete_job: {
         Args: { _dispatcher_income: number; _expense_per_worker: number; _job_id: string }
         Returns: Json
