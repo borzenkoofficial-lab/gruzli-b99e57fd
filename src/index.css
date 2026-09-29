@@ -1018,3 +1018,40 @@ html, body {
       font-size: 16px;
     }
   }
+
+  /* Global performance primitives for long mobile lists and app surfaces. */
+  .native-list-item {
+    contain: layout paint style;
+    content-visibility: auto;
+    contain-intrinsic-size: 84px;
+  }
+
+  .native-surface {
+    contain: layout paint;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+
+  @media (max-width: 767px) {
+    .app-scroll {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .app-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Avoid the visual jump caused by browser focus rings on touch controls. */
+    button:focus-visible,
+    [role="button"]:focus-visible {
+      outline: 2px solid hsl(var(--ring) / 0.55);
+      outline-offset: 2px;
+    }
+
+    .bottom-nav-pill {
+      min-height: 64px;
+      padding-top: 6px;
+      padding-bottom: 6px;
+    }
+  }
