@@ -12,6 +12,7 @@ CREATE OR REPLACE FUNCTION public.dispatcher_update_job(
   _start_time timestamptz DEFAULT NULL,
   _urgent boolean DEFAULT NULL,
   _quick_minimum boolean DEFAULT NULL,
+  _requires_contract boolean DEFAULT NULL,
   _status text DEFAULT NULL
 )
 RETURNS public.jobs
@@ -45,6 +46,7 @@ BEGIN
       start_time = COALESCE(_start_time, start_time),
       urgent = COALESCE(_urgent, urgent),
       quick_minimum = COALESCE(_quick_minimum, quick_minimum),
+      requires_contract = COALESCE(_requires_contract, requires_contract),
       status = COALESCE(_status, status),
       updated_at = now()
   WHERE id = _job_id
@@ -60,5 +62,5 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.dispatcher_update_job(uuid,text,text,integer,numeric,integer,text,text,timestamptz,boolean,boolean,text) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.dispatcher_update_job(uuid,text,text,integer,numeric,integer,text,text,timestamptz,boolean,boolean,boolean,text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.dispatcher_update_job(uuid,text,text,integer,numeric,integer,text,text,timestamptz,boolean,boolean,text) TO authenticated;
