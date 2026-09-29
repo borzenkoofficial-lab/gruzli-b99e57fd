@@ -216,7 +216,7 @@ const KartotekaScreen = () => {
       {loading ? (
         <div className="px-5 space-y-3 pt-2">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="native-list-item bg-card border border-border rounded-2xl p-4 animate-pulse>
+            <div key={i} className="native-list-item bg-card border border-border rounded-2xl p-4 animate-pulse">
               <div className="flex gap-3">
                 <div className="w-14 h-14 rounded-xl bg-muted" />
                 <div className="flex-1 space-y-2">
