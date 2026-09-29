@@ -265,11 +265,12 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   );
 
   const Header = ({ title, onBack: goBack }: { title: string; onBack: () => void }) => (
-    <div className="flex items-center gap-3 px-5 safe-top pb-5">
-      <button onClick={goBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
-        <ArrowLeft size={18} className="text-foreground" />
-      </button>
-      <h1 className="text-xl font-bold text-foreground">{title}</h1>
+    <div className="gruzli-settings-page-head">
+      <button onClick={goBack} className="gruzli-settings-page-back"><ArrowLeft size={18} /></button>
+      <div>
+        <span>GRUZLI / CONTROL</span>
+        <h1>{title}</h1>
+      </div>
     </div>
   );
 
@@ -280,11 +281,9 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   );
 
   const ScrollWrapper = ({ children, title, goBack }: { children: React.ReactNode; title: string; goBack: () => void }) => (
-    <div className="flex flex-col h-full">
+    <div className="gruzli-settings-subpage flex flex-col h-full">
       <Header title={title} onBack={goBack} />
-      <div className="flex-1 overflow-y-auto overscroll-contain pb-28">
-        {children}
-      </div>
+      <div className="flex-1 overflow-y-auto overscroll-contain pb-28">{children}</div>
     </div>
   );
 
