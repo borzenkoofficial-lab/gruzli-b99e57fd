@@ -5159,3 +5159,11 @@ button.bg-foreground:active{
 /* Remove legacy neon/3D visual artifacts everywhere. */
 [class*="glow"],[class*="shimmer"]{filter:none!important;}
 [style*="hsl(228 22% 6%)"]{box-shadow:0 8px 24px rgba(20,24,32,.12)!important;}
+
+.gruzli-role-selected{
+  background:#fff5c7!important;
+  border:1px solid rgba(239,183,20,.42)!important;
+  box-shadow:0 8px 24px rgba(239,183,20,.10),inset 0 1px 0 rgba(255,255,255,.9)!important;
+}
+.gruzli-role-selected svg{color:#7a6000!important;}
+.gruzli-role-selected p:last-child{color:#746216!important;}
