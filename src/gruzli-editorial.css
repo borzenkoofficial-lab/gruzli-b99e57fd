@@ -6019,3 +6019,58 @@ button.bg-foreground:active{
     -webkit-overflow-scrolling:touch;
   }
 }
+
+
+/* FINAL MOBILE STABILITY OVERRIDES */
+@media(max-width:767px){
+  .bottom-nav-wrapper{
+    position:absolute!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    width:100%!important;
+    max-width:none!important;
+    transform:none!important;
+    will-change:auto!important;
+    padding:0 max(12px,env(safe-area-inset-left,0px)) env(safe-area-inset-bottom,0px) max(12px,env(safe-area-inset-right,0px))!important;
+    background:transparent!important;
+  }
+  .bottom-nav-pill{
+    backdrop-filter:blur(14px) saturate(1.1)!important;
+    -webkit-backdrop-filter:blur(14px) saturate(1.1)!important;
+    will-change:auto!important;
+  }
+  .gruzli-settings-screen,
+  .gruzli-settings-subpage{
+    min-height:100%!important;
+    height:100%!important;
+    overflow:hidden!important;
+    background:#f7f7f8!important;
+  }
+  .gruzli-settings-hero{
+    padding-top:calc(env(safe-area-inset-top,0px) + 10px)!important;
+    flex:none!important;
+  }
+  .gruzli-settings-page-head{
+    padding-top:calc(env(safe-area-inset-top,0px) + 10px)!important;
+    min-height:calc(76px + env(safe-area-inset-top,0px))!important;
+    flex:none!important;
+  }
+  .gruzli-settings-screen > .flex-1.overflow-y-auto,
+  .gruzli-settings-subpage > .flex-1.overflow-y-auto{
+    min-height:0!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    border:0!important;
+    box-shadow:none!important;
+    background:transparent!important;
+    overscroll-behavior:contain!important;
+  }
+  .gruzli-settings-screen .gruzli-settings-hero,
+  .gruzli-settings-subpage .gruzli-settings-page-head{
+    border-bottom-color:rgba(20,21,24,.06)!important;
+  }
+}
+@media all and (display-mode:standalone){
+  html,body,#root,.app-shell{background:#f7f7f8!important;}
+}
