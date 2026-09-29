@@ -107,7 +107,7 @@ const KartotekaScreen = () => {
     );
   }
 
-  return (\n    <div className="gruzli-kartoteka-screen app-scroll">
+  return (\n    <div className="gruzli-kartoteka-screen gruzli-document-screen app-scroll">
       {/* Header */}
       <div className="px-5 safe-top pb-2">
         <div className="flex items-center justify-between">
@@ -116,7 +116,7 @@ const KartotekaScreen = () => {
               <Shield size={22} className="text-primary" />
               Картотека
             </h1>
-            <p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground mt-1.5">Реестр исполнителей</p>
+            <div className="gruzli-document-kicker"><span>GRUZLI / 07</span><i /><b>РЕЕСТР ИСПОЛНИТЕЛЕЙ</b></div>
           </div>
           <button
             onClick={() => setShowForm(true)}
@@ -314,7 +314,7 @@ const EntryDetail = ({ entry, isOwner, onBack, onEdit, onDelete }: EntryDetailPr
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="gruzli-kartoteka-detail min-h-screen bg-background pb-8">
       <div className="flex items-center gap-3 px-4 safe-top pb-4">
         <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
           <ArrowLeft size={18} className="text-foreground" />
@@ -526,7 +526,7 @@ const KartotekaForm = ({ entry, onBack, onSaved }: KartotekaFormProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="gruzli-kartoteka-form min-h-screen bg-background pb-8">
       <div className="flex items-center gap-3 px-4 safe-top pb-4">
         <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
           <ArrowLeft size={18} className="text-foreground" />
