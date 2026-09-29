@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback, memo } from "react";
-import { motion } from "framer-motion";
 import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, CheckCheck, Clock3, MoreVertical, Trash2, Ban, BellOff, Smile, Reply as ReplyIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -705,13 +704,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
               <MoreVertical size={18} />
             </button>
             {showMenu && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9, y: -4 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9, y: -4 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-11 w-52 bg-card border border-border rounded-2xl shadow-md z-50 overflow-hidden"
-                >
+                <div className="absolute right-0 top-11 w-52 bg-card border border-border rounded-2xl shadow-md z-50 overflow-hidden">
                   <button onClick={handleMuteNotifications} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted/50 transition-colors">
                     <BellOff size={16} className="text-muted-foreground" /> Без звука
                   </button>
@@ -721,7 +714,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
                   <button onClick={handleDeleteConversation} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 transition-colors">
                     <Trash2 size={16} /> Удалить диалог
                   </button>
-                </motion.div>
+                </div>
               )}
           </div>
         </div>
@@ -833,7 +826,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
 
       {/* Attach popup */}
       {showAttach && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="absolute bottom-20 left-3 right-3 bg-card rounded-2xl p-4 z-50 border border-border shadow-md">
+          <div className="absolute bottom-20 left-3 right-3 bg-card rounded-2xl p-4 z-50 border border-border shadow-md">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-semibold text-foreground">Прикрепить</span>
               <button onClick={() => setShowAttach(false)}><X size={16} className="text-muted-foreground" /></button>
@@ -848,7 +841,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
                 <span className="text-[11px] text-muted-foreground">Видео</span>
               </button>
             </div>
-          </motion.div>
+          </div>
         )}
 
       {/* Input area */}
@@ -868,21 +861,13 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
           </div>
         )}
         
-        <AnimatePresence mode="wait">
-          {isRecording ? (
-            <VoiceRecorder
-              key="recorder"
-              onSend={handleSendVoice}
-              onCancel={() => setIsRecording(false)}
-            />
-          ) : (
-            <motion.div
-              key="input"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex items-end gap-1.5"
-            >
+        {isRecording ? (
+          <VoiceRecorder
+            onSend={handleSendVoice}
+            onCancel={() => setIsRecording(false)}
+          />
+        ) : (
+          <div className="flex items-end gap-1.5">
               <button onClick={() => { setShowAttach(!showAttach); setShowEmoji(false); }} className="native-press w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0 mb-0.5">
                 <Paperclip size={20} />
               </button>
@@ -921,8 +906,8 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
                   <Mic size={18} className="text-primary-foreground" />
                 </button>
               )}
-            </motion.div>
-          )}
+          </div>
+        )}
       </div>
     </div>
   );
