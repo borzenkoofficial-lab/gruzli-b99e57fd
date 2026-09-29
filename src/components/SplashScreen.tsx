@@ -11,15 +11,16 @@ const SplashScreen = ({ onFinished, minDuration = 650 }: SplashScreenProps) => {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    const timers: ReturnType<typeof setTimeout>[] = [];
-    timers.push(
-      setTimeout(() => {
-        setVisible(false);
-        localStorage.setItem("gruzli_returning", "1");
-        setTimeout(onFinished, 350);
-      }, duration),
-    );
-    return (
+    const timer = window.setTimeout(() => {
+      setVisible(false);
+      localStorage.setItem("gruzli_returning", "1");
+      window.setTimeout(onFinished, 160);
+    }, duration);
+
+    return () => window.clearTimeout(timer);
+  }, [duration, onFinished]);
+
+  return (
     <div
       className={`gruzli-splash fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden bg-background ${visible ? "is-visible" : "is-hidden"}`}
       aria-label="Gruzli"
