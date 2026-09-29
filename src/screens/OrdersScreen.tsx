@@ -23,10 +23,10 @@ interface AcceptedJob {
 }
 
 const STATUS_STEPS = [
-  { key: "ready", label: "Готов", icon: CheckCircle2, emoji: "✅" },
-  { key: "en_route", label: "Выехал", icon: Navigation, emoji: "🚗" },
-  { key: "late", label: "Опаздываю", icon: AlertTriangle, emoji: "⚠️" },
-  { key: "arrived", label: "На месте", icon: MapPin, emoji: "📍" },
+  { key: "confirmed", label: "Подтверждён", icon: CheckCircle2, emoji: "✓" },
+  { key: "en_route", label: "Выехал", icon: Navigation, emoji: "→" },
+  { key: "late", label: "Опаздываю", icon: AlertTriangle, emoji: "!" },
+  { key: "arrived", label: "На месте", icon: MapPin, emoji: "•" },
 ];
 
 const OrdersScreen = () => {
@@ -594,26 +594,45 @@ const OrdersScreen = () => {
                 <WorkTimer startedAt={job.workStartedAt} hourlyRate={job.hourlyRate} />
               )}
 
-              <div className="grid grid-cols-4 gap-1.5">
-                {STATUS_STEPS.map((step) => {
-                  const isActive = job.workerStatus === step.key;
-                  const Icon = step.icon;
-                  return (
-                    <button
-                      key={step.key}
-                      onClick={() => setWorkerStatus(job.responseId, step.key)}
-                      className={`py-2.5 rounded-xl text-[11px] font-semibold transition-all flex flex-col items-center gap-1 ${
-                        isActive
-                          ? "bg-foreground text-primary-foreground"
-                          : "bg-card border border-border text-muted-foreground active:bg-surface-1"
-                      }`}
-                    >
-                      <Icon size={14} />
-                      {step.label}
-                    </button>
-                  );
-                })}
-              </div>
+              {(() => {
+                const nextByStatus: Record<string, string[]> = {
+                  confirmed: ["en_route", "late"],
+                  en_route: ["arrived", "late"],
+                  late: ["en_route", "arrived"],
+                  arrived: [],
+                };
+                const next = nextByStatus[job.workerStatus || "confirmed"] || [];
+                return (
+                  <div className="space-y-2">
+                    {next.length > 0 && (
+                      <div className="grid grid-cols-2 gap-2">
+                        {next.map((status) => {
+                          const step = STATUS_STEPS.find((s) => s.key === status)!;
+                          const Icon = step.icon;
+                          return (
+                            <button
+                              key={status}
+                              onClick={() => setWorkerStatus(job.responseId, status)}
+                              className="py-3 rounded-xl bg-foreground text-primary-foreground text-xs font-bold flex flex-col items-center gap-1 active:scale-[0.98] transition-all"
+                            >
+                              <Icon size={15} />
+                              {step.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {job.workerStatus === "arrived" && (
+                      <button
+                        onClick={() => finishWork(job)}
+                        className="w-full py-3 rounded-xl bg-primary text-primary-foreground text-sm font-bold active:scale-[0.98] transition-all"
+                      >
+                        Завершить работу
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
             </motion.div>
           ))}
         </AnimatePresence>
