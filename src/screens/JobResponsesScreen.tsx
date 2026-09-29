@@ -187,7 +187,8 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-8">
+    <div className="min-h-screen bg-background pb-8" aria-busy={loading}>
+      <span className="sr-only" role="status" aria-live="polite">{loading ? "Загружаем отклики" : `${responses.length} откликов загружено`}</span>
       <div className="flex items-center gap-3 px-4 safe-top pb-3">
         <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 transition-all">
           <ArrowLeft size={18} className="text-foreground" />
@@ -235,6 +236,7 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
+              aria-label="Поиск откликов по имени грузчика"
               placeholder="Поиск по имени"
               className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
             />
@@ -255,7 +257,8 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
           {!isFilled && sortedPending.length > 1 && slotsLeft > 0 && (
             <button
               onClick={acceptTopMatching}
-              className="w-full py-2.5 rounded-xl bg-primary/10 border border-primary/30 text-primary text-xs font-bold flex items-center justify-center gap-2 active:bg-primary/20 transition-all"
+              disabled={acceptingId !== null}
+              className="w-full py-2.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed bg-primary/10 border border-primary/30 text-primary text-xs font-bold flex items-center justify-center gap-2 active:bg-primary/20 transition-all"
             >
               <Sparkles size={13} /> Принять {Math.min(slotsLeft, sortedPending.length)} лучших автоматически
             </button>
@@ -398,7 +401,9 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
                         </button>
                         <button
                           onClick={() => rejectResponse(r.id)}
-                          className="w-12 h-12 rounded-xl bg-card border border-border flex items-center justify-center active:bg-surface-1 transition-all"
+                          disabled={acceptingId !== null}
+                          aria-label={`Отклонить отклик ${r.profile?.full_name || "грузчика"}`}
+                          className="w-12 h-12 rounded-xl bg-card border border-border flex items-center justify-center active:bg-surface-1 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                           title="Отклонить"
                         >
                           <X size={16} className="text-destructive" />
