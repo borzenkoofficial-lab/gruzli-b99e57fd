@@ -27,6 +27,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [demoMode, setDemoMode] = useState(() => localStorage.getItem("gruzli_demo_worker") === "1");
+  const [demoRole, setDemoRole] = useState<AppRole>(() => {
+    const saved = localStorage.getItem("gruzli_demo_role");
+    return saved === "client" || saved === "dispatcher" || saved === "worker" ? saved : "worker";
+  });
 
   const fetchRoleAndProfile = async (nextUser: User) => {
     const userId = nextUser.id;
@@ -69,7 +73,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    const handler = () => setDemoMode(localStorage.getItem("gruzli_demo_worker") === "1");
+    const handler = () => {
+      setDemoMode(localStorage.getItem("gruzli_demo_worker") === "1");
+      const saved = localStorage.getItem("gruzli_demo_role");
+      if (saved === "client" || saved === "dispatcher" || saved === "worker") setDemoRole(saved);
+    };
     window.addEventListener("gruzli-demo-change", handler);
     return () => window.removeEventListener("gruzli-demo-change", handler);
   }, []);
@@ -78,17 +86,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.auth.signOut();
     setUser(null); setSession(null); setRole(null); setProfile(null);
     localStorage.removeItem("gruzli_demo_worker");
+    localStorage.removeItem("gruzli_demo_role");
     setDemoMode(false);
   };
 
-  const demoUser: User = { id: "demo-worker", email: "demo@gruzli.local", user_metadata: { role: "worker", full_name: "Демо-грузчик" } };
+  const demoNames: Record<"client" | "dispatcher" | "worker", string> = {
+    worker: "Алексей Морозов",
+    dispatcher: "Анна Петрова",
+    client: "Сергей Волков",
+  };
+  const demoUser: User = {
+    id: `demo-${demoRole}`,
+    email: `demo-${demoRole}@gruzli.local`,
+    user_metadata: { role: demoRole, full_name: demoNames[demoRole] },
+  };
   const effectiveUser = demoMode ? demoUser : user;
   const effectiveSession = demoMode ? { user: demoUser, access_token: "demo-token" } : session;
-  const effectiveRole = demoMode ? "worker" : role;
+  const effectiveRole = demoMode ? demoRole : role;
   const effectiveProfile = demoMode ? {
-    full_name: "Демо-грузчик", role: "worker", rating: 4.96, completed_orders: 128,
+    full_name: demoNames[demoRole], role: demoRole, rating: 4.96, completed_orders: 128,
     total_earned: 186400, balance: 12450, is_premium: true,
-    premium_until: "2026-12-31T23:59:59Z", skills: ["Переезды","Разгрузка","Демонтаж"],
+    premium_until: "2026-12-31T23:59:59Z", skills: demoRole === "worker" ? ["Переезды","Разгрузка","Демонтаж"] : demoRole === "dispatcher" ? ["Переезды","Коммерческие объекты","Бригады"] : ["Переезд","Квартирные работы"],
   } : profile;
 
   return <AuthContext.Provider value={{ user: effectiveUser, session: effectiveSession, role: effectiveRole, profile: effectiveProfile, loading, signOut }}>{children}</AuthContext.Provider>;
