@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, Copy, Trash2, FileText, Loader2 } from "lucide-react";
+import { X, Plus, Trash2, FileText, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -29,7 +29,6 @@ const JobTemplatesModal = ({ open, onClose }: Props) => {
   const { user } = useAuth();
   const [templates, setTemplates] = useState<JobTemplate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [posting, setPosting] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
   // form
@@ -84,33 +83,6 @@ const JobTemplatesModal = ({ open, onClose }: Props) => {
     fetchTemplates();
   };
 
-  const handlePost = async (t: JobTemplate) => {
-    if (!user) return;
-    setPosting(t.id);
-    const { error } = await supabase.from("jobs").insert({
-      dispatcher_id: user.id,
-      title: t.title,
-      description: t.description || "",
-      hourly_rate: t.hourly_rate,
-      duration_hours: t.duration_hours || 1,
-      workers_needed: t.workers_needed || 1,
-      metro: t.metro || "",
-      address: t.address || "",
-      urgent: t.urgent || false,
-      quick_minimum: t.quick_minimum || false,
-      template_id: t.id,
-      status: "active",
-    } as any);
-    if (error) {
-      toast.error("Не удалось опубликовать");
-    } else {
-      await supabase.from("job_templates").update({ use_count: t.use_count + 1 }).eq("id", t.id);
-      toast.success("✅ Заявка опубликована");
-      fetchTemplates();
-    }
-    setPosting(null);
-  };
-
   const handleDelete = async (id: string) => {
     if (!confirm("Удалить шаблон?")) return;
     await supabase.from("job_templates").delete().eq("id", id);
@@ -143,7 +115,7 @@ const JobTemplatesModal = ({ open, onClose }: Props) => {
                   <X size={16} className="text-muted-foreground" />
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Публикуйте частые заявки в один клик</p>
+              <p className="text-xs text-muted-foreground mt-1">Сохраняйте типовые параметры для работы диспетчера</p>
             </div>
 
             <div className="p-5 space-y-3">
@@ -201,14 +173,9 @@ const JobTemplatesModal = ({ open, onClose }: Props) => {
                         <Trash2 size={13} className="text-destructive" />
                       </button>
                     </div>
-                    <button
-                      onClick={() => handlePost(t)}
-                      disabled={posting === t.id}
-                      className="w-full mt-2.5 py-2 rounded-xl bg-foreground text-primary-foreground text-xs font-bold flex items-center justify-center gap-1.5 active:scale-[0.98] disabled:opacity-50 transition-all"
-                    >
-                      {posting === t.id ? <Loader2 size={12} className="animate-spin" /> : <Copy size={12} />}
-                      {posting === t.id ? "Публикую..." : "Опубликовать"}
-                    </button>
+                    <p className="mt-2.5 rounded-xl border border-border bg-muted/40 px-3 py-2 text-[10px] leading-4 text-muted-foreground">
+                      Шаблон сохраняется для диспетчера. Новые заявки создаёт заказчик, после чего диспетчер отправляет предложение.
+                    </p>
                   </div>
                 ))
               )}
