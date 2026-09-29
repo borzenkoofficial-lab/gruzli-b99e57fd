@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Command, X, Map, MessageCircle, Users, BriefcaseBusiness, LayoutDashboard, Search } from "lucide-react";
+import "../styles/gruzli-os.css";
 
 type Props={onClose:()=>void};
 
