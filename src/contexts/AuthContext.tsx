@@ -28,12 +28,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [demoMode, setDemoMode] = useState(() => localStorage.getItem("gruzli_demo_worker") === "1");
 
-  const fetchRoleAndProfile = async (userId: string) => {
+  const fetchRoleAndProfile = async (nextUser: User) => {
+    const userId = nextUser.id;
     const [roleRes, profileRes] = await Promise.all([
       supabase.rpc("get_user_role", { _user_id: userId }),
       supabase.from("profiles").select("*").eq("user_id", userId).single(),
     ]);
-    const metadataRole = user?.user_metadata?.role as AppRole | undefined;
+    const metadataRole = nextUser.user_metadata?.role as AppRole | undefined;
     if (roleRes.data) setRole(roleRes.data as AppRole);
     else if (metadataRole && ["client", "worker", "dispatcher", "admin"].includes(metadataRole)) setRole(metadataRole);
     if (profileRes.data) setProfile(profileRes.data);
@@ -43,7 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
-      if (nextSession?.user) setTimeout(() => fetchRoleAndProfile(nextSession.user.id), 0);
+      if (nextSession?.user) setTimeout(() => fetchRoleAndProfile(nextSession.user), 0);
       else { setRole(null); setProfile(null); }
       setLoading(false);
     });
@@ -51,13 +52,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(({ data: { session: nextSession } }) => {
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
-      if (nextSession?.user) fetchRoleAndProfile(nextSession.user.id);
+      if (nextSession?.user) fetchRoleAndProfile(nextSession.user);
       setLoading(false);
     });
 
     const handleAvatarUpdate = () => {
       supabase.auth.getSession().then(({ data: { session: nextSession } }) => {
-        if (nextSession?.user) fetchRoleAndProfile(nextSession.user.id);
+        if (nextSession?.user) fetchRoleAndProfile(nextSession.user);
       });
     };
     window.addEventListener("profile-avatar-updated", handleAvatarUpdate);
