@@ -197,6 +197,30 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
           });
         }
       )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'job_responses' },
+        (payload) => {
+          const response = payload.new as { job_id?: string };
+          if (!response.job_id) return;
+          setWorkersFound((prev) => ({
+            ...prev,
+            [response.job_id]: (prev[response.job_id] || 0) + 1,
+          }));
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'job_responses' },
+        (payload) => {
+          const response = payload.old as { job_id?: string };
+          if (!response.job_id) return;
+          setWorkersFound((prev) => ({
+            ...prev,
+            [response.job_id]: Math.max(0, (prev[response.job_id] || 0) - 1),
+          }));
+        }
+      )
       .subscribe();
 
     return () => {
@@ -766,7 +790,7 @@ const SwipeableJobCard = ({
                     {workersReady} <span className="text-white/35">/</span> {workersNeeded}
                   </div>
                   <div className="mt-1 text-[9px] font-medium text-white/50">
-                    грузчиков уже есть · нужно {workersNeeded}
+                    грузчиков откликнулось · нужно {workersNeeded}
                   </div>
                 </div>
                 <span className="rounded-full border border-white/10 bg-white/8 px-2 py-1 text-[8px] font-bold text-white/65">
