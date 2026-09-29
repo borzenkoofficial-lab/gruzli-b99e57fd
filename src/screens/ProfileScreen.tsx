@@ -30,7 +30,7 @@ interface Review {
 
 const AdminButton = () => {
   const navigate = useNavigate();
-  return (\n    <div className="relative min-h-screen">\n      {isDemo && (\n        <div className="mx-4 mt-4 rounded-2xl border border-primary/25 bg-primary/5 p-3">\n          <div className="flex items-center justify-between gap-3 mb-2">\n            <div><p className="text-xs font-bold text-foreground">Демо-режим</p><p className="text-[11px] text-muted-foreground">Переключайте роль без регистрации</p></div>\n            <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-primary/15 text-foreground">3 роли</span>\n          </div>\n          <div className="grid grid-cols-3 gap-1.5">\n            {([\n              ["worker", "Грузчик"],\n              ["dispatcher", "Диспетчер"],\n              ["client", "Заказчик"],\n            ] as const).map(([id, label]) => (\n              <button key={id} onClick={() => switchDemoRole(id)} className={`rounded-xl py-2 text-[11px] font-semibold transition-colors ${role === id ? "bg-foreground text-background" : "bg-card border border-border text-foreground"}`}>{label}</button>\n            ))}\n          </div>\n        </div>\n      )}
+  return (
     <button onClick={() => navigate("/admin")} className="w-full flex items-center gap-3 p-3.5 rounded-2xl bg-card border border-border native-list-item tap-scale transition-colors">
       <ShieldCheck size={18} className="text-primary" />
       <span className="text-sm font-medium text-foreground flex-1 text-left">Админ-панель</span>
@@ -38,6 +38,20 @@ const AdminButton = () => {
     </button>
   );
 };
+
+const DemoRoleSwitcher = ({ role, onSwitch }: { role: string | null; onSwitch: (role: "worker" | "dispatcher" | "client") => void }) => (
+  <div className="mx-5 mb-4 rounded-2xl border border-primary/25 bg-primary/5 p-3">
+    <div className="flex items-center justify-between gap-3 mb-2">
+      <div><p className="text-xs font-bold text-foreground">Демо-режим</p><p className="text-[11px] text-muted-foreground">Переключайте роль без регистрации</p></div>
+      <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-primary/15 text-foreground">3 роли</span>
+    </div>
+    <div className="grid grid-cols-3 gap-1.5">
+      {([["worker","Грузчик"],["dispatcher","Диспетчер"],["client","Заказчик"]] as const).map(([id,label]) => (
+        <button key={id} onClick={() => onSwitch(id)} className={`rounded-xl py-2 text-[11px] font-semibold transition-colors ${role === id ? "bg-foreground text-background" : "bg-card border border-border text-foreground"}`}>{label}</button>
+      ))}
+    </div>
+  </div>
+);
 
 const VerifiedPopup = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   if (!open) return null;
@@ -139,6 +153,13 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
   const isDispatcher = role === "dispatcher";
   const isAdmin = role === "admin";
   const isDemo = user?.id?.startsWith("demo-") === true;
+  const switchDemoRole = (nextRole: "worker" | "dispatcher" | "client") => {
+    localStorage.setItem("gruzli_demo_worker", "1");
+    localStorage.setItem("gruzli_demo_role", nextRole);
+    window.dispatchEvent(new Event("gruzli-demo-change"));
+    window.dispatchEvent(new Event("navigate-to-feed"));
+    toast.success(`Демо: ${nextRole === "worker" ? "Грузчик" : nextRole === "dispatcher" ? "Диспетчер" : "Заказчик"}`);
+  };
   const switchDemoRole = (nextRole: "worker" | "dispatcher" | "client") => {
     localStorage.setItem("gruzli_demo_worker", "1");
     localStorage.setItem("gruzli_demo_role", nextRole);
