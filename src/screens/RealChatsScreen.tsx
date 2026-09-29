@@ -317,7 +317,8 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
     c.otherName.toLowerCase().includes(search.toLowerCase())
   );
 
-  return (\n    <div className="gruzli-chats-screen app-scroll">
+  return (
+    <div className="gruzli-chats-screen app-scroll">
       {/* Header */}
       <div className="px-5 safe-top pb-2 flex items-center justify-between">
         <div><p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Gruzli</p><h1 className="text-[29px] font-extrabold text-foreground tracking-[-.045em] leading-none">Чаты</h1></div>
