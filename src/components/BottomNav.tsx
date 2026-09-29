@@ -6,6 +6,7 @@ interface BottomNavProps {
   active: string;
   onNavigate: (tab: string) => void;
   isDispatcher?: boolean;
+  isClient?: boolean;
   unreadMessages?: number;
   newJobsCount?: number;
 }
@@ -20,7 +21,7 @@ const Badge = memo(({ count }: { count: number }) => {
 });
 Badge.displayName = "Badge";
 
-const BottomNav = memo(({ active, onNavigate, isDispatcher, unreadMessages = 0, newJobsCount = 0 }: BottomNavProps) => {
+const BottomNav = memo(({ active, onNavigate, isDispatcher, isClient, unreadMessages = 0, newJobsCount = 0 }: BottomNavProps) => {
   const workerTabs = [
     { id: "feed", label: "Главная", icon: Home, badge: newJobsCount },
     { id: "orders", label: "Заказы", icon: ClipboardList, badge: 0 },
@@ -36,7 +37,14 @@ const BottomNav = memo(({ active, onNavigate, isDispatcher, unreadMessages = 0, 
     { id: "profile", label: "Профиль", icon: User, badge: 0 },
   ];
 
-  const tabs = isDispatcher ? dispatcherTabs : workerTabs;
+  const clientTabs = [
+    { id: "feed", label: "Заказать", icon: Home, badge: 0 },
+    { id: "orders", label: "Заявки", icon: ClipboardList, badge: 0 },
+    { id: "chats", label: "Чаты", icon: MessageCircle, badge: unreadMessages },
+    { id: "profile", label: "Профиль", icon: User, badge: 0 },
+  ];
+
+  const tabs = isClient ? clientTabs : isDispatcher ? dispatcherTabs : workerTabs;
 
   return (
     <nav className="bottom-nav-wrapper" role="navigation" aria-label="Основная навигация">
