@@ -1388,6 +1388,18 @@ export type Database = {
         Args: { _job_id: string }
         Returns: Database["public"]["Tables"]["jobs"]["Row"]
       }
+      dispatcher_complete_job: {
+        Args: { _dispatcher_income: number; _expense_per_worker: number; _job_id: string }
+        Returns: Json
+      }
+      dispatcher_finish_job: {
+        Args: { _job_id: string }
+        Returns: Json
+      }
+      dispatcher_reject_job_response: {
+        Args: { _response_id: string }
+        Returns: Json
+      }
       create_direct_conversation: {
         Args: { _other_user_id: string; _title?: string }
         Returns: string
@@ -1415,6 +1427,14 @@ export type Database = {
         Returns: Database["public"]["Enums"]["app_role"]
       }
       get_weekly_completed_jobs: { Args: { _user_id: string }; Returns: number }
+      worker_update_response_status: {
+        Args: { _next_status: string; _response_id: string }
+        Returns: Json
+      }
+      worker_withdraw_response: {
+        Args: { _response_id: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
