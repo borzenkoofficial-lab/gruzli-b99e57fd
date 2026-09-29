@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, lazy, Suspense, startTransition } from "react";
 import { toast } from "sonner";
 import { useParams } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
@@ -251,7 +251,7 @@ const Index = () => {
     preloadTab(t);
     if (t === "chats") resetMessages();
     if (t === "feed" && !isDispatcher) resetJobs();
-    setTab(t);
+    startTransition(() => setTab(t));
   };
 
   // --- Detail panel content for desktop ---
