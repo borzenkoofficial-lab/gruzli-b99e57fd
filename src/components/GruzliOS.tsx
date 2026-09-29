@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Command, X, Map, MessageCircle, Users, BriefcaseBusiness, LayoutDashboard } from "lucide-react";
+import { Command, X, MessageCircle, FolderOpen, Users, BriefcaseBusiness, LayoutDashboard } from "lucide-react";
 import "../styles/gruzli-os.css";
 
 type Props={onClose:()=>void};
@@ -8,7 +8,7 @@ type Props={onClose:()=>void};
 const baseApps=[
  {key:"feed",label:"Лента",icon:BriefcaseBusiness,target:"feed"},
  {key:"chats",label:"Чаты",icon:MessageCircle,target:"chats"},
- {key:"kartoteka",label:"Картотека",icon:Users,target:"kartoteka"},
+ {key:"kartoteka",label:"Картотека",icon:FolderOpen,target:"kartoteka"},
  {key:"profile",label:"Профиль",icon:LayoutDashboard,target:"profile"},
 ];
 
@@ -42,6 +42,6 @@ export default function GruzliOS({onClose}:Props){
     <div className="gruzli-os-apps">{apps.map(a=>{const Icon=a.icon;return <button key={a.key} className={active===a.key?"active":""} onClick={()=>{setActive(a.key);window.dispatchEvent(new CustomEvent("gruzli-os-navigate",{detail:{tab:a.target}}));}}><Icon size={18}/><b>{a.label}</b><small>OPEN SPACE</small></button>})}</div>
     <div className="gruzli-os-signal" onClick={()=>setSignal(v=>(v+1)%signals.length)}><div><Command size={15}/><span>GRUZLI SIGNAL / 0{signal+1}</span></div><b>{signals[signal]}</b><small>Нажмите, чтобы открыть следующий сигнал ↗</small></div>
    </div>
-   <div className="gruzli-os-dock">{apps.map(a=>{const Icon=a.icon;return <button key={a.key} onClick={()=>setActive(a.key)} className={active===a.key?"active":""}><Icon size={17}/><span>{a.label}</span></button>})}<button onClick={onClose}><X size={17}/><span>Закрыть</span></button></div>
+   <div className="gruzli-os-dock">{apps.map(a=>{const Icon=a.icon;return <button key={a.key} onClick={()=>{setActive(a.key);window.dispatchEvent(new CustomEvent("gruzli-os-navigate",{detail:{tab:a.target}}));}} className={active===a.key?"active":""}><Icon size={17}/><span>{a.label}</span></button>})}<button onClick={onClose}><X size={17}/><span>Закрыть</span></button></div>
  </div>
 }
