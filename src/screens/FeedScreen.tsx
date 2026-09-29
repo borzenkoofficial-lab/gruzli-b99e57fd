@@ -489,6 +489,10 @@ const SwipeableJobCard = ({
   const x = useMotionValue(0);
   const bgLeft = useTransform(x, [-150, 0], [1, 0]);
   const bgRight = useTransform(x, [0, 150], [0, 1]);
+  // Subtle pointer/swipe light follows the card, extending the editorial canvas.
+  const glowX = useTransform(x, [-150, 0, 150], [-18, 0, 18]);
+  const glowOpacity = useTransform(x, [-150, 0, 150], [0.18, 0.045, 0.18]);
+  const glowRotate = useTransform(x, [-150, 0, 150], [-1.5, 0, 1.5]);
   const didDrag = useRef(false);
   const swipeCommitted = useRef(false);
   const [swipeExitDirection, setSwipeExitDirection] = useState<1 | -1>(-1);
@@ -583,6 +587,16 @@ const SwipeableJobCard = ({
         </div>
       </motion.div>
 
+      <motion.div
+        className="gruzli-card-follow-light pointer-events-none absolute inset-0 z-[11] rounded-2xl"
+        style={{
+          x: glowX,
+          opacity: glowOpacity,
+          rotate: glowRotate,
+        }}
+        aria-hidden="true"
+      />
+      
       <motion.div
         drag={isBot ? false : "x"}
         dragConstraints={{ left: 0, right: 0 }}
