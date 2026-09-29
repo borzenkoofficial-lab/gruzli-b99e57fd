@@ -1308,3 +1308,27 @@ button{ -webkit-tap-highlight-color:transparent; }
     border-radius:16px!important;
   }
 }
+
+@media(max-width:767px){
+  .gruzli-chat-detail{
+    background:
+      radial-gradient(420px 220px at 15% 4%,rgba(255,255,255,.92),transparent 72%),
+      linear-gradient(180deg,#f7f7f8 0%,#f1f1f3 100%)!important;
+  }
+  .gruzli-chat-detail .bubble-other{
+    background:rgba(255,255,255,.78)!important;
+    border:1px solid rgba(255,255,255,.9)!important;
+    box-shadow:0 10px 28px rgba(31,35,43,.045),inset 0 1px 0 rgba(255,255,255,.94)!important;
+    backdrop-filter:blur(18px);
+    -webkit-backdrop-filter:blur(18px);
+  }
+  .gruzli-chat-detail .bubble-own{
+    box-shadow:0 8px 22px rgba(31,35,43,.08);
+  }
+  .gruzli-chat-detail [class*="bg-card"]{
+    border-color:rgba(255,255,255,.9)!important;
+    box-shadow:0 16px 38px rgba(31,35,43,.07),inset 0 1px 0 rgba(255,255,255,.96)!important;
+    backdrop-filter:blur(22px);
+    -webkit-backdrop-filter:blur(22px);
+  }
+}
