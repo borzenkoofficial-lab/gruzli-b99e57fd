@@ -593,7 +593,6 @@ const SwipeableJobCard = ({
         onDragEnd={handleDragEnd}
         onClick={handleTap}
         whileTap={{ scale: 0.985 }}
-        whileHover={{ y: -1 }}
         className={`gruzli-job-card relative z-10 rounded-2xl border p-4 cursor-pointer transition-colors overflow-hidden ${
           isOfficial
             ? "border-yellow-400/40"
