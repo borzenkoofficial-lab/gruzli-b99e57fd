@@ -3528,3 +3528,10 @@ body,
   .gruzli-earnings-main{margin-top:21px}
   .gruzli-earnings-main>div:first-child strong{font-size:25px}
 }
+
+/* Swipe guidance belongs to the order card itself */
+.gruzli-card-swipe-hint{display:flex;align-items:center;justify-content:flex-end;gap:7px;margin:-3px 0 8px;color:#9a9ca0;font-size:6.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.72}
+.gruzli-card-swipe-hint span{display:inline-flex;align-items:center;gap:3px}
+.gruzli-card-swipe-hint i{width:2px;height:2px;border-radius:50%;background:#c4c5c6}
+.gruzli-job-card:hover .gruzli-card-swipe-hint{opacity:1;color:#74767a}
+@media(max-width:390px){.gruzli-card-swipe-hint{margin-top:-2px;margin-bottom:7px;font-size:6px}}
