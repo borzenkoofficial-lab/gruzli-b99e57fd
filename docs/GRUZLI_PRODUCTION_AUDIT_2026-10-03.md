@@ -27,45 +27,55 @@ Therefore the highest-risk findings are integration/production-readiness and tes
 
 ### P1 — Critical
 
-3. **Dispatcher lifecycle RPC can mutate order status directly**
+3. **Unauthenticated push Edge Functions expose a service-role-backed notification path**
+   - `send-push` is configured with `verify_jwt = false` but creates a Supabase client with `SUPABASE_SERVICE_ROLE_KEY` and can target workers/participants based on caller-supplied payload.
+   - `send-push4site` is also configured without JWT verification and forwards caller-controlled payloads using the server-side Push4Site credential.
+   - This needs an internal authenticated trigger contract before production launch; simply relying on CORS is not authorization.
+
+4. **External/legacy hosting metadata remains in the web shell**
+   - `index.html` references Lovable-hosted social metadata and a Push4site/Lovable external script, while notification code contains `https://gruzli.lovable.app` as an application URL.
+   - This is an ownership/integration risk and can send users to the wrong host.
+
+
+5. **Dispatcher lifecycle RPC can mutate order status directly**
    - `dispatcher_update_job` accepts `_status` and currently allows `open/active/filled`.
    - This creates a second lifecycle mutation path beside `dispatcher_claim_job`, `client_select_dispatcher_offer`, `dispatcher_finish_job`, `dispatcher_complete_job`, and cancellation.
    - Root cause: data-edit RPC mixes editable fields with state-machine transitions.
 
-4. **Dispatcher finish/complete lifecycle lacks strict state preconditions**
+6. **Dispatcher finish/complete lifecycle lacks strict state preconditions**
    - `dispatcher_finish_job` does not require an appropriate current order state.
    - `dispatcher_complete_job` does not require the order to be in `finishing`.
    - A caller with dispatcher role could reach lifecycle states out of sequence.
 
-5. **Automated regression protection is insufficient**
+7. **Automated regression protection is insufficient**
    - Only `src/test/example.test.ts` exists and only asserts `true`.
    - There are no repository-owned production E2E scenarios for client → dispatcher → worker.
    - No GitHub Actions workflow is present.
 
-6. **Playwright configuration is not self-contained**
+8. **Playwright configuration is not self-contained**
    - `playwright.config.ts` imports `lovable-agent-playwright-config/config`, which is not declared in package.json.
    - This makes the repository's E2E entry point dependent on an undeclared external package.
 
 ### P2 — Important
 
-7. **README is still the default Lovable placeholder**
+9. **README is still the default Lovable placeholder**
    - It does not document architecture, setup, roles, backend, or test commands.
 
-8. **Very large dependency surface**
+10. **Very large dependency surface**
    - package.json contains many Radix primitives and UI packages. This is not automatically a defect, but it increases maintenance/bundle risk and should be measured rather than assumed.
 
-9. **Realtime channel is broad**
+11. **Realtime channel is broad**
    - The notification hook subscribes to INSERT/UPDATE events for whole tables and filters mostly in client code.
    - Production verification must confirm RLS/realtime publication behavior and avoid leaking metadata through realtime payloads.
 
-10. **Presence writes are periodic client DB updates**
+12. **Presence writes are periodic client DB updates**
     - `usePresence` writes every 60 seconds and on visibility changes. This needs production measurement and rate/traffic review.
 
 ### P3 — Polish / maintainability
 
-11. Duplicate branding assets: `gruzli-logo.jpeg` and `gruzli-splash.jpeg` currently have the same blob/size.
-12. README and project documentation do not describe the current three-role product model.
-13. Visual consistency and accessibility still require a runtime/device pass; repository inspection alone cannot certify pixel-level behavior.
+13. Duplicate branding assets: `gruzli-logo.jpeg` and `gruzli-splash.jpeg` currently have the same blob/size.
+14. README and project documentation do not describe the current three-role product model.
+15. Visual consistency and accessibility still require a runtime/device pass; repository inspection alone cannot certify pixel-level behavior.
 
 ## Architecture observations
 
@@ -121,3 +131,23 @@ Performance profiling: NOT CERTIFIED
 3. Establish repository-owned CI: install → lint → unit tests → build → smoke E2E.
 4. Add real Supabase integration/E2E coverage for role isolation and the complete order pipeline.
 5. Then perform device-level UI/UX and accessibility polish.
+
+
+## Changes made during this audit
+
+- Created branch `audit/global-production-hardening` from main.
+- Added this audit report.
+- Added `20261003210000_harden_dispatcher_lifecycle_invariants.sql` to prevent dispatcher status mutation through the data-edit RPC and to enforce finish → finishing → complete ordering.
+- Replaced the undeclared Lovable Playwright configuration with a repository-owned Playwright configuration.
+- Added mobile/desktop smoke tests for root loading and initial horizontal overflow.
+- Added GitHub Actions validation for npm ci, lint, Vitest, build and Playwright smoke coverage.
+- Replaced the placeholder README with current architecture, workflow and production constraints.
+
+## Current counted findings
+
+- P0: 2
+- P1: 6
+- P2: 4
+- P3: 3
+
+The counts are based on repository evidence only. Runtime/device and real-backend findings remain uncertified until the application can be executed against a real Supabase environment.
