@@ -469,12 +469,15 @@ button,input,textarea,select{font-family:inherit;}
 :root{
   color-scheme:light;
   --gruzli-ink:#151619;
-  --gruzli-muted:#777a82;
-  --gruzli-line:#e7e7ea;
-  --gruzli-yellow:#efb714;
-  --gruzli-yellow-soft:#fff6d5;
-  --gruzli-shadow:0 10px 32px rgba(18,20,25,.055);
-  --gruzli-shadow-hover:0 18px 46px rgba(18,20,25,.075);
+  --gruzli-line:#e6e6e9;
+  --gruzli-yellow:#f0bd18;
+  --gruzli-shadow:0 18px 55px rgba(20,24,32,.075),0 2px 8px rgba(20,24,32,.035);
+  --gruzli-ease:cubic-bezier(.22,1,.36,1);
+  --gd-paper:#f6f6f4;
+  --gd-ink:#111214;
+  --gd-line:#dedfdf;
+  --gd-yellow:#f2bd16;
+  --gd-ease:cubic-bezier(.22,1,.36,1);
 }
 html{color-scheme:light!important;background:#f7f7f8!important;}
 body{background:#f7f7f8!important;color:var(--gruzli-ink)!important;}
