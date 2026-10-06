@@ -9,7 +9,9 @@ npm ci
 npm run dev
 ```
 
-Production builds use the real Supabase backend. Demo mode is enabled only with:
+Production builds use the real Supabase backend.
+
+The production branch keeps demo mode isolated behind an explicit build flag. Demo mode is enabled only with:
 
 ```env
 VITE_GRUZLI_DEMO_MODE=true
