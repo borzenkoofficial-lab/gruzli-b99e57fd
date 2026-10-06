@@ -257,7 +257,7 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
       setConversations(items);
     }
     setLoading(false);
-  }, [user, communityId]);
+  }, [user, communityId, isDemo]);
 
   useEffect(() => {
     const loadCommunityId = async () => {
