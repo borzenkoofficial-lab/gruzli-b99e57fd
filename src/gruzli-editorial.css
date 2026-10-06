@@ -1,41 +1,6 @@
 /* GRUZLI EDITORIAL UI — standalone Gruzli visual system.
    UI-only layer: preserves existing screen structure, navigation and business logic. */
 
-:root{
-  --background: 0 0% 96.8%;
-  --foreground: 222 18% 10%;
-  --card: 0 0% 100%;
-  --card-foreground: 222 18% 10%;
-  --card-hover: 0 0% 98%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222 18% 10%;
-  --primary: 43 96% 48%;
-  --primary-foreground: 222 18% 8%;
-  --secondary: 0 0% 93%;
-  --secondary-foreground: 222 12% 28%;
-  --muted: 0 0% 93%;
-  --muted-foreground: 220 8% 43%;
-  --accent: 0 0% 94%;
-  --accent-foreground: 222 18% 10%;
-  --border: 220 10% 87%;
-  --input: 220 10% 87%;
-  --ring: 43 96% 48%;
-  --surface-1: 0 0% 96.8%;
-  --surface-2: 0 0% 100%;
-  --surface-3: 0 0% 97%;
-  --surface-4: 220 10% 89%;
-  --bubble-own: 43 96% 91%;
-  --bubble-other: 0 0% 100%;
-  --sidebar-background: 0 0% 99%;
-  --sidebar-foreground: 222 18% 10%;
-  --sidebar-primary: 43 96% 48%;
-  --sidebar-primary-foreground: 222 18% 8%;
-  --sidebar-accent: 0 0% 95%;
-  --sidebar-accent-foreground: 222 18% 10%;
-  --sidebar-border: 220 10% 89%;
-  --sidebar-ring: 43 96% 48%;
-  --radius: .95rem;
-}
 
 html,body,#root{background:hsl(var(--background));color:hsl(var(--foreground));}
 body{font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",sans-serif;letter-spacing:-.012em;}
