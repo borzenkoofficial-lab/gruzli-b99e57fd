@@ -681,3 +681,23 @@ GRANT EXECUTE ON FUNCTION public.purchase_premium(text,text) TO authenticated;
 
 REVOKE ALL ON FUNCTION public.purchase_company(text,text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.purchase_company(text,text) TO authenticated;
+
+
+CREATE OR REPLACE FUNCTION public.get_unread_message_count()
+RETURNS integer
+LANGUAGE sql
+STABLE
+SECURITY INVOKER
+SET search_path=public
+AS $$
+  SELECT count(*)::integer
+  FROM public.messages m
+  JOIN public.conversation_participants cp
+    ON cp.conversation_id = m.conversation_id
+  WHERE cp.user_id = auth.uid()
+    AND m.sender_id <> auth.uid()
+    AND (cp.last_read_at IS NULL OR m.created_at > cp.last_read_at);
+$$;
+
+REVOKE ALL ON FUNCTION public.get_unread_message_count() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_unread_message_count() TO authenticated;
