@@ -6409,3 +6409,56 @@ button.bg-foreground:active{
     transform:none!important;
   }
 }
+
+
+/* Secondary surfaces: keep the same light product language as the core feed. */
+.gruzli-company-screen,
+.gruzli-premium-screen,
+.gruzli-job-responses-screen {
+  background:
+    radial-gradient(520px 240px at 80% -40px,rgba(242,196,0,.055),transparent 70%),
+    linear-gradient(180deg,#f7f7f6 0%,#f1f1f0 100%)!important;
+}
+
+.gruzli-company-screen > div.flex-1.overflow-y-auto > div:first-child {
+  border:1px solid rgba(17,18,20,.10);
+  background:linear-gradient(145deg,#202126 0%,#34353a 62%,#4a4b50 100%)!important;
+  box-shadow:0 18px 44px rgba(20,22,25,.14)!important;
+}
+
+.gruzli-company-screen > div.flex-1.overflow-y-auto > div:first-child p {
+  color:rgba(255,255,255,.72);
+}
+
+.gruzli-premium-screen > div.flex-1.overflow-y-auto > div:first-child {
+  border:1px solid rgba(17,18,20,.10);
+  filter:saturate(.82);
+  box-shadow:0 18px 44px rgba(20,22,25,.12)!important;
+}
+
+.gruzli-company-screen > div.flex-1.overflow-y-auto > div:not(:first-child),
+.gruzli-premium-screen > div.flex-1.overflow-y-auto > div:not(:first-child),
+.gruzli-job-responses-screen > div:not(.sr-only) {
+  border-color:rgba(17,18,20,.09);
+}
+
+.gruzli-job-responses-screen h1 {
+  letter-spacing:-.035em;
+}
+
+.gruzli-job-responses-screen .rounded-2xl {
+  box-shadow:0 8px 24px rgba(20,22,25,.045);
+}
+
+/* Notifications share the same card rhythm as orders and chats. */
+.gruzli-page-enter.min-h-full.w-full.bg-background > div.px-5 > div.space-y-2 > div {
+  border-color:rgba(17,18,20,.09)!important;
+  box-shadow:0 8px 24px rgba(20,22,25,.045)!important;
+}
+
+@media (max-width: 767px) {
+  .gruzli-company-screen > div.flex-1.overflow-y-auto,
+  .gruzli-premium-screen > div.flex-1.overflow-y-auto {
+    padding-bottom:32px!important;
+  }
+}
