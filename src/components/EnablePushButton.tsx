@@ -3,7 +3,6 @@ import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-const FIRST_PROMPT_KEY = "push-first-prompt-shown";
 const DISMISSED_KEY = "push-banner-dismissed";
 
 interface EnablePushButtonProps {
@@ -128,17 +127,6 @@ const EnablePushButton = ({ variant = "banner", className = "" }: EnablePushButt
       setBusy(false);
     }
   };
-
-  // Автозапрос при первом запуске
-  useEffect(() => {
-    if (!supported || subscribed || busy) return;
-    if (permission !== "default") return;
-    if (localStorage.getItem(FIRST_PROMPT_KEY) === "true") return;
-    localStorage.setItem(FIRST_PROMPT_KEY, "true");
-    const t = setTimeout(() => { handleEnable(); }, 1500);
-    return () => clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supported, permission, subscribed, busy]);
 
   const handleDismiss = () => {
     setDismissed(true);
