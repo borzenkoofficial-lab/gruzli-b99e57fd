@@ -1,14 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-function attachBrowserDiagnostics(page: Parameters<typeof test>[0]["page"]) {
-  page.on("pageerror", (error) => console.error("[playwright:pageerror]", error.stack || error.message));
-  page.on("console", (message) => {
-    if (message.type() === "error") console.error("[playwright:console]", message.text());
-  });
-}
-
 test("Gruzli boots into the demo worker workspace", async ({ page }) => {
-  attachBrowserDiagnostics(page);
   await page.addInitScript(() => {
     localStorage.setItem("gruzli_demo_worker", "1");
     localStorage.setItem("gruzli_demo_role", "worker");
