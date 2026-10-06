@@ -5776,7 +5776,7 @@ button.bg-foreground:active{
     min-height:0;
     height:auto;
     touch-action:pan-y;
-    overs:contain;
+    overscroll-behavior-y:contain;
   }
   .pull-refresh-scroll > .gruzli-mobile-feed{
     min-height:100%;
@@ -6057,5 +6057,186 @@ button.bg-foreground:active{
 
     margin:0!important;
 
+  }
+}
+
+
+/* =====================================================================
+   GRUZLI FINAL UI POLISH — production visual baseline
+   Goal: calm logistics marketplace, clear hierarchy, restrained motion.
+   No business logic changes.
+   ===================================================================== */
+
+:root{
+  --gruzli-canvas:#f5f5f6;
+  --gruzli-surface:#ffffff;
+  --gruzli-surface-soft:#fafafa;
+  --gruzli-line:#e4e4e7;
+  --gruzli-line-strong:#d9d9dd;
+  --gruzli-ink:#18191c;
+  --gruzli-muted:#72747b;
+  --gruzli-yellow:#f2c400;
+}
+
+/* Base canvas: remove the decorative "AI / editorial" texture from the app shell. */
+.app-shell{
+  background:var(--gruzli-canvas)!important;
+}
+.app-shell:before,
+.gruzli-mobile-feed:before,
+.gruzli-mobile-feed:after{
+  display:none!important;
+}
+
+/* Headers use spacing and typography for hierarchy, not a decorative underline. */
+.app-scroll header:after{
+  display:none!important;
+}
+.gruzli-feed-hero{
+  border-bottom:1px solid var(--gruzli-line)!important;
+}
+.gruzli-feed-hero:before{
+  display:none!important;
+}
+.gruzli-feed-live i{
+  animation:none!important;
+  box-shadow:none!important;
+}
+
+/* Feed canvas and cards are flat, bright and information-first. */
+.gruzli-mobile-feed{
+  background:var(--gruzli-canvas)!important;
+}
+.gruzli-job-card{
+  background:var(--gruzli-surface)!important;
+  border:1px solid var(--gruzli-line)!important;
+  border-radius:18px!important;
+  box-shadow:0 2px 10px rgba(18,20,25,.035)!important;
+  transform-style:flat!important;
+}
+.gruzli-job-card:before,
+.gruzli-job-card:after{
+  display:none!important;
+}
+.gruzli-job-card:hover{
+  box-shadow:0 5px 18px rgba(18,20,25,.055)!important;
+  transform:translateY(-1px);
+}
+.gruzli-order-index{
+  color:rgba(24,25,28,.035)!important;
+}
+.gruzli-order-description{
+  background:#f8f8f9!important;
+  border-left-color:#d8d8dc!important;
+}
+.gruzli-order-pay{
+  background:#fafafa!important;
+  border-color:var(--gruzli-line)!important;
+  box-shadow:none!important;
+}
+.gruzli-card-follow-light{
+  display:none!important;
+}
+
+/* Primary actions: solid, predictable, no perpetual shimmer. */
+.app-scroll button.bg-foreground:before,
+.app-scroll button.bg-primary:before,
+.gruzli-mobile-cta:before,
+.app-scroll .btn-shimmer:after{
+  display:none!important;
+}
+.app-scroll button.bg-foreground,
+.app-scroll button.bg-primary,
+.gruzli-mobile-cta{
+  box-shadow:0 3px 10px rgba(18,20,25,.10)!important;
+}
+
+/* Secondary controls use a shared neutral surface. */
+.app-scroll input,
+.app-scroll textarea,
+.app-scroll select{
+  background:#fff!important;
+  box-shadow:inset 0 1px 0 rgba(20,22,26,.02)!important;
+}
+.app-scroll input:focus,
+.app-scroll textarea:focus,
+.app-scroll select:focus{
+  box-shadow:0 0 0 3px rgba(242,196,0,.12)!important;
+}
+
+/* Dialogs and sheets: one consistent radius + shadow. */
+@media(max-width:767px){
+  [role="dialog"]{
+    border:1px solid var(--gruzli-line)!important;
+    box-shadow:0 16px 50px rgba(18,20,25,.18)!important;
+  }
+}
+
+/* Mobile bottom navigation: opaque enough for legibility, still light and compact. */
+@media(max-width:767px){
+  .bottom-nav-pill{
+    background:rgba(255,255,255,.96)!important;
+    background-image:none!important;
+    border:1px solid rgba(18,20,25,.09)!important;
+    box-shadow:0 8px 28px rgba(18,20,25,.10)!important;
+    backdrop-filter:blur(16px) saturate(1.05)!important;
+    -webkit-backdrop-filter:blur(16px) saturate(1.05)!important;
+  }
+  .bottom-nav-active,
+  .bottom-nav-active:hover,
+  .bottom-nav-active:focus-visible{
+    background:#18191c!important;
+    box-shadow:none!important;
+  }
+}
+
+/* Desktop workspace: remove gradients/glows and keep a quiet enterprise shell. */
+@media(min-width:768px){
+  .desktop-shell{
+    background:#f4f4f5!important;
+  }
+  .desktop-sidebar{
+    background:#fff!important;
+    border-right:1px solid #e5e5e7!important;
+  }
+  .desktop-topbar{
+    background:#fff!important;
+    border-bottom:1px solid #e5e5e7!important;
+  }
+  .desktop-main{
+    background:#f4f4f5!important;
+  }
+  .desktop-main-inner{
+    padding-top:30px!important;
+  }
+  .desktop-main-inner > *{
+    animation:none!important;
+  }
+  .desktop-main-inner .gruzli-mobile-feed{
+    background:transparent!important;
+  }
+  .desktop-main-inner .gruzli-job-card{
+    background:#fff!important;
+    box-shadow:0 2px 10px rgba(18,20,25,.035)!important;
+  }
+  .desktop-main-inner .gruzli-job-card:hover{
+    box-shadow:0 5px 18px rgba(18,20,25,.055)!important;
+  }
+  .desktop-main-inner > div::after{
+    display:none!important;
+  }
+}
+
+/* Profile / company / premium hero surfaces keep one material language. */
+.gruzli-profile-screen,
+.gruzli-company-screen,
+.gruzli-premium-screen,
+.gruzli-job-responses-screen{
+  background:var(--gruzli-canvas)!important;
+}
+
+@media(prefers-reduced-motion:reduce){
+  .gruzli-job-card:hover{
+    transform:none!important;
   }
 }
