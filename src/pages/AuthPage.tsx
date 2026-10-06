@@ -46,7 +46,7 @@ const SecurityModal = forwardRef<HTMLDivElement, { open: boolean; onClose: () =>
             exit={{ opacity: 0, y: 100 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             onClick={(e) => e.stopPropagation()}
-            className="relative w-full max-w-sm bg-card border border-border rounded-2xl p-5 z-10"
+            className="relative w-full max-w-sm max-h-[82vh] overflow-y-auto overscroll-contain bg-card border border-border rounded-2xl p-5 z-10"
           >
             <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground">
               <X size={18} />
