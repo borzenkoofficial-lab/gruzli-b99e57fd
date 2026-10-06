@@ -6255,3 +6255,20 @@ button.bg-foreground:active{
     animation:none!important;
   }
 }
+
+
+/* Mobile detail shells own the vertical scroll. Settings must not introduce a
+   second scroll container inside the surrounding mobile-screen-scroll. */
+@media(max-width:767px){
+  .mobile-screen-scroll .gruzli-settings-screen > .flex-1.overflow-y-auto,
+  .mobile-screen-scroll .gruzli-settings-subpage > .flex-1.overflow-y-auto{
+    flex:none!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    overflow:visible!important;
+    overscroll-behavior:auto!important;
+    -webkit-overflow-scrolling:auto!important;
+    padding-bottom:24px!important;
+  }
+}
