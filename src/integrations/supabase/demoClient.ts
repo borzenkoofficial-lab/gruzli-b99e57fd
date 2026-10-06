@@ -252,6 +252,7 @@ async function rpc(name: string, args: Record<string, any> = {}) {
   if (name === "has_role") return { data: args._role === (user?.user_metadata?.role || profileFor(user)?.role), error: null };
   if (name === "is_admin") return { data: (user?.user_metadata?.role || profileFor(user)?.role) === "admin", error: null };
   if (name === "get_weekly_completed_jobs") return { data: 0, error: null };
+  if (name === "get_unread_message_count") return { data: 0, error: null };
   if (name === "get_support_user_id") return { data: "demo-support", error: null };
   if (name === "client_create_job") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
