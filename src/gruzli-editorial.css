@@ -6368,3 +6368,47 @@ button.bg-foreground:active{
     font-size:9px!important;
   }
 }
+
+
+/* Final dispatcher cabinet cleanup — remove remaining legacy glass/dark controls. */
+.gruzli-dispatcher-cabinet .bg-white\/5,
+.gruzli-dispatcher-cabinet .bg-white\/10,
+.gruzli-dispatcher-cabinet .backdrop-blur-md{
+  background:#f5f5f6!important;
+  border-color:var(--gruzli-line)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.gruzli-dispatcher-cabinet [style*="linear-gradient"]{
+  background-image:none!important;
+}
+.gruzli-dispatcher-cabinet .gruzli-dispatcher-hero .text-white\/40,
+.gruzli-dispatcher-cabinet .gruzli-dispatcher-hero .text-white\/45,
+.gruzli-dispatcher-cabinet .gruzli-dispatcher-hero .text-white\/50{
+  color:#85878d!important;
+}
+
+.gruzli-dispatcher-cabinet .text-green-500{
+  color:#36744a!important;
+}
+.gruzli-dispatcher-cabinet .bg-green-500\/10{
+  background:#eef7f0!important;
+}
+.gruzli-dispatcher-cabinet .text-orange-500{
+  color:#9a6a16!important;
+}
+.gruzli-dispatcher-cabinet .bg-orange-500\/10{
+  background:#fbf5e9!important;
+}
+
+@media(max-width:767px){
+  .gruzli-dispatcher-cabinet .gruzli-dispatcher-hero{
+    box-shadow:0 3px 14px rgba(18,20,25,.04)!important;
+  }
+  .gruzli-dispatcher-cabinet .gruzli-dispatcher-hero-orbit{
+    border-color:rgba(18,20,25,.055)!important;
+  }
+  .gruzli-dispatcher-cabinet .gruzli-dispatcher-hero-orbit-small{
+    border-color:rgba(242,196,0,.28)!important;
+  }
+}
