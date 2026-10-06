@@ -1496,6 +1496,14 @@ export type Database = {
         }
         Returns: number
       }
+      purchase_company: {
+        Args: { _company_name: string; _plan_id: string }
+        Returns: Json
+      }
+      purchase_premium: {
+        Args: { _period_id: string; _tier_id: string }
+        Returns: Json
+      }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
