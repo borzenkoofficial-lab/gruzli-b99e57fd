@@ -383,7 +383,7 @@ async function rpc(name: string, args: Record<string, any> = {}) {
     const allowed = ["confirmed", "en_route", "late", "arrived", "finishing", "completed"];
     if (!allowed.includes(args._next_status)) return { data: null, error: { code: "22023", message: "Недопустимый статус" } };
     const transitions: Record<string, string[]> = {
-      accepted: ["confirmed"], confirmed: ["en_route", "late"], en_route: ["arrived", "late"],
+      ready: ["confirmed"], accepted: ["confirmed"], confirmed: ["en_route", "late"], en_route: ["arrived", "late"],
       late: ["en_route", "arrived"], arrived: ["finishing", "completed"], finishing: ["completed"],
     };
     const current = response.worker_status || "accepted";
