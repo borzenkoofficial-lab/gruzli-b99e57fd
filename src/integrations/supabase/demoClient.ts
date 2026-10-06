@@ -354,6 +354,37 @@ async function rpc(name: string, args: Record<string, any> = {}) {
     response.status = "rejected";
     saveDb(db); return { data: response, error: null };
   }
+  if (name === "purchase_premium") {
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    const role = user.user_metadata?.role || profileFor(user)?.role || "worker";
+    const base = ({ worker_premium: 299, worker_vip: 599, disp_pro: 299, disp_business: 999 } as Record<string, number>)[args._tier_id];
+    const multiplier = ({ month: 1, quarter: 2.5, year: 8 } as Record<string, number>)[args._period_id];
+    if (!base || !multiplier || !((role === "worker" && String(args._tier_id).startsWith("worker_")) || (role === "dispatcher" && String(args._tier_id).startsWith("disp_")))) {
+      return { data: null, error: { code: "22023", message: "Недопустимый тариф" } };
+    }
+    const dbProfile = db.profiles.find((p) => p.user_id === user.id);
+    const price = Math.round(base * multiplier);
+    const balance = Number(dbProfile?.balance || 0);
+    if (balance < price) return { data: null, error: { code: "P0001", message: "Недостаточно средств" } };
+    const days = args._period_id === "month" ? 30 : args._period_id === "quarter" ? 90 : 365;
+    const until = new Date(Date.now() + days * 86400000).toISOString();
+    if (dbProfile) Object.assign(dbProfile, { balance: balance - price, is_premium: true, premium_until: until, company_plan: args._tier_id });
+    saveDb(db);
+    return { data: { tier_id: args._tier_id, period_id: args._period_id, price, premium_until: until, balance: balance - price }, error: null };
+  }
+  if (name === "purchase_company") {
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    const prices: Record<string, number> = { starter: 1990, business: 4990, enterprise: 12990 };
+    const price = prices[args._plan_id];
+    if (!price || String(args._company_name || "").trim().length < 2) return { data: null, error: { code: "22023", message: "Проверьте тариф и название компании" } };
+    const dbProfile = db.profiles.find((p) => p.user_id === user.id);
+    const balance = Number(dbProfile?.balance || 0);
+    if (balance < price) return { data: null, error: { code: "P0001", message: "Недостаточно средств" } };
+    const until = new Date(Date.now() + 30 * 86400000).toISOString();
+    if (dbProfile) Object.assign(dbProfile, { balance: balance - price, is_company: true, company_until: until, company_name: String(args._company_name).trim(), company_plan: args._plan_id });
+    saveDb(db);
+    return { data: { plan_id: args._plan_id, price, company_until: until, balance: balance - price }, error: null };
+  }
   if (name === "dispatcher_republish_job") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
     const job = db.jobs.find((j) => j.id === args._job_id && j.dispatcher_id === user.id && j.status === "closed");
