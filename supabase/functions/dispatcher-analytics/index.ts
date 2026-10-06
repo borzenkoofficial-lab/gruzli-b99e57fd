@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { allowRateLimit, requireUser } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,7 +11,9 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { stats } = await req.json();
+    const auth = await requireUser(req);
+    if (!auth.user) return new Response(JSON.stringify({ error: "Не авторизовано" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!allowRateLimit(`analytics:${auth.user.id}`, 10, 60_000)) return new Response(JSON.stringify({ error: "Слишком много запросов" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });    const { stats } = await req.json();
     if (!stats) {
       return new Response(JSON.stringify({ error: "Нет данных статистики" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
