@@ -96,7 +96,7 @@ const WelcomeStep = ({ isDispatcher }: { isDispatcher: boolean }) => (
             { icon: Briefcase, label: "Заказы", color: "text-foreground" },
             { icon: Zap, label: "Быстро", color: "text-yellow-400" },
             { icon: Shield, label: "Надёжно", color: "text-green-400" },
-            { icon: MessageSquare, label: "Чат", color: "text-purple-400" },
+            { icon: MessageSquare, label: "Чат", color: "text-primary" },
           ]
       ).map((f, i) => (
         <motion.div
