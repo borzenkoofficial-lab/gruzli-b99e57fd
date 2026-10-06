@@ -311,48 +311,37 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       const now = new Date();
       const otherId = conversationId.includes("dispatcher") ? "demo-dispatcher" : conversationId.includes("worker") ? "demo-worker" : "demo-official";
       const otherName = conversationId.includes("dispatcher") ? "Анна Петрова" : conversationId.includes("worker") ? "Алексей Морозов" : "Gruzli Official";
+      const currentUserId = user?.id || "demo";
+
       setOtherUserId(otherId);
       setResolvedTitle(otherName);
-      setSenderNames({ [otherId]: otherName, [user?.id || "demo"]: profileNameForDemo(user?.id) });
-      setMessages([
-        { id: `demo-msg-${conversationId}-1`, conversation_id: conversationId, sender_id: otherId, text: "Привет! Хотел уточнить детали заказа.", message_type: "text", created_at: new Date(now.getTime() - 18 * 60000).toISOString() },
-        { id: `demo-msg-${conversationId}-2`, conversation_id: conversationId, sender_id: user?.id || "demo", text: "Да, конечно. Заказ подтверждён, всё готово.", message_type: "text", created_at: new Date(now.getTime() - 16 * 60000).toISOString() },
-        { id: `demo-msg-${conversationId}-3`, conversation_id: conversationId, sender_id: otherId, text: "Отлично. Тогда остаёмся на связи.", message_type: "text", created_at: new Date(now.getTime() - 14 * 60000).toISOString() },
-      ]);
+      setSenderNames({ [otherId]: otherName, [currentUserId]: profileNameForDemo(currentUserId) });
+
+      const { data: storedMessages } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", conversationId)
+        .order("created_at", { ascending: true });
+
+      if (storedMessages && storedMessages.length > 0) {
+        setMessages(storedMessages as Message[]);
+      } else {
+        const seedMessages: Message[] = [
+          { id: `demo-msg-${conversationId}-1`, conversation_id: conversationId, sender_id: otherId, text: "Привет! Хотел уточнить детали заказа.", message_type: "text", created_at: new Date(now.getTime() - 18 * 60000).toISOString() },
+          { id: `demo-msg-${conversationId}-2`, conversation_id: conversationId, sender_id: currentUserId, text: "Да, конечно. Заказ подтверждён, всё готово.", message_type: "text", created_at: new Date(now.getTime() - 16 * 60000).toISOString() },
+          { id: `demo-msg-${conversationId}-3`, conversation_id: conversationId, sender_id: otherId, text: "Отлично. Тогда остаёмся на связи.", message_type: "text", created_at: new Date(now.getTime() - 14 * 60000).toISOString() },
+        ];
+
+        for (const message of seedMessages) {
+          await supabase.from("messages").insert(message);
+        }
+        setMessages(seedMessages);
+      }
+
       setLoading(false);
       setTimeout(() => scrollToBottom(false), 50);
       return;
     }
-
-    const [convRes, msgsRes] = await Promise.all([
-      supabase.from("conversations").select("job_id").eq("id", conversationId).single(),
-      supabase.from("messages").select("*").eq("conversation_id", conversationId).order("created_at", { ascending: true }),
-    ]);
-
-    if (convRes.data?.job_id) {
-      const { data: jobData } = await supabase.from("jobs").select("*").eq("id", convRes.data.job_id).single();
-      if (jobData) setLinkedJob(jobData);
-    }
-
-    if (msgsRes.data) {
-      setMessages(msgsRes.data as Message[]);
-      const senderIds = [...new Set(msgsRes.data.map((m) => m.sender_id))];
-      const unknownIds = senderIds.filter((id) => !senderNamesRef.current[id]);
-      if (unknownIds.length > 0) {
-        const { data: profilesRaw } = await supabase.from("profiles_public" as any).select("user_id, full_name").in("user_id", unknownIds);
-        const profiles = profilesRaw as any[] | null;
-        if (profiles) {
-          setSenderNames((prev) => {
-            const next = { ...prev };
-            profiles.forEach((p) => (next[p.user_id] = p.full_name));
-            return next;
-          });
-        }
-      }
-    }
-    setLoading(false);
-    setTimeout(() => scrollToBottom(false), 50);
-  }, [conversationId, isDemo, scrollToBottom, user?.id]);
 
   const markAsRead = useCallback(async () => {
     if (!user || !conversationId) return;
