@@ -317,7 +317,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
         {searchResultIds !== null && (
           <div className="mt-2 flex items-center justify-between px-1">
             <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium">
-              <Sparkles size={11} className="text-yellow-600" /> Найдено: <b className="text-foreground">{filtered.length}</b>
+              <Search size={11} className="text-muted-foreground" /> Найдено: <b className="text-foreground">{filtered.length}</b>
             </span>
             <button onClick={clearSearch} className="text-[11px] font-semibold text-foreground">Сбросить</button>
           </div>
