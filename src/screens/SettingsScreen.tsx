@@ -686,32 +686,21 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
       const orgTypeLabels = { ip: "ИП", self: "Самозанятый", ooo: "ООО" };
       const message = `📋 Заявка на верификацию\n\n👤 ФИО: ${vFullName.trim()}\n🎂 Возраст: ${vAge}\n📱 Телефон: ${vPhone.trim()}\n🏢 Тип: ${orgTypeLabels[vOrgType]}${vOrgName.trim() ? `\n🏛 Организация: ${vOrgName.trim()}` : ""}\n\nID: ${profile?.display_id || user?.id?.slice(0, 8).toUpperCase()}\nРоль: ${role === "dispatcher" ? "Диспетчер" : "Грузчик"}`;
 
-      // Find or create conversation with support
-      const { data: myConvs } = await supabase
-        .from("conversation_participants")
-        .select("conversation_id")
-        .eq("user_id", user!.id);
-
-      let conversationId: string | null = null;
-      if (myConvs) {
-        for (const mc of myConvs) {
-          const { data: other } = await supabase
-            .from("conversation_participants")
-            .select("id")
-            .eq("conversation_id", mc.conversation_id)
-            .eq("user_id", supportUserId!)
-            .single();
-          if (other) { conversationId = mc.conversation_id; break; }
-        }
+      if (!supportUserId) {
+        toast.error("Не удалось определить поддержку. Попробуйте позже.");
+        setVSending(false);
+        return;
       }
 
-      if (!conversationId) {
-        conversationId = crypto.randomUUID();
-        await supabase.from("conversations").insert({ id: conversationId, title: "Gruzli Official" });
-        await supabase.from("conversation_participants").insert([
-          { conversation_id: conversationId, user_id: user!.id },
-          { conversation_id: conversationId, user_id: supportUserId! },
-        ]);
+      const { data: conversationId, error: conversationError } = await supabase.rpc("create_direct_conversation", {
+        _other_user_id: supportUserId,
+        _title: "Gruzli Official",
+      });
+
+      if (conversationError || !conversationId) {
+        toast.error("Не удалось открыть чат поддержки");
+        setVSending(false);
+        return;
       }
 
       await supabase.from("messages").insert({
