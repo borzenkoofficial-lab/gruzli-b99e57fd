@@ -1430,7 +1430,7 @@ export type Database = {
         Returns: Json
       }
       dispatcher_create_replacement_job: {
-        Args: { _bonus?: number; _job_id: string; _worker_id: string }
+        Args: { _bonus?: number; _job_id: string; _worker_id: string | null }
         Returns: Database["public"]["Tables"]["jobs"]["Row"]
       }
       dispatcher_cancel_job: {
