@@ -56,7 +56,7 @@ export const AdminFraudReportsTab = () => {
 
     if (userIds.length) {
       const { data: profs } = await supabase
-        .from("profiles")
+        .from("profiles_public" as any)
         .select("user_id, full_name")
         .in("user_id", userIds);
       const map: Record<string, string> = {};
