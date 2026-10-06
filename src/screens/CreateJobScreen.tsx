@@ -473,8 +473,8 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
                 </div>
               )}
               <div className="flex items-center justify-between">
-                <span className="text-[13px] text-muted-foreground">Публикация заявки</span>
-                <span className="text-[13px] font-semibold text-foreground">{JOB_POSTING_FEE} ₽</span>
+                <span className="text-[13px] text-muted-foreground">Запрос диспетчерам</span>
+                <span className="text-[13px] font-semibold text-foreground">Бесплатно</span>
               </div>
               <div className="border-t border-border my-1" />
               <div className="flex items-center justify-between">
@@ -621,7 +621,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
                   {loading ? <Loader2 size={18} className="animate-spin" /> : (
                     <>
                       <Sparkles size={15} />
-                      Опубликовать за {JOB_POSTING_FEE} ₽
+                      Отправить запрос диспетчерам
                     </>
                   )}
                 </motion.button>
