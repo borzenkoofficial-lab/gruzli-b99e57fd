@@ -73,13 +73,13 @@ const WelcomeStep = ({ isDispatcher }: { isDispatcher: boolean }) => (
     >
       {(isDispatcher
         ? [
-            { icon: ClipboardList, label: "Заявки", color: "text-blue-400" },
+            { icon: ClipboardList, label: "Заявки", color: "text-foreground" },
             { icon: Users, label: "Грузчики", color: "text-yellow-400" },
             { icon: BarChart3, label: "Аналитика", color: "text-green-400" },
-            { icon: MessageSquare, label: "Чат", color: "text-purple-400" },
+            { icon: MessageSquare, label: "Чат", color: "text-primary" },
           ]
         : [
-            { icon: Briefcase, label: "Заказы", color: "text-blue-400" },
+            { icon: Briefcase, label: "Заказы", color: "text-foreground" },
             { icon: Zap, label: "Быстро", color: "text-yellow-400" },
             { icon: Shield, label: "Надёжно", color: "text-green-400" },
             { icon: MessageSquare, label: "Чат", color: "text-purple-400" },
@@ -388,7 +388,7 @@ const CelebrationStep = ({ onStart, isDispatcher }: { onStart: () => void; isDis
             width: 8 + Math.random() * 8,
             height: 8 + Math.random() * 8,
             borderRadius: Math.random() > 0.5 ? "50%" : "2px",
-            backgroundColor: ["#3B82F6", "#F59E0B", "#10B981", "#EF4444", "#8B5CF6", "#EC4899"][i % 6],
+            backgroundColor: i % 3 === 0 ? "#191a1d" : i % 3 === 1 ? "#f2c400" : "#d9dadd",
           }}
         />
       ))}
