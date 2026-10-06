@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Users, MapPin, AlertTriangle, X } from "lucide-react";
+import { Plus, MapPin, AlertTriangle, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface FABProps {
