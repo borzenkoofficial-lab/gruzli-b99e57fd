@@ -70,7 +70,27 @@ function uid(prefix = "demo") {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+const DEMO_USER_BY_ROLE: Record<string, { id: string; name: string }> = {
+  worker: { id: "demo-worker", name: "Алексей Морозов" },
+  dispatcher: { id: "demo-dispatcher", name: "Анна Петрова" },
+  client: { id: "demo-client", name: "Сергей Волков" },
+};
+
 function currentSession(): DemoSession | null {
+  if (localStorage.getItem("gruzli_demo_worker") === "1") {
+    const savedRole = localStorage.getItem("gruzli_demo_role");
+    const role = savedRole === "dispatcher" || savedRole === "client" ? savedRole : "worker";
+    const demo = DEMO_USER_BY_ROLE[role];
+    return {
+      user: {
+        id: demo.id,
+        email: `demo-${role}@gruzli.local`,
+        user_metadata: { role, full_name: demo.name },
+      },
+      access_token: "demo-token",
+    };
+  }
+
   try {
     return JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
   } catch {
