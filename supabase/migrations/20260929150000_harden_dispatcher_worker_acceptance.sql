@@ -1,4 +1,14 @@
 -- Harden the dispatcher -> worker staffing boundary.
+
+ALTER TABLE public.job_responses
+  ADD COLUMN IF NOT EXISTS agreed_hourly_rate integer;
+
+UPDATE public.job_responses jr
+SET agreed_hourly_rate = j.hourly_rate
+FROM public.jobs j
+WHERE jr.job_id = j.id
+  AND jr.agreed_hourly_rate IS NULL;
+
 -- A dispatcher may accept only pending responses belonging to their own assigned job.
 -- Repeated acceptance is rejected instead of corrupting the accepted counter.
 
