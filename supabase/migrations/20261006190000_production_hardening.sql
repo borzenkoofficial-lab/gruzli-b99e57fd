@@ -506,3 +506,34 @@ DROP POLICY IF EXISTS "Authenticated can add participants" ON public.conversatio
 REVOKE INSERT, UPDATE, DELETE ON public.conversations FROM authenticated;
 REVOKE INSERT, UPDATE, DELETE ON public.conversation_participants FROM authenticated;
 REVOKE UPDATE, DELETE ON public.messages FROM authenticated;
+
+
+-- Kartoteka photos are stored under <user_id>/..., so upload/update/delete
+-- must stay inside the caller's own folder.
+DROP POLICY IF EXISTS "Authenticated users can upload kartoteka photos" ON storage.objects;
+CREATE POLICY "Users can upload own kartoteka photos"
+  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'kartoteka-photos'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+DROP POLICY IF EXISTS "Users can update own kartoteka photos" ON storage.objects;
+CREATE POLICY "Users can update own kartoteka photos"
+  ON storage.objects FOR UPDATE TO authenticated
+  USING (
+    bucket_id = 'kartoteka-photos'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  )
+  WITH CHECK (
+    bucket_id = 'kartoteka-photos'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+DROP POLICY IF EXISTS "Users can delete own kartoteka photos" ON storage.objects;
+CREATE POLICY "Users can delete own kartoteka photos"
+  ON storage.objects FOR DELETE TO authenticated
+  USING (
+    bucket_id = 'kartoteka-photos'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
