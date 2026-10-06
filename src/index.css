@@ -72,7 +72,6 @@
     overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
     -webkit-tap-highlight-color: transparent;
-    overscroll-behavior: none;
     touch-action: manipulation;
     -webkit-touch-callout: none;
 
