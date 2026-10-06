@@ -759,7 +759,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                       </div>
 
                       {job.description && (
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{job.description}</p>
+                        <p className="text-sm leading-relaxed text-muted-foreground mb-3 line-clamp-3">{job.description}</p>
                       )}
 
                       <div className="flex items-center gap-3 text-[11px] text-muted-foreground mb-3 flex-wrap">
