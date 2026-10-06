@@ -1,5 +1,5 @@
 import type { Database } from "./types";
-import { DEMO_DISPATCHER_NAMES, DEMO_FEED_JOBS, DEMO_USERS, DEMO_WORKER_PROFILE } from "@/data/demoData";
+import { DEMO_DISPATCHER_NAMES, DEMO_FEED_JOBS, DEMO_JOB_RESPONSES, DEMO_USERS, DEMO_WORKER_PROFILE } from "@/data/demoData";
 
 type DemoUser = {
   id: string;
@@ -54,7 +54,7 @@ const seed: Record<string, Row[]> = {
   dispatcher_offers: [
     { id: "demo-offer-1", job_id: "demo-job-1", dispatcher_id: DEMO_USERS.dispatcher.id, proposed_hourly_rate: 900, proposed_workers: 2, message: "Готов закрыть заказ командой из двух грузчиков.", status: "pending", created_at: new Date().toISOString() },
   ],
-  job_responses: [],
+  job_responses: DEMO_JOB_RESPONSES.map((response) => ({ ...response })),
   conversations: [],
   conversation_participants: [],
   messages: [],
