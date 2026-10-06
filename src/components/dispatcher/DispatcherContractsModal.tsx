@@ -61,11 +61,19 @@ const DispatcherContractsModal = ({ open, onClose }: DispatcherContractsModalPro
       ]);
 
       const workerIds = Array.from(new Set((responses || []).map((r: any) => r.worker_id)));
-      const { data: profiles } = workerIds.length
-        ? await supabase.from("profiles").select("user_id, full_name, phone").in("user_id", workerIds)
-        : { data: [] as any[] };
-
-      const profMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+      const profileRows: any[] = [];
+      for (const jobId of jobIds) {
+        const idsForJob = Array.from(new Set(
+          (responses || []).filter((r: any) => r.job_id === jobId).map((r: any) => r.worker_id),
+        ));
+        if (!idsForJob.length) continue;
+        const { data } = await supabase.rpc("get_job_party_profiles", {
+          _job_id: jobId,
+          _target_user_ids: idsForJob,
+        });
+        profileRows.push(...(data || []));
+      }
+      const profMap = new Map(profileRows.map((p: any) => [p.user_id, p]));
       const sigMap = new Map<string, any>();
       (signatures || []).forEach((s: any) => sigMap.set(`${s.contract_id}:${s.worker_id}`, s));
 
