@@ -74,9 +74,12 @@ const NotificationsScreen = ({ onBack }: Props) => {
   const [items, setItems] = useState<AppNotification[]>(getStoredNotifications);
 
   useEffect(() => {
-    markAllRead();
     const handler = () => setItems(getStoredNotifications());
     window.addEventListener("notifications-updated", handler);
+
+    markAllRead();
+    setItems(getStoredNotifications());
+
     return () => window.removeEventListener("notifications-updated", handler);
   }, []);
 
