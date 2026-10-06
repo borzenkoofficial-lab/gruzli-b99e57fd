@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { allowRateLimit, requireUser } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,8 +11,11 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    const auth = await requireUser(req);
+    if (!auth.user) return new Response(JSON.stringify({ error: "Не авторизовано" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!allowRateLimit(`search:${auth.user.id}`, 30, 60_000)) return new Response(JSON.stringify({ error: "Слишком много запросов" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const { query, jobs } = await req.json();
-    if (!query || !jobs || !Array.isArray(jobs)) {
+    if (!query || !jobs || !Array.isArray(jobs) || typeof query !== "string" || query.length > 500 || jobs.length > 200) {
       return new Response(JSON.stringify({ error: "Нужен запрос и список заявок" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
