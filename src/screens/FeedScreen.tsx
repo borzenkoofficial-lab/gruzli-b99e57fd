@@ -77,7 +77,6 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
       setWorkersFound({});
     }
     if (feedJobs.length > 0) {
-      setJobs(feedJobs);
       const dispatcherIds = [...new Set(feedJobs.map((j) => j.dispatcher_id).filter((id): id is string => Boolean(id)))];
       if (dispatcherIds.length > 0) {
         const { data: profiles } = await supabase
@@ -503,10 +502,7 @@ const SwipeableJobCard = ({
   const workersNeeded = Math.max(1, Number(job.workers_needed) || 1);
   const workersReady = Math.min(workersNeeded, workersFound[job.id] || 0);
   const staffingProgress = Math.round((workersReady / workersNeeded) * 100);
-  // Three visual languages rotate through the feed:
-  // passport = editorial document, live = staffing dashboard, official = branded order.
-  const cardVariant = isOfficial ? "official" : (job.urgent || index % 3 === 1 ? "live" : "passport");
-  const isLiveOrder = cardVariant === "live";
+  const isLiveOrder = !isOfficial && (job.urgent || workersReady > 0);
 
   // Top accent bar color
   const accentClass = isOfficial
