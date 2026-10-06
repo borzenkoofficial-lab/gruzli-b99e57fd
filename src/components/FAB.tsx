@@ -13,9 +13,6 @@ const FAB = ({ onOpenSupport }: FABProps) => {
   const handleAction = (id: string) => {
     setOpen(false);
     switch (id) {
-      case "team":
-        toast("🔜 Скоро", { description: "Функция поиска бригады в разработке" });
-        break;
       case "nearby":
         window.dispatchEvent(new CustomEvent("navigate-to-feed"));
         break;
@@ -27,7 +24,6 @@ const FAB = ({ onOpenSupport }: FABProps) => {
   };
 
   const actions = [
-    { id: "team", icon: Users, label: "Нужна бригада", color: "bg-foreground" },
     { id: "nearby", icon: MapPin, label: "Заказы рядом", color: "bg-foreground" },
     { id: "sos", icon: AlertTriangle, label: "SOS", color: "bg-destructive" },
   ];
