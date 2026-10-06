@@ -98,10 +98,10 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
     const textToCheck = `${title.trim()} ${description.trim()}`.trim();
     if (textToCheck.length > 5) {
       try {
-        const { data: modResult } = await supabase.functions.invoke("moderate-content", {
+        const { data: modResult, error: moderationError } = await supabase.functions.invoke("moderate-content", {
           body: { text: textToCheck, type: "job" },
         });
-        if (modResult && !modResult.safe) {
+        if (moderationError) {\n          toast.error("Не удалось проверить заявку. Попробуйте ещё раз.");\n          setLoading(false);\n          return;\n        }\n        if (!modResult?.safe) {
           toast.error(modResult.reason || "Содержимое не прошло модерацию");
           setLoading(false);
           return;
