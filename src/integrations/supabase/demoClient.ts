@@ -368,7 +368,7 @@ async function rpc(name: string, args: Record<string, any> = {}) {
     if (balance < price) return { data: null, error: { code: "P0001", message: "Недостаточно средств" } };
     const days = args._period_id === "month" ? 30 : args._period_id === "quarter" ? 90 : 365;
     const until = new Date(Date.now() + days * 86400000).toISOString();
-    if (dbProfile) Object.assign(dbProfile, { balance: balance - price, is_premium: true, premium_until: until, company_plan: args._tier_id });
+    if (dbProfile) Object.assign(dbProfile, { balance: balance - price, is_premium: true, premium_until: until, premium_plan: args._tier_id });
     saveDb(db);
     return { data: { tier_id: args._tier_id, period_id: args._period_id, price, premium_until: until, balance: balance - price }, error: null };
   }
