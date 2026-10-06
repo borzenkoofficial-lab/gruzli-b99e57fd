@@ -129,7 +129,11 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
     if (!resp) return;
 
     // Worker: notify when dispatcher accepted their response
-    if (resp.worker_id === userIdRef.current && resp.status === "accepted") {
+    if (
+      resp.worker_id === userIdRef.current &&
+      resp.status === "accepted" &&
+      old?.status !== "accepted"
+    ) {
       playSuccess();
       vibrate();
 
