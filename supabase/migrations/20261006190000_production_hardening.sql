@@ -537,3 +537,138 @@ CREATE POLICY "Users can delete own kartoteka photos"
     bucket_id = 'kartoteka-photos'
     AND (storage.foldername(name))[1] = auth.uid()::text
   );
+
+
+CREATE OR REPLACE FUNCTION public.purchase_premium(
+  _tier_id text,
+  _period_id text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path=public
+AS $$
+DECLARE
+  v_user uuid := auth.uid();
+  v_role text;
+  v_price numeric;
+  v_days integer;
+  v_new_balance integer;
+  v_until timestamptz;
+BEGIN
+  IF v_user IS NULL THEN RAISE EXCEPTION 'not_authenticated' USING ERRCODE='42501'; END IF;
+
+  SELECT role::text INTO v_role FROM public.user_roles WHERE user_id=v_user LIMIT 1;
+  IF v_role IS NULL THEN RAISE EXCEPTION 'role_not_found' USING ERRCODE='P0002'; END IF;
+
+  IF _tier_id = 'worker_premium' AND v_role = 'worker' THEN
+    v_price := 299;
+  ELSIF _tier_id = 'worker_vip' AND v_role = 'worker' THEN
+    v_price := 599;
+  ELSIF _tier_id = 'disp_pro' AND v_role = 'dispatcher' THEN
+    v_price := 299;
+  ELSIF _tier_id = 'disp_business' AND v_role = 'dispatcher' THEN
+    v_price := 999;
+  ELSE
+    RAISE EXCEPTION 'invalid_premium_tier' USING ERRCODE='22023';
+  END IF;
+
+  IF _period_id = 'month' THEN
+    v_price := round(v_price * 1);
+    v_days := 30;
+  ELSIF _period_id = 'quarter' THEN
+    v_price := round(v_price * 2.5);
+    v_days := 90;
+  ELSIF _period_id = 'year' THEN
+    v_price := round(v_price * 8);
+    v_days := 365;
+  ELSE
+    RAISE EXCEPTION 'invalid_premium_period' USING ERRCODE='22023';
+  END IF;
+
+  UPDATE public.profiles
+  SET balance = COALESCE(balance,0) - v_price::integer
+  WHERE user_id=v_user
+    AND COALESCE(balance,0) >= v_price::integer
+  RETURNING balance INTO v_new_balance;
+
+  IF NOT FOUND THEN RAISE EXCEPTION 'insufficient_balance' USING ERRCODE='P0001'; END IF;
+
+  v_until := now() + make_interval(days => v_days);
+
+  UPDATE public.profiles
+  SET is_premium=true,
+      premium_until=v_until,
+      company_plan=_tier_id,
+      updated_at=now()
+  WHERE user_id=v_user;
+
+  RETURN jsonb_build_object(
+    'tier_id',_tier_id,
+    'period_id',_period_id,
+    'price',v_price,
+    'premium_until',v_until,
+    'balance',v_new_balance
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.purchase_company(
+  _plan_id text,
+  _company_name text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path=public
+AS $$
+DECLARE
+  v_user uuid := auth.uid();
+  v_price integer;
+  v_new_balance integer;
+  v_until timestamptz;
+BEGIN
+  IF v_user IS NULL THEN RAISE EXCEPTION 'not_authenticated' USING ERRCODE='42501'; END IF;
+  IF length(trim(coalesce(_company_name,''))) < 2 THEN RAISE EXCEPTION 'company_name_required' USING ERRCODE='22023'; END IF;
+
+  v_price := CASE _plan_id
+    WHEN 'starter' THEN 1990
+    WHEN 'business' THEN 4990
+    WHEN 'enterprise' THEN 12990
+    ELSE NULL
+  END;
+
+  IF v_price IS NULL THEN RAISE EXCEPTION 'invalid_company_plan' USING ERRCODE='22023'; END IF;
+
+  UPDATE public.profiles
+  SET balance = COALESCE(balance,0) - v_price
+  WHERE user_id=v_user
+    AND COALESCE(balance,0) >= v_price
+  RETURNING balance INTO v_new_balance;
+
+  IF NOT FOUND THEN RAISE EXCEPTION 'insufficient_balance' USING ERRCODE='P0001'; END IF;
+
+  v_until := now() + interval '30 days';
+
+  UPDATE public.profiles
+  SET is_company=true,
+      company_until=v_until,
+      company_name=trim(_company_name),
+      company_plan=_plan_id,
+      updated_at=now()
+  WHERE user_id=v_user;
+
+  RETURN jsonb_build_object(
+    'plan_id',_plan_id,
+    'price',v_price,
+    'company_until',v_until,
+    'balance',v_new_balance
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.purchase_premium(text,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.purchase_premium(text,text) TO authenticated;
+
+REVOKE ALL ON FUNCTION public.purchase_company(text,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.purchase_company(text,text) TO authenticated;
