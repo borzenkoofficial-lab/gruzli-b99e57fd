@@ -6272,3 +6272,140 @@ button.bg-foreground:active{
     padding-bottom:24px!important;
   }
 }
+
+
+/* ==========================================================================
+   GRUZLI — UI POLISH PASS 4 / PRODUCT CLEANUP
+   Desktop workspace hierarchy, navigation clarity and restrained typography.
+   Visual-only: no business logic or data behavior.
+   ========================================================================== */
+
+/* Desktop feed belongs to the workspace, not a narrow mobile column. */
+@media (min-width: 768px) {
+  .desktop-main-inner .gruzli-mobile-feed {
+    width:100%;
+    max-width:980px!important;
+    margin:0 auto!important;
+    padding-bottom:24px;
+    background:transparent!important;
+  }
+
+  .desktop-main-inner .gruzli-feed-hero {
+    padding-left:0!important;
+    padding-right:0!important;
+    margin-bottom:18px;
+  }
+
+  .desktop-main-inner .gruzli-feed-title {
+    font-size:42px!important;
+    line-height:.98!important;
+    letter-spacing:-.055em!important;
+  }
+
+  .desktop-main-inner .gruzli-feed-earnings {
+    max-width:720px;
+  }
+
+  .desktop-main-inner .gruzli-job-card {
+    border-radius:18px!important;
+    background:rgba(255,255,255,.82)!important;
+    box-shadow:0 10px 30px rgba(20,22,25,.045)!important;
+  }
+
+  .desktop-main-inner .gruzli-job-card:hover {
+    transform:translateY(-1px);
+    box-shadow:0 16px 40px rgba(20,22,25,.07)!important;
+  }
+
+  .desktop-main-inner .bg-card {
+    border-radius:16px!important;
+  }
+}
+
+/* Keep compact controls intact: labels should not split in the middle of words. */
+@media (max-width: 767px) {
+  .bottom-nav-pill button,
+  .bottom-nav-pill span,
+  .gruzli-order-kicker,
+  .gruzli-order-open,
+  .gruzli-feed-eyebrow,
+  .gruzli-feed-live {
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+  }
+
+  .gruzli-job-card {
+    border-radius:20px!important;
+  }
+
+  .gruzli-job-card + .gruzli-job-card {
+    margin-top:2px;
+  }
+}
+
+/* Clear active state: the selected destination is the only dark control. */
+.bottom-nav-active,
+.bottom-nav-active:hover,
+.bottom-nav-active:focus-visible {
+  background:#17181b!important;
+  color:#fff!important;
+  box-shadow:
+    0 8px 22px rgba(20,24,32,.14),
+    inset 0 1px 0 rgba(255,255,255,.10)!important;
+}
+
+.bottom-nav-active .text-foreground,
+.bottom-nav-active svg {
+  color:#fff!important;
+}
+
+.bottom-nav-active:after {
+  background:var(--gd-yellow,#f2bd16)!important;
+}
+
+/* Navigation stays attached to the visual viewport rather than the feed height. */
+@media (max-width: 767px) {
+  .bottom-nav-wrapper {
+    position:fixed!important;
+    left:50%!important;
+    right:auto!important;
+    bottom:0!important;
+    width:min(100vw,430px)!important;
+    max-width:430px!important;
+    transform:translate3d(-50%,0,0)!important;
+    z-index:1000!important;
+  }
+
+  .bottom-nav-pill {
+    width:100%;
+    pointer-events:auto;
+  }
+}
+
+/* Avoid poster-like giant headings inside ordinary mobile product screens. */
+@media (min-width:768px) and (max-width:1199px) {
+  .desktop-main-inner h1 {
+    font-size:40px!important;
+  }
+}
+
+/* Secondary metadata is quiet; the task itself remains visually dominant. */
+.gruzli-order-kicker,
+.gruzli-order-open,
+.gruzli-order-scene-label {
+  letter-spacing:.12em;
+}
+
+/* Keep expensive glass effects off the densest desktop feed. */
+@media (min-width:768px) {
+  .desktop-main-inner .gruzli-job-card {
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .desktop-main-inner .gruzli-job-card:hover {
+    transform:none!important;
+  }
+}
