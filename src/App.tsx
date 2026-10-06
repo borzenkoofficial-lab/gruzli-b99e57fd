@@ -24,7 +24,7 @@ const AdminPage = lazy(() => import("./pages/AdminPage"));
 const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
-const queryClient = new QueryClient({
+const DEMO_ENABLED = import.meta.env.VITE_GRUZLI_DEMO_MODE === "true";\n\nconst queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30_000,
@@ -40,7 +40,7 @@ const AppRoutes = () => {
   const [splashDone, setSplashDone] = useState(false);
   // Temporary demo mode: lets us inspect the worker cabinet without Supabase authentication.
   // Remove this flag/flow before production release.
-  const [demoWorkerMode, setDemoWorkerMode] = useState(() => localStorage.getItem("gruzli_demo_worker") === "1");
+  const [demoWorkerMode, setDemoWorkerMode] = useState(() => DEMO_ENABLED && localStorage.getItem("gruzli_demo_worker") === "1");
   const [alertQueue, setAlertQueue] = useState<Tables<"jobs">[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return !localStorage.getItem("onboarding_completed");
@@ -71,11 +71,11 @@ const AppRoutes = () => {
     }
   }, [user]);
 
-  if (!demoWorkerMode && (loading || (!splashDone && !isConsentRoute))) {
+  if (!(DEMO_ENABLED && demoWorkerMode) && (loading || (!splashDone && !isConsentRoute))) {
     return <SplashScreen onFinished={handleSplashFinished} />;
   }
 
-  if (!user && !isConsentRoute && !demoWorkerMode) {
+  if (!user && !isConsentRoute && !(DEMO_ENABLED && demoWorkerMode)) {
     return <AuthPage onDemoLogin={() => { localStorage.setItem("gruzli_demo_worker", "1"); setDemoWorkerMode(true); window.dispatchEvent(new Event("gruzli-demo-change")); }} />;
   }
 
