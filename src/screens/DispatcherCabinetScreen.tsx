@@ -197,10 +197,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   };
 
   const handleRepublishJob = async (jobId: string) => {
-    const { data, error } = await supabase.rpc("dispatcher_update_job", {
-      _job_id: jobId,
-      _status: "active",
-    });
+    const { data, error } = await supabase.rpc("dispatcher_republish_job", { _job_id: jobId });
     if (error || !data) {
       toast.error("Не удалось опубликовать заявку");
       return;
