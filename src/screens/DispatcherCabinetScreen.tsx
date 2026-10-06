@@ -213,7 +213,6 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     const { error } = await supabase.rpc("dispatcher_update_job", {
       _job_id: job.id,
       _hourly_rate: newRate,
-      _status: "active",
     });
     setAdjustingId(null);
     if (error) {
