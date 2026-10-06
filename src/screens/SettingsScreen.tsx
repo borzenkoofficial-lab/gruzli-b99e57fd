@@ -195,9 +195,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   };
 
   const clearCache = () => {
-    const theme = localStorage.getItem("theme");
     localStorage.clear();
-    if (theme) localStorage.setItem("theme", theme);
     toast.success("Кеш очищен");
     setTimeout(() => window.location.reload(), 500);
   };
