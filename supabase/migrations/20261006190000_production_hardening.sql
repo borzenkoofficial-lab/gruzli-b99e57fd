@@ -321,6 +321,10 @@ BEGIN
     RAISE EXCEPTION 'workers_below_assigned' USING ERRCODE='P0001';
   END IF;
 
+  IF _status IS NOT NULL AND _status IS DISTINCT FROM v_job.status THEN
+    RAISE EXCEPTION 'lifecycle_managed_status' USING ERRCODE='P0001';
+  END IF;
+
   UPDATE public.jobs
   SET title=COALESCE(NULLIF(trim(_title),''),title),
       description=COALESCE(_description,description),
