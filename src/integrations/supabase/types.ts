@@ -1463,6 +1463,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_unread_message_count: {
+        Args: never
+        Returns: number
+      }
       get_weekly_completed_jobs: { Args: { _user_id: string }; Returns: number }
       worker_update_response_status: {
         Args: { _next_status: string; _response_id: string }
