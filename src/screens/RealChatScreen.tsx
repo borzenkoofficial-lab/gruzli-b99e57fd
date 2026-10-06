@@ -306,7 +306,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
 
   useEffect(() => { adjustTextarea(); }, [text, adjustTextarea]);
 
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     if (isDemo) {
       const now = new Date();
       const otherId = conversationId.includes("dispatcher") ? "demo-dispatcher" : conversationId.includes("worker") ? "demo-worker" : "demo-official";
@@ -352,7 +352,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     }
     setLoading(false);
     setTimeout(() => scrollToBottom(false), 50);
-  };
+  }, [conversationId, isDemo, scrollToBottom, user?.id]);
 
   const markAsRead = useCallback(async () => {
     if (!user || !conversationId) return;
@@ -385,7 +385,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [conversationId, markAsRead, user?.id, isNearBottom, scrollToBottom, appendMessage]);
+  }, [conversationId, fetchMessages, markAsRead, user?.id, isNearBottom, scrollToBottom, appendMessage]);
 
   useEffect(() => { if (isNearBottom()) scrollToBottom(); }, [messages, scrollToBottom, isNearBottom]);
 
