@@ -378,12 +378,12 @@ const OrdersScreen = () => {
             </div>
           ) : jobs.map((job) => (
             <motion.div key={job.jobId} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-border bg-card p-5 native-surface">
-              <div className="flex items-start justify-between gap-3">
-                <div>
+              <div className="flex items-start justify-between gap-3 min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-[10px] font-bold uppercase tracking-[.14em] text-muted-foreground">ЗАКАЗ / {job.jobId.slice(0, 6).toUpperCase()}</p>
-                  <h3 className="text-base font-extrabold text-foreground mt-1">{job.title}</h3>
+                  <h3 className="text-base font-extrabold text-foreground mt-1 break-words">{job.title}</h3>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider rounded-full border border-border px-2.5 py-1">
+                <span className="max-w-[44%] shrink-0 text-right text-[10px] font-bold uppercase tracking-wider rounded-full border border-border px-2.5 py-1">
                   {job.workerStatus === "open" ? "Ищем диспетчера" : job.workerStatus === "active" ? "Диспетчер выбран" : job.workerStatus === "finishing" ? "Завершается" : job.workerStatus === "closed" ? "Закрыт" : job.workerStatus === "completed" ? "Завершён" : "В работе"}
                 </span>
               </div>
