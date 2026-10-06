@@ -74,17 +74,51 @@ export const DEMO_FEED_JOBS: Tables<"jobs">[] = [
   },
 ];
 
-export const DEMO_WORKER_PROFILE = {
-  full_name: DEMO_USERS.worker.name,
-  role: "worker" as const,
-  rating: 4.96,
-  completed_orders: 128,
-  total_earned: 186400,
-  balance: 12450,
-  is_premium: true,
-  premium_until: "2026-12-31T23:59:59Z",
-  skills: ["Переезды", "Разгрузка", "Демонтаж"],
+export const DEMO_PROFILES: Record<DemoRole, {
+  full_name: string;
+  role: DemoRole;
+  rating: number;
+  completed_orders: number;
+  total_earned?: number;
+  balance?: number;
+  is_premium?: boolean;
+  premium_until?: string;
+  skills: string[];
+}> = {
+  worker: {
+    full_name: DEMO_USERS.worker.name,
+    role: "worker",
+    rating: 4.96,
+    completed_orders: 128,
+    total_earned: 186400,
+    balance: 12450,
+    is_premium: true,
+    premium_until: "2026-12-31T23:59:59Z",
+    skills: ["Переезды", "Разгрузка", "Демонтаж"],
+  },
+  dispatcher: {
+    full_name: DEMO_USERS.dispatcher.name,
+    role: "dispatcher",
+    rating: 4.9,
+    completed_orders: 342,
+    total_earned: 0,
+    balance: 0,
+    is_premium: true,
+    skills: ["Переезды", "Коммерческие объекты", "Бригады"],
+  },
+  client: {
+    full_name: DEMO_USERS.client.name,
+    role: "client",
+    rating: 0,
+    completed_orders: 18,
+    total_earned: 0,
+    balance: 0,
+    is_premium: true,
+    skills: ["Переезд", "Квартирные работы"],
+  },
 };
+
+export const DEMO_WORKER_PROFILE = DEMO_PROFILES.worker;
 
 export const DEMO_RESPONSE_COUNTS: Record<string, number> = {
   "demo-job-1": 1,
