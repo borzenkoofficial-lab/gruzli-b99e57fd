@@ -364,6 +364,9 @@ async function rpc(name: string, args: Record<string, any> = {}) {
   }
   if (name === "accept_job_response") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "dispatcher") {
+      return { data: null, error: { code: "42501", message: "Нужна роль диспетчера" } };
+    }
     const response = db.job_responses.find((r) => r.id === args._response_id && r.status === "pending");
     if (!response) return { data: null, error: { code: "P0002", message: "Отклик уже обработан" } };
     const job = db.jobs.find((j) => j.id === response.job_id);
