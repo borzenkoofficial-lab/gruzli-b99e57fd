@@ -25,7 +25,7 @@ describe("demo Supabase session", () => {
     localStorage.setItem("gruzli_demo_role", "worker");
 
     const { data, error } = await demoSupabase.rpc("worker_submit_response", {
-      _job_id: "demo-job-1",
+      _job_id: "demo-job-4",
       _message: "Готов выйти на заказ.",
     });
 
