@@ -1,4 +1,5 @@
 import type { Database } from "./types";
+import { DEMO_DISPATCHER_NAMES, DEMO_FEED_JOBS, DEMO_USERS, DEMO_WORKER_PROFILE } from "@/data/demoData";
 
 type DemoUser = {
   id: string;
@@ -11,34 +12,53 @@ type DemoSession = { user: DemoUser; access_token: string };
 
 type Row = Record<string, any>;
 
-const DB_KEY = "gruzli_demo_db_v1";
+const DB_KEY = "gruzli_demo_db_v2";
 const SESSION_KEY = "gruzli_demo_session_v1";
 
 const seed: Record<string, Row[]> = {
-  jobs: [
-    { id: "demo-job-1", title: "Разгрузка стройматериалов", description: "Разгрузить материалы на объекте.", address: "Москва, ул. Лесная, 12", metro: "Белорусская", hourly_rate: 850, duration_hours: 5, workers_needed: 3, status: "active", created_at: new Date().toISOString(), start_time: new Date(Date.now()+86400000).toISOString(), dispatcher_id: "demo-dispatcher", client_id: "demo-client" },
-    { id: "demo-job-2", title: "Переезд офиса", description: "Перенос мебели и коробок.", address: "Москва, Пресненская наб., 8", metro: "Деловой центр", hourly_rate: 900, duration_hours: 6, workers_needed: 4, status: "active", created_at: new Date(Date.now()-3600000).toISOString(), start_time: new Date(Date.now()+172800000).toISOString(), dispatcher_id: "demo-dispatcher", client_id: "demo-client" },
-  ],
+  jobs: DEMO_FEED_JOBS.map((job) => ({ ...job })),
   profiles: [
-    { user_id: "demo-worker", full_name: "Демо-грузчик", phone: "+7 900 000-00-01", role: "worker", rating: 4.96, completed_orders: 128, total_earned: 186400, balance: 12450, is_premium: true, skills: ["Переезды","Разгрузка","Демонтаж"], availability: [true,true,true,true,true,true,true] },
-    { user_id: "demo-dispatcher", full_name: "Алексей Смирнов", phone: "+7 900 000-00-02", role: "dispatcher", rating: 4.9, completed_orders: 342 },
-    { user_id: "demo-client", full_name: "ООО «Грузли»", phone: "+7 900 000-00-03", role: "client" },
+    {
+      user_id: DEMO_USERS.worker.id,
+      full_name: DEMO_USERS.worker.name,
+      phone: "+7 900 000-00-01",
+      role: "worker",
+      rating: DEMO_WORKER_PROFILE.rating,
+      completed_orders: DEMO_WORKER_PROFILE.completed_orders,
+      total_earned: DEMO_WORKER_PROFILE.total_earned,
+      balance: DEMO_WORKER_PROFILE.balance,
+      is_premium: DEMO_WORKER_PROFILE.is_premium,
+      premium_until: DEMO_WORKER_PROFILE.premium_until,
+      skills: DEMO_WORKER_PROFILE.skills,
+    },
+    { user_id: DEMO_USERS.dispatcher.id, full_name: DEMO_USERS.dispatcher.name, phone: "+7 900 000-00-02", role: "dispatcher", rating: 4.9, completed_orders: 342 },
+    { user_id: DEMO_USERS.client.id, full_name: DEMO_USERS.client.name, phone: "+7 900 000-00-03", role: "client" },
+    { user_id: "demo-dispatcher-1", full_name: "Алексей", phone: null, role: "dispatcher", rating: 4.9, completed_orders: 150 },
+    { user_id: "demo-dispatcher-2", full_name: "Мария", phone: null, role: "dispatcher", rating: 4.9, completed_orders: 150 },
+    { user_id: "demo-dispatcher-3", full_name: "Gruzli", phone: null, role: "dispatcher", rating: 4.9, completed_orders: 150 },
+    { user_id: "demo-dispatcher-4", full_name: "Илья", phone: null, role: "dispatcher", rating: 4.9, completed_orders: 150 },
+    { user_id: "demo-dispatcher-5", full_name: "Анна", phone: null, role: "dispatcher", rating: 4.9, completed_orders: 150 },
   ],
   profiles_public: [
-    { user_id: "demo-worker", full_name: "Демо-грузчик", avatar_url: null, rating: 4.96, completed_orders: 128, verified: true },
-    { user_id: "demo-dispatcher", full_name: "Алексей Смирнов", avatar_url: null, rating: 4.9, completed_orders: 342, verified: true },
+    { user_id: DEMO_USERS.worker.id, full_name: DEMO_USERS.worker.name, avatar_url: null, rating: DEMO_WORKER_PROFILE.rating, completed_orders: DEMO_WORKER_PROFILE.completed_orders, verified: true },
+    { user_id: DEMO_USERS.dispatcher.id, full_name: DEMO_USERS.dispatcher.name, avatar_url: null, rating: 4.9, completed_orders: 342, verified: true },
+    { user_id: "demo-dispatcher-1", full_name: "Алексей", avatar_url: null, rating: 4.9, completed_orders: 150, verified: true },
+    { user_id: "demo-dispatcher-2", full_name: "Мария", avatar_url: null, rating: 4.9, completed_orders: 150, verified: true },
+    { user_id: "demo-dispatcher-3", full_name: "Gruzli", avatar_url: null, rating: 4.9, completed_orders: 150, verified: true },
+    { user_id: "demo-dispatcher-4", full_name: "Илья", avatar_url: null, rating: 4.9, completed_orders: 150, verified: true },
+    { user_id: "demo-dispatcher-5", full_name: "Анна", avatar_url: null, rating: 4.9, completed_orders: 150, verified: true },
   ],
   dispatcher_offers: [
-    { id: "demo-offer-1", job_id: "demo-job-1", dispatcher_id: "demo-dispatcher", proposed_hourly_rate: 850, proposed_workers: 3, message: "Готов закрыть заказ командой из трёх грузчиков.", status: "pending", created_at: new Date().toISOString() },
+    { id: "demo-offer-1", job_id: "demo-job-1", dispatcher_id: DEMO_USERS.dispatcher.id, proposed_hourly_rate: 900, proposed_workers: 2, message: "Готов закрыть заказ командой из двух грузчиков.", status: "pending", created_at: new Date().toISOString() },
   ],
   job_responses: [],
   conversations: [],
   conversation_participants: [],
   messages: [],
   user_roles: [
-    { id: "demo-role-1", user_id: "demo-worker", role: "worker" },
-    { id: "demo-role-2", user_id: "demo-dispatcher", role: "dispatcher" },
-    { id: "demo-role-3", user_id: "demo-client", role: "client" },
+    { id: "demo-role-1", user_id: DEMO_USERS.worker.id, role: "worker" },
+    { id: "demo-role-2", user_id: DEMO_USERS.dispatcher.id, role: "dispatcher" },
+    { id: "demo-role-3", user_id: DEMO_USERS.client.id, role: "client" },
   ],
   blocked_users: [],
   channel_posts: [],
