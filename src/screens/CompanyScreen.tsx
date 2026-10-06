@@ -97,7 +97,7 @@ const CompanyScreen = ({ onBack, onOpenSupport }: CompanyScreenProps) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-background flex flex-col" style={{ height: "calc(var(--vh, 1vh) * 100)" }}>
+    <div className="gruzli-company-screen fixed inset-0 bg-background flex flex-col" style={{ height: "calc(var(--vh, 1vh) * 100)" }}>
       {/* Header */}
       <div className="flex items-center gap-3 px-4 safe-top pb-4 flex-shrink-0">
         <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 transition-all">
