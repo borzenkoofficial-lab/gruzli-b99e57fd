@@ -293,6 +293,26 @@ async function rpc(name: string, args: Record<string, any> = {}) {
     db.dispatcher_offers.filter((o) => o.job_id === offer.job_id).forEach((o) => { o.status = o.id === offer.id ? "accepted" : "rejected"; });
     saveDb(db); return { data: job, error: null };
   }
+  if (name === "worker_submit_response") {
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "worker") return { data: null, error: { code: "42501", message: "Нужна роль грузчика" } };
+    const job = db.jobs.find((j) => j.id === args._job_id);
+    if (!job || job.dispatcher_id == null || !["active", "open"].includes(job.status)) return { data: null, error: { code: "P0001", message: "Заказ уже недоступен" } };
+    const existing = db.job_responses.find((r) => r.job_id === job.id && r.worker_id === user.id && ["pending", "accepted"].includes(r.status));
+    if (existing) return { data: null, error: { code: "23505", message: "Вы уже откликнулись на этот заказ" } };
+    const response = {
+      id: uid("response"),
+      job_id: job.id,
+      worker_id: user.id,
+      message: String(args._message || "").trim() || null,
+      status: "pending",
+      worker_status: "ready",
+      agreed_hourly_rate: Number(job.hourly_rate || 0),
+      created_at: new Date().toISOString(),
+    };
+    db.job_responses.push(response); saveDb(db);
+    return { data: response, error: null };
+  }
   if (name === "accept_job_response") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
     const response = db.job_responses.find((r) => r.id === args._response_id && r.status === "pending");
@@ -408,6 +428,50 @@ async function rpc(name: string, args: Record<string, any> = {}) {
     const bonus = Math.max(0, Number(args._bonus) || 0);
     const replacement = { id: uid("job"), client_id: job.client_id, dispatcher_id: user.id, title: "🚨 СРОЧНО: " + job.title, description: ("СРОЧНАЯ ЗАМЕНА. Грузчик не вышел.\n\n" + String(job.description || "")).trim(), hourly_rate: Number(job.hourly_rate || 0) + bonus, duration_hours: job.duration_hours, workers_needed: 1, metro: job.metro, address: job.address, urgent: true, quick_minimum: true, status: "active", replacement_for_job_id: job.id, replacement_for_worker_id: workerId, start_time: new Date().toISOString(), created_at: new Date().toISOString() };
     db.jobs.push(replacement); saveDb(db); return { data: replacement, error: null };
+  }
+  if (name === "dispatcher_cancel_job") {
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    const job = db.jobs.find((j) => j.id === args._job_id && j.dispatcher_id === user.id);
+    if (!job || !["open", "active", "filled"].includes(job.status)) return { data: null, error: { code: "P0001", message: "Заявку нельзя закрыть" } };
+    if (db.job_responses.some((r) => r.job_id === job.id && r.status === "accepted" && r.worker_status !== "completed")) return { data: null, error: { code: "P0001", message: "Нельзя закрыть заказ: грузчики уже назначены" } };
+    job.status = "closed"; saveDb(db); return { data: { job_id: job.id, status: "closed" }, error: null };
+  }
+  if (name === "dispatcher_update_job") {
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    const job = db.jobs.find((j) => j.id === args._job_id && j.dispatcher_id === user.id && ["open", "active", "filled"].includes(j.status));
+    if (!job) return { data: null, error: { code: "42501", message: "Заявка недоступна для редактирования" } };
+    const accepted = db.job_responses.filter((r) => r.job_id === job.id && r.status === "accepted").length;
+    if (args._hourly_rate != null && Number(args._hourly_rate) !== Number(job.hourly_rate) && db.job_responses.some((r) => r.job_id === job.id && ["pending", "accepted"].includes(r.status))) {
+      return { data: null, error: { code: "P0001", message: "hourly_rate_locked" } };
+    }
+    if (args._workers_needed != null && Number(args._workers_needed) < accepted) return { data: null, error: { code: "P0001", message: "workers_below_assigned" } };
+    if (args._status != null && args._status !== job.status) return { data: null, error: { code: "P0001", message: "lifecycle_managed_status" } };
+    if (args._title != null && String(args._title).trim()) job.title = String(args._title).trim();
+    if (args._description != null) job.description = String(args._description);
+    if (args._hourly_rate != null) job.hourly_rate = Number(args._hourly_rate);
+    if (args._duration_hours != null) job.duration_hours = Number(args._duration_hours);
+    if (args._workers_needed != null) job.workers_needed = Number(args._workers_needed);
+    if (args._address != null) job.address = String(args._address).trim();
+    if (args._metro != null) job.metro = String(args._metro).trim() || null;
+    if (args._start_time != null) job.start_time = args._start_time;
+    if (args._urgent != null) job.urgent = !!args._urgent;
+    if (args._quick_minimum != null) job.quick_minimum = !!args._quick_minimum;
+    if (args._requires_contract != null) job.requires_contract = !!args._requires_contract;
+    job.updated_at = new Date().toISOString();
+    saveDb(db); return { data: job, error: null };
+  }
+  if (name === "worker_review_dispatcher") {
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    const role = user.user_metadata?.role || profileFor(user)?.role;
+    if (role !== "worker") return { data: null, error: { code: "42501", message: "Нужна роль грузчика" } };
+    const valid = db.job_responses.some((r) => r.worker_id === user.id && r.status === "accepted" && r.worker_status === "completed" && db.jobs.some((j) => j.id === r.job_id && j.dispatcher_id === args._dispatcher_id));
+    if (!valid) return { data: null, error: { code: "P0001", message: "review_requires_completed_job" } };
+    if (Number(args._rating) < 1 || Number(args._rating) > 5) return { data: null, error: { code: "22023", message: "Недопустимая оценка" } };
+    const existing = db.dispatcher_reviews.find((r) => r.reviewer_id === user.id && r.dispatcher_id === args._dispatcher_id);
+    const review = existing || { id: uid("review"), reviewer_id: user.id, dispatcher_id: args._dispatcher_id, created_at: new Date().toISOString() };
+    review.rating = Number(args._rating); review.text = String(args._text || "").trim();
+    if (!existing) db.dispatcher_reviews.push(review);
+    saveDb(db); return { data: review, error: null };
   }
   if (name === "dispatcher_republish_job") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
