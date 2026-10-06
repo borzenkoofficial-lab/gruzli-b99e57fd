@@ -1,7 +1,3 @@
-/* GRUZLI EDITORIAL UI — standalone Gruzli visual system.
-   UI-only layer: preserves existing screen structure, navigation and business logic. */
-
-
 html,body,#root{background:hsl(var(--background));color:hsl(var(--foreground));}
 body{font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",sans-serif;letter-spacing:-.012em;}
 button,input,textarea,select{font-family:inherit;}
@@ -135,7 +131,6 @@ button,input,textarea,select{font-family:inherit;}
   box-shadow:0 8px 28px rgba(20,24,32,.055)!important;
 }
 
-/* Feed: editorial cards, airy spacing, quiet hierarchy */
 .desktop-main-inner .space-y-3 > div,
 .desktop-main-inner [class*="rounded-2xl"][class*="bg-card"]{
   transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
@@ -148,7 +143,6 @@ button,input,textarea,select{font-family:inherit;}
   background:linear-gradient(145deg,#e8e8ea,#fff,#e5e5e7)!important;
 }
 
-/* Yellow becomes the brand accent, not a dominant surface. */
 .bg-primary,.bg-foreground{
   background:#191a1d!important;
   color:#fff!important;
@@ -161,7 +155,6 @@ button,input,textarea,select{font-family:inherit;}
 }
 .ring-primary{--tw-ring-color:rgba(239,183,20,.35)!important;}
 
-/* Floating mobile navigation — cloud/glass capsule */
 .bottom-nav-wrapper{
   max-width:32rem;
   padding:0 14px max(9px,env(safe-area-inset-bottom,0px)) 14px;
@@ -209,28 +202,24 @@ button,input,textarea,select{font-family:inherit;}
   background:#f4f4f5!important;
 }
 
-/* Make the primary mobile content feel like a premium product sheet. */
 @media(max-width:767px){
   body{background:hsl(var(--background));}
   .app-shell{max-width:100%;background:hsl(var(--background));}
   .app-scroll{
-    background:
-      radial-gradient(500px 260px at 50% -80px,rgba(255,255,255,.95),transparent 70%),
-      hsl(var(--background));
+
   }
   .app-scroll > div{
-    background:transparent!important;
+
   }
   .app-scroll .rounded-2xl{border-radius:18px;}
-  .app-scroll .rounded-xl{border-radius:14px;}
-  .app-scroll .bg-card{background:rgba(255,255,255,.96);}
+  .app-scroll .rounded-xl{}
+  .app-scroll .bg-card{}
   .app-scroll .border-border{border-color:hsl(220 10% 88%);}
   .app-scroll .shadow-md,.app-scroll .shadow-lg{
     box-shadow:0 10px 30px rgba(20,24,32,.05)!important;
   }
 }
 
-/* Shared modal / popover surfaces */
 [role="dialog"],
 [data-radix-popper-content-wrapper] > div{
   border-color:hsl(220 10% 87%)!important;
@@ -239,16 +228,13 @@ button,input,textarea,select{font-family:inherit;}
 }
 .bg-popover{background:#fff!important;}
 
-/* Global mobile editorial system: applies consistently across every existing screen. */
 @media(max-width:767px){
   .app-shell{
     background:#f6f6f7!important;
     color:#17181b;
   }
   .app-scroll{
-    background:
-      radial-gradient(520px 240px at 50% -70px,rgba(255,255,255,.98),transparent 72%),
-      linear-gradient(180deg,#f8f8f9 0%,#f4f4f5 100%)!important;
+
   }
   .app-scroll h1{
     font-size:29px!important;
@@ -257,17 +243,17 @@ button,input,textarea,select{font-family:inherit;}
     font-weight:780!important;
   }
   .app-scroll h2{
-    letter-spacing:-.035em!important;
+
     font-weight:740!important;
   }
   .app-scroll h3{
-    letter-spacing:-.025em!important;
+
     font-weight:700!important;
   }
   .app-scroll .bg-card,
   .app-scroll [class*="bg-white"],
   .app-scroll [class*="bg-background"]{
-    background:rgba(255,255,255,.94)!important;
+
   }
   .app-scroll .border,
   .app-scroll [class*="border-border"]{
@@ -277,7 +263,7 @@ button,input,textarea,select{font-family:inherit;}
     border-radius:20px!important;
   }
   .app-scroll .rounded-xl{
-    border-radius:16px!important;
+
   }
   .app-scroll .shadow,
   .app-scroll .shadow-sm,
@@ -290,7 +276,7 @@ button,input,textarea,select{font-family:inherit;}
   .app-scroll select{
     min-height:46px;
     border-radius:14px!important;
-    border-color:#e1e1e5!important;
+
     background:#fff!important;
   }
   .app-scroll button{
@@ -298,28 +284,26 @@ button,input,textarea,select{font-family:inherit;}
   }
   .app-scroll button.bg-primary,
   .app-scroll button[class*="bg-primary"]{
-    background:#191a1d!important;
+
     color:#fff!important;
-    border-color:#191a1d!important;
+
     box-shadow:0 8px 20px rgba(20,24,32,.12);
   }
   .app-scroll .text-primary{
     color:#191a1d!important;
   }
   .app-scroll [class*="text-muted-foreground"]{
-    color:#77787e!important;
+
   }
   .app-scroll [class*="bg-muted"]{
-    background:#f0f0f2!important;
+
   }
 
-  /* Common screen header rhythm. */
   .app-scroll > div > .px-5:first-child,
   .app-scroll > div > .px-4:first-child{
     padding-top:calc(env(safe-area-inset-top,0px) + 10px);
   }
 
-  /* Editorial cards: flatter structure, stronger hierarchy, restrained motion. */
   .app-scroll .rounded-2xl,
   .app-scroll .rounded-xl{
     transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;
@@ -329,7 +313,6 @@ button,input,textarea,select{font-family:inherit;}
     transform:scale(.992);
   }
 
-  /* Remove legacy visual noise while retaining semantic colors for destructive states. */
   .app-scroll [class*="animate-pulse"]{
     animation-duration:2.2s!important;
   }
@@ -338,7 +321,6 @@ button,input,textarea,select{font-family:inherit;}
   }
 }
 
-/* Global mobile editorial system: reusable components and screen primitives. */
 .gruzli-mobile-section{
   padding:18px 16px 0;
 }
@@ -413,8 +395,6 @@ button,input,textarea,select{font-family:inherit;}
   .gruzli-mobile-card{border-radius:20px;}
 }
 
-/* Mockup language: browser/device shells used by empty states and detail previews. */
-
 .gruzli-mockup{
   position:relative;
   overflow:hidden;
@@ -462,18 +442,15 @@ button,input,textarea,select{font-family:inherit;}
   box-shadow:0 20px 60px rgba(255,255,255,.5);
 }
 
-/* Reduce the old neon / dark treatment without touching component logic. */
 [class*="glow"],[class*="shimmer"]{box-shadow:none;}
 .gradient-cyan,.gradient-primary
 .text-gradient-cyan,.text-gradient-primary
 
-/* Mobile typography and spacing */
 @media(max-width:430px){
   .app-scroll{padding-bottom:calc(var(--bottom-nav-height) + env(safe-area-inset-bottom,0px) + 30px);}
   .app-scroll .px-5{padding-left:16px!important;padding-right:16px!important;}
 }
 
-/* Mobile editorial composition — Gruzli hierarchy without changing business logic. */
 .gruzli-mobile-feed{padding-bottom:8px;}
 .gruzli-mobile-hero{
   min-height:82px;
@@ -491,8 +468,6 @@ button,input,textarea,select{font-family:inherit;}
   .gruzli-mobile-feed{max-width:430px;margin:0 auto;}
 }
 
-/* ===== Forced mobile product shell ===== */
-/* The Gruzli experience is intentionally rendered as the mobile product on every viewport. */
 .app-shell{
   width:100%;
   max-width:430px;
@@ -516,7 +491,6 @@ button,input,textarea,select{font-family:inherit;}
   }
 }
 
-/* ===== Gruzli light product system ===== */
 :root{
   color-scheme:light;
   --gruzli-ink:#151619;
@@ -598,7 +572,6 @@ button{ -webkit-tap-highlight-color:transparent; }
   color:var(--gruzli-ink);
 }
 
-/* Consistent card language across all Gruzli screens. */
 .desktop-main-inner .bg-card,
 .app-scroll .bg-card{
   border-color:var(--gruzli-line)!important;
@@ -639,7 +612,6 @@ button{ -webkit-tap-highlight-color:transparent; }
   box-shadow:0 0 0 4px rgba(239,183,20,.10)!important;
 }
 
-/* Primary actions are black; yellow is reserved for identity and status. */
 .desktop-main-inner button.bg-primary,
 .app-scroll button.bg-primary{
   background:#17181b!important;
@@ -656,7 +628,6 @@ button{ -webkit-tap-highlight-color:transparent; }
 .app-scroll .bg-primary\/10,
 .app-scroll .bg-primary\/15{background:var(--gruzli-yellow-soft)!important;}
 
-/* Editorial section headers. */
 .desktop-main-inner h1,
 .desktop-main-inner h2{
   letter-spacing:-.035em;
@@ -670,7 +641,6 @@ button{ -webkit-tap-highlight-color:transparent; }
 }
 .app-scroll .text-muted-foreground{color:var(--gruzli-muted)!important;}
 
-/* Floating mobile shell. */
 @media(max-width:767px){
   .app-scroll{
     padding-top:8px;
@@ -680,7 +650,7 @@ button{ -webkit-tap-highlight-color:transparent; }
   .app-scroll .mx-5{margin-left:18px!important;margin-right:18px!important;}
   .app-scroll .space-y-3{row-gap:12px!important;}
   .bottom-nav-wrapper{
-    padding-left:12px!important;
+
     padding-right:12px!important;
     bottom:8px!important;
   }
@@ -693,7 +663,6 @@ button{ -webkit-tap-highlight-color:transparent; }
   }
 }
 
-/* Large desktop: more editorial whitespace and stable reading width. */
 @media(min-width:1200px){
   .desktop-main-inner{padding-left:52px;padding-right:52px;}
 }
@@ -701,7 +670,6 @@ button{ -webkit-tap-highlight-color:transparent; }
   .desktop-main-inner{padding:18px 18px 60px;}
 }
 
-/* Remove legacy visual treatments while keeping their layout classes intact. */
 .bg-gradient-to-br.from-foreground\/15,
 .bg-gradient-to-br.from-foreground\/20,
 [class*="from-foreground\/"]{
@@ -713,7 +681,6 @@ button{ -webkit-tap-highlight-color:transparent; }
   box-shadow:0 7px 20px rgba(18,20,25,.06)!important;
 }
 
-/* Lightweight browser/mockup surface for previews and empty states. */
 .gruzli-mockup-content{
   min-height:160px;
   padding:18px;
@@ -722,7 +689,6 @@ button{ -webkit-tap-highlight-color:transparent; }
     #f7f7f8;
 }
 
-/* ===== Gruzli motion + mockup layer ===== */
 .gruzli-preview-frame{
   position:relative;
   margin:14px;
@@ -819,7 +785,6 @@ button{ -webkit-tap-highlight-color:transparent; }
   .app-scroll .bg-card{transition:none!important;}
 }
 
-/* Gruzli mobile controls: tactile buttons, premium search, and calmer feed rhythm. */
 @media(max-width:767px){
   .gruzli-mobile-feed input,
   .gruzli-mobile-feed [role="searchbox"],
@@ -851,26 +816,26 @@ button{ -webkit-tap-highlight-color:transparent; }
     padding-left:13px!important;
     padding-right:13px!important;
     border-color:#e1e1e5!important;
-    background:#fff!important;
+
     color:#5d5e64!important;
     box-shadow:0 3px 10px rgba(20,24,32,.035)!important;
   }
   .gruzli-mobile-feed .rounded-full.border.bg-foreground,
   .gruzli-mobile-feed button.bg-foreground{
-    background:#191a1d!important;
+
     color:#fff!important;
-    border-color:#191a1d!important;
+
     box-shadow:0 7px 18px rgba(20,24,32,.12)!important;
   }
 
   .gruzli-mobile-feed .btn-shimmer{
-    background:#191a1d!important;
+
     border-radius:14px!important;
-    min-height:44px;
+
     padding-left:17px!important;
-    padding-right:17px!important;
+
     box-shadow:0 8px 18px rgba(20,24,32,.13)!important;
-    transition:transform .16s ease,box-shadow .16s ease!important;
+
   }
   .gruzli-mobile-feed .btn-shimmer:active{
     transform:scale(.965)!important;
@@ -879,7 +844,7 @@ button{ -webkit-tap-highlight-color:transparent; }
 
   .gruzli-mobile-feed .gruzli-mobile-card,
   .gruzli-mobile-feed [class*="rounded-2xl"][class*="border"]{
-    box-shadow:0 8px 26px rgba(20,24,32,.05)!important;
+
   }
 
   .gruzli-mobile-feed > .px-5.space-y-3{
@@ -897,7 +862,6 @@ button{ -webkit-tap-highlight-color:transparent; }
   }
 }
 
-/* Feed UX: keep search reachable and quick filters thumb-friendly. */
 @media(max-width:767px){
   .gruzli-feed-search{
     position:sticky;
@@ -922,19 +886,18 @@ button{ -webkit-tap-highlight-color:transparent; }
     box-shadow:0 5px 14px rgba(20,24,32,.12);
   }
   .gruzli-feed-filters{
-    position:relative;
+
   }
   .gruzli-feed-filters > div{
     scrollbar-width:none;
     -webkit-overflow-scrolling:touch;
   }
   .gruzli-feed-filters button{
-    min-height:40px!important;
+
     flex-shrink:0;
   }
 }
 
-/* Premium glass system — shared across feed, cards, navigation and profile. */
 @keyframes gruzli-glass-drift-a{
   0%,100%{transform:translate3d(-4%,0,0) scale(1);}
   50%{transform:translate3d(5%,3%,0) scale(1.08);}
@@ -982,7 +945,6 @@ button{ -webkit-tap-highlight-color:transparent; }
     animation:gruzli-glass-drift-b 15s ease-in-out infinite;
   }
 
-  /* Glass cards: translucent surface + soft inner highlight, not a heavy blur. */
   .gruzli-mobile-card,
   .gruzli-job-card,
   .gruzli-profile-screen .rounded-2xl,
@@ -1015,7 +977,6 @@ button{ -webkit-tap-highlight-color:transparent; }
     z-index:1;
   }
 
-  /* Order cards: make the money/action hierarchy immediately scannable. */
   .gruzli-job-card{
     padding:16px!important;
     overflow:hidden!important;
@@ -1040,7 +1001,6 @@ button{ -webkit-tap-highlight-color:transparent; }
     box-shadow:inset 0 1px 0 rgba(255,255,255,.8)!important;
   }
 
-  /* Premium navigation: same glass material as the cards, but denser. */
   .bottom-nav-wrapper{
     bottom:7px!important;
     padding-left:12px!important;
@@ -1087,7 +1047,6 @@ button{ -webkit-tap-highlight-color:transparent; }
     height:2.5px;
   }
 
-  /* Remove unstable horizontal text movement and prevent long labels from shifting layout. */
   .app-scroll h1,.app-scroll h2,.app-scroll h3,
   .app-scroll p,.app-scroll span,.app-scroll button{
     overflow-wrap:anywhere;
@@ -1106,7 +1065,6 @@ button{ -webkit-tap-highlight-color:transparent; }
   }
 }
 
-/* Shared screen treatment: chats, orders and kartoteka inherit the same product material. */
 @media(max-width:767px){
   .gruzli-chats-screen,
   .gruzli-orders-screen,
@@ -1138,11 +1096,10 @@ button{ -webkit-tap-highlight-color:transparent; }
   .gruzli-chats-screen .bg-background,
   .gruzli-orders-screen .bg-background,
   .gruzli-kartoteka-screen .bg-background{
-    background:transparent!important;
+
   }
 }
 
-/* Premium component language — one visual hierarchy across the product. */
 @media(max-width:767px){
   .gruzli-chats-screen .border-b,
   .gruzli-orders-screen .border-b,
@@ -1166,7 +1123,7 @@ button{ -webkit-tap-highlight-color:transparent; }
   }
 
   .gruzli-chats-screen .bg-background{
-    background:linear-gradient(145deg,rgba(255,255,255,.86),rgba(255,255,255,.68))!important;
+
   }
 
   .gruzli-chats-screen .cursor-pointer{
@@ -1185,7 +1142,7 @@ button{ -webkit-tap-highlight-color:transparent; }
   .gruzli-kartoteka-screen button[class*="bg-primary"]{
     min-height:46px;
     border-radius:14px!important;
-    box-shadow:0 8px 20px rgba(20,24,32,.11);
+
   }
 
   .gruzli-kartoteka-screen .text-red-500{
@@ -1193,14 +1150,13 @@ button{ -webkit-tap-highlight-color:transparent; }
   }
 
   .gruzli-kartoteka-screen .text-orange-500{
-    color:#c96b16!important;
+
   }
 
   .gruzli-kartoteka-screen .text-yellow-500{
-    color:#927500!important;
+
   }
 
-  /* Keep destructive data visually secondary until the user explicitly opens it. */
   .gruzli-kartoteka-screen [class*="bg-red-500/10"],
   .gruzli-kartoteka-screen [class*="bg-orange-500/10"],
   .gruzli-kartoteka-screen [class*="bg-yellow-500/10"]{
@@ -1208,7 +1164,6 @@ button{ -webkit-tap-highlight-color:transparent; }
   }
 }
 
-/* The floating dock must remain interactive even though its wrapper is click-through. */
 .bottom-nav-pill{
   pointer-events:auto;
 }
@@ -1374,7 +1329,6 @@ button{ -webkit-tap-highlight-color:transparent; }
   }
 }
 
-/* ===== GLOBAL 2026 PRODUCT PASS ===== */
 :root{
   --gruzli-glass:rgba(255,255,255,.80);
   --gruzli-glass-strong:rgba(255,255,255,.94);
@@ -1474,12 +1428,6 @@ body{overflow-x:hidden;}
   *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;}
 }
 
-/* ============================================================
-   GRUZLI DIGITAL EDITORIAL — FINAL VISUAL LAYER
-   Gruzli composition adapted to marketplace UX.
-   Logic/data/navigation remain untouched.
-   ============================================================ */
-
 :root{
   --gd-paper:#f6f6f4;
   --gd-white:#ffffff;
@@ -1491,7 +1439,6 @@ body{overflow-x:hidden;}
   --gd-ease:cubic-bezier(.22,1,.36,1);
 }
 
-/* Editorial canvas */
 body,
 #root{
   background:var(--gd-paper)!important;
@@ -1505,7 +1452,6 @@ body,
     var(--gd-paper)!important;
 }
 
-/* Slow glass atmosphere — deliberately subtle. */
 .app-shell::before,
 .desktop-shell::before{
   content:"";
@@ -1545,7 +1491,6 @@ body,
   50%{transform:translate3d(36px,-22px,0) scale(1.08)}
 }
 
-/* Main feed: magazine hierarchy */
 .gruzli-mobile-feed{
   position:relative;
   z-index:1;
@@ -1623,7 +1568,6 @@ body,
   filter:grayscale(.15) contrast(1.04);
 }
 
-/* Earnings becomes an editorial data strip */
 .gruzli-feed-earnings{
   margin-top:22px!important;
   padding-top:14px!important;
@@ -1653,7 +1597,6 @@ body,
   background:var(--gd-line)!important;
 }
 
-/* Search — glass/editorial rather than SaaS input */
 .gruzli-feed-search{
   background:linear-gradient(180deg,var(--gd-paper) 65%,transparent)!important;
 }
@@ -1673,13 +1616,11 @@ body,
   color:#fff!important;
 }
 
-/* Stats: clean editorial modules */
 .gruzli-mobile-feed .gruzli-stat-card,
 .gruzli-mobile-feed [data-testid="stat-card"]{
   border-radius:0!important;
 }
 
-/* Generic feed cards — thin border, large rhythm, numbered feel */
 .gruzli-mobile-feed .rounded-2xl.border,
 .gruzli-mobile-feed .rounded-xl.border{
   border-color:rgba(17,18,20,.11)!important;
@@ -1701,7 +1642,6 @@ body,
   box-shadow:0 24px 60px rgba(20,22,25,.075)!important;
 }
 
-/* Category/filter chips */
 .gruzli-mobile-feed button.rounded-full{
   transition:
     transform .22s var(--gd-ease),
@@ -1718,7 +1658,6 @@ body,
   box-shadow:0 9px 22px rgba(17,18,20,.14)!important;
 }
 
-/* Primary CTAs */
 .gruzli-mobile-feed button.bg-foreground,
 .gruzli-mobile-feed .bg-primary{
   background:var(--gd-ink)!important;
@@ -1728,7 +1667,6 @@ body,
   box-shadow:0 14px 28px rgba(17,18,20,.16);
 }
 
-/* Yellow = brand signal, never the whole interface */
 .gruzli-mobile-feed .text-yellow-500,
 .gruzli-mobile-feed .text-yellow-600{
   color:#a97800!important;
@@ -1738,7 +1676,6 @@ body,
   background:var(--gd-yellow)!important;
 }
 
-/* Bottom navigation: floating magazine control */
 .bottom-nav-wrapper{
   z-index:100!important;
 }
@@ -1759,7 +1696,6 @@ body,
   transition:transform .22s var(--gd-ease),background .22s ease!important;
 }
 
-/* Desktop editorial shell */
 .desktop-sidebar{
   background:rgba(255,255,255,.56)!important;
   border-right:1px solid rgba(17,18,20,.09)!important;
@@ -1786,7 +1722,6 @@ body,
   box-shadow:0 28px 70px rgba(20,22,25,.07)!important;
 }
 
-/* Editorial headings on all screens */
 .desktop-main-inner h1{
   font-size:clamp(34px,4vw,58px)!important;
   line-height:.96!important;
@@ -1798,7 +1733,6 @@ body,
   font-weight:780!important;
 }
 
-/* Motion language across existing Framer Motion components */
 .gruzli-editorial-reveal,
 .gruzli-preview-frame{
   will-change:transform,opacity;
@@ -1816,7 +1750,6 @@ body,
 .gruzli-mobile-feed > *:nth-child(5){animation-delay:.10s}
 .gruzli-mobile-feed > *:nth-child(6){animation-delay:.125s}
 
-/* Respect reduced motion */
 @media(prefers-reduced-motion:reduce){
   .app-shell::before,.app-shell::after,
   .desktop-shell::before,.desktop-shell::after,
@@ -1826,14 +1759,12 @@ body,
   }
 }
 
-/* Small screens: keep the editorial density under control */
 @media(max-width:390px){
   .gruzli-feed-title{font-size:40px!important;}
   .gruzli-feed-hero{padding-left:16px!important;padding-right:16px!important;}
-  .gruzli-feed-earnings strong{font-size:16px!important;}
+  .gruzli-feed-earnings strong{}
 }
 
-/* Desktop-only floating glass details */
 @media(min-width:768px){
   .desktop-main-inner > div{
     position:relative;
@@ -1852,30 +1783,22 @@ body,
   }
 }
 
-/* ============================================================
-   DIGITAL SYSTEM — SECOND PASS
-   Shared treatment for cabinet / orders / chats / profile / details.
-   ============================================================ */
-
 .app-scroll{
   background:transparent!important;
 }
 
-/* Every screen inherits the same editorial rhythm. */
 .app-shell .app-scroll > *,
 .app-shell .app-scroll main,
 .app-shell .app-scroll section{
   --tw-ring-color:rgba(17,18,20,.08);
 }
 
-/* Screen-level white surfaces become paper/editorial sheets. */
 .app-shell .bg-card,
 .app-shell [class*="bg-card"]{
   background:rgba(255,255,255,.78)!important;
   border-color:rgba(17,18,20,.09)!important;
 }
 
-/* Reduce "mobile SaaS dashboard" feeling without touching semantic layout. */
 .app-shell .rounded-3xl{
   border-radius:24px!important;
 }
@@ -1886,13 +1809,11 @@ body,
   border-radius:14px!important;
 }
 
-/* Editorial section labels */
 .app-shell .uppercase.tracking-wider,
 .app-shell .uppercase.tracking-wide{
   letter-spacing:.13em!important;
 }
 
-/* Buttons */
 .app-shell button{
   transition:
     transform .22s var(--gd-ease),
@@ -1915,7 +1836,6 @@ body,
   box-shadow:0 14px 32px rgba(17,18,20,.17);
 }
 
-/* Cabinet / orders data cards */
 .app-shell [class*="shadow-"]{
   --tw-shadow-color:rgba(20,22,25,.055);
 }
@@ -1923,7 +1843,6 @@ body,
   border-color:rgba(17,18,20,.095)!important;
 }
 
-/* Make list rows feel like editorial entries. */
 .app-shell [role="button"]{
   transition:background .22s ease,border-color .22s ease,transform .22s var(--gd-ease);
 }
@@ -1931,7 +1850,6 @@ body,
   background:rgba(255,255,255,.92);
 }
 
-/* Profile hero / avatar stage */
 .app-shell img{
   image-rendering:auto;
 }
@@ -1940,7 +1858,6 @@ body,
   border-color:rgba(17,18,20,.08)!important;
 }
 
-/* Chat list */
 .app-shell .gruzli-chat-item{
   border-bottom:1px solid rgba(17,18,20,.08);
   background:transparent;
@@ -1949,7 +1866,6 @@ body,
   background:rgba(255,255,255,.7);
 }
 
-/* Job detail */
 .gruzli-job-detail,
 .gruzli-job-detail-screen{
   background:transparent!important;
@@ -1960,7 +1876,6 @@ body,
   border-color:rgba(17,18,20,.09)!important;
 }
 
-/* Desktop sidebar becomes a clean editorial index. */
 .desktop-sidebar nav a,
 .desktop-sidebar nav button{
   border-radius:10px!important;
@@ -1977,14 +1892,12 @@ body,
   color:#fff!important;
 }
 
-/* Desktop content cards */
 .desktop-main-inner .rounded-3xl,
 .desktop-main-inner .rounded-2xl,
 .desktop-main-inner .rounded-xl{
   border-color:rgba(17,18,20,.09)!important;
 }
 
-/* Detail panel gets the same paper/glass language. */
 .desktop-detail{
   background:rgba(255,255,255,.70)!important;
   border-left:1px solid rgba(17,18,20,.09)!important;
@@ -1996,14 +1909,12 @@ body,
   border-bottom:1px solid rgba(17,18,20,.08)!important;
 }
 
-/* Modals: less generic, more product-editorial. */
 .fixed.inset-0.z-\[100\] > div,
 .fixed.inset-0.z-\[90\] > div{
   border-color:rgba(17,18,20,.10)!important;
   box-shadow:0 30px 100px rgba(17,18,20,.18)!important;
 }
 
-/* Yellow micro-accent */
 .app-shell .text-yellow-500,
 .app-shell .text-yellow-600{
   color:#9a7000!important;
@@ -2013,7 +1924,6 @@ body,
   background:#f2bd16!important;
 }
 
-/* Premium glass hover */
 .gruzli-editorial-glass{
   background:rgba(255,255,255,.66)!important;
   border:1px solid rgba(17,18,20,.09)!important;
@@ -2022,7 +1932,6 @@ body,
   -webkit-backdrop-filter:blur(24px);
 }
 
-/* Stagger utility for future screens */
 .gruzli-editorial-stagger > *{
   animation:gd-card-enter .48s var(--gd-ease) both;
 }
@@ -2037,11 +1946,6 @@ body,
     animation:gd-card-enter .45s var(--gd-ease) both;
   }
 }
-
-/* ============================================================
-   GRUZLI ORDER MOCKUP CARDS — magazine / product mockup pass
-   Data, swipe behavior and actions remain unchanged.
-   ============================================================ */
 
 .gruzli-mobile-feed .gruzli-job-card{
   position:relative!important;
@@ -2296,15 +2200,10 @@ body,
   }
 }
 
-/* Swipe states become part of the mockup language. */
 .gruzli-mobile-feed .absolute.inset-0.rounded-2xl{
   border-radius:26px!important;
   backdrop-filter:blur(8px);
 }
-
-/* ============================================================
-   ORDER MOCKUP SCENE — visual metadata composition
-   ============================================================ */
 
 .gruzli-mobile-feed .gruzli-order-scene{
   position:relative;
@@ -2494,10 +2393,6 @@ body,
   }
 }
 
-/* ============================================================
-   FEED STABILITY HOTFIX
-   Keep editorial blocks in normal document flow.
-   ============================================================ */
 .gruzli-mobile-feed .gruzli-feed-hero{
   position:relative!important;
   display:block!important;
@@ -2536,7 +2431,7 @@ body,
   margin:10px 0 0!important;
 }
 .gruzli-mobile-feed > *{
-  /* Do not animate layout containers: it causes text blocks to visually jump. */
+
   animation:none!important;
 }
 .gruzli-mobile-feed .gruzli-mobile-section-title{
@@ -2555,7 +2450,6 @@ body,
   transform:none!important;
 }
 
-/* Feed layout stabilization v2 */
 .gruzli-mobile-feed{
   overflow-x:hidden!important;
 }
@@ -2612,9 +2506,6 @@ body,
   }
 }
 
-/* ===== FEED RESPONSIVE FINALIZATION =====
-   One stable flow for compact phones; no transform-based layout tricks.
-*/
 .gruzli-mobile-feed .gruzli-feed-swipe-note{
   margin-left:0!important;
   margin-right:0!important;
@@ -2683,12 +2574,6 @@ body,
   }
 }
 
-/* ============================================================
-   GRUZLI FEED — FINAL VISUAL POLISH
-   Editorial / magazine hierarchy, quieter chrome, stronger
-   product rhythm. No behavior changes.
-   ============================================================ */
-
 .gruzli-mobile-feed{
   background:
     radial-gradient(420px 260px at 88% -2%, rgba(242,189,22,.105), transparent 68%),
@@ -2716,7 +2601,6 @@ body,
   z-index:1;
 }
 
-/* Header */
 .gruzli-mobile-feed .gruzli-feed-hero{
   padding-top:22px!important;
   padding-bottom:12px!important;
@@ -2777,7 +2661,6 @@ body,
   border-radius:12px!important;
 }
 
-/* Earnings becomes a quiet editorial data strip */
 .gruzli-mobile-feed .gruzli-feed-earnings{
   margin-top:20px!important;
   min-height:70px!important;
@@ -2817,7 +2700,6 @@ body,
   font-size:13px!important;
 }
 
-/* Search: floating instrument rather than generic input */
 .gruzli-mobile-feed .gruzli-feed-search{
   margin-top:13px!important;
 }
@@ -2842,7 +2724,6 @@ body,
   box-shadow:0 6px 16px rgba(17,18,20,.16)!important;
 }
 
-/* Stats: remove the generic app-card feeling */
 .gruzli-mobile-feed > .px-5.mt-3.mb-4{
   margin-top:11px!important;
   margin-bottom:18px!important;
@@ -2869,7 +2750,6 @@ body,
   font-size:18px!important;
 }
 
-/* Section heading: editorial rule */
 .gruzli-mobile-feed .gruzli-mobile-section{
   position:relative!important;
   margin-top:1px!important;
@@ -2900,7 +2780,6 @@ body,
   box-shadow:inset 0 1px 0 #fff!important;
 }
 
-/* Cards: more premium, less "UI kit" */
 .gruzli-mobile-feed .gruzli-job-card{
   box-shadow:
     0 20px 52px rgba(17,18,20,.055),
@@ -2992,7 +2871,6 @@ body,
   transform:translateX(3px);
 }
 
-/* Swipe instruction becomes a tiny system legend */
 .gruzli-mobile-feed .gruzli-feed-swipe-note{
   justify-content:center!important;
   width:max-content!important;
@@ -3012,7 +2890,6 @@ body,
   background:#c9c9c6!important;
 }
 
-/* Official cards get a controlled yellow identity, not a yellow glow */
 .gruzli-mobile-feed .gruzli-job-card[style*="45 90% 55%"]{
   box-shadow:
     0 20px 54px rgba(17,18,20,.06),
@@ -3020,18 +2897,13 @@ body,
     inset 0 1px 0 #fff!important;
 }
 
-/* Compact phones */
 @media(max-width:390px){
   .gruzli-mobile-feed .gruzli-feed-title{font-size:40px!important;}
   .gruzli-mobile-feed .gruzli-feed-mark{width:48px!important;height:48px!important;border-radius:15px!important;}
   .gruzli-mobile-feed .gruzli-feed-earnings{min-height:64px!important;}
-  .gruzli-mobile-feed .gruzli-order-heading h3{font-size:21px!important;}
+  .gruzli-mobile-feed .gruzli-order-heading h3{}
   .gruzli-mobile-feed .gruzli-order-heading > div{min-width:76px!important;}
 }
-
-/* ============================================================
-   GRUZLI WORKER PROFILE — editorial identity system
-   ============================================================ */
 
 .gruzli-profile-screen{
   background:
@@ -3292,7 +3164,6 @@ body,
 .gruzli-worker-dossier-secondary{display:flex;align-items:center;justify-content:center;gap:6px;min-width:62px;padding:0 13px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.05);color:rgba(255,255,255,.78)}
 @media(max-width:390px){.gruzli-worker-dossier{padding:13px;border-radius:22px}.gruzli-worker-dossier-avatar{width:52px;height:52px;flex-basis:52px}.gruzli-worker-dossier-identity h3{font-size:16px}.gruzli-worker-dossier-rating>div{padding:0 6px}.gruzli-worker-dossier-rating strong{font-size:10px}}
 
-/* Worker identity mockup — physical card / editorial object */
 .gruzli-worker-id-mockup{
   position:relative;
   overflow:hidden;
@@ -3409,7 +3280,6 @@ body,
   .gruzli-worker-id-meta{gap:9px}
 }
 
-/* Worker profile dashboard — editorial data layer */
 .gruzli-worker-id-hero{min-height:214px;padding:17px;border-radius:28px;box-shadow:0 30px 70px rgba(17,18,20,.14),0 5px 14px rgba(17,18,20,.05),inset 0 1px 0 #fff}
 .gruzli-worker-id-hero .gruzli-worker-id-body{padding:20px 0 17px}
 .gruzli-worker-dashboard{overflow:hidden;border:1px solid rgba(17,18,20,.09);border-radius:24px;background:rgba(255,255,255,.74);box-shadow:0 18px 48px rgba(17,18,20,.065),inset 0 1px 0 #fff}
@@ -3470,14 +3340,12 @@ body,
   .gruzli-earnings-main>div:first-child strong{font-size:25px}
 }
 
-/* Swipe guidance belongs to the order card itself */
 .gruzli-card-swipe-hint{display:flex;align-items:center;justify-content:flex-end;gap:7px;margin:-3px 0 8px;color:#9a9ca0;font-size:6.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.72}
 .gruzli-card-swipe-hint span{display:inline-flex;align-items:center;gap:3px}
 .gruzli-card-swipe-hint i{width:2px;height:2px;border-radius:50%;background:#c4c5c6}
 .gruzli-job-card:hover .gruzli-card-swipe-hint{opacity:1;color:#74767a}
 @media(max-width:390px){.gruzli-card-swipe-hint{margin-top:-2px;margin-bottom:7px;font-size:6px}}
 
-/* Profile v2 — editorial identity system */
 .gruzli-profile-screen{
   position:relative;
   isolation:isolate;
@@ -3752,7 +3620,6 @@ body,
   .gruzli-work-history{transition:none}
 }
 
-/* Profile v3 — Worker ID as the primary physical/digital document */
 .gruzli-worker-id-hero{
   min-height:228px;
   padding:18px 18px 15px;
@@ -3921,7 +3788,6 @@ body,
   .gruzli-worker-id-top>span:last-child{font-size:5px}
 }
 
-/* Profile v4 — one editorial document, not a stack of cards */
 .gruzli-profile-screen{
   --profile-gap:18px;
 }
@@ -4023,10 +3889,6 @@ body,
   .gruzli-worker-dashboard-grid>div{min-height:52px}
 }
 
-/* ==========================================================================
-   GRUZLI EDITORIAL SYSTEM — KARTOTEKA + CHAT / DOCUMENT REDESIGN
-   ========================================================================== */
-
 @media(max-width:767px){
   .gruzli-document-screen{
     position:relative;
@@ -4071,38 +3933,38 @@ body,
   }
   .gruzli-document-kicker span{color:#17181b}
   .gruzli-document-kicker i{
-    width:18px;
+
     height:1px;
-    background:#f2bd16;
+
     display:block;
   }
   .gruzli-document-kicker b{font-weight:750}
 
   .gruzli-document-screen > .px-5:nth-of-type(2){
-    padding-top:3px;
+
   }
 
   .gruzli-document-screen > .px-5:nth-of-type(2) > .flex{
-    gap:7px!important;
+
   }
 
   .gruzli-document-screen > .px-5:nth-of-type(2) > .flex > div{
     min-height:70px;
     border-radius:18px!important;
-    background:rgba(255,255,255,.74)!important;
+
     border:1px solid rgba(255,255,255,.95)!important;
     box-shadow:0 14px 34px rgba(24,26,31,.05),inset 0 1px 0 rgba(255,255,255,.98);
     backdrop-filter:blur(20px);
     -webkit-backdrop-filter:blur(20px);
   }
   .gruzli-document-screen > .px-5:nth-of-type(2) > .flex > div p:first-child{
-    font-size:20px!important;
+
     letter-spacing:-.04em;
   }
   .gruzli-document-screen > .px-5:nth-of-type(2) > .flex > div p:last-child{
-    font-size:8px!important;
+
     text-transform:uppercase;
-    letter-spacing:.06em;
+
   }
 
   .gruzli-document-screen > .px-5:nth-of-type(3){
@@ -4110,14 +3972,14 @@ body,
   }
 
   .gruzli-document-screen > .px-5:nth-of-type(3) input{
-    min-height:52px!important;
+
     border-radius:17px!important;
-    font-size:13px!important;
+
     box-shadow:0 14px 34px rgba(24,26,31,.055),inset 0 1px 0 rgba(255,255,255,.98)!important;
   }
 
   .gruzli-document-screen > .px-5:nth-of-type(3) > .flex > button{
-    width:52px!important;
+
     height:52px!important;
     border-radius:17px!important;
     background:#191a1d!important;
@@ -4126,56 +3988,54 @@ body,
   }
 
   .gruzli-document-screen > .px-5:nth-of-type(5){
-    padding-top:4px;
+
   }
 
   .gruzli-document-screen > .px-5:nth-of-type(5) button{
-    position:relative;
+
     overflow:hidden;
-    min-height:92px;
+
     padding:15px!important;
-    border-radius:23px!important;
+
     background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(247,247,246,.78))!important;
-    border:1px solid rgba(255,255,255,.98)!important;
+
     box-shadow:0 18px 44px rgba(24,26,31,.065),inset 0 1px 0 rgba(255,255,255,1);
   }
   .gruzli-document-screen > .px-5:nth-of-type(5) button:before{
-    content:"KARTOTEKA / ENTRY";
+
     position:absolute;
-    top:10px;
+
     right:14px;
-    font-size:7px;
+
     font-weight:800;
-    letter-spacing:.14em;
+
     color:#96989c;
   }
   .gruzli-document-screen > .px-5:nth-of-type(5) button:after{
-    content:"";
+
     position:absolute;
     left:0;
     top:0;
-    width:3px;
+
     height:100%;
-    background:#f2bd16;
+
   }
   .gruzli-document-screen > .px-5:nth-of-type(5) button img,
   .gruzli-document-screen > .px-5:nth-of-type(5) button > div:first-child{
-    border-radius:15px!important;
+
     box-shadow:0 7px 18px rgba(20,21,24,.09);
   }
   .gruzli-document-screen > .px-5:nth-of-type(5) button h3{
-    font-size:15px!important;
+
     letter-spacing:-.025em;
   }
   .gruzli-document-screen > .px-5:nth-of-type(5) button p{
-    font-size:11px!important;
+
   }
 
   .gruzli-kartoteka-detail,
   .gruzli-kartoteka-form{
-    background:
-      radial-gradient(420px 220px at 80% 0%,rgba(255,255,255,.95),transparent 72%),
-      linear-gradient(180deg,#f8f8f7 0%,#f1f1f2 100%)!important;
+
   }
 
   .gruzli-kartoteka-detail > div:first-child,
@@ -4186,107 +4046,79 @@ body,
 
   .gruzli-kartoteka-detail > div:first-child h1,
   .gruzli-kartoteka-form > div:first-child h1{
-    font-size:20px!important;
+
     letter-spacing:-.035em;
   }
 
   .gruzli-kartoteka-detail > .px-5 > div:first-child{
-    position:relative;
+
     overflow:hidden;
-    border-radius:27px!important;
+
     padding:20px!important;
-    background:linear-gradient(145deg,#fff,#f3f3f1)!important;
+
     border:1px solid rgba(255,255,255,.98)!important;
-    box-shadow:0 22px 52px rgba(25,27,32,.08),inset 0 1px 0 #fff!important;
+
   }
   .gruzli-kartoteka-detail > .px-5 > div:first-child:before{
-    content:"GRUZLI / KARTOTEKA";
+
     position:absolute;
-    top:14px;
+
     right:16px;
-    font-size:7px;
+
     font-weight:800;
-    letter-spacing:.14em;
+
     color:#92949a;
   }
   .gruzli-kartoteka-detail > .px-5 > div:first-child:after{
-    content:"";
+
     position:absolute;
-    left:0;
+
     top:0;
-    width:3px;
+
     height:100%;
-    background:#f2bd16;
+
   }
 
   .gruzli-kartoteka-detail > .px-5 > div:not(:first-child){
-    border-radius:19px!important;
+
     background:rgba(255,255,255,.72)!important;
-    border-color:rgba(255,255,255,.95)!important;
+
     box-shadow:0 14px 34px rgba(25,27,32,.045),inset 0 1px 0 #fff!important;
   }
 
   .gruzli-kartoteka-form > .px-5{
-    padding-top:8px;
+
   }
   .gruzli-kartoteka-form > .px-5 > div{
-    border-radius:22px;
+
   }
   .gruzli-kartoteka-form input,
   .gruzli-kartoteka-form textarea{
-    min-height:48px;
+
     border-radius:15px!important;
-    background:rgba(255,255,255,.78)!important;
+
     border-color:rgba(255,255,255,.96)!important;
-    box-shadow:0 10px 26px rgba(25,27,32,.045),inset 0 1px 0 #fff!important;
+
   }
 
-  /* Chat index: editorial inbox rather than generic messenger list. */
-  .gruzli-chats-screen{
-    position:relative;
-    isolation:isolate;
-    background:
-      radial-gradient(440px 250px at 86% -4%,rgba(255,255,255,.98),transparent 70%),
-      linear-gradient(180deg,#f8f8f7 0%,#f1f1f2 100%);
-  }
-  .gruzli-chats-screen > .px-5:first-child{
-    padding-top:9px!important;
-  }
-  .gruzli-chats-screen > .px-5:first-child p{
+  .grnsparent 70%),
+      linear-gradient(180deg,#f8f8f7 0uzli-chats-screen > .px-5:first-child{
+    padding-top:uzli-chats-screen > .px-5:first-child p{
     font-size:8px!important;
-    letter-spacing:.17em!important;
-  }
-  .gruzli-chats-screen > .px-5:first-child h1{
+    letter-spacing:.17li-chats-screen > .px-5:first-child h1{
     font-size:35px!important;
     letter-spacing:-.06em!important;
-    line-height:.95!important;
-  }
-  .gruzli-chats-screen > .px-5:nth-child(2){
-    padding-top:14px!important;
-  }
-  .gruzli-chats-screen > .px-5:nth-child(2) input{
-    min-height:52px!important;
-    border-radius:17px!important;
-    background:rgba(255,255,255,.78)!important;
-  }
-  .gruzli-chats-screen > .px-5:nth-child(3){
+    line-heightli-chats-screen > .px-5:nth-child(2){
+    padding-top:14px!iats-screen > .px-5:nth-child(2) input{
+adius:17px!important;
+    background:rgba(255,255,255,zli-chats-screen > .px-5:nth-child(3){
     padding-top:2px!important;
-    padding-bottom:14px!important;
-  }
-  .gruzli-chats-screen > .px-5:nth-child(3) button{
-    min-height:86px;
-    border-radius:23px!important;
-    background:linear-gradient(145deg,#191a1d,#2b2d31)!important;
-    border-color:#191a1d!important;
-    box-shadow:0 18px 42px rgba(20,21,24,.13),inset 0 1px 0 rgba(255,255,255,.10)!important;
-  }
-  .gruzli-chats-screen > .px-5:nth-child(3) button > div{
-    background:#f2bd16!important;
+    padding-bottom:14px!imgruzli-chats-screen > .px-5:nth-child(3nt;
+    background:linear-gradient(145deg2px rgba(20,21,24,.13),inset 0 1px 0 rgba(255,255,255,.10)!importan > .px-5:nth-child(3) button > divmportant;
     color:#191a1d!important;
     box-shadow:none!important;
   }
-  .gruzli-chats-screen > div:last-child > div{
-    margin-left:20px;
+  .gruzli-chats-screen > din-left:20px;
     margin-right:20px;
     border-radius:20px!important;
     overflow:hidden;
@@ -4294,154 +4126,24 @@ body,
   .gruzli-chats-screen .relative.overflow-hidden{
     border-bottom:1px solid rgba(218,219,222,.65);
   }
-  .gruzli-chats-screen .relative.overflow-hidden > .relative.z-10{
-    min-height:82px;
-    padding:14px 10px 14px 4px!important;
-    background:rgba(255,255,255,.62)!important;
-    backdrop-filter:blur(16px);
+  reen .relative.overflow-hidden > .relative.z-10x 14px 4px!important;
+    background:  backdrop-filter:blur(16px);
     -webkit-backdrop-filter:blur(16px);
   }
-  .gruzli-chats-screen .relative.overflow-hidden > .relative.z-10 > div:first-child > div{
-    width:48px!important;
+  .gruzli-chats-screen .ren > .relative.z-10 > div:first-cportant;
     height:48px!important;
     border-radius:15px!important;
     box-shadow:0 8px 18px rgba(20,21,24,.08);
   }
-  .gruzli-chats-screen .relative.overflow-hidden > .relative.z-10 > div:nth-child(2){
+  .gruzli-chats-screen > .relative.z-10 > div:nth-child(2){
     border-bottom:0!important;
     padding-bottom:0!important;
-  }
-  .gruzli-chats-screen .relative.overflow-hidden .text-[16px]{
+  .relative.overflow-hidden .text-[16px]{
     font-size:14px!important;
     letter-spacing:-.015em;
-  }
-  .gruzli-chats-screen .relative.overflow-hidden .text-[14px]{
-    font-size:12px!important;
+  .relative.overflow-hidden .text-[14p12px!important;
   }
 
-  /* Conversation window — make it a full-screen Gruzli document, not a stock chat clone. */
-  .gruzli-chat-detail{
-    position:relative;
-    isolation:isolate;
-    background:
-      radial-gradient(520px 260px at 12% -2%,rgba(255,255,255,.98),transparent 70%),
-      radial-gradient(360px 220px at 96% 28%,rgba(255,245,190,.25),transparent 72%),
-      linear-gradient(180deg,#f8f8f7 0%,#eeeeef 100%)!important;
-  }
-  .gruzli-chat-detail > .relative.z-40{
-    min-height:68px;
-    padding:9px 12px 9px!important;
-    background:rgba(255,255,255,.78)!important;
-    border-bottom:1px solid rgba(215,216,219,.8)!important;
-    box-shadow:0 10px 28px rgba(25,27,32,.045)!important;
-    backdrop-filter:blur(24px) saturate(1.2)!important;
-    -webkit-backdrop-filter:blur(24px) saturate(1.2)!important;
-  }
-  .gruzli-chat-detail > .relative.z-40:before{
-    content:"GRUZLI / MESSAGE";
-    position:absolute;
-    left:64px;
-    top:4px;
-    font-size:7px;
-    font-weight:800;
-    letter-spacing:.15em;
-    color:#9a9ba0;
-  }
-  .gruzli-chat-detail > .relative.z-40 h2{
-    padding-top:6px;
-    font-size:14px!important;
-    letter-spacing:-.02em;
-  }
-  .gruzli-chat-detail > .relative.z-40 button{
-    border-radius:13px!important;
-  }
-  .gruzli-chat-detail > .flex-1.min-h-0.overflow-y-auto{
-    padding:18px 14px 16px!important;
-    scroll-padding-bottom:100px;
-  }
-  .gruzli-chat-detail .bubble-other,
-  .gruzli-chat-detail .bubble-own{
-    border-radius:19px!important;
-    border:1px solid rgba(255,255,255,.86);
-    box-shadow:0 8px 22px rgba(25,27,32,.055),inset 0 1px 0 rgba(255,255,255,.88);
-  }
-  .gruzli-chat-detail .bubble-own{
-    background:linear-gradient(145deg,#fff0ad,#f6d86b)!important;
-    color:#191a1d!important;
-    border-color:rgba(235,187,25,.38)!important;
-  }
-  .gruzli-chat-detail .bubble-other{
-    background:rgba(255,255,255,.82)!important;
-  }
-  .gruzli-chat-detail .bubble-own p,
-  .gruzli-chat-detail .bubble-other p{
-    font-size:14px!important;
-  }
-  .gruzli-chat-detail > .px-3.pt-2.5{
-    background:rgba(255,255,255,.78)!important;
-    border-top:1px solid rgba(215,216,219,.75)!important;
-    box-shadow:0 -12px 30px rgba(25,27,32,.045);
-    backdrop-filter:blur(24px)!important;
-    -webkit-backdrop-filter:blur(24px)!important;
-  }
-  .gruzli-chat-detail textarea{
-    font-size:14px!important;
-  }
-  .gruzli-chat-detail .gruzli-chat-composer,
-  .gruzli-chat-detail .flex-1.flex.items-end{
-    border-radius:18px!important;
-    background:rgba(255,255,255,.9)!important;
-    border-color:rgba(255,255,255,.98)!important;
-    box-shadow:0 8px 22px rgba(25,27,32,.06),inset 0 1px 0 #fff!important;
-  }
-  .gruzli-chat-detail .bubble-own + *,
-  .gruzli-chat-detail .bubble-other + *{
-    margin-top:2px;
-  }
-}
-
-@media(min-width:768px){
-  .gruzli-document-screen,
-  .gruzli-chats-screen,
-  .gruzli-chat-detail{
-    --doc-max:1120px;
-  }
-  .gruzli-document-screen,
-  .gruzli-chats-screen{
-    max-width:1120px;
-    margin:0 auto;
-  }
-  .gruzli-chat-detail{
-    background:
-      radial-gradient(520px 280px at 15% 0%,rgba(255,255,255,.96),transparent 72%),
-      #f3f3f4!important;
-  }
-  .gruzli-chats-screen .relative.overflow-hidden > .relative.z-10{
-    transition:transform .2s ease,background .2s ease,box-shadow .2s ease;
-  }
-  .gruzli-chats-screen .relative.overflow-hidden > .relative.z-10:hover{
-    transform:translateX(3px);
-    background:#fff!important;
-    box-shadow:0 10px 28px rgba(20,21,24,.055);
-  }
-  .gruzli-document-screen > .px-5:nth-of-type(5) button:hover{
-    transform:translateY(-2px);
-    box-shadow:0 22px 52px rgba(24,26,31,.09),inset 0 1px 0 #fff;
-  }
-}
-
-@media(prefers-reduced-motion:reduce){
-  .gruzli-document-screen *,
-  .gruzli-chats-screen *,
-  .gruzli-chat-detail *{
-    scroll-behavior:auto!important;
-    animation-duration:.01ms!important;
-  }
-}
-
-/* ==========================================================================
-   GRUZLI SETTINGS — CONTROL CENTER
-   ========================================================================== */
 .gruzli-settings-screen{
   background:
     radial-gradient(520px 260px at 85% -2%,rgba(255,255,255,.98),transparent 70%),
@@ -4607,9 +4309,6 @@ body,
   .gruzli-settings-group>button{transition:none}
 }
 
-/* ==========================================================================
-   GRUZLI SETTINGS — ALL SUBPAGES / FULL DOCUMENT SYSTEM
-   ========================================================================== */
 .gruzli-settings-subpage{
   background:
     radial-gradient(500px 260px at 90% -5%,rgba(255,255,255,.98),transparent 72%),
@@ -4691,7 +4390,6 @@ body,
   letter-spacing:.08em;
 }
 
-/* Profile */
 .gruzli-settings-subpage .flex.justify-center.mb-6{
   position:relative;
   padding:20px 0 24px;
@@ -4713,7 +4411,6 @@ body,
   border-radius:18px!important;
 }
 
-/* Notifications */
 .gruzli-settings-subpage .space-y-4>div{
   position:relative;
   overflow:hidden;
@@ -4736,7 +4433,6 @@ body,
   transition:transform .18s ease;
 }
 
-/* Security */
 .gruzli-settings-subpage button.text-destructive,
 .gruzli-settings-subpage button.bg-destructive\/10{
   border-radius:16px!important;
@@ -4745,7 +4441,6 @@ body,
   background:rgba(217,74,74,.06)!important;
 }
 
-/* Appearance */
 .gruzli-settings-subpage [class*="grid"] button{
   border-radius:18px!important;
   overflow:hidden;
@@ -4754,7 +4449,6 @@ body,
   border-radius:14px!important;
 }
 
-/* Language / blocked / about / storage / verification */
 .gruzli-settings-subpage .divide-y > *,
 .gruzli-settings-subpage .space-y-3 > *,
 .gruzli-settings-subpage .space-y-2 > *{
@@ -4773,7 +4467,6 @@ body,
   background:#dfe0e2!important;
 }
 
-/* Verification as official document */
 .gruzli-settings-subpage [class*="verification"]{
   border-radius:24px;
 }
@@ -4811,7 +4504,6 @@ body,
   .gruzli-settings-profile-work{padding:15px}
 }
 
-/* SETTINGS — INTERIOR DESIGN SYSTEM */
 .gruzli-settings-section-intro{
   padding:4px 2px 8px;
 }
@@ -4874,11 +4566,6 @@ body,
   .gruzli-settings-section-intro h2{font-size:34px}
 }
 
-/* ─────────────────────────────────────────────────────────────
-   GRUZLI 2026 UI SYSTEM — final consistency layer
-   One visual language for auth, app, overlays, forms and feedback.
-   ───────────────────────────────────────────────────────────── */
-
 :root{
   --gruzli-ink:#17181b;
   --gruzli-ink-2:#34353a;
@@ -4896,10 +4583,8 @@ body,
   --gruzli-ease:cubic-bezier(.22,1,.36,1);
 }
 
-/* Never let legacy theme classes fragment the product identity. */
 html.light,html.theme-midnight,html.theme-emerald,html.theme-crimson,html.theme-amber
 
-/* Auth / splash */
 .gruzli-auth-shell,
 .gruzli-auth-shell *{
   -webkit-font-smoothing:antialiased;
@@ -4939,7 +4624,6 @@ html.light,html.theme-midnight,html.theme-emerald,html.theme-crimson,html.theme-
 .gruzli-auth-shell [class*="rounded-3xl"]{border-radius:24px!important;}
 .gruzli-auth-shell [class*="rounded-2xl"]{border-radius:18px!important;}
 
-/* Unified action language */
 .gruzli-cta,
 button.bg-primary,
 button.bg-foreground{
@@ -4967,7 +4651,6 @@ button.bg-foreground:active{
   color:#fff!important;
 }
 
-/* All Radix dialogs/popovers use the same product geometry. */
 [data-radix-dialog-overlay],
 [role="dialog"] + [data-radix-dialog-overlay]{
   background:rgba(17,18,21,.34)!important;
@@ -4995,7 +4678,6 @@ button.bg-foreground:active{
   letter-spacing:-.03em;
 }
 
-/* Toasts: compact, quiet, non-blocking. */
 [data-radix-toast-viewport]{
   z-index:200!important;
   width:min(calc(100vw - 24px),390px)!important;
@@ -5019,7 +4701,6 @@ button.bg-foreground:active{
   transition:transform .18s var(--gruzli-ease)!important;
 }
 
-/* Loading / skeleton language */
 .gruzli-skeleton,
 [class*="animate-pulse"]{
   animation-duration:1.7s!important;
@@ -5034,7 +4715,6 @@ button.bg-foreground:active{
   to{background-position:-200% 0}
 }
 
-/* Page transitions: one subtle motion system, no competing effects. */
 .gruzli-page-enter{
   animation:gruzli-page-in .24s var(--gruzli-ease) both;
 }
@@ -5043,7 +4723,6 @@ button.bg-foreground:active{
   to
 }
 
-/* Sheets and full-screen mobile detail screens */
 @media(max-width:767px){
   [role="dialog"]{
     width:calc(100vw - 20px)!important;
@@ -5055,7 +4734,6 @@ button.bg-foreground:active{
   }
 }
 
-/* Remove legacy neon/3D visual artifacts everywhere. */
 [class*="glow"],[class*="shimmer"]{filter:none!important;}
 [style*="hsl(228 22% 6%)"]{box-shadow:0 8px 24px rgba(20,24,32,.12)!important;}
 
@@ -5066,12 +4744,6 @@ button.bg-foreground:active{
 }
 .gruzli-role-selected svg{color:#7a6000!important;}
 .gruzli-role-selected p:last-child{color:#746216!important;}
-
-/* ==========================================================================
-   GRUZLI ORDER MOCKUP — REFINED VISUAL LAYER
-   Preserve the existing card design; add depth, guides, hierarchy and
-   information clarity without changing the underlying order flow.
-   ========================================================================== */
 
 .gruzli-job-card{
   position:relative;
@@ -5091,7 +4763,6 @@ button.bg-foreground:active{
     background .28s ease;
 }
 
-/* Technical mockup background: thin construction lines, rings and crop marks. */
 .gruzli-job-card:before{
   content:"";
   position:absolute;
@@ -5445,11 +5116,6 @@ button.bg-foreground:active{
   .gruzli-job-card:hover{transform:none}
 }
 
-/* ==========================================================================
-   GRUZLI — LIVING EDITORIAL CANVAS
-   Animated paper / blueprint atmosphere behind the existing mockup cards.
-   ========================================================================== */
-
 .gruzli-mobile-feed{
   position:relative;
   isolation:isolate;
@@ -5593,7 +5259,6 @@ button.bg-foreground:active{
   }
 }
 
-/* Swipe-responsive light: the card appears to illuminate the paper beneath it. */
 .gruzli-card-follow-light{
   background:
     radial-gradient(
@@ -5642,10 +5307,6 @@ button.bg-foreground:active{
   .gruzli-job-card:after
 }
 
-/* ===== GRUZLI PRODUCT POLISH / PASS 2 =====
-   Visual-only refinement: editorial hierarchy, tactile controls, calmer surfaces.
-   No business logic or layout contracts are changed. */
-
 :root{
   --gruzli-yellow:#f0bd18;
   --gruzli-yellow-deep:#b98500;
@@ -5655,7 +5316,6 @@ button.bg-foreground:active{
   --gruzli-paper:#f5f5f6;
 }
 
-/* App canvas: subtle depth instead of a flat gray page. */
 .app-shell{
   background:
     radial-gradient(520px 300px at 50% -120px,rgba(255,255,255,.98),transparent 74%),
@@ -5676,7 +5336,6 @@ button.bg-foreground:active{
 }
 .app-shell > *{position:relative;z-index:1;}
 
-/* Screen headers become compact editorial mastheads. */
 .app-scroll header{
   position:relative;
 }
@@ -5694,7 +5353,6 @@ button.bg-foreground:active{
   opacity:.85;
 }
 
-/* Primary actions: physical, not generic Tailwind buttons. */
 .app-scroll button.bg-foreground,
 .app-scroll button.bg-primary,
 .gruzli-mobile-cta{
@@ -5727,7 +5385,6 @@ button.bg-foreground:active{
   transform:translateY(1px) scale(.985);
 }
 
-/* Cards: cleaner edge + an almost invisible paper highlight. */
 .app-scroll .rounded-3xl,
 .app-scroll .gruzli-mobile-card{
   position:relative;
@@ -5746,7 +5403,6 @@ button.bg-foreground:active{
   box-shadow:inset 0 1px 0 rgba(255,255,255,.9);
 }
 
-/* Status chips: consistent semantic language. */
 .app-scroll [class*="rounded-full"][class*="border"]{
   letter-spacing:.045em;
 }
@@ -5766,7 +5422,6 @@ button.bg-foreground:active{
   color:#66686f;
 }
 
-/* Inputs and search fields: one consistent product geometry. */
 .app-scroll input,
 .app-scroll textarea,
 .app-scroll select{
@@ -5781,7 +5436,6 @@ button.bg-foreground:active{
   outline:none;
 }
 
-/* Lists and rows: deliberate separators instead of nested boxes everywhere. */
 .app-scroll .divide-y > * + *,
 .app-scroll [class*="border-b"]{
   border-color:#ececef!important;
@@ -5793,12 +5447,10 @@ button.bg-foreground:active{
   background:rgba(248,248,249,.72);
 }
 
-/* Avatar treatment. */
 .app-scroll img[class*="rounded-full"]{
   box-shadow:0 0 0 2px rgba(255,255,255,.92),0 4px 14px rgba(20,22,26,.09);
 }
 
-/* Dialogs: premium sheet on mobile, floating panel on desktop. */
 @media(max-width:767px){
   [role="dialog"]{
     border-radius:24px!important;
@@ -5809,7 +5461,6 @@ button.bg-foreground:active{
   }
 }
 
-/* Desktop: restore the editorial workspace feel without changing app structure. */
 @media(min-width:768px){
   .desktop-main{
     background:
@@ -5823,11 +5474,10 @@ button.bg-foreground:active{
     animation:gruzli-editorial-rise .42s cubic-bezier(.22,1,.36,1) both;
   }
   .desktop-sidebar{
-    background:rgba(250,250,251,.90)!important;
+
   }
 }
 
-/* Feed/order cards get a restrained technical identity. */
 .gruzli-job-card{
   border-color:#dedfe3!important;
   box-shadow:
@@ -5841,7 +5491,6 @@ button.bg-foreground:active{
   color:#74777e!important;
 }
 
-/* Tactile icon buttons without adding visual noise. */
 .app-scroll button[aria-label]{
   transition:transform .16s cubic-bezier(.22,1,.36,1),
              background-color .16s ease,
@@ -5851,7 +5500,6 @@ button.bg-foreground:active{
   transform:scale(.94);
 }
 
-/* Page entrance: one coherent motion language. */
 @keyframes gruzli-editorial-rise{
   from{opacity:0;transform:translateY(8px);}
   to{opacity:1;transform:translateY(0);}
@@ -5863,7 +5511,6 @@ button.bg-foreground:active{
   .app-scroll textarea{transition:none!important;}
 }
 
-/* Small-screen spacing: preserve the product's breathing room. */
 @media(max-width:430px){
   .app-scroll main,
   .app-scroll section{
@@ -5874,8 +5521,6 @@ button.bg-foreground:active{
   }
 }
 
-/* Refinement pass — preserve the established Gruzli editorial direction.
-   Focus, reduced-motion and touch feedback only; no palette or layout redesign. */
 :where(button,a,[role="button"],input,textarea,select):focus-visible{
   outline:2px solid rgba(201,148,0,.78);
   outline-offset:3px;
@@ -5912,7 +5557,6 @@ button.bg-foreground:active{
   }
 }
 
-/* FINAL MOBILE STABILITY OVERRIDES */
 @media(max-width:767px){
   .bottom-nav-wrapper{
     position:absolute!important;
@@ -5943,13 +5587,13 @@ button.bg-foreground:active{
     flex:none!important;
   }
   .gruzli-settings-page-head{
-    padding-top:calc(env(safe-area-inset-top,0px) + 10px)!important;
+
     min-height:calc(76px + env(safe-area-inset-top,0px))!important;
     flex:none!important;
   }
   .gruzli-settings-screen > .flex-1.overflow-y-auto,
   .gruzli-settings-subpage > .flex-1.overflow-y-auto{
-    min-height:0!important;
+
     overflow-y:auto!important;
     overflow-x:hidden!important;
     border:0!important;
@@ -5966,7 +5610,6 @@ button.bg-foreground:active{
   html,body,#root,.app-shell{background:#f7f7f8!important;}
 }
 
-/* Lightweight splash: opacity-only compositing, no spring/layout animation. */
 .gruzli-splash{
   opacity:1;
   transition:opacity .16s ease-out;
@@ -5977,12 +5620,6 @@ button.bg-foreground:active{
 @keyframes gruzli-splash-progress{from{transform:translateX(-100%)}to{transform:translateX(200%)}}
 @media(prefers-reduced-motion:reduce){.gruzli-splash{transition:none}.gruzli-splash-progress{animation:none}}
 
-/* ===== GRUZLI — UI POLISH PASS 3 / 2026-10 =====
-   Readability, responsive card geometry, calmer canvas and deterministic mobile scrolling.
-   Visual/interaction polish only; no business rules are changed.
-   ========================================================================== */
-
-/* The feed should feel slightly toned, not like a pure white sheet. */
 .gruzli-mobile-feed{
   background:
     radial-gradient(520px 360px at 88% 8%,rgba(242,196,0,.055),transparent 68%),
@@ -5995,13 +5632,11 @@ button.bg-foreground:active{
   background-size:52px 52px;
 }
 
-/* Decorative numerals stay decorative — never compete with real content. */
 .gruzli-order-index{
   z-index:0;
   color:rgba(23,24,27,.028)!important;
 }
 
-/* The price column is fixed; the title gets every remaining pixel. */
 .gruzli-order-heading{
   align-items:flex-start;
 }
@@ -6014,7 +5649,6 @@ button.bg-foreground:active{
   white-space:nowrap;
 }
 
-/* Tags and metro labels must shrink inside narrow cards instead of pushing layout. */
 .gruzli-order-tags{
   min-width:0;
   max-width:100%;
@@ -6033,7 +5667,6 @@ button.bg-foreground:active{
   min-width:0;
 }
 
-/* Location/time block: preserve two columns, but let both columns actually shrink. */
 .gruzli-order-scene-main{
   grid-template-columns:minmax(0,1fr) minmax(92px,.64fr);
 }
@@ -6045,7 +5678,6 @@ button.bg-foreground:active{
   white-space:normal;
 }
 
-/* Bottom metadata is a flex row with a deliberately bounded dispatcher label. */
 .gruzli-order-scene-bottom{
   gap:8px;
 }
@@ -6064,7 +5696,6 @@ button.bg-foreground:active{
   white-space:nowrap;
 }
 
-/* Description is body copy, not footnote copy. */
 .gruzli-order-description{
   font-size:11.5px!important;
   line-height:1.55!important;
@@ -6073,19 +5704,15 @@ button.bg-foreground:active{
   padding:11px 12px 11px 14px!important;
 }
 
-/* Money block gets a little more separation from the description. */
 .gruzli-order-pay{
   margin-top:14px!important;
 }
 
-/* The inline swipe hint was colliding with content at small widths.
-   Gesture remains functional; discoverability is handled by the card affordance itself. */
 @media(max-width:767px){
   .gruzli-card-swipe-hint{
     display:none!important;
   }
 
-  /* Make the pull-refresh wrapper the only vertical scroll owner for the feed. */
   .pull-refresh-shell{
     display:flex;
     flex:1 1 auto;
@@ -6097,20 +5724,18 @@ button.bg-foreground:active{
     min-height:0;
     height:auto;
     touch-action:pan-y;
-    overscroll-behavior-y:contain;
+    overs:contain;
   }
   .pull-refresh-scroll > .gruzli-mobile-feed{
     min-height:100%;
   }
 
-  /* Full-screen detail pages keep one explicit scroll root. */
   .mobile-screen-scroll{
     touch-action:pan-y;
     overscroll-behavior-y:contain;
   }
 }
 
-/* Compact phones: favor readability over dense decorative geometry. */
 @media(max-width:390px){
   .gruzli-job-card{
     padding:15px!important;
@@ -6126,7 +5751,7 @@ button.bg-foreground:active{
     gap:10px;
   }
   .gruzli-order-scene-bottom{
-    gap:7px;
+
     padding-left:12px;
     padding-right:12px;
   }
@@ -6134,7 +5759,7 @@ button.bg-foreground:active{
     max-width:112px;
   }
   .gruzli-order-dispatcher > span:nth-child(2){
-    max-width:70px;
+
   }
 }
 
@@ -6145,8 +5770,6 @@ button.bg-foreground:active{
   }
 }
 
-/* Mobile detail shells own the vertical scroll. Settings must not introduce a
-   second scroll container inside the surrounding mobile-screen-scroll. */
 @media(max-width:767px){
   .mobile-screen-scroll .gruzli-settings-screen > .flex-1.overflow-y-auto,
   .mobile-screen-scroll .gruzli-settings-subpage > .flex-1.overflow-y-auto{
@@ -6161,13 +5784,6 @@ button.bg-foreground:active{
   }
 }
 
-/* ==========================================================================
-   GRUZLI — UI POLISH PASS 4 / PRODUCT CLEANUP
-   Desktop workspace hierarchy, navigation clarity and restrained typography.
-   Visual-only: no business logic or data behavior.
-   ========================================================================== */
-
-/* Desktop feed belongs to the workspace, not a narrow mobile column. */
 @media (min-width: 768px) {
   .desktop-main-inner .gruzli-mobile-feed {
     width:100%;
@@ -6205,11 +5821,10 @@ button.bg-foreground:active{
   }
 
   .desktop-main-inner .bg-card {
-    border-radius:16px!important;
+
   }
 }
 
-/* Keep compact controls intact: labels should not split in the middle of words. */
 @media (max-width: 767px) {
   .bottom-nav-pill button,
   .bottom-nav-pill span,
@@ -6230,7 +5845,6 @@ button.bg-foreground:active{
   }
 }
 
-/* Clear active state: the selected destination is the only dark control. */
 .bottom-nav-active,
 .bottom-nav-active:hover,
 .bottom-nav-active:focus-visible {
@@ -6250,7 +5864,6 @@ button.bg-foreground:active{
   background:var(--gd-yellow,#f2bd16)!important;
 }
 
-/* Navigation stays attached to the visual viewport rather than the feed height. */
 @media (max-width: 767px) {
   .bottom-nav-wrapper {
     position:fixed!important;
@@ -6264,26 +5877,23 @@ button.bg-foreground:active{
   }
 
   .bottom-nav-pill {
-    width:100%;
+
     pointer-events:auto;
   }
 }
 
-/* Avoid poster-like giant headings inside ordinary mobile product screens. */
 @media (min-width:768px) and (max-width:1199px) {
   .desktop-main-inner h1 {
     font-size:40px!important;
   }
 }
 
-/* Secondary metadata is quiet; the task itself remains visually dominant. */
 .gruzli-order-kicker,
 .gruzli-order-open,
 .gruzli-order-scene-label {
   letter-spacing:.12em;
 }
 
-/* Keep expensive glass effects off the densest desktop feed. */
 @media (min-width:768px) {
   .desktop-main-inner .gruzli-job-card {
     backdrop-filter:none!important;
@@ -6297,7 +5907,6 @@ button.bg-foreground:active{
   }
 }
 
-/* Secondary surfaces: keep the same light product language as the core feed. */
 .gruzli-company-screen,
 .gruzli-premium-screen,
 .gruzli-job-responses-screen {
@@ -6336,7 +5945,6 @@ button.bg-foreground:active{
   box-shadow:0 8px 24px rgba(20,22,25,.045);
 }
 
-/* Notifications share the same card rhythm as orders and chats. */
 .gruzli-page-enter.min-h-full.w-full.bg-background > div.px-5 > div.space-y-2 > div {
   border-color:rgba(17,18,20,.09)!important;
   box-shadow:0 8px 24px rgba(20,22,25,.045)!important;
@@ -6349,8 +5957,6 @@ button.bg-foreground:active{
   }
 }
 
-/* Full-screen surfaces with their own internal scroller must not receive a second
-   vertical scroll container from the mobile shell. */
 @media (max-width:767px) {
   .mobile-screen-viewport {
     position:relative;
@@ -6370,7 +5976,6 @@ button.bg-foreground:active{
   }
 }
 
-/* Keep compositor hints only while a card is actively moving. */
 .gruzli-job-card {
   will-change:auto;
 }
@@ -6384,7 +5989,6 @@ button.bg-foreground:active{
   }
 }
 
-/* Desktop detail owns its viewport: full-screen mobile roots become panel-local. */
 @media (min-width:768px) {
   .desktop-detail-body > .gruzli-create-job-screen,
   .desktop-detail-body > .gruzli-company-screen,
@@ -6405,15 +6009,15 @@ button.bg-foreground:active{
   .desktop-detail-body > .gruzli-contract-screen > .flex-1.overflow-y-auto,
   .desktop-detail-body > .gruzli-company-screen > .flex-1.overflow-y-auto,
   .desktop-detail-body > .gruzli-premium-screen > .flex-1.overflow-y-auto {
-    min-height:0;
+
   }
 
   .desktop-detail-body > .app-shell,
   .desktop-detail-body > .gruzli-chat-detail.app-shell {
-    width:100%!important;
+
     max-width:none!important;
-    min-height:100%!important;
+
     margin:0!important;
-    box-shadow:none!important;
+
   }
 }
