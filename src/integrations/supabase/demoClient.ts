@@ -15,6 +15,15 @@ type Row = Record<string, any>;
 const DB_KEY = "gruzli_demo_db_v2";
 const SESSION_KEY = "gruzli_demo_session_v1";
 
+const DEMO_DISPATCHER_PROFILES = Object.entries(DEMO_DISPATCHER_NAMES).map(([user_id, full_name]) => ({
+  user_id,
+  full_name,
+  phone: null,
+  role: "dispatcher",
+  rating: 4.9,
+  completed_orders: 150,
+}));
+
 const seed: Record<string, Row[]> = {
   jobs: DEMO_FEED_JOBS.map((job) => ({ ...job })),
   profiles: [
@@ -33,20 +42,14 @@ const seed: Record<string, Row[]> = {
     },
     { user_id: DEMO_USERS.dispatcher.id, full_name: DEMO_USERS.dispatcher.name, phone: "+7 900 000-00-02", role: "dispatcher", rating: 4.9, completed_orders: 342 },
     { user_id: DEMO_USERS.client.id, full_name: DEMO_USERS.client.name, phone: "+7 900 000-00-03", role: "client" },
-    { user_id: "demo-dispatcher-1", full_name: "Алексей", phone: null, role: "dispatcher", rating: 4.9, completed_orders: 150 },
-    { user_id: "demo-dispatcher-2", full_name: "Мария", phone: null, role: "dispatcher", rating: 4.9, completed_orders: 150 },
-    { user_id: "demo-dispatcher-3", full_name: "Gruzli", phone: null, role: "dispatcher", rating: 4.9, completed_orders: 150 },
-    { user_id: "demo-dispatcher-4", full_name: "Илья", phone: null, role: "dispatcher", rating: 4.9, completed_orders: 150 },
-    { user_id: "demo-dispatcher-5", full_name: "Анна", phone: null, role: "dispatcher", rating: 4.9, completed_orders: 150 },
+    ...DEMO_DISPATCHER_PROFILES,
   ],
   profiles_public: [
     { user_id: DEMO_USERS.worker.id, full_name: DEMO_USERS.worker.name, avatar_url: null, rating: DEMO_WORKER_PROFILE.rating, completed_orders: DEMO_WORKER_PROFILE.completed_orders, verified: true },
     { user_id: DEMO_USERS.dispatcher.id, full_name: DEMO_USERS.dispatcher.name, avatar_url: null, rating: 4.9, completed_orders: 342, verified: true },
-    { user_id: "demo-dispatcher-1", full_name: "Алексей", avatar_url: null, rating: 4.9, completed_orders: 150, verified: true },
-    { user_id: "demo-dispatcher-2", full_name: "Мария", avatar_url: null, rating: 4.9, completed_orders: 150, verified: true },
-    { user_id: "demo-dispatcher-3", full_name: "Gruzli", avatar_url: null, rating: 4.9, completed_orders: 150, verified: true },
-    { user_id: "demo-dispatcher-4", full_name: "Илья", avatar_url: null, rating: 4.9, completed_orders: 150, verified: true },
-    { user_id: "demo-dispatcher-5", full_name: "Анна", avatar_url: null, rating: 4.9, completed_orders: 150, verified: true },
+    ...DEMO_DISPATCHER_PROFILES.map(({ user_id, full_name, rating, completed_orders }) => ({
+      user_id, full_name, avatar_url: null, rating, completed_orders, verified: true,
+    })),
   ],
   dispatcher_offers: [
     { id: "demo-offer-1", job_id: "demo-job-1", dispatcher_id: DEMO_USERS.dispatcher.id, proposed_hourly_rate: 900, proposed_workers: 2, message: "Готов закрыть заказ командой из двух грузчиков.", status: "pending", created_at: new Date().toISOString() },
