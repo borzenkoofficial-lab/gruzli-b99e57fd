@@ -37,6 +37,17 @@ describe("demo Supabase session", () => {
     });
   });
 
+  it("blocks admin RPCs for non-admin demo roles", async () => {
+    localStorage.setItem("gruzli_demo_worker", "1");
+    localStorage.setItem("gruzli_demo_role", "worker");
+
+    const stats = await demoSupabase.rpc("admin_dashboard_stats");
+    const users = await demoSupabase.rpc("admin_list_users");
+
+    expect(stats.error?.code).toBe("42501");
+    expect(users.error?.code).toBe("42501");
+  });
+
   it("runs the worker completion lifecycle and calculates earnings", async () => {
     localStorage.setItem("gruzli_demo_worker", "1");
     localStorage.setItem("gruzli_demo_role", "worker");
