@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { DEMO_USERS, DEMO_WORKER_PROFILE, type DemoRole } from "@/data/demoData";
+import { DEMO_PROFILES, DEMO_USERS, type DemoRole } from "@/data/demoData";
 
 type AppRole = "client" | "worker" | "dispatcher" | "admin";
 type User = { id: string; email?: string; phone?: string | null; user_metadata: Record<string, any> };
@@ -168,15 +168,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const effectiveRole = DEMO_ENABLED && demoMode ? demoRole : role;
   const effectiveProfile = DEMO_ENABLED && demoMode
     ? {
-        ...DEMO_WORKER_PROFILE,
+        ...DEMO_PROFILES[demoRole as DemoRole],
         full_name: demoUserData.name,
         role: demoRole,
-        skills:
-          demoRole === "worker"
-            ? DEMO_WORKER_PROFILE.skills
-            : demoRole === "dispatcher"
-              ? ["Переезды", "Коммерческие объекты", "Бригады"]
-              : ["Переезд", "Квартирные работы"],
       }
     : profile;
 
