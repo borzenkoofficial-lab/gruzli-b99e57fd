@@ -38,31 +38,26 @@ const AdminDashboardTab = () => {
   };
 
   const fetchStats = async () => {
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const weekStart = new Date(now.getTime() - 7 * 86400000).toISOString();
-    const onlineThreshold = new Date(now.getTime() - 2 * 60000).toISOString();
-
-    const [profilesRes, onlineRes, todayRes, weekRes, ratingsRes] = await Promise.all([
-      supabase.from("profiles").select("id", { count: "exact", head: true }),
-      supabase.from("profiles").select("id", { count: "exact", head: true }).gte("last_seen_at", onlineThreshold),
-      supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", todayStart),
-      supabase.from("profiles").select("id", { count: "exact", head: true }).gte("created_at", weekStart),
-      supabase.from("app_ratings").select("rating"),
-    ]);
-
-    const ratingsData = ratingsRes.data || [];
-    const avg = ratingsData.length > 0
-      ? ratingsData.reduce((s, r) => s + r.rating, 0) / ratingsData.length
-      : 0;
-
+    const { data, error } = await supabase.rpc("admin_dashboard_stats");
+    if (error || !data) {
+      console.error("admin_dashboard_stats failed", error);
+      setStats({
+        totalUsers: 0,
+        onlineNow: 0,
+        newToday: 0,
+        newThisWeek: 0,
+        avgRating: 0,
+        totalRatings: 0,
+      });
+      return;
+    }
     setStats({
-      totalUsers: profilesRes.count || 0,
-      onlineNow: onlineRes.count || 0,
-      newToday: todayRes.count || 0,
-      newThisWeek: weekRes.count || 0,
-      avgRating: Math.round(avg * 10) / 10,
-      totalRatings: ratingsData.length,
+      totalUsers: Number(data.totalUsers || 0),
+      onlineNow: Number(data.onlineNow || 0),
+      newToday: Number(data.newToday || 0),
+      newThisWeek: Number(data.newThisWeek || 0),
+      avgRating: Number(data.avgRating || 0),
+      totalRatings: Number(data.totalRatings || 0),
     });
   };
 
@@ -77,7 +72,7 @@ const AdminDashboardTab = () => {
 
     const userIds = [...new Set(data.map(r => r.user_id))];
     const { data: profiles } = await supabase
-      .from("profiles")
+      .from("profiles_public" as any)
       .select("user_id, full_name")
       .in("user_id", userIds);
 
