@@ -6086,3 +6086,172 @@ button.bg-foreground:active{
 .gruzli-splash-progress{animation:gruzli-splash-progress .8s linear infinite;will-change:transform;}
 @keyframes gruzli-splash-progress{from{transform:translateX(-100%)}to{transform:translateX(200%)}}
 @media(prefers-reduced-motion:reduce){.gruzli-splash{transition:none}.gruzli-splash-progress{animation:none}}
+
+
+/* ===== GRUZLI — UI POLISH PASS 3 / 2026-10 =====
+   Readability, responsive card geometry, calmer canvas and deterministic mobile scrolling.
+   Visual/interaction polish only; no business rules are changed.
+   ========================================================================== */
+
+/* The feed should feel slightly toned, not like a pure white sheet. */
+.gruzli-mobile-feed{
+  background:
+    radial-gradient(520px 360px at 88% 8%,rgba(242,196,0,.055),transparent 68%),
+    radial-gradient(460px 340px at 4% 42%,rgba(95,105,120,.045),transparent 72%),
+    linear-gradient(180deg,#f7f7f6 0%,#f0f0ef 50%,#f6f6f5 100%);
+}
+
+.gruzli-mobile-feed:before{
+  opacity:.28;
+  background-size:52px 52px;
+}
+
+/* Decorative numerals stay decorative — never compete with real content. */
+.gruzli-order-index{
+  z-index:0;
+  color:rgba(23,24,27,.028)!important;
+}
+
+/* The price column is fixed; the title gets every remaining pixel. */
+.gruzli-order-heading{
+  align-items:flex-start;
+}
+.gruzli-order-heading h3{
+  max-width:none!important;
+  overflow-wrap:anywhere;
+}
+.gruzli-order-heading > div{
+  flex:none;
+  white-space:nowrap;
+}
+
+/* Tags and metro labels must shrink inside narrow cards instead of pushing layout. */
+.gruzli-order-tags{
+  min-width:0;
+  max-width:100%;
+}
+.gruzli-order-tags > span{
+  max-width:100%;
+}
+.gruzli-order-route > div{
+  min-width:0;
+  max-width:100%;
+}
+.gruzli-order-route .rounded-full{
+  max-width:100%;
+}
+.gruzli-order-route .rounded-full > span:last-child{
+  min-width:0;
+}
+
+/* Location/time block: preserve two columns, but let both columns actually shrink. */
+.gruzli-order-scene-main{
+  grid-template-columns:minmax(0,1fr) minmax(92px,.64fr);
+}
+.gruzli-order-time{
+  min-width:0;
+}
+.gruzli-order-time strong{
+  overflow-wrap:anywhere;
+  white-space:normal;
+}
+
+/* Bottom metadata is a flex row with a deliberately bounded dispatcher label. */
+.gruzli-order-scene-bottom{
+  gap:8px;
+}
+.gruzli-order-scene-bottom > span{
+  flex:none;
+}
+.gruzli-order-dispatcher{
+  flex:1 1 auto;
+  width:auto;
+  max-width:150px;
+}
+.gruzli-order-dispatcher > span:nth-child(2){
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+/* Description is body copy, not footnote copy. */
+.gruzli-order-description{
+  font-size:11.5px!important;
+  line-height:1.55!important;
+  color:#5f6269!important;
+  background:rgba(242,196,0,.07)!important;
+  padding:11px 12px 11px 14px!important;
+}
+
+/* Money block gets a little more separation from the description. */
+.gruzli-order-pay{
+  margin-top:14px!important;
+}
+
+/* The inline swipe hint was colliding with content at small widths.
+   Gesture remains functional; discoverability is handled by the card affordance itself. */
+@media(max-width:767px){
+  .gruzli-card-swipe-hint{
+    display:none!important;
+  }
+
+  /* Make the pull-refresh wrapper the only vertical scroll owner for the feed. */
+  .pull-refresh-shell{
+    display:flex;
+    flex:1 1 auto;
+    min-height:0;
+    height:100%;
+  }
+  .pull-refresh-scroll{
+    flex:1 1 auto;
+    min-height:0;
+    height:auto;
+    touch-action:pan-y;
+    overscroll-behavior-y:contain;
+  }
+  .pull-refresh-scroll > .gruzli-mobile-feed{
+    min-height:100%;
+  }
+
+  /* Full-screen detail pages keep one explicit scroll root. */
+  .mobile-screen-scroll{
+    touch-action:pan-y;
+    overscroll-behavior-y:contain;
+  }
+}
+
+/* Compact phones: favor readability over dense decorative geometry. */
+@media(max-width:390px){
+  .gruzli-job-card{
+    padding:15px!important;
+  }
+  .gruzli-order-heading{
+    gap:10px;
+  }
+  .gruzli-order-heading > div{
+    width:72px;
+  }
+  .gruzli-order-scene-main{
+    grid-template-columns:minmax(0,1fr) minmax(84px,.58fr);
+    gap:10px;
+  }
+  .gruzli-order-scene-bottom{
+    gap:7px;
+    padding-left:12px;
+    padding-right:12px;
+  }
+  .gruzli-order-dispatcher{
+    max-width:112px;
+  }
+  .gruzli-order-dispatcher > span:nth-child(2){
+    max-width:70px;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .gruzli-mobile-feed:after,
+  .gruzli-feed-hero:before{
+    animation:none!important;
+  }
+}
