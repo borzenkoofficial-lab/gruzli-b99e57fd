@@ -51,7 +51,13 @@ const ContractScreen = ({ contractId, onBack }: ContractScreenProps) => {
       setContract(c);
       const [{ data: j }, { data: d }, { data: existing }] = await Promise.all([
         supabase.from("jobs").select("*").eq("id", c.job_id).maybeSingle(),
-        supabase.from("profiles").select("full_name, phone").eq("user_id", c.dispatcher_id).maybeSingle(),
+        supabase.rpc("get_job_party_profiles", {
+          _job_id: c.job_id,
+          _target_user_ids: [c.dispatcher_id],
+        }).then(({ data, error }) => ({
+          data: data?.[0] ?? null,
+          error,
+        })),
         supabase
           .from("contract_signatures")
           .select("*")
