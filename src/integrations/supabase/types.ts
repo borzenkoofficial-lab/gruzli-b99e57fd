@@ -956,6 +956,7 @@ export type Database = {
           is_self_employed: boolean
           last_seen_at: string | null
           phone: string | null
+          premium_plan: string | null
           premium_until: string | null
           rating: number | null
           recovery_code: string | null
@@ -985,6 +986,7 @@ export type Database = {
           is_self_employed?: boolean
           last_seen_at?: string | null
           phone?: string | null
+          premium_plan?: string | null
           premium_until?: string | null
           rating?: number | null
           recovery_code?: string | null
