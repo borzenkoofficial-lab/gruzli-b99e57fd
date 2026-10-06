@@ -1,4 +1,4 @@
-/* GRUZLI EDITORIAL UI — visual rebrand inspired by the Nexum.dev design language.
+/* GRUZLI EDITORIAL UI — standalone Gruzli visual system.
    UI-only layer: preserves existing screen structure, navigation and business logic. */
 
 :root{
@@ -518,7 +518,7 @@ button,input,textarea,select{font-family:inherit;}
 
 
 
-/* Mobile editorial composition — Nexum-inspired hierarchy without changing business logic. */
+/* Mobile editorial composition — Gruzli hierarchy without changing business logic. */
 .gruzli-mobile-feed{padding-bottom:8px;}
 .gruzli-mobile-hero{
   min-height:82px;
@@ -768,7 +768,7 @@ button{ -webkit-tap-highlight-color:transparent; }
 }
 
 
-/* ===== Nexum Digital-inspired motion + mockup layer ===== */
+/* ===== Gruzli motion + mockup layer ===== */
 .gruzli-preview-frame{
   position:relative;
   margin:14px;
@@ -1526,7 +1526,7 @@ body{overflow-x:hidden;}
 
 /* ============================================================
    GRUZLI DIGITAL EDITORIAL — FINAL VISUAL LAYER
-   Nexum Digital-inspired composition adapted to marketplace UX.
+   Gruzli composition adapted to marketplace UX.
    Logic/data/navigation remain untouched.
    ============================================================ */
 
