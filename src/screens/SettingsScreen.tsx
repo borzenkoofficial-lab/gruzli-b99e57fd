@@ -50,7 +50,7 @@ interface SettingsScreenProps {
   onOpenPremium?: () => void;
 }
 
-type Section = "main" | "profile" | "notifications" | "security" | "appearance" | "blocked" | "about" | "language" | "storage" | "verification";
+type Section = "main" | "profile" | "notifications" | "security" | "appearance" | "blocked" | "about" | "storage" | "verification";
 
 const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   const { user, profile, signOut, role } = useAuth();
@@ -77,9 +77,6 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
-
-  // Language state
-  const [language, setLanguage] = useState(() => localStorage.getItem("app_language") || "ru");
 
   // Blocked users
   const [blockedUsers, setBlockedUsers] = useState<{ id: string; blocked_id: string; full_name: string }[]>([]);
@@ -175,12 +172,6 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
     toast.info("Обратитесь в поддержку для удаления аккаунта");
   };
 
-  const changeLanguage = (lang: string) => {
-    setLanguage(lang);
-    localStorage.setItem("app_language", lang);
-    toast.success(lang === "ru" ? "Язык: Русский" : "Language: English");
-  };
-
   const fetchBlockedUsers = async () => {
     if (!user) return;
     setLoadingBlocked(true);
@@ -228,10 +219,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
       // user cancelled share
     }
   };
-
-  const handleRateApp = () => {
-    toast.success("Спасибо за вашу оценку! ⭐");
-  };
+;
 
   const getStorageEstimate = () => {
     const keys = Object.keys(localStorage);
@@ -550,24 +538,6 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
     );
   }
 
-  // Language section
-  if (section === "language") {
-    return (
-      <ScrollWrapper title="Язык" goBack={() => setSection("main")}>
-        <div className="px-5 space-y-3">
-          {[{ id: "ru", label: "Русский", emoji: "🇷🇺" }, { id: "en", label: "English", emoji: "🇬🇧" }].map((lang) => (
-            <button key={lang.id} onClick={() => changeLanguage(lang.id)} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${language === lang.id ? "bg-card border border-border border border-primary/30" : "bg-card"}`}>
-              <span className="text-2xl">{lang.emoji}</span>
-              <span className={`text-sm font-semibold flex-1 text-left ${language === lang.id ? "text-primary" : "text-foreground"}`}>{lang.label}</span>
-              {language === lang.id && <Check size={18} className="text-primary" />}
-            </button>
-          ))}
-          <p className="text-[11px] text-muted-foreground text-center mt-4">Полная локализация скоро будет доступна</p>
-        </div>
-      </ScrollWrapper>
-    );
-  }
-
   // Blocked users section
   if (section === "blocked") {
     if (blockedUsers.length === 0 && !loadingBlocked) fetchBlockedUsers();
@@ -844,8 +814,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
           <MenuItem icon={Shield} label="Безопасность" desc="" onClick={() => setSection("security")} />
           <div className="h-px bg-border ml-[52px]" />
           <MenuItem icon={Palette} label="Оформление" desc="" onClick={() => setSection("appearance")} />
-          <div className="h-px bg-border ml-[52px]" />
-          <MenuItem icon={Globe} label="Язык" desc="" onClick={() => setSection("language")} badge={language === "ru" ? "RU" : "EN"} />
+ 
         </div>
 
         {/* Data */}
@@ -858,8 +827,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
         {/* App */}
         <div className="gruzli-settings-group">
           <MenuItem icon={Share2} label="Поделиться" desc="" onClick={handleShareApp} />
-          <div className="h-px bg-border ml-[52px]" />
-          <MenuItem icon={Star} label="Оценить приложение" desc="" onClick={handleRateApp} />
+ 
           <div className="h-px bg-border ml-[52px]" />
           <MenuItem icon={Info} label="О приложении" desc="" onClick={() => setSection("about")} />
         </div>
