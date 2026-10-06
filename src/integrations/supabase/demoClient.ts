@@ -299,25 +299,19 @@ async function rpc(name: string, args: Record<string, any> = {}) {
   if (name === "get_support_user_id") return { data: "demo-support", error: null };
   if (name === "client_create_job") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
-    if ((user.user_metadata?.role || profileFor(user)?.role) !== "client") {
-      return { data: null, error: { code: "42501", message: "Нужна роль заказчика" } };
-    }
     const title = String(args._title || "").trim();
     const address = String(args._address || "").trim();
     const rate = Number(args._hourly_rate);
     const duration = Number(args._duration_hours);
     const workers = Number(args._workers_needed);
-    if (!title || !Number.isFinite(rate) || rate <= 0 || !Number.isFinite(duration) || duration <= 0 || !Number.isInteger(workers) || workers < 1 || workers > 100) {
-      return { data: null, error: { code: "22023", message: "Проверьте название, ставку, длительность и количество грузчиков" } };
+    if (!title || !address || !Number.isFinite(rate) || rate <= 0 || !Number.isFinite(duration) || duration <= 0 || !Number.isInteger(workers) || workers < 1 || workers > 100) {
+      return { data: null, error: { code: "22023", message: "Проверьте название, адрес, ставку, длительность и количество грузчиков" } };
     }
     const job = { id: uid("job"), title, description: String(args._description || "").trim(), address, metro: args._metro || null, duration_hours: duration, hourly_rate: rate, workers_needed: workers, start_time: args._start_time || null, status: "open", client_id: user.id, dispatcher_id: null, created_at: new Date().toISOString() };
     db.jobs.push(job); saveDb(db); return { data: job, error: null };
   }
   if (name === "dispatcher_submit_offer") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
-    if ((user.user_metadata?.role || profileFor(user)?.role) !== "dispatcher") {
-      return { data: null, error: { code: "42501", message: "Нужна роль диспетчера" } };
-    }
     const job = db.jobs.find((j) => j.id === args._job_id);
     if (!job || job.status !== "open" || job.dispatcher_id) return { data: null, error: { code: "P0001", message: "Заказ уже недоступен" } };
     const rate = Number(args._proposed_hourly_rate);
@@ -364,9 +358,6 @@ async function rpc(name: string, args: Record<string, any> = {}) {
   }
   if (name === "accept_job_response") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
-    if ((user.user_metadata?.role || profileFor(user)?.role) !== "dispatcher") {
-      return { data: null, error: { code: "42501", message: "Нужна роль диспетчера" } };
-    }
     const response = db.job_responses.find((r) => r.id === args._response_id && r.status === "pending");
     if (!response) return { data: null, error: { code: "P0002", message: "Отклик уже обработан" } };
     const job = db.jobs.find((j) => j.id === response.job_id);
@@ -392,7 +383,7 @@ async function rpc(name: string, args: Record<string, any> = {}) {
     const allowed = ["confirmed", "en_route", "late", "arrived", "finishing", "completed"];
     if (!allowed.includes(args._next_status)) return { data: null, error: { code: "22023", message: "Недопустимый статус" } };
     const transitions: Record<string, string[]> = {
-      ready: ["confirmed"], accepted: ["confirmed"], confirmed: ["en_route", "late"], en_route: ["arrived", "late"],
+      accepted: ["confirmed"], confirmed: ["en_route", "late"], en_route: ["arrived", "late"],
       late: ["en_route", "arrived"], arrived: ["finishing", "completed"], finishing: ["completed"],
     };
     const current = response.worker_status || "accepted";
@@ -403,16 +394,11 @@ async function rpc(name: string, args: Record<string, any> = {}) {
     if (args._next_status === "completed") {
       response.work_finished_at = now;
       const started = response.work_started_at ? new Date(response.work_started_at).getTime() : Date.now();
-      response.hours_worked = Math.max(0.5, Math.round(((Date.now() - started) / 3600000) * 10) / 10);
+      response.hours_worked = Math.max(0, Math.round(((Date.now() - started) / 3600000) * 100) / 100);
       const job = db.jobs.find((j) => j.id === response.job_id);
-      response.earned = Math.round(response.hours_worked * Number(response.agreed_hourly_rate || job?.hourly_rate || 0));
-      const profile = db.profiles.find((p) => p.user_id === user.id);
-      if (profile) {
-        profile.completed_orders = Number(profile.completed_orders || 0) + 1;
-        profile.total_earned = Number(profile.total_earned || 0) + Number(response.earned || 0);
-      }
-      // The dispatcher owns final job closure and financial settlement.
-      // Worker completion only updates the response/profile, matching production RPC semantics.
+      response.earned = response.hours_worked * Number(response.agreed_hourly_rate || job?.hourly_rate || 0);
+      const otherActive = db.job_responses.some((r) => r.job_id === response.job_id && r.id !== response.id && r.status === "accepted" && r.worker_status !== "completed");
+      if (!otherActive && job) job.status = "completed";
     }
     saveDb(db); return { data: response, error: null };
   }
@@ -537,10 +523,6 @@ async function rpc(name: string, args: Record<string, any> = {}) {
     job.status = "active"; saveDb(db); return { data: job, error: null };
   }
   if (name === "admin_dashboard_stats") {
-    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
-    if ((user.user_metadata?.role || profileFor(user)?.role) !== "admin") {
-      return { data: null, error: { code: "42501", message: "Нужна роль администратора" } };
-    }
     const ratings = db.app_ratings || [];
     const now = Date.now();
     return { data: {
@@ -552,79 +534,7 @@ async function rpc(name: string, args: Record<string, any> = {}) {
       totalRatings: ratings.length,
     }, error: null };
   }
-  if (name === "dispatcher_finish_job") {
-    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
-    if ((user.user_metadata?.role || profileFor(user)?.role) !== "dispatcher") {
-      return { data: null, error: { code: "42501", message: "Нужна роль диспетчера" } };
-    }
-    const job = db.jobs.find((j) => j.id === args._job_id);
-    if (!job || job.dispatcher_id !== user.id) {
-      return { data: null, error: { code: "42501", message: "Нет доступа к заказу" } };
-    }
-    let workersNotCompleted = 0;
-    db.job_responses.forEach((response) => {
-      if (response.job_id === job.id && response.status === "accepted" && response.worker_status !== "completed") {
-        response.worker_status = "finishing";
-        workersNotCompleted += 1;
-      }
-    });
-    job.status = "finishing";
-    job.updated_at = new Date().toISOString();
-    saveDb(db);
-    return { data: { job_id: job.id, status: "finishing", workers_not_completed: workersNotCompleted }, error: null };
-  }
-
-  if (name === "dispatcher_complete_job") {
-    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
-    if ((user.user_metadata?.role || profileFor(user)?.role) !== "dispatcher") {
-      return { data: null, error: { code: "42501", message: "Нужна роль диспетчера" } };
-    }
-    const expense = Number(args._expense_per_worker);
-    const income = Number(args._dispatcher_income);
-    if (!Number.isFinite(expense) || expense < 0 || !Number.isFinite(income) || income < 0) {
-      return { data: null, error: { code: "22023", message: "Недопустимые суммы" } };
-    }
-    const job = db.jobs.find((j) => j.id === args._job_id);
-    if (!job || job.dispatcher_id !== user.id) {
-      return { data: null, error: { code: "42501", message: "Нет доступа к заказу" } };
-    }
-    const unfinished = db.job_responses.some((response) =>
-      response.job_id === job.id && response.status === "accepted" && response.worker_status !== "completed"
-    );
-    if (unfinished) {
-      return { data: null, error: { code: "P0001", message: "Есть незавершённые грузчики" } };
-    }
-    job.status = "completed";
-    job.expense_per_worker = expense;
-    job.dispatcher_income = income;
-    job.updated_at = new Date().toISOString();
-    saveDb(db);
-    return { data: { job_id: job.id, status: "completed" }, error: null };
-  }
-
-  if (name === "dispatcher_review_worker") {
-    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
-    if ((user.user_metadata?.role || profileFor(user)?.role) !== "dispatcher") {
-      return { data: null, error: { code: "42501", message: "Нужна роль диспетчера" } };
-    }
-    const rating = Number(args._rating);
-    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-      return { data: null, error: { code: "22023", message: "Недопустимая оценка" } };
-    }
-    const response = db.job_responses.find((r) => r.id === args._response_id);
-    if (!response) return { data: null, error: { code: "P0002", message: "Отклик не найден" } };
-    const job = db.jobs.find((j) => j.id === response.job_id);
-    if (!job || job.dispatcher_id !== user.id) {
-      return { data: null, error: { code: "42501", message: "Нет доступа к отклику" } };
-    }
-    if (response.worker_status !== "completed") {
-      return { data: null, error: { code: "P0001", message: "Грузчик ещё не завершил работу" } };
-    }
-    response.dispatcher_review_rating = rating;
-    response.dispatcher_review_text = String(args._text || "").trim() || null;
-    saveDb(db);
-    return { data: { response_id: response.id, rating }, error: null };
-  }
+  if (name === "dispatcher_finish_job" || name === "dispatcher_complete_job" || name === "dispatcher_review_worker") return { data: {}, error: null };
   if (name === "create_direct_conversation") {
     if (!user || !args._other_user_id) return { data: null, error: { message: "invalid_participant" } };
     const existing = db.conversation_participants
@@ -638,13 +548,7 @@ async function rpc(name: string, args: Record<string, any> = {}) {
     db.conversation_participants.push({ id: uid("participant"), conversation_id: id, user_id: args._other_user_id, last_read_at: null, created_at: new Date().toISOString() });
     saveDb(db); return { data: id, error: null };
   }
-  if (name === "admin_list_users") {
-    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
-    if ((user.user_metadata?.role || profileFor(user)?.role) !== "admin") {
-      return { data: null, error: { code: "42501", message: "Нужна роль администратора" } };
-    }
-    return { data: db.profiles.map((p) => ({ ...p, user_id: p.user_id, role: p.role || "worker", email: "", verified: true, blocked: false })), error: null };
-  }
+  if (name === "admin_list_users") return { data: db.profiles.map((p) => ({ ...p, user_id: p.user_id, role: p.role || "worker", email: "", verified: true, blocked: false })), error: null };
   return { data: null, error: null };
 }
 
