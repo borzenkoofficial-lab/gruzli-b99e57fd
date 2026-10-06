@@ -66,7 +66,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
     if (reviewsData && reviewsData.length > 0) {
       const reviewerIds = [...new Set(reviewsData.map((r: any) => r.reviewer_id))];
       const { data: profiles } = await supabase
-        .from("profiles")
+        .from("profiles_public" as any)
         .select("user_id, full_name")
         .in("user_id", reviewerIds);
       const nameMap: Record<string, string> = {};
@@ -133,20 +133,13 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
     setSubmittingReview(true);
 
     try {
-      if (existingReview) {
-        const { error } = await supabase
-          .from("dispatcher_reviews")
-          .update({ rating: reviewStars, text: reviewText })
-          .eq("id", existingReview.id);
-        if (error) throw error;
-        toast.success("Отзыв обновлён");
-      } else {
-        const { error } = await supabase
-          .from("dispatcher_reviews")
-          .insert({ reviewer_id: user.id, dispatcher_id: userId, rating: reviewStars, text: reviewText });
-        if (error) throw error;
-        toast.success("Отзыв отправлен");
-      }
+      const { error } = await supabase.rpc("worker_review_dispatcher", {
+        _dispatcher_id: userId,
+        _rating: reviewStars,
+        _text: reviewText || null,
+      });
+      if (error) throw error;
+      toast.success(existingReview ? "Отзыв обновлён" : "Отзыв отправлен");
 
       await fetchReviews();
       setShowReviewForm(false);
@@ -182,7 +175,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-full bg-background">
         <div className="flex items-center gap-3 px-4 safe-top pb-4">
           <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center">
             <ArrowLeft size={18} className="text-foreground" />
@@ -208,7 +201,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
   const workerStatus = profile.is_available === false ? "Сейчас занят" : "Готов к работе";
 
   return (
-    <div className="min-h-screen bg-background animate-fade-in pb-[calc(var(--bottom-nav-height,80px)+env(safe-area-inset-bottom,0px)+32px)]">
+    <div className="min-h-full bg-background animate-fade-in pb-[calc(var(--bottom-nav-height,80px)+env(safe-area-inset-bottom,0px)+32px)]">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 safe-top pb-4">
         <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">

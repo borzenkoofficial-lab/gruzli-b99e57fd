@@ -81,9 +81,9 @@ const NotificationsScreen = ({ onBack }: Props) => {
   }, []);
 
   return (
-    <div className="gruzli-page-enter min-h-screen bg-background max-w-lg mx-auto">
+    <div className="gruzli-page-enter min-h-full w-full bg-background">
       {/* Header */}
-      <div className="px-4 safe-top pb-3 flex items-center gap-3">
+      <div className="px-5 safe-top pb-3 flex items-center gap-3">
         <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center">
           <ArrowLeft size={18} className="text-foreground" />
         </button>
@@ -99,7 +99,7 @@ const NotificationsScreen = ({ onBack }: Props) => {
       </div>
 
       {/* List */}
-      <div className="px-4">
+      <div className="px-5">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-16 h-16 rounded-full bg-surface-1 border border-border flex items-center justify-center mb-4">

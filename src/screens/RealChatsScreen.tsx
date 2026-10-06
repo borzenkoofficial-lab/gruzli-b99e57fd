@@ -7,14 +7,12 @@ import { toast } from "sonner";
 import { formatLastSeen } from "@/hooks/usePresence";
 
 const avatarColors = [
-  "linear-gradient(135deg, #6366f1, #8b5cf6)",
-  "linear-gradient(135deg, #ec4899, #f43f5e)",
-  "linear-gradient(135deg, #10b981, #14b8a6)",
-  "linear-gradient(135deg, #f59e0b, #ef4444)",
-  "linear-gradient(135deg, #8b5cf6, #6366f1)",
-  "linear-gradient(135deg, #06b6d4, #3b82f6)",
-  "linear-gradient(135deg, #f43f5e, #fb923c)",
-  "linear-gradient(135deg, #22c55e, #16a34a)",
+  "#191a1d",
+  "#2a2b2f",
+  "#34353a",
+  "#424348",
+  "#505157",
+  "#5c5d63",
 ];
 const getAvatarColor = (name: string) => {
   let hash = 0;
@@ -151,8 +149,6 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
   const [communityId, setCommunityId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const conversationsRef = useRef(conversations);
-  conversationsRef.current = conversations;
 
   const fetchConversations = useCallback(async () => {
     if (!user) return;
@@ -261,7 +257,7 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
       setConversations(items);
     }
     setLoading(false);
-  }, [user, communityId]);
+  }, [user, communityId, isDemo]);
 
   useEffect(() => {
     const loadCommunityId = async () => {
@@ -357,7 +353,7 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
           className="w-full flex items-center gap-3 px-3.5 py-3 rounded-[18px] border border-border bg-card active:bg-muted/50 transition-colors"
         >
           <div className="w-[48px] h-[48px] rounded-full flex items-center justify-center text-primary-foreground shrink-0"
-            style={{ background: "linear-gradient(135deg, #3b82f6, #6366f1)" }}
+            style={{ background: "#191a1d" }}
           >
             <Megaphone size={22} />
           </div>

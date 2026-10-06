@@ -116,6 +116,7 @@ const AdminUsersTab = () => {
           <option value="all">Все роли</option>
           <option value="worker">Грузчики</option>
           <option value="dispatcher">Диспетчеры</option>
+          <option value="client">Клиенты</option>
         </select>
       </div>
 
@@ -143,8 +144,8 @@ const AdminUsersTab = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={u.role === "dispatcher" ? "default" : "secondary"}>
-                      {u.role === "dispatcher" ? "Диспетчер" : "Грузчик"}
+                    <Badge variant={u.role === "dispatcher" ? "default" : u.role === "client" ? "outline" : "secondary"}>
+                      {u.role === "dispatcher" ? "Диспетчер" : u.role === "client" ? "Клиент" : "Грузчик"}
                     </Badge>
                   </TableCell>
                   <TableCell>{u.balance ?? 0} ₽</TableCell>

@@ -18,7 +18,6 @@ function vibrate() {
 
 async function showForegroundNotification(title: string, body: string, tag: string, url?: string) {
   if (typeof window === "undefined") return;
-  if (document.visibilityState !== "visible") return;
   if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
 
   const options = {

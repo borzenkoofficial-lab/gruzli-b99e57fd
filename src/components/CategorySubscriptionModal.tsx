@@ -67,7 +67,7 @@ const CategorySubscriptionModal = ({ open, onClose, onSaved, firstRun }: Props) 
           >
             {/* Decorative gradient header */}
             <div className="relative px-5 pt-6 pb-4 overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-foreground/10 via-transparent to-online/10 opacity-70" />
+              <div className="absolute inset-0 bg-primary/5" />
               <div className="absolute -top-16 -right-10 h-40 w-40 rounded-full bg-online/20 blur-3xl" />
               <div className="absolute -bottom-16 -left-10 h-40 w-40 rounded-full bg-foreground/10 blur-3xl" />
 
@@ -115,14 +115,14 @@ const CategorySubscriptionModal = ({ open, onClose, onSaved, firstRun }: Props) 
                     style={
                       active
                         ? {
-                            boxShadow: `inset 0 0 0 1px ${c.ring}, 0 4px 16px -8px ${c.ring}`,
-                            background: `linear-gradient(135deg, ${c.tint}, hsl(var(--card)) 60%)`,
+                            boxShadow: "inset 0 0 0 1px hsl(var(--primary) / 0.28), 0 4px 16px -8px hsl(var(--primary) / 0.18)",
+                            background: "hsl(var(--primary) / 0.06)",
                           }
                         : undefined
                     }
                   >
                     <div
-                      className={`shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br ${c.gradient} flex items-center justify-center text-white shadow-md`}
+                      className="shrink-0 h-11 w-11 rounded-xl bg-foreground flex items-center justify-center text-background shadow-sm"
                     >
                       <Icon size={20} strokeWidth={2.2} />
                     </div>

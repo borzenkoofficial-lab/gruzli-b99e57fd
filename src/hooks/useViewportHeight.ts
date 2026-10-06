@@ -17,10 +17,12 @@ export function useViewportHeight() {
     setVH();
 
     // Only update on real resize/orientation, not keyboard
+    const handleOrientationChange = () => {
+      window.setTimeout(setVH, 200);
+    };
+
     window.addEventListener("resize", setVH);
-    window.addEventListener("orientationchange", () => {
-      setTimeout(setVH, 200);
-    });
+    window.addEventListener("orientationchange", handleOrientationChange);
 
     // Lock orientation to portrait
     try {
@@ -29,6 +31,7 @@ export function useViewportHeight() {
 
     return () => {
       window.removeEventListener("resize", setVH);
+      window.removeEventListener("orientationchange", handleOrientationChange);
     };
   }, []);
 }

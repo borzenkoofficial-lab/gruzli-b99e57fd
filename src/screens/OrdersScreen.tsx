@@ -38,28 +38,6 @@ const OrdersScreen = () => {
 
   const fetchAcceptedJobs = async () => {
     setLoading(true);
-    if (!user) {
-      const demoMode = localStorage.getItem("gruzli_demo_worker") === "1";
-      if (demoMode) {
-        setJobs([{
-          responseId: "demo-response-1", jobId: "demo-job-1", title: "Переезд квартиры · Сокольники",
-          address: "Москва, ул. Стромынка, 18", startTime: "2026-09-30T10:00:00+03:00",
-          hourlyRate: 900, durationHours: 5, dispatcherName: "Алексей", workerStatus: "confirmed",
-          workStartedAt: null, workFinishedAt: null, hoursWorked: null, earned: null,
-        }]);
-        setCompletedJobs([{
-          responseId: "demo-response-0", jobId: "demo-job-0", title: "Разгрузка фуры · Химки",
-          address: "Химки, Ленинградское шоссе, 23", startTime: null, hourlyRate: 750, durationHours: 4,
-          dispatcherName: "Мария", workerStatus: "completed", workStartedAt: null, workFinishedAt: null,
-          hoursWorked: 4, earned: 3000,
-        }]);
-      } else {
-        setJobs([]);
-        setCompletedJobs([]);
-      }
-      setLoading(false);
-      return;
-    }
     setLoading(true);
 
     if (role === "client") {
@@ -364,7 +342,7 @@ const OrdersScreen = () => {
 
   if (role === "client") {
     return (
-      <div className="gruzli-orders-screen app-scroll gruzli-page-enter native-surface">
+      <div className="gruzli-orders-screen gruzli-page-enter native-surface">
         <header className="px-5 safe-top pb-4">
           <p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Gruzli / CLIENT</p>
           <h1 className="text-[29px] font-extrabold text-foreground tracking-[-.045em] leading-none">Мои заявки</h1>
@@ -378,12 +356,12 @@ const OrdersScreen = () => {
             </div>
           ) : jobs.map((job) => (
             <motion.div key={job.jobId} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-3xl border border-border bg-card p-5 native-surface">
-              <div className="flex items-start justify-between gap-3">
-                <div>
+              <div className="flex items-start justify-between gap-3 min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-[10px] font-bold uppercase tracking-[.14em] text-muted-foreground">ЗАКАЗ / {job.jobId.slice(0, 6).toUpperCase()}</p>
-                  <h3 className="text-base font-extrabold text-foreground mt-1">{job.title}</h3>
+                  <h3 className="text-base font-extrabold text-foreground mt-1 break-words">{job.title}</h3>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider rounded-full border border-border px-2.5 py-1">
+                <span className="max-w-[44%] shrink-0 text-right text-[10px] font-bold uppercase tracking-wider rounded-full border border-border px-2.5 py-1">
                   {job.workerStatus === "open" ? "Ищем диспетчера" : job.workerStatus === "active" ? "Диспетчер выбран" : job.workerStatus === "finishing" ? "Завершается" : job.workerStatus === "closed" ? "Закрыт" : job.workerStatus === "completed" ? "Завершён" : "В работе"}
                 </span>
               </div>

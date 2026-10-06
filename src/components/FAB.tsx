@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Users, MapPin, AlertTriangle, X } from "lucide-react";
+import { Plus, MapPin, AlertTriangle, X } from "lucide-react";
 import { toast } from "sonner";
 
 interface FABProps {
@@ -13,9 +13,6 @@ const FAB = ({ onOpenSupport }: FABProps) => {
   const handleAction = (id: string) => {
     setOpen(false);
     switch (id) {
-      case "team":
-        toast("🔜 Скоро", { description: "Функция поиска бригады в разработке" });
-        break;
       case "nearby":
         window.dispatchEvent(new CustomEvent("navigate-to-feed"));
         break;
@@ -27,7 +24,6 @@ const FAB = ({ onOpenSupport }: FABProps) => {
   };
 
   const actions = [
-    { id: "team", icon: Users, label: "Нужна бригада", color: "bg-foreground" },
     { id: "nearby", icon: MapPin, label: "Заказы рядом", color: "bg-foreground" },
     { id: "sos", icon: AlertTriangle, label: "SOS", color: "bg-destructive" },
   ];
@@ -60,7 +56,7 @@ const FAB = ({ onOpenSupport }: FABProps) => {
                 }`} style={{
                   boxShadow: action.id === "sos"
                     ? '0 4px 20px hsl(0 72% 51% / 0.4)'
-                    : '0 4px 20px hsl(230 60% 58% / 0.35)',
+                    : '0 4px 20px hsl(45 95% 55% / 0.22)',
                 }}>
                   <action.icon size={20} className="text-white" />
                 </div>
@@ -74,7 +70,7 @@ const FAB = ({ onOpenSupport }: FABProps) => {
         onClick={() => setOpen(!open)}
         className="w-14 h-14 rounded-full bg-foreground flex items-center justify-center tap-scale"
         style={{
-          boxShadow: '6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%), 0 4px 20px hsl(230 60% 58% / 0.4)',
+          boxShadow: '0 8px 24px rgba(20,22,25,.18), 0 3px 12px hsl(45 95% 55% / 0.16)',
         }}
       >
         <motion.div animate={{ rotate: open ? 45 : 0 }}>

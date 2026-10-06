@@ -187,7 +187,7 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-8" aria-busy={loading}>
+    <div className="gruzli-job-responses-screen min-h-full bg-background pb-8" aria-busy={loading}>
       <span className="sr-only" role="status" aria-live="polite">{loading ? "Загружаем отклики" : `${responses.length} откликов загружено`}</span>
       <div className="flex items-center gap-3 px-4 safe-top pb-3">
         <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 transition-all">
@@ -195,7 +195,7 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
         </button>
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-bold text-foreground">Набор</h1>
-          <p className="text-xs text-muted-foreground truncate">{job.title}</p>
+          <p className="text-xs text-muted-foreground break-words leading-relaxed">{job.title}</p>
         </div>
       </div>
 

@@ -64,7 +64,7 @@ begin
     end if;
 
     v_hours := greatest(0.5, round(extract(epoch from (v_now - v_response.work_started_at)) / 3600.0, 1));
-    v_earned := round(v_hours * coalesce(v_response.hourly_rate, 0));
+    v_earned := round(v_hours * coalesce(v_response.agreed_hourly_rate, 0));
 
     update public.job_responses
       set worker_status = 'completed',

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, User, Phone, Bell, Shield, Palette, LogOut, Camera, Check, Loader2, Volume2, Vibrate, Layers, Mail, Ban, Trash2, Info, Globe, Database, Share2, Star, Smartphone, HardDrive, Crown, BadgeCheck, Send, FileText } from "lucide-react";
+import { ArrowLeft, User, Phone, Bell, Shield, Palette, LogOut, Camera, Check, Loader2, Volume2, Vibrate, Layers, Mail, Ban, Trash2, Info, Database, Share2, Smartphone, HardDrive, Crown, BadgeCheck, Send, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
@@ -50,7 +50,7 @@ interface SettingsScreenProps {
   onOpenPremium?: () => void;
 }
 
-type Section = "main" | "profile" | "notifications" | "security" | "appearance" | "blocked" | "about" | "language" | "storage" | "verification";
+type Section = "main" | "profile" | "notifications" | "security" | "appearance" | "blocked" | "about" | "storage" | "verification";
 
 const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   const { user, profile, signOut, role } = useAuth();
@@ -77,12 +77,6 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
-
-  // Theme state
-  const [theme, setTheme] = useState<string>("light");
-
-  // Language state
-  const [language, setLanguage] = useState(() => localStorage.getItem("app_language") || "ru");
 
   // Blocked users
   const [blockedUsers, setBlockedUsers] = useState<{ id: string; blocked_id: string; full_name: string }[]>([]);
@@ -178,23 +172,6 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
     toast.info("Обратитесь в поддержку для удаления аккаунта");
   };
 
-  const toggleTheme = (_newTheme: string) => {
-    // Gruzli uses one product-wide visual language. Keep the legacy theme
-    // setting only as a compatibility value for older sessions.
-    const el = document.documentElement;
-    el.classList.remove("light", "theme-midnight", "theme-emerald", "theme-crimson", "theme-amber");
-    el.classList.add("light");
-    setTheme("light");
-    localStorage.setItem("theme", "light");
-    toast.success("Оформление Gruzli обновлено");
-  };
-
-  const changeLanguage = (lang: string) => {
-    setLanguage(lang);
-    localStorage.setItem("app_language", lang);
-    toast.success(lang === "ru" ? "Язык: Русский" : "Language: English");
-  };
-
   const fetchBlockedUsers = async () => {
     if (!user) return;
     setLoadingBlocked(true);
@@ -218,10 +195,21 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   };
 
   const clearCache = () => {
-    const theme = localStorage.getItem("theme");
-    localStorage.clear();
-    if (theme) localStorage.setItem("theme", theme);
-    toast.success("Кеш очищен");
+    const appKeys = [
+      "onboarding_completed",
+      "push-first-prompt-shown",
+      "push-banner-dismissed",
+      "app_language",
+      "theme",
+    ];
+
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith("gruzli") || appKeys.includes(key)) {
+        localStorage.removeItem(key);
+      }
+    });
+
+    toast.success("Кеш Gruzli очищен");
     setTimeout(() => window.location.reload(), 500);
   };
 
@@ -229,7 +217,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
     const shareData = {
       title: "Gruzli",
       text: "Gruzli — платформа для грузчиков и диспетчеров. Быстрый поиск работы!",
-      url: "https://gruzli.lovable.app",
+      url: window.location.origin,
     };
     try {
       if (navigator.share) {
@@ -242,10 +230,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
       // user cancelled share
     }
   };
-
-  const handleRateApp = () => {
-    toast.success("Спасибо за вашу оценку! ⭐");
-  };
+;
 
   const getStorageEstimate = () => {
     const keys = Object.keys(localStorage);
@@ -414,400 +399,6 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
             <PushControl />
           </div>
 
-          <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">В приложении</p>
-            {([
-              { key: "sound" as const, label: "Звук", desc: "Звуковой сигнал", icon: Volume2 },
-              { key: "vibration" as const, label: "Вибрация", desc: "Вибрация при уведомлениях", icon: Vibrate },
-              { key: "overlay" as const, label: "Оверлей заказов", desc: "Полноэкранное уведомление", icon: Layers },
-            ]).map((item) => (
-              <div key={item.key} className="flex items-center justify-between py-1">
-                <div className="flex items-center gap-3">
-                  <item.icon size={16} className="text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{item.label}</p>
-                    <p className="text-[11px] text-muted-foreground">{item.desc}</p>
-                  </div>
-                </div>
-                <Toggle enabled={notifSettings[item.key]} onToggle={() => updateNotif(item.key, !notifSettings[item.key])} />
-              </div>
-            ))}
-          </div>
-
-          <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Категории push</p>
-            {([
-              { key: "pushJobs" as const, label: "Новые заказы", desc: "Уведомления о новых заявках" },
-              { key: "pushMessages" as const, label: "Сообщения", desc: "Уведомления о новых сообщениях" },
-              { key: "pushResponses" as const, label: "Отклики", desc: "Когда кто-то откликнулся" },
-            ]).map((item) => (
-              <div key={item.key} className="flex items-center justify-between py-1">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{item.label}</p>
-                  <p className="text-[11px] text-muted-foreground">{item.desc}</p>
-                </div>
-                <Toggle enabled={notifSettings[item.key]} onToggle={() => updateNotif(item.key, !notifSettings[item.key])} />
-              </div>
-            ))}
-          </div>
-
-          <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">📧 Email-уведомления</p>
-            <div className="mb-2">
-              <label className="text-xs text-muted-foreground mb-1.5 block">Почта для уведомлений</label>
-              <input type="email" value={notifSettings.notificationEmail} onChange={(e) => updateNotif("notificationEmail", e.target.value)} placeholder={user?.email || "email@example.com"} className="w-full bg-surface-1 border border-border rounded-2xl py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none" />
-              <p className="text-[10px] text-muted-foreground mt-1">{notifSettings.notificationEmail ? `Уведомления на ${notifSettings.notificationEmail}` : `По умолчанию: ${user?.email || "ваш email"}`}</p>
-            </div>
-            {([
-              { key: "emailJobs" as const, label: "Новые заказы", desc: "Email при новом заказе" },
-              { key: "emailMessages" as const, label: "Сообщения", desc: "Email при новых сообщениях" },
-            ]).map((item) => (
-              <div key={item.key} className="flex items-center justify-between py-1">
-                <div className="flex items-center gap-3">
-                  <Mail size={16} className="text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{item.label}</p>
-                    <p className="text-[11px] text-muted-foreground">{item.desc}</p>
-                  </div>
-                </div>
-                <Toggle enabled={notifSettings[item.key]} onToggle={() => updateNotif(item.key, !notifSettings[item.key])} />
-              </div>
-            ))}
-          </div>
-
-          <TelegramLinkCard />
-          <TelegramChannelsCard />
-        </div>
-      </ScrollWrapper>
-    );
-  }
-
-  // Security section
-  if (section === "security") {
-    return (
-      <ScrollWrapper title="Безопасность" goBack={() => setSection("main")}>
-        <div className="px-5 space-y-4">
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <h3 className="text-sm font-bold text-foreground mb-4">Изменить пароль</h3>
-            <InputField label="Новый пароль" value={password} onChange={setPassword} error={passwordErrors.password} placeholder="Минимум 6 символов" type="password" />
-            <InputField label="Повторите пароль" value={confirmPassword} onChange={setConfirmPassword} error={passwordErrors.confirmPassword} placeholder="Ещё раз" type="password" />
-            <button onClick={handleChangePassword} disabled={changingPassword || !password} className="w-full py-3 rounded-2xl bg-foreground text-primary-foreground text-sm font-bold tap-scale disabled:opacity-50 flex items-center justify-center gap-2">
-              {changingPassword ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
-              {changingPassword ? "Сохранение..." : "Изменить пароль"}
-            </button>
-          </div>
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <h3 className="text-sm font-bold text-foreground mb-2">Сессия</h3>
-            <p className="text-xs text-muted-foreground mb-3">Email: {user?.email}<br />Последний вход: {user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString("ru-RU") : "—"}</p>
-            <button onClick={signOut} className="w-full py-3 rounded-2xl border border-destructive/30 text-destructive text-sm font-bold tap-scale">Выйти из аккаунта</button>
-          </div>
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <h3 className="text-sm font-bold text-destructive mb-2">Опасная зона</h3>
-            <p className="text-xs text-muted-foreground mb-3">Удаление аккаунта необратимо.</p>
-            <button onClick={handleDeleteAccount} className="w-full py-3 rounded-2xl bg-destructive/10 text-destructive text-sm font-bold tap-scale">Удалить аккаунт</button>
-          </div>
-        </div>
-      </ScrollWrapper>
-    );
-  }
-
-  // Appearance section
-  if (section === "appearance") {
-    return (
-      <ScrollWrapper title="Оформление" goBack={() => setSection("main")}>
-        <div className="px-5 space-y-4">
-          <div className="bg-card border border-border rounded-2xl p-5">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-[#fff5c7] flex items-center justify-center shrink-0">
-                <Palette size={21} className="text-[#8a6b00]" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-foreground">Единый стиль Gruzli</h3>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  Светлая бумажная основа, графитовая типографика и жёлтый акцент используются во всём приложении.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-5 overflow-hidden rounded-2xl border border-[#e5e5e8] bg-[#f6f6f7]">
-              <div className="h-8 border-b border-[#e5e5e8] bg-white flex items-center gap-1.5 px-3">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#d7d7da]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-[#d7d7da]" />
-                <span className="w-1.5 h-1.5 rounded-full bg-[#d7d7da]" />
-              </div>
-              <div className="p-3 space-y-2">
-                <div className="h-3 w-24 rounded-full bg-[#17181b]" />
-                <div className="h-14 rounded-xl bg-white border border-[#e5e5e8]" />
-                <div className="flex gap-2">
-                  <div className="h-8 flex-1 rounded-lg bg-white border border-[#e5e5e8]" />
-                  <div className="h-8 w-20 rounded-lg bg-[#f2c400]" />
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 flex items-center justify-between rounded-xl bg-[#fff5c7] px-3.5 py-3">
-              <div>
-                <p className="text-xs font-bold text-[#5e4b00]">Светлая тема</p>
-                <p className="text-[11px] text-[#7a670f] mt-0.5">Стандарт Gruzli</p>
-              </div>
-              <div className="w-6 h-6 rounded-full bg-[#f2c400] flex items-center justify-center">
-                <Check size={14} className="text-[#17181b]" />
-              </div>
-            </div>
-          </div>
-
-          <p className="text-[11px] text-muted-foreground text-center px-5">
-            Персональные цветовые темы отключены, чтобы интерфейс и навигация оставались одинаковыми для всех экранов.
-          </p>
-        </div>
-      </ScrollWrapper>
-    );
-  }
-
-  // Language section
-  if (section === "language") {
-    return (
-      <ScrollWrapper title="Язык" goBack={() => setSection("main")}>
-        <div className="px-5 space-y-3">
-          {[{ id: "ru", label: "Русский", emoji: "🇷🇺" }, { id: "en", label: "English", emoji: "🇬🇧" }].map((lang) => (
-            <button key={lang.id} onClick={() => changeLanguage(lang.id)} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all ${language === lang.id ? "bg-card border border-border border border-primary/30" : "bg-card"}`}>
-              <span className="text-2xl">{lang.emoji}</span>
-              <span className={`text-sm font-semibold flex-1 text-left ${language === lang.id ? "text-primary" : "text-foreground"}`}>{lang.label}</span>
-              {language === lang.id && <Check size={18} className="text-primary" />}
-            </button>
-          ))}
-          <p className="text-[11px] text-muted-foreground text-center mt-4">Полная локализация скоро будет доступна</p>
-        </div>
-      </ScrollWrapper>
-    );
-  }
-
-  // Blocked users section
-  if (section === "blocked") {
-    if (blockedUsers.length === 0 && !loadingBlocked) fetchBlockedUsers();
-    return (
-      <ScrollWrapper title="Заблокированные" goBack={() => setSection("main")}>
-        <div className="px-5">
-          {loadingBlocked ? (
-            <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-primary" /></div>
-          ) : blockedUsers.length === 0 ? (
-            <div className="bg-card border border-border rounded-2xl p-6 text-center">
-              <Ban size={32} className="text-muted-foreground mx-auto mb-3" />
-              <p className="text-sm font-semibold text-foreground mb-1">Список пуст</p>
-              <p className="text-xs text-muted-foreground">Вы никого не заблокировали</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {blockedUsers.map((bu) => (
-                <div key={bu.id} className="bg-card border border-border rounded-2xl p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center text-xs font-bold text-muted-foreground">
-                    {bu.full_name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
-                  </div>
-                  <span className="text-sm font-semibold text-foreground flex-1">{bu.full_name}</span>
-                  <button onClick={() => unblockUser(bu.id)} className="px-3 py-1.5 rounded-xl bg-destructive/10 text-destructive text-xs font-bold tap-scale">
-                    Разблокировать
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </ScrollWrapper>
-    );
-  }
-
-  // Storage section (new feature)
-  if (section === "storage") {
-    const storageInfo = getStorageEstimate();
-    return (
-      <ScrollWrapper title="Данные и хранилище" goBack={() => setSection("main")}>
-        <div className="px-5 space-y-4">
-          <div className="bg-card border border-border rounded-2xl p-5">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-card border border-border flex items-center justify-center">
-                <HardDrive size={24} className="text-primary" />
-              </div>
-              <div>
-                <p className="text-lg font-bold text-foreground">{storageInfo.sizeKB} КБ</p>
-                <p className="text-xs text-muted-foreground">Локальные данные ({storageInfo.items} записей)</p>
-              </div>
-            </div>
-            <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
-              <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(parseFloat(storageInfo.sizeKB) / 50 * 100, 100)}%` }} />
-            </div>
-            <p className="text-[10px] text-muted-foreground mt-2">Лимит ~5 МБ (localStorage)</p>
-          </div>
-
-          <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Действия</p>
-            <button onClick={clearCache} className="w-full flex items-center gap-3 p-3 rounded-xl active:bg-muted/50 transition-colors">
-              <Trash2 size={16} className="text-destructive" />
-              <div className="text-left">
-                <p className="text-sm font-semibold text-foreground">Очистить кеш</p>
-                <p className="text-[11px] text-muted-foreground">Сбросить все локальные данные</p>
-              </div>
-            </button>
-          </div>
-
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Что хранится</p>
-            <div className="space-y-2">
-              {[
-                { label: "Настройки темы", desc: "Выбранная тема оформления" },
-                { label: "Уведомления", desc: "Настройки push и email" },
-                { label: "Язык", desc: "Язык интерфейса" },
-                { label: "Кеш данных", desc: "Временные данные приложения" },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center gap-3 py-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  <div>
-                    <p className="text-xs font-medium text-foreground">{item.label}</p>
-                    <p className="text-[10px] text-muted-foreground">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </ScrollWrapper>
-    );
-  }
-
-  // Verification section
-  if (section === "verification") {
-
-    const handleSendVerification = async () => {
-      if (!vFullName.trim() || !vAge || !vPhone.trim()) {
-        toast.error("Заполните все обязательные поля");
-        return;
-      }
-      setVSending(true);
-
-      const orgTypeLabels = { ip: "ИП", self: "Самозанятый", ooo: "ООО" };
-      const message = `📋 Заявка на верификацию\n\n👤 ФИО: ${vFullName.trim()}\n🎂 Возраст: ${vAge}\n📱 Телефон: ${vPhone.trim()}\n🏢 Тип: ${orgTypeLabels[vOrgType]}${vOrgName.trim() ? `\n🏛 Организация: ${vOrgName.trim()}` : ""}\n\nID: ${profile?.display_id || user?.id?.slice(0, 8).toUpperCase()}\nРоль: ${role === "dispatcher" ? "Диспетчер" : "Грузчик"}`;
-
-      // Find or create conversation with support
-      const { data: myConvs } = await supabase
-        .from("conversation_participants")
-        .select("conversation_id")
-        .eq("user_id", user!.id);
-
-      let conversationId: string | null = null;
-      if (myConvs) {
-        for (const mc of myConvs) {
-          const { data: other } = await supabase
-            .from("conversation_participants")
-            .select("id")
-            .eq("conversation_id", mc.conversation_id)
-            .eq("user_id", supportUserId!)
-            .single();
-          if (other) { conversationId = mc.conversation_id; break; }
-        }
-      }
-
-      if (!conversationId) {
-        conversationId = crypto.randomUUID();
-        await supabase.from("conversations").insert({ id: conversationId, title: "Gruzli Official" });
-        await supabase.from("conversation_participants").insert([
-          { conversation_id: conversationId, user_id: user!.id },
-          { conversation_id: conversationId, user_id: supportUserId! },
-        ]);
-      }
-
-      await supabase.from("messages").insert({
-        conversation_id: conversationId,
-        sender_id: user!.id,
-        text: message,
-      });
-
-      toast.success("Заявка на верификацию отправлена!");
-      setVSending(false);
-      setSection("main");
-    };
-
-    return (
-      <ScrollWrapper title="Верификация" goBack={() => setSection("main")}>
-        <div className="px-5 space-y-4">
-          <div className="bg-card border border-border rounded-2xl p-4 text-center">
-            <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-              <BadgeCheck size={28} className="text-primary" />
-            </div>
-            <h3 className="text-sm font-bold text-foreground">Пройти верификацию</h3>
-            <p className="text-[11px] text-muted-foreground mt-1">Заполните анкету — она будет отправлена в тех. поддержку для проверки</p>
-          </div>
-
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">ФИО *</label>
-              <input value={vFullName} onChange={(e) => setVFullName(e.target.value)} placeholder="Иванов Иван Иванович" className="w-full bg-surface-1 border border-border rounded-2xl py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none" />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Возраст *</label>
-              <input type="number" value={vAge} onChange={(e) => setVAge(e.target.value)} placeholder="25" className="w-full bg-surface-1 border border-border rounded-2xl py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none" />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Номер телефона *</label>
-              <input type="tel" value={vPhone} onChange={(e) => setVPhone(e.target.value)} placeholder="+7 (999) 123-45-67" className="w-full bg-surface-1 border border-border rounded-2xl py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none" />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Тип деятельности *</label>
-              <div className="grid grid-cols-3 gap-2">
-                {([{ id: "ip" as const, label: "ИП" }, { id: "self" as const, label: "Самозанятый" }, { id: "ooo" as const, label: "ООО" }]).map((t) => (
-                  <button key={t.id} type="button" onClick={() => setVOrgType(t.id)} className={`py-2.5 rounded-xl text-xs font-semibold transition-all ${vOrgType === t.id ? "bg-foreground text-primary-foreground" : "bg-card border border-border text-muted-foreground"}`}>
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {(vOrgType === "ip" || vOrgType === "ooo") && (
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Название организации</label>
-                <input value={vOrgName} onChange={(e) => setVOrgName(e.target.value)} placeholder='ООО "Грузовик"' className="w-full bg-surface-1 border border-border rounded-2xl py-3 px-4 text-sm text-foreground placeholder:text-muted-foreground outline-none" />
-              </div>
-            )}
-          </div>
-
-          <button onClick={handleSendVerification} disabled={vSending} className="w-full py-3.5 rounded-2xl bg-foreground text-primary-foreground text-sm font-bold tap-scale disabled:opacity-50 flex items-center justify-center gap-2">
-            {vSending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-            {vSending ? "Отправка..." : "Отправить заявку"}
-          </button>
-        </div>
-      </ScrollWrapper>
-    );
-  }
-
-  // About section
-  if (section === "about") {
-    const openDoc = (doc: "privacy" | "terms" | "personal_data") => {
-      setLegalDoc(doc);
-      setLegalOpen(true);
-    };
-
-    return (
-      <ScrollWrapper title="О приложении" goBack={() => setSection("main")}>
-        <div className="px-5 space-y-4">
-          <div className="bg-card border border-border rounded-2xl p-6 text-center">
-            <div className="w-16 h-16 rounded-2xl bg-foreground flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl font-extrabold text-primary-foreground">G</span>
-            </div>
-            <h2 className="text-lg font-bold text-foreground">Gruzli</h2>
-            <p className="text-xs text-muted-foreground mt-1">Версия 1.0.0 beta</p>
-            <div className="mx-auto mt-2 px-3 py-1.5 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
-              <p className="text-[11px] text-yellow-500 font-semibold">⚠️ Бета-версия — возможны ошибки в работе</p>
-            </div>
-            <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
-              Платформа для грузчиков и диспетчеров. Быстрый поиск работы и исполнителей.
-            </p>
-          </div>
-
-          <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ссылки</p>
-            <a href="https://gruzli.lovable.app" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 py-2">
-              <Globe size={16} className="text-primary" />
-              <span className="text-sm text-foreground">Веб-сайт</span>
-            </a>
-          </div>
-
           <div className="bg-card border border-border rounded-2xl p-4 space-y-1">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Юридические документы</p>
             <button onClick={() => openDoc("privacy")} className="flex items-center gap-3 py-2.5 w-full text-left">
@@ -826,7 +417,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
             </button>
           </div>
 
-          <p className="text-[11px] text-muted-foreground text-center">© 2025 Gruzli. Все права защищены.</p>
+          <p className="text-[11px] text-muted-foreground text-center">© 2026 Gruzli. Все права защищены.</p>
         </div>
         <LegalModal open={legalOpen} onClose={() => setLegalOpen(false)} initialDoc={legalDoc} />
       </ScrollWrapper>
@@ -869,8 +460,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
           <MenuItem icon={Shield} label="Безопасность" desc="" onClick={() => setSection("security")} />
           <div className="h-px bg-border ml-[52px]" />
           <MenuItem icon={Palette} label="Оформление" desc="" onClick={() => setSection("appearance")} />
-          <div className="h-px bg-border ml-[52px]" />
-          <MenuItem icon={Globe} label="Язык" desc="" onClick={() => setSection("language")} badge={language === "ru" ? "RU" : "EN"} />
+ 
         </div>
 
         {/* Data */}
@@ -883,8 +473,7 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
         {/* App */}
         <div className="gruzli-settings-group">
           <MenuItem icon={Share2} label="Поделиться" desc="" onClick={handleShareApp} />
-          <div className="h-px bg-border ml-[52px]" />
-          <MenuItem icon={Star} label="Оценить приложение" desc="" onClick={handleRateApp} />
+ 
           <div className="h-px bg-border ml-[52px]" />
           <MenuItem icon={Info} label="О приложении" desc="" onClick={() => setSection("about")} />
         </div>

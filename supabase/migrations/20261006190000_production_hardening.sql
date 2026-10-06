@@ -1,0 +1,887 @@
+-- Gruzli production hardening: real backend boundary, profile privacy, safe chat creation,
+-- response-rate snapshots and controlled dispatcher republish.
+
+ALTER TABLE public.job_responses
+  ADD COLUMN IF NOT EXISTS agreed_hourly_rate integer;
+
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS premium_plan text;
+
+UPDATE public.job_responses jr
+SET agreed_hourly_rate = j.hourly_rate
+FROM public.jobs j
+WHERE jr.job_id = j.id
+  AND jr.agreed_hourly_rate IS NULL;
+
+CREATE OR REPLACE FUNCTION public.worker_submit_response(
+  _job_id uuid,
+  _message text DEFAULT NULL
+)
+RETURNS public.job_responses
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user uuid := auth.uid();
+  v_job public.jobs%rowtype;
+  v_response public.job_responses%rowtype;
+BEGIN
+  IF v_user IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated' USING ERRCODE = '42501';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.user_roles
+    WHERE user_id = v_user AND role = 'worker'
+  ) THEN
+    RAISE EXCEPTION 'worker_role_required' USING ERRCODE = '42501';
+  END IF;
+
+  SELECT * INTO v_job FROM public.jobs WHERE id = _job_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'job_not_found' USING ERRCODE = 'P0002'; END IF;
+  IF v_job.dispatcher_id IS NULL OR v_job.status NOT IN ('active', 'open') THEN
+    RAISE EXCEPTION 'job_not_available' USING ERRCODE = 'P0001';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.job_responses
+    WHERE job_id = _job_id AND worker_id = v_user
+      AND status IN ('pending', 'accepted')
+  ) THEN
+    RAISE EXCEPTION 'response_already_exists' USING ERRCODE = '23505';
+  END IF;
+
+  INSERT INTO public.job_responses (
+    job_id, worker_id, message, status, worker_status, agreed_hourly_rate
+  )
+  VALUES (
+    _job_id, v_user, NULLIF(trim(_message), ''), 'pending', 'ready',
+    v_job.hourly_rate
+  )
+  RETURNING * INTO v_response;
+
+  RETURN v_response;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.worker_submit_response(uuid,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.worker_submit_response(uuid,text) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.accept_job_response(_response_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_job_id uuid;
+  v_worker_id uuid;
+  v_dispatcher uuid;
+  v_needed integer;
+  v_accepted_count integer;
+  v_filled boolean := false;
+  v_auto_rejected integer := 0;
+  v_rate integer;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated'; END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role = 'dispatcher'
+  ) THEN
+    RAISE EXCEPTION 'dispatcher_role_required';
+  END IF;
+
+  SELECT jr.job_id, jr.worker_id INTO v_job_id, v_worker_id
+  FROM public.job_responses jr WHERE jr.id = _response_id FOR UPDATE;
+  IF v_job_id IS NULL THEN RAISE EXCEPTION 'response_not_found'; END IF;
+
+  SELECT j.dispatcher_id, GREATEST(1, COALESCE(j.workers_needed,1)), j.hourly_rate
+  INTO v_dispatcher, v_needed, v_rate
+  FROM public.jobs j WHERE j.id = v_job_id FOR UPDATE;
+
+  IF v_dispatcher IS NULL OR v_dispatcher <> auth.uid() THEN RAISE EXCEPTION 'access_denied'; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.job_responses WHERE id = _response_id AND status = 'pending'
+  ) THEN RAISE EXCEPTION 'response_not_pending'; END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM public.jobs
+    WHERE id = v_job_id AND dispatcher_id = auth.uid() AND status IN ('active','open')
+  ) THEN RAISE EXCEPTION 'job_not_available'; END IF;
+
+  SELECT count(*)::integer INTO v_accepted_count
+  FROM public.job_responses WHERE job_id = v_job_id AND status = 'accepted';
+
+  IF v_accepted_count >= v_needed THEN RAISE EXCEPTION 'worker_limit_reached' USING ERRCODE='P0002'; END IF;
+
+  UPDATE public.job_responses
+  SET status = 'accepted',
+      worker_status = COALESCE(worker_status, 'ready'),
+      agreed_hourly_rate = COALESCE(agreed_hourly_rate, v_rate)
+  WHERE id = _response_id AND status = 'pending';
+
+  IF NOT FOUND THEN RAISE EXCEPTION 'response_not_pending'; END IF;
+
+  v_accepted_count := v_accepted_count + 1;
+
+  IF v_accepted_count >= v_needed THEN
+    UPDATE public.jobs
+    SET status = 'filled', updated_at = now()
+    WHERE id = v_job_id AND dispatcher_id = auth.uid() AND status IN ('active','open');
+
+    WITH upd AS (
+      UPDATE public.job_responses SET status='rejected'
+      WHERE job_id=v_job_id AND status='pending' RETURNING 1
+    )
+    SELECT count(*)::integer INTO v_auto_rejected FROM upd;
+    v_filled := true;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'accepted', true,
+    'filled', v_filled,
+    'auto_rejected', v_auto_rejected,
+    'accepted_count', v_accepted_count,
+    'workers_needed', v_needed,
+    'job_id', v_job_id,
+    'worker_id', v_worker_id
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.accept_job_response(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.accept_job_response(uuid) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.worker_update_response_status(
+  _response_id uuid,
+  _next_status text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user uuid := auth.uid();
+  v_response public.job_responses%rowtype;
+  v_now timestamptz := now();
+  v_hours numeric;
+  v_earned numeric;
+BEGIN
+  IF v_user IS NULL THEN RAISE EXCEPTION 'not_authenticated' USING ERRCODE='42501'; END IF;
+
+  SELECT * INTO v_response
+  FROM public.job_responses
+  WHERE id = _response_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN RAISE EXCEPTION 'response_not_found' USING ERRCODE='P0002'; END IF;
+  IF v_response.worker_id <> v_user THEN RAISE EXCEPTION 'not_response_owner' USING ERRCODE='42501'; END IF;
+  IF v_response.status <> 'accepted' THEN RAISE EXCEPTION 'response_not_accepted' USING ERRCODE='P0001'; END IF;
+
+  IF _next_status = 'confirmed' THEN
+    IF v_response.worker_status IS NOT NULL AND v_response.worker_status NOT IN ('ready') THEN
+      RAISE EXCEPTION 'invalid_transition';
+    END IF;
+    UPDATE public.job_responses SET worker_status='confirmed' WHERE id=_response_id;
+
+  ELSIF _next_status='en_route' THEN
+    IF v_response.worker_status NOT IN ('confirmed','late') THEN RAISE EXCEPTION 'invalid_transition'; END IF;
+    UPDATE public.job_responses SET worker_status='en_route' WHERE id=_response_id;
+
+  ELSIF _next_status='late' THEN
+    IF v_response.worker_status NOT IN ('confirmed','en_route','late') THEN RAISE EXCEPTION 'invalid_transition'; END IF;
+    UPDATE public.job_responses SET worker_status='late' WHERE id=_response_id;
+
+  ELSIF _next_status='arrived' THEN
+    IF v_response.worker_status NOT IN ('en_route','late') THEN RAISE EXCEPTION 'invalid_transition'; END IF;
+    UPDATE public.job_responses
+    SET worker_status='arrived', work_started_at=coalesce(work_started_at,v_now)
+    WHERE id=_response_id;
+
+  ELSIF _next_status='completed' THEN
+    IF v_response.worker_status NOT IN ('arrived','finishing') THEN RAISE EXCEPTION 'invalid_transition'; END IF;
+    IF v_response.work_started_at IS NULL THEN RAISE EXCEPTION 'work_not_started'; END IF;
+
+    v_hours := greatest(0.5, round(extract(epoch from (v_now-v_response.work_started_at))/3600.0,1));
+    v_earned := round(v_hours * coalesce(v_response.agreed_hourly_rate,0));
+
+    UPDATE public.job_responses
+    SET worker_status='completed',
+        work_finished_at=v_now,
+        hours_worked=v_hours,
+        earned=v_earned
+    WHERE id=_response_id;
+
+    UPDATE public.profiles
+    SET completed_orders=coalesce(completed_orders,0)+1,
+        total_earned=coalesce(total_earned,0)+v_earned
+    WHERE user_id=v_user;
+  ELSE
+    RAISE EXCEPTION 'unsupported_status';
+  END IF;
+
+  RETURN jsonb_build_object(
+    'response_id',_response_id,
+    'worker_status',_next_status,
+    'work_started_at',(SELECT work_started_at FROM public.job_responses WHERE id=_response_id),
+    'work_finished_at',(SELECT work_finished_at FROM public.job_responses WHERE id=_response_id),
+    'hours_worked',(SELECT hours_worked FROM public.job_responses WHERE id=_response_id),
+    'earned',(SELECT earned FROM public.job_responses WHERE id=_response_id)
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.worker_update_response_status(uuid,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.worker_update_response_status(uuid,text) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.dispatcher_republish_job(_job_id uuid)
+RETURNS public.jobs
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path=public
+AS $$
+DECLARE
+  v_job public.jobs;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'not_authenticated' USING ERRCODE='42501'; END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM public.user_roles WHERE user_id=auth.uid() AND role='dispatcher'
+  ) THEN RAISE EXCEPTION 'dispatcher_role_required' USING ERRCODE='42501'; END IF;
+
+  UPDATE public.jobs
+  SET status='active', updated_at=now()
+  WHERE id=_job_id
+    AND dispatcher_id=auth.uid()
+    AND status='closed'
+    AND NOT EXISTS (
+      SELECT 1 FROM public.job_responses
+      WHERE job_id=_job_id AND status='accepted'
+    )
+  RETURNING * INTO v_job;
+
+  IF NOT FOUND THEN RAISE EXCEPTION 'job_not_republishable' USING ERRCODE='P0001'; END IF;
+  RETURN v_job;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.dispatcher_republish_job(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.dispatcher_republish_job(uuid) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.dispatcher_update_job(
+  _job_id uuid,
+  _title text DEFAULT NULL,
+  _description text DEFAULT NULL,
+  _hourly_rate integer DEFAULT NULL,
+  _duration_hours numeric DEFAULT NULL,
+  _workers_needed integer DEFAULT NULL,
+  _address text DEFAULT NULL,
+  _metro text DEFAULT NULL,
+  _start_time timestamptz DEFAULT NULL,
+  _urgent boolean DEFAULT NULL,
+  _quick_minimum boolean DEFAULT NULL,
+  _requires_contract boolean DEFAULT NULL,
+  _status text DEFAULT NULL
+)
+RETURNS public.jobs
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_user uuid:=auth.uid();
+  v_job public.jobs;
+  v_accepted_workers integer;
+BEGIN
+  IF v_user IS NULL THEN RAISE EXCEPTION 'not_authenticated' USING ERRCODE='42501'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.user_roles WHERE user_id=v_user AND role='dispatcher') THEN
+    RAISE EXCEPTION 'dispatcher_role_required' USING ERRCODE='42501';
+  END IF;
+  IF _status IS NOT NULL AND _status NOT IN ('open','active','filled') THEN RAISE EXCEPTION 'invalid_edit_status'; END IF;
+  IF _hourly_rate IS NOT NULL AND _hourly_rate <= 0 THEN RAISE EXCEPTION 'invalid_hourly_rate'; END IF;
+  IF _duration_hours IS NOT NULL AND _duration_hours <= 0 THEN RAISE EXCEPTION 'invalid_duration'; END IF;
+  IF _workers_needed IS NOT NULL AND _workers_needed < 1 THEN RAISE EXCEPTION 'invalid_workers_count'; END IF;
+
+  SELECT * INTO v_job FROM public.jobs
+  WHERE id=_job_id AND dispatcher_id=v_user AND status IN ('open','active','filled')
+  FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'job_not_editable' USING ERRCODE='42501'; END IF;
+
+  SELECT count(*) INTO v_accepted_workers
+  FROM public.job_responses WHERE job_id=_job_id AND status='accepted';
+
+  IF _hourly_rate IS NOT NULL AND _hourly_rate IS DISTINCT FROM v_job.hourly_rate
+     AND EXISTS (
+       SELECT 1 FROM public.job_responses
+       WHERE job_id=_job_id AND status IN ('pending','accepted')
+     )
+  THEN
+    RAISE EXCEPTION 'hourly_rate_locked' USING ERRCODE='P0001';
+  END IF;
+
+  IF COALESCE(_workers_needed,v_job.workers_needed) < v_accepted_workers THEN
+    RAISE EXCEPTION 'workers_below_assigned' USING ERRCODE='P0001';
+  END IF;
+
+  IF _status IS NOT NULL AND _status IS DISTINCT FROM v_job.status THEN
+    RAISE EXCEPTION 'lifecycle_managed_status' USING ERRCODE='P0001';
+  END IF;
+
+  UPDATE public.jobs
+  SET title=COALESCE(NULLIF(trim(_title),''),title),
+      description=COALESCE(_description,description),
+      hourly_rate=COALESCE(_hourly_rate,hourly_rate),
+      duration_hours=COALESCE(_duration_hours,duration_hours),
+      workers_needed=COALESCE(_workers_needed,workers_needed),
+      address=COALESCE(_address,address),
+      metro=COALESCE(_metro,metro),
+      start_time=COALESCE(_start_time,start_time),
+      urgent=COALESCE(_urgent,urgent),
+      quick_minimum=COALESCE(_quick_minimum,quick_minimum),
+      requires_contract=COALESCE(_requires_contract,requires_contract),
+      status=COALESCE(_status,status),
+      updated_at=now()
+  WHERE id=_job_id;
+
+  SELECT * INTO v_job FROM public.jobs WHERE id=_job_id;
+  RETURN v_job;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.dispatcher_update_job(uuid,text,text,integer,numeric,integer,text,text,timestamptz,boolean,boolean,boolean,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.dispatcher_update_job(uuid,text,text,integer,numeric,integer,text,text,timestamptz,boolean,boolean,boolean,text) TO authenticated;
+
+-- User profile privacy: only the owner can read their private profile.
+DROP POLICY IF EXISTS "Profiles viewable by authenticated" ON public.profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+
+CREATE POLICY "Users can view own profile"
+  ON public.profiles FOR SELECT TO authenticated
+  USING (auth.uid() = user_id);
+
+CREATE OR REPLACE FUNCTION public.profile_self_update_allowed(
+  _user_id uuid,
+  _rating numeric,
+  _completed_orders integer,
+  _total_earned integer,
+  _balance integer,
+  _blocked boolean,
+  _is_premium boolean,
+  _premium_until timestamptz,
+  _premium_plan text,
+  _is_company boolean,
+  _company_plan text,
+  _company_until timestamptz,
+  _display_id text,
+  _verified boolean,
+  _recovery_code text
+)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path=public
+AS $$
+DECLARE v public.profiles;
+BEGIN
+  IF auth.uid() IS NULL OR auth.uid() <> _user_id THEN RETURN false; END IF;
+  SELECT * INTO v FROM public.profiles WHERE user_id=_user_id;
+  IF NOT FOUND THEN RETURN false; END IF;
+
+  RETURN _rating IS NOT DISTINCT FROM v.rating
+     AND _completed_orders IS NOT DISTINCT FROM v.completed_orders
+     AND _total_earned IS NOT DISTINCT FROM v.total_earned
+     AND _balance IS NOT DISTINCT FROM v.balance
+     AND _blocked IS NOT DISTINCT FROM v.blocked
+     AND _is_premium IS NOT DISTINCT FROM v.is_premium
+     AND _premium_until IS NOT DISTINCT FROM v.premium_until
+     AND _premium_plan IS NOT DISTINCT FROM v.premium_plan
+     AND _is_company IS NOT DISTINCT FROM v.is_company
+     AND _company_plan IS NOT DISTINCT FROM v.company_plan
+     AND _company_until IS NOT DISTINCT FROM v.company_until
+     AND _display_id IS NOT DISTINCT FROM v.display_id
+     AND _verified IS NOT DISTINCT FROM v.verified
+     AND _recovery_code IS NOT DISTINCT FROM v.recovery_code;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.profile_self_update_allowed(uuid,numeric,integer,integer,integer,boolean,boolean,timestamptz,text,boolean,text,timestamptz,text,boolean,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.profile_self_update_allowed(uuid,numeric,integer,integer,integer,boolean,boolean,timestamptz,text,boolean,text,timestamptz,text,boolean,text) TO authenticated;
+
+CREATE POLICY "Users can update safe profile fields"
+  ON public.profiles FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (
+    public.profile_self_update_allowed(
+      user_id, rating, completed_orders, total_earned, balance,
+      blocked, is_premium, premium_until, premium_plan,
+      is_company, company_plan, company_until, display_id,
+      verified, recovery_code
+    )
+  );
+
+CREATE OR REPLACE FUNCTION public.admin_dashboard_stats()
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path=public
+AS $$
+DECLARE
+  v_admin boolean;
+  v_total integer;
+  v_online integer;
+  v_today integer;
+  v_week integer;
+  v_avg numeric;
+  v_ratings integer;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1 FROM public.user_roles WHERE user_id=auth.uid() AND role='admin'
+  ) INTO v_admin;
+  IF NOT v_admin THEN RAISE EXCEPTION 'admin_role_required' USING ERRCODE='42501'; END IF;
+
+  SELECT count(*) INTO v_total FROM public.profiles;
+  SELECT count(*) INTO v_online FROM public.profiles WHERE last_seen_at >= now()-interval '2 minutes';
+  SELECT count(*) INTO v_today FROM public.profiles WHERE created_at >= date_trunc('day', now());
+  SELECT count(*) INTO v_week FROM public.profiles WHERE created_at >= now()-interval '7 days';
+  SELECT coalesce(avg(rating),0), count(*) INTO v_avg,v_ratings FROM public.app_ratings;
+
+  RETURN jsonb_build_object(
+    'totalUsers',v_total,'onlineNow',v_online,'newToday',v_today,
+    'newThisWeek',v_week,'avgRating',round(v_avg,1),'totalRatings',v_ratings
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.admin_dashboard_stats() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.admin_dashboard_stats() TO authenticated;
+
+DROP POLICY IF EXISTS "Admins can view app ratings" ON public.app_ratings;
+CREATE POLICY "Admins can view app ratings"
+  ON public.app_ratings FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(),'admin'));
+
+CREATE OR REPLACE FUNCTION public.create_direct_conversation(
+  _other_user_id uuid,
+  _title text DEFAULT NULL
+)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path=public
+AS $$
+DECLARE
+  v_user uuid:=auth.uid();
+  v_existing uuid;
+  v_id uuid;
+BEGIN
+  IF v_user IS NULL THEN RAISE EXCEPTION 'not_authenticated' USING ERRCODE='42501'; END IF;
+  IF _other_user_id IS NULL OR _other_user_id=v_user THEN RAISE EXCEPTION 'invalid_participant' USING ERRCODE='22023'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id=_other_user_id) THEN RAISE EXCEPTION 'participant_not_found' USING ERRCODE='P0002'; END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.blocked_users
+    WHERE (blocker_id=v_user AND blocked_id=_other_user_id)
+       OR (blocker_id=_other_user_id AND blocked_id=v_user)
+  ) THEN
+    RAISE EXCEPTION 'conversation_blocked' USING ERRCODE='42501';
+  END IF;
+
+  SELECT c.id INTO v_existing
+  FROM public.conversations c
+  JOIN public.conversation_participants a ON a.conversation_id=c.id AND a.user_id=v_user
+  JOIN public.conversation_participants b ON b.conversation_id=c.id AND b.user_id=_other_user_id
+  WHERE coalesce(c.is_group,false)=false
+  ORDER BY c.created_at DESC
+  LIMIT 1;
+
+  IF v_existing IS NOT NULL THEN RETURN v_existing; END IF;
+
+  INSERT INTO public.conversations(title,is_group)
+  VALUES (coalesce(nullif(trim(_title),''),'Чат'),false)
+  RETURNING id INTO v_id;
+
+  INSERT INTO public.conversation_participants(conversation_id,user_id)
+  VALUES (v_id,v_user),(v_id,_other_user_id);
+
+  RETURN v_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.create_direct_conversation(uuid,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.create_direct_conversation(uuid,text) TO authenticated;
+
+DROP POLICY IF EXISTS "Authenticated can create conversations" ON public.conversations;
+DROP POLICY IF EXISTS "Authenticated can add participants" ON public.conversation_participants;
+
+
+
+-- Conversations and participants are created only by the secured direct-chat RPC.
+REVOKE INSERT, UPDATE, DELETE ON public.conversations FROM authenticated;
+REVOKE INSERT, DELETE ON public.conversation_participants FROM authenticated;
+GRANT UPDATE ON public.conversation_participants TO authenticated;
+DROP POLICY IF EXISTS "Users can update own participation" ON public.conversation_participants;
+CREATE POLICY "Users can update own participation"
+  ON public.conversation_participants FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+REVOKE UPDATE, DELETE ON public.messages FROM authenticated;
+
+
+-- Kartoteka photos are stored under <user_id>/..., so upload/update/delete
+-- must stay inside the caller's own folder.
+DROP POLICY IF EXISTS "Authenticated users can upload kartoteka photos" ON storage.objects;
+CREATE POLICY "Users can upload own kartoteka photos"
+  ON storage.objects FOR INSERT TO authenticated
+  WITH CHECK (
+    bucket_id = 'kartoteka-photos'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+DROP POLICY IF EXISTS "Users can update own kartoteka photos" ON storage.objects;
+CREATE POLICY "Users can update own kartoteka photos"
+  ON storage.objects FOR UPDATE TO authenticated
+  USING (
+    bucket_id = 'kartoteka-photos'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  )
+  WITH CHECK (
+    bucket_id = 'kartoteka-photos'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+DROP POLICY IF EXISTS "Users can delete own kartoteka photos" ON storage.objects;
+CREATE POLICY "Users can delete own kartoteka photos"
+  ON storage.objects FOR DELETE TO authenticated
+  USING (
+    bucket_id = 'kartoteka-photos'
+    AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+
+CREATE OR REPLACE FUNCTION public.purchase_premium(
+  _tier_id text,
+  _period_id text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path=public
+AS $$
+DECLARE
+  v_user uuid := auth.uid();
+  v_role text;
+  v_price numeric;
+  v_days integer;
+  v_new_balance integer;
+  v_until timestamptz;
+BEGIN
+  IF v_user IS NULL THEN RAISE EXCEPTION 'not_authenticated' USING ERRCODE='42501'; END IF;
+
+  SELECT role::text INTO v_role FROM public.user_roles WHERE user_id=v_user LIMIT 1;
+  IF v_role IS NULL THEN RAISE EXCEPTION 'role_not_found' USING ERRCODE='P0002'; END IF;
+
+  IF _tier_id = 'worker_premium' AND v_role = 'worker' THEN
+    v_price := 299;
+  ELSIF _tier_id = 'worker_vip' AND v_role = 'worker' THEN
+    v_price := 599;
+  ELSIF _tier_id = 'disp_pro' AND v_role = 'dispatcher' THEN
+    v_price := 299;
+  ELSIF _tier_id = 'disp_business' AND v_role = 'dispatcher' THEN
+    v_price := 999;
+  ELSE
+    RAISE EXCEPTION 'invalid_premium_tier' USING ERRCODE='22023';
+  END IF;
+
+  IF _period_id = 'month' THEN
+    v_price := round(v_price * 1);
+    v_days := 30;
+  ELSIF _period_id = 'quarter' THEN
+    v_price := round(v_price * 2.5);
+    v_days := 90;
+  ELSIF _period_id = 'year' THEN
+    v_price := round(v_price * 8);
+    v_days := 365;
+  ELSE
+    RAISE EXCEPTION 'invalid_premium_period' USING ERRCODE='22023';
+  END IF;
+
+  UPDATE public.profiles
+  SET balance = COALESCE(balance,0) - v_price::integer
+  WHERE user_id=v_user
+    AND COALESCE(balance,0) >= v_price::integer
+  RETURNING balance INTO v_new_balance;
+
+  IF NOT FOUND THEN RAISE EXCEPTION 'insufficient_balance' USING ERRCODE='P0001'; END IF;
+
+  v_until := now() + make_interval(days => v_days);
+
+  UPDATE public.profiles
+  SET is_premium=true,
+      premium_until=v_until,
+      company_plan=_tier_id,
+      updated_at=now()
+  WHERE user_id=v_user;
+
+  RETURN jsonb_build_object(
+    'tier_id',_tier_id,
+    'period_id',_period_id,
+    'price',v_price,
+    'premium_until',v_until,
+    'balance',v_new_balance
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.purchase_company(
+  _plan_id text,
+  _company_name text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path=public
+AS $$
+DECLARE
+  v_user uuid := auth.uid();
+  v_price integer;
+  v_new_balance integer;
+  v_until timestamptz;
+BEGIN
+  IF v_user IS NULL THEN RAISE EXCEPTION 'not_authenticated' USING ERRCODE='42501'; END IF;
+  IF length(trim(coalesce(_company_name,''))) < 2 THEN RAISE EXCEPTION 'company_name_required' USING ERRCODE='22023'; END IF;
+
+  v_price := CASE _plan_id
+    WHEN 'starter' THEN 1990
+    WHEN 'business' THEN 4990
+    WHEN 'enterprise' THEN 12990
+    ELSE NULL
+  END;
+
+  IF v_price IS NULL THEN RAISE EXCEPTION 'invalid_company_plan' USING ERRCODE='22023'; END IF;
+
+  UPDATE public.profiles
+  SET balance = COALESCE(balance,0) - v_price
+  WHERE user_id=v_user
+    AND COALESCE(balance,0) >= v_price
+  RETURNING balance INTO v_new_balance;
+
+  IF NOT FOUND THEN RAISE EXCEPTION 'insufficient_balance' USING ERRCODE='P0001'; END IF;
+
+  v_until := now() + interval '30 days';
+
+  UPDATE public.profiles
+  SET is_company=true,
+      company_until=v_until,
+      company_name=trim(_company_name),
+      company_plan=_plan_id,
+      updated_at=now()
+  WHERE user_id=v_user;
+
+  RETURN jsonb_build_object(
+    'plan_id',_plan_id,
+    'price',v_price,
+    'company_until',v_until,
+    'balance',v_new_balance
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.purchase_premium(text,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.purchase_premium(text,text) TO authenticated;
+
+REVOKE ALL ON FUNCTION public.purchase_company(text,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.purchase_company(text,text) TO authenticated;
+
+
+CREATE OR REPLACE FUNCTION public.get_unread_message_count()
+RETURNS integer
+LANGUAGE sql
+STABLE
+SECURITY INVOKER
+SET search_path=public
+AS $$
+  SELECT count(*)::integer
+  FROM public.messages m
+  JOIN public.conversation_participants cp
+    ON cp.conversation_id = m.conversation_id
+  WHERE cp.user_id = auth.uid()
+    AND m.sender_id <> auth.uid()
+    AND (cp.last_read_at IS NULL OR m.created_at > cp.last_read_at);
+$$;
+
+REVOKE ALL ON FUNCTION public.get_unread_message_count() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_unread_message_count() TO authenticated;
+
+
+CREATE OR REPLACE FUNCTION public.get_job_party_profiles(
+  _job_id uuid,
+  _target_user_ids uuid[]
+)
+RETURNS TABLE (
+  user_id uuid,
+  full_name text,
+  phone text,
+  inn text,
+  is_self_employed boolean,
+  avatar_url text,
+  last_seen_at timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path=public
+AS $$
+DECLARE
+  v_user uuid := auth.uid();
+  v_job public.jobs;
+BEGIN
+  IF v_user IS NULL THEN RAISE EXCEPTION 'not_authenticated' USING ERRCODE='42501'; END IF;
+
+  SELECT * INTO v_job FROM public.jobs WHERE id=_job_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'job_not_found' USING ERRCODE='P0002'; END IF;
+
+  IF NOT (
+    v_user = v_job.client_id
+    OR v_user = v_job.dispatcher_id
+    OR EXISTS (
+      SELECT 1 FROM public.job_responses
+      WHERE job_id=_job_id AND worker_id=v_user AND status='accepted'
+    )
+  ) THEN
+    RAISE EXCEPTION 'access_denied' USING ERRCODE='42501';
+  END IF;
+
+  RETURN QUERY
+  SELECT p.user_id, p.full_name, p.phone, p.inn, p.is_self_employed, p.avatar_url, p.last_seen_at
+  FROM public.profiles p
+  WHERE p.user_id = ANY(COALESCE(_target_user_ids, ARRAY[]::uuid[]))
+    AND (
+      p.user_id = v_job.client_id
+      OR p.user_id = v_job.dispatcher_id
+      OR EXISTS (
+        SELECT 1 FROM public.job_responses jr
+        WHERE jr.job_id=_job_id AND jr.worker_id=p.user_id AND jr.status='accepted'
+      )
+    );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_job_party_profiles(uuid,uuid[]) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_job_party_profiles(uuid,uuid[]) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.dispatcher_create_replacement_job(
+  _job_id uuid,
+  _worker_id uuid,
+  _bonus integer DEFAULT 100
+)
+RETURNS public.jobs
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path=public
+AS $$
+DECLARE
+  v_user uuid := auth.uid();
+  v_job public.jobs;
+  v_replacement public.jobs;
+BEGIN
+  IF v_user IS NULL THEN RAISE EXCEPTION 'not_authenticated' USING ERRCODE='42501'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.user_roles WHERE user_id=v_user AND role='dispatcher') THEN
+    RAISE EXCEPTION 'dispatcher_role_required' USING ERRCODE='42501';
+  END IF;
+  IF _bonus IS NULL OR _bonus < 0 THEN RAISE EXCEPTION 'invalid_bonus' USING ERRCODE='22023'; END IF;
+
+  SELECT * INTO v_job
+  FROM public.jobs
+  WHERE id=_job_id AND dispatcher_id=v_user
+  FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'job_not_found' USING ERRCODE='P0002'; END IF;
+
+  IF _worker_id IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM public.job_responses
+    WHERE job_id=_job_id AND worker_id=_worker_id AND status='accepted'
+  ) THEN
+    RAISE EXCEPTION 'worker_not_assigned' USING ERRCODE='P0001';
+  END IF;
+
+  IF _worker_id IS NOT NULL THEN
+    UPDATE public.job_responses
+    SET worker_status='no_show', status='rejected'
+    WHERE job_id=_job_id AND worker_id=_worker_id AND status='accepted';
+  END IF;
+
+  INSERT INTO public.jobs (
+    client_id, dispatcher_id, title, description, hourly_rate, duration_hours,
+    workers_needed, metro, address, urgent, quick_minimum, status,
+    replacement_for_job_id, replacement_for_worker_id, start_time
+  )
+  VALUES (
+    v_job.client_id, v_user, '🚨 СРОЧНО: ' || v_job.title,
+    trim('СРОЧНАЯ ЗАМЕНА. Грузчик не вышел.' || E'\n\n' || coalesce(v_job.description,'')),
+    coalesce(v_job.hourly_rate,0) + _bonus,
+    v_job.duration_hours, 1, v_job.metro, v_job.address, true, true, 'active',
+    v_job.id, _worker_id, now()
+  )
+  RETURNING * INTO v_replacement;
+
+  RETURN v_replacement;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.dispatcher_create_replacement_job(uuid,uuid,integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.dispatcher_create_replacement_job(uuid,uuid,integer) TO authenticated;
+
+
+CREATE OR REPLACE FUNCTION public.worker_review_dispatcher(
+  _dispatcher_id uuid,
+  _rating integer,
+  _text text DEFAULT NULL
+)
+RETURNS public.dispatcher_reviews
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path=public
+AS $$
+DECLARE
+  v_user uuid := auth.uid();
+  v_review public.dispatcher_reviews;
+BEGIN
+  IF v_user IS NULL THEN RAISE EXCEPTION 'not_authenticated' USING ERRCODE='42501'; END IF;
+  IF _dispatcher_id IS NULL OR _dispatcher_id = v_user THEN RAISE EXCEPTION 'invalid_dispatcher' USING ERRCODE='22023'; END IF;
+  IF _rating < 1 OR _rating > 5 THEN RAISE EXCEPTION 'invalid_rating' USING ERRCODE='22023'; END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.user_roles
+    WHERE user_id=v_user AND role='worker'
+  ) THEN
+    RAISE EXCEPTION 'worker_role_required' USING ERRCODE='42501';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.job_responses jr
+    JOIN public.jobs j ON j.id=jr.job_id
+    WHERE jr.worker_id=v_user
+      AND j.dispatcher_id=_dispatcher_id
+      AND jr.status='accepted'
+      AND jr.worker_status='completed'
+  ) THEN
+    RAISE EXCEPTION 'review_requires_completed_job' USING ERRCODE='P0001';
+  END IF;
+
+  INSERT INTO public.dispatcher_reviews(reviewer_id,dispatcher_id,rating,text)
+  VALUES (v_user,_dispatcher_id,_rating,NULLIF(trim(_text),''))
+  ON CONFLICT (reviewer_id,dispatcher_id)
+  DO UPDATE SET rating=EXCLUDED.rating,text=EXCLUDED.text
+  RETURNING * INTO v_review;
+
+  RETURN v_review;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.worker_review_dispatcher(uuid,integer,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.worker_review_dispatcher(uuid,integer,text) TO authenticated;
+
+DROP POLICY IF EXISTS "Workers can create reviews" ON public.dispatcher_reviews;
+DROP POLICY IF EXISTS "Authors can update own reviews" ON public.dispatcher_reviews;
+DROP POLICY IF EXISTS "Authors can delete own reviews" ON public.dispatcher_reviews;

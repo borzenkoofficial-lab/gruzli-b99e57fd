@@ -10,36 +10,13 @@ export function useUnreadCounts() {
   const fetchUnreadMessages = useCallback(async () => {
     if (!user) return;
 
-    // Get all conversations with their last_read_at
-    const { data: myConvs } = await supabase
-      .from("conversation_participants")
-      .select("conversation_id, last_read_at")
-      .eq("user_id", user.id);
-
-    if (!myConvs || myConvs.length === 0) {
-      setUnreadMessages(0);
+    const { data, error } = await supabase.rpc("get_unread_message_count");
+    if (error) {
+      console.error("Failed to load unread message count", error);
       return;
     }
 
-    // Count messages newer than last_read_at for each conversation in parallel
-    const counts = await Promise.all(
-      myConvs.map((conv) => {
-        const q = supabase
-          .from("messages")
-          .select("*", { count: "exact", head: true })
-          .eq("conversation_id", conv.conversation_id)
-          .neq("sender_id", user.id);
-
-        if (conv.last_read_at) {
-          q.gt("created_at", conv.last_read_at);
-        }
-
-        return q.then(({ count }) => count || 0);
-      })
-    );
-
-    const total = counts.reduce((sum, c) => sum + c, 0);
-    setUnreadMessages(total);
+    setUnreadMessages(Number(data || 0));
   }, [user]);
 
   const fetchNewJobs = useCallback(async () => {

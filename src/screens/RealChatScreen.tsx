@@ -69,20 +69,20 @@ const isSameGroup = (a: Message, b: Message) =>
   a.sender_id === b.sender_id &&
   Math.abs(new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) < 120000;
 
-const avatarGradients = [
-  "linear-gradient(135deg, #6366f1, #8b5cf6)",
-  "linear-gradient(135deg, #ec4899, #f43f5e)",
-  "linear-gradient(135deg, #10b981, #14b8a6)",
-  "linear-gradient(135deg, #f59e0b, #ef4444)",
-  "linear-gradient(135deg, #8b5cf6, #6366f1)",
-  "linear-gradient(135deg, #06b6d4, #3b82f6)",
-  "linear-gradient(135deg, #f43f5e, #fb923c)",
-  "linear-gradient(135deg, #22c55e, #16a34a)",
+const avatarColors = [
+  "#191a1d",
+  "#2b2c30",
+  "#37383d",
+  "#44454a",
+  "#52535a",
+  "#606168",
+  "#6d6e75",
+  "#797a80",
 ];
 const getAvatarColor = (name: string) => {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return avatarGradients[Math.abs(hash) % avatarGradients.length];
+  return avatarColors[Math.abs(hash) % avatarColors.length];
 };
 
 const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup, renderMedia, replyPreview, onReplyClick }: {
@@ -118,7 +118,7 @@ const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup,
     <div className={`flex ${isOwn ? "justify-end" : "justify-start"} ${isLastInGroup ? "mb-2" : "mb-0.5"} ${msg._optimistic ? "opacity-60" : ""}`}>
       <div className={`max-w-[78%] ${isOwn ? "items-end" : "items-start"}`}>
         {showSender && !isOwn && (
-          <p className="text-[12px] font-semibold mb-1 ml-3 opacity-80" style={{ color: getAvatarColor(senderName).includes("#6366f1") ? "#818cf8" : "#8b5cf6" }}>
+          <p className="text-[12px] font-semibold mb-1 ml-3 text-primary">
             {senderName}
           </p>
         )}
@@ -306,7 +306,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
 
   useEffect(() => { adjustTextarea(); }, [text, adjustTextarea]);
 
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     if (isDemo) {
       const now = new Date();
       const otherId = conversationId.includes("dispatcher") ? "demo-dispatcher" : conversationId.includes("worker") ? "demo-worker" : "demo-official";
@@ -352,7 +352,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     }
     setLoading(false);
     setTimeout(() => scrollToBottom(false), 50);
-  };
+  }, [conversationId, isDemo, scrollToBottom, user?.id]);
 
   const markAsRead = useCallback(async () => {
     if (!user || !conversationId) return;
@@ -385,7 +385,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [conversationId, markAsRead, user?.id, isNearBottom, scrollToBottom, appendMessage]);
+  }, [conversationId, fetchMessages, markAsRead, user?.id, isNearBottom, scrollToBottom, appendMessage]);
 
   useEffect(() => { if (isNearBottom()) scrollToBottom(); }, [messages, scrollToBottom, isNearBottom]);
 

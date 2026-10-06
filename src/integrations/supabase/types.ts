@@ -592,6 +592,7 @@ export type Database = {
       job_responses: {
         Row: {
           created_at: string
+          agreed_hourly_rate: number | null
           dispatcher_review_rating: number | null
           dispatcher_review_text: string | null
           earned: number | null
@@ -609,6 +610,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          agreed_hourly_rate?: number | null
           dispatcher_review_rating?: number | null
           dispatcher_review_text?: string | null
           earned?: number | null
@@ -626,6 +628,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          agreed_hourly_rate?: number | null
           dispatcher_review_rating?: number | null
           dispatcher_review_text?: string | null
           earned?: number | null
@@ -953,6 +956,7 @@ export type Database = {
           is_self_employed: boolean
           last_seen_at: string | null
           phone: string | null
+          premium_plan: string | null
           premium_until: string | null
           rating: number | null
           recovery_code: string | null
@@ -982,6 +986,7 @@ export type Database = {
           is_self_employed?: boolean
           last_seen_at?: string | null
           phone?: string | null
+          premium_plan?: string | null
           premium_until?: string | null
           rating?: number | null
           recovery_code?: string | null
@@ -1424,9 +1429,17 @@ export type Database = {
         Args: { _rating: number; _response_id: string; _text?: string | null }
         Returns: Json
       }
+      dispatcher_create_replacement_job: {
+        Args: { _bonus?: number; _job_id: string; _worker_id: string | null }
+        Returns: Database["public"]["Tables"]["jobs"]["Row"]
+      }
       dispatcher_cancel_job: {
         Args: { _job_id: string }
         Returns: Json
+      }
+      dispatcher_republish_job: {
+        Args: { _job_id: string }
+        Returns: Database["public"]["Tables"]["jobs"]["Row"]
       }
       create_direct_conversation: {
         Args: { _other_user_id: string; _title?: string }
@@ -1454,7 +1467,27 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_job_party_profiles: {
+        Args: { _job_id: string; _target_user_ids: string[] }
+        Returns: {
+          user_id: string
+          full_name: string
+          phone: string | null
+          inn: string | null
+          is_self_employed: boolean
+          avatar_url: string | null
+          last_seen_at: string | null
+        }[]
+      }
+      get_unread_message_count: {
+        Args: never
+        Returns: number
+      }
       get_weekly_completed_jobs: { Args: { _user_id: string }; Returns: number }
+      worker_review_dispatcher: {
+        Args: { _dispatcher_id: string; _rating: number; _text?: string | null }
+        Returns: Database["public"]["Tables"]["dispatcher_reviews"]["Row"]
+      }
       worker_update_response_status: {
         Args: { _next_status: string; _response_id: string }
         Returns: Json
@@ -1488,6 +1521,14 @@ export type Database = {
           source_queue: string
         }
         Returns: number
+      }
+      purchase_company: {
+        Args: { _company_name: string; _plan_id: string }
+        Returns: Json
+      }
+      purchase_premium: {
+        Args: { _period_id: string; _tier_id: string }
+        Returns: Json
       }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }

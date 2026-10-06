@@ -4,9 +4,11 @@
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "display_override": ["standalone"],
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "display_override": [
+    "standalone"
+  ],
+  "background_color": "#f6f6f5",
+  "theme_color": "#17181b",
   "icons": [
     {
       "src": "/pwa-192x192.png",

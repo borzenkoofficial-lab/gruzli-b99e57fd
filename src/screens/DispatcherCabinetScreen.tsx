@@ -197,10 +197,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   };
 
   const handleRepublishJob = async (jobId: string) => {
-    const { data, error } = await supabase.rpc("dispatcher_update_job", {
-      _job_id: jobId,
-      _status: "active",
-    });
+    const { data, error } = await supabase.rpc("dispatcher_republish_job", { _job_id: jobId });
     if (error || !data) {
       toast.error("Не удалось опубликовать заявку");
       return;
@@ -216,11 +213,10 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     const { error } = await supabase.rpc("dispatcher_update_job", {
       _job_id: job.id,
       _hourly_rate: newRate,
-      _status: "active",
     });
     setAdjustingId(null);
     if (error) {
-      toast.error("Не удалось изменить оплату");
+      toast.error(error?.message?.includes("hourly_rate_locked") ? "Нельзя менять ставку после отклика/назначения грузчиков" : "Не удалось изменить оплату");
       return;
     }
     setMyJobs((prev) => prev.map((j) => (j.id === job.id ? { ...j, hourly_rate: newRate, status: "active" } : j)));
@@ -759,7 +755,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                       </div>
 
                       {job.description && (
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{job.description}</p>
+                        <p className="text-sm leading-relaxed text-muted-foreground mb-3 line-clamp-3">{job.description}</p>
                       )}
 
                       <div className="flex items-center gap-3 text-[11px] text-muted-foreground mb-3 flex-wrap">
@@ -869,7 +865,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-sm font-bold text-foreground truncate">{aj.job.title}</h3>
+                            <h3 className="min-w-0 break-words text-sm font-bold leading-snug text-foreground">{aj.job.title}</h3>
                             {aj.job.status === "filled" && <span className="shrink-0 px-2 py-0.5 rounded-lg bg-primary/15 text-[10px] font-bold text-primary flex items-center gap-1"><Lock size={9} /> Набрано</span>}
                             {isFinishing && <span className="shrink-0 px-2 py-0.5 rounded-lg bg-orange-500/10 text-[10px] font-bold text-orange-500">Завершается</span>}
                             {allDone && !isFinishing && <span className="shrink-0 px-2 py-0.5 rounded-lg bg-green-500/10 text-[10px] font-bold text-green-500">Готово</span>}

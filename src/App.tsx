@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
@@ -24,6 +23,8 @@ const AdminPage = lazy(() => import("./pages/AdminPage"));
 const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
+const DEMO_ENABLED = import.meta.env.DEV && import.meta.env.VITE_GRUZLI_DEMO_MODE === "true";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -38,9 +39,7 @@ const queryClient = new QueryClient({
 const AppRoutes = () => {
   const { user, loading, role } = useAuth();
   const [splashDone, setSplashDone] = useState(false);
-  // Temporary demo mode: lets us inspect the worker cabinet without Supabase authentication.
-  // Remove this flag/flow before production release.
-  const [demoWorkerMode, setDemoWorkerMode] = useState(() => localStorage.getItem("gruzli_demo_worker") === "1");
+  const [demoWorkerMode, setDemoWorkerMode] = useState(() => DEMO_ENABLED && localStorage.getItem("gruzli_demo_worker") === "1");
   const [alertQueue, setAlertQueue] = useState<Tables<"jobs">[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return !localStorage.getItem("onboarding_completed");
@@ -71,12 +70,12 @@ const AppRoutes = () => {
     }
   }, [user]);
 
-  if (!demoWorkerMode && (loading || (!splashDone && !isConsentRoute))) {
+  if (!(DEMO_ENABLED && demoWorkerMode) && (loading || (!splashDone && !isConsentRoute))) {
     return <SplashScreen onFinished={handleSplashFinished} />;
   }
 
-  if (!user && !isConsentRoute && !demoWorkerMode) {
-    return <AuthPage onDemoLogin={() => { localStorage.setItem("gruzli_demo_worker", "1"); setDemoWorkerMode(true); window.dispatchEvent(new Event("gruzli-demo-change")); }} />;
+  if (!user && !isConsentRoute && !(DEMO_ENABLED && demoWorkerMode)) {
+    return <AuthPage onDemoLogin={DEMO_ENABLED ? () => { localStorage.setItem("gruzli_demo_worker", "1"); setDemoWorkerMode(true); window.dispatchEvent(new Event("gruzli-demo-change")); } : undefined} />;
   }
 
   return (
@@ -116,7 +115,6 @@ const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
         <Sonner />
         <AuthProvider>
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>

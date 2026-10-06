@@ -60,7 +60,10 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
   const [requiresContract, setRequiresContract] = useState(false);
   const [contractTitle, setContractTitle] = useState("Договор подряда");
   const [contractBody, setContractBody] = useState(
-    "1. Исполнитель обязуется выполнить грузо-погрузочные работы по адресу и в срок, указанные выше.\n2. Заказчик обязуется оплатить работы по согласованной ставке за фактически отработанное время.\n3. Исполнитель несёт ответственность за сохранность перемещаемого имущества в пределах своей вины.\n4. Стороны обязуются соблюдать технику безопасности и нормы общения."
+    `1. Исполнитель обязуется выполнить грузо-погрузочные работы по адресу и в срок, указанные выше.
+2. Заказчик обязуется оплатить работы по согласованной ставке за фактически отработанное время.
+3. Исполнитель несёт ответственность за сохранность перемещаемого имущества в пределах своей вины.
+4. Стороны обязуются соблюдать технику безопасности и нормы общения.`
   );
 
   const balance = profile?.balance || 0;
@@ -98,16 +101,23 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
     const textToCheck = `${title.trim()} ${description.trim()}`.trim();
     if (textToCheck.length > 5) {
       try {
-        const { data: modResult } = await supabase.functions.invoke("moderate-content", {
+        const { data: modResult, error: moderationError } = await supabase.functions.invoke("moderate-content", {
           body: { text: textToCheck, type: "job" },
         });
-        if (modResult && !modResult.safe) {
+        if (moderationError) {
+          toast.error("Не удалось проверить заявку. Попробуйте ещё раз.");
+          setLoading(false);
+          return;
+        }
+        if (!modResult?.safe) {
           toast.error(modResult.reason || "Содержимое не прошло модерацию");
           setLoading(false);
           return;
         }
       } catch {
-        // Fail-open: allow on error
+        toast.error("Не удалось проверить заявку. Попробуйте ещё раз.");
+        setLoading(false);
+        return;
       }
     }
 
@@ -139,17 +149,17 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-background flex flex-col" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
+    <div className="gruzli-create-job-screen fixed inset-0 bg-background flex flex-col" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 safe-top pb-3 flex-shrink-0">
-        <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:scale-95 transition-all">
+      <div className="flex items-center gap-3 px-4 safe-top pb-3 flex-shrink-0 min-w-0">
+        <button onClick={onBack} className="w-10 h-10 shrink-0 rounded-2xl bg-card border border-border flex items-center justify-center active:scale-95 transition-all">
           <ArrowLeft size={18} className="text-foreground" />
         </button>
-        <div className="flex-1">
-          <h1 className="text-lg font-bold text-foreground">{isClient ? "Заказать грузчиков" : "Новая заявка"}</h1>
-          <p className="text-[11px] text-muted-foreground -mt-0.5">{isClient ? "Опишите задачу — диспетчер соберёт команду" : "Заполните детали работы"}</p>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-lg font-bold text-foreground break-words">{isClient ? "Заказать грузчиков" : "Новая заявка"}</h1>
+          <p className="text-[11px] leading-snug text-muted-foreground -mt-0.5 break-words">{isClient ? "Опишите задачу — диспетчер соберёт команду" : "Заполните детали работы"}</p>
         </div>
-        {!isClient && (        <div className="flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-1.5">
+        {!isClient && (        <div className="shrink-0 flex items-center gap-1.5 bg-card border border-border rounded-xl px-3 py-1.5">
           <DollarSign size={12} className="text-muted-foreground" />
           <span className={`text-xs font-bold ${canAfford ? "text-foreground" : "text-destructive"}`}>{balance} ₽</span>
         </div>
@@ -463,8 +473,8 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
                 </div>
               )}
               <div className="flex items-center justify-between">
-                <span className="text-[13px] text-muted-foreground">Публикация заявки</span>
-                <span className="text-[13px] font-semibold text-foreground">{JOB_POSTING_FEE} ₽</span>
+                <span className="text-[13px] text-muted-foreground">Запрос диспетчерам</span>
+                <span className="text-[13px] font-semibold text-foreground">Бесплатно</span>
               </div>
               <div className="border-t border-border my-1" />
               <div className="flex items-center justify-between">
@@ -611,7 +621,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
                   {loading ? <Loader2 size={18} className="animate-spin" /> : (
                     <>
                       <Sparkles size={15} />
-                      Опубликовать за {JOB_POSTING_FEE} ₽
+                      Отправить запрос диспетчерам
                     </>
                   )}
                 </motion.button>

@@ -152,28 +152,13 @@ const PremiumScreen = ({ onBack, onOpenSupport }: PremiumScreenProps) => {
     }
 
     setPurchasing(true);
-    const { error: balanceError } = await supabase
-      .from("profiles")
-      .update({ balance: balance - totalPrice })
-      .eq("user_id", user.id);
+    const { error } = await supabase.rpc("purchase_premium", {
+      _tier_id: selectedTier.id,
+      _period_id: selectedPeriod,
+    });
 
-    if (balanceError) {
-      toast.error("Ошибка списания");
-      setPurchasing(false);
-      return;
-    }
-
-    const daysMap: Record<string, number> = { month: 30, quarter: 90, year: 365 };
-    const days = daysMap[selectedPeriod] || 30;
-    const premiumUntil = new Date(Date.now() + days * 86400000).toISOString();
-
-    const { error: premiumError } = await supabase
-      .from("profiles")
-      .update({ is_premium: true, premium_until: premiumUntil, company_plan: selectedTier.id })
-      .eq("user_id", user.id);
-
-    if (premiumError) {
-      toast.error("Ошибка активации тарифа");
+    if (error) {
+      toast.error(error.message.includes("insufficient_balance") ? `Недостаточно средств. Нужно ${totalPrice} ₽, на балансе ${balance} ₽` : "Не удалось активировать тариф");
       setPurchasing(false);
       return;
     }
@@ -184,7 +169,7 @@ const PremiumScreen = ({ onBack, onOpenSupport }: PremiumScreenProps) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-background flex flex-col" style={{ height: "calc(var(--vh, 1vh) * 100)" }}>
+    <div className="gruzli-premium-screen fixed inset-0 bg-background flex flex-col" style={{ height: "calc(var(--vh, 1vh) * 100)" }}>
       {/* Header */}
       <div className="flex items-center gap-3 px-4 safe-top pb-4 flex-shrink-0">
         <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 transition-all">

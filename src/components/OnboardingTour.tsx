@@ -13,6 +13,20 @@ interface OnboardingTourProps {
 
 const SWIPE_THRESHOLD = 50;
 
+const CONFETTI = [
+  { x: -112, y: -18, scale: 0.9, rotate: -18, size: 9, shape: "square" as const, color: "#191a1d" },
+  { x: -76, y: -46, scale: 1, rotate: 24, size: 11, shape: "round" as const, color: "#f2c400" },
+  { x: -42, y: -76, scale: 0.82, rotate: -12, size: 8, shape: "round" as const, color: "#d9dadd" },
+  { x: -8, y: -104, scale: 1.08, rotate: 28, size: 10, shape: "square" as const, color: "#191a1d" },
+  { x: 24, y: -62, scale: 0.9, rotate: -22, size: 9, shape: "round" as const, color: "#f2c400" },
+  { x: 58, y: -88, scale: 1, rotate: 14, size: 12, shape: "square" as const, color: "#d9dadd" },
+  { x: 92, y: -34, scale: 0.82, rotate: -16, size: 8, shape: "round" as const, color: "#191a1d" },
+  { x: 118, y: -74, scale: 1.04, rotate: 20, size: 10, shape: "square" as const, color: "#f2c400" },
+  { x: -95, y: 6, scale: 0.78, rotate: 10, size: 8, shape: "round" as const, color: "#d9dadd" },
+  { x: -18, y: 14, scale: 0.86, rotate: -28, size: 9, shape: "square" as const, color: "#f2c400" },
+  { x: 82, y: 8, scale: 0.84, rotate: 32, size: 9, shape: "round" as const, color: "#191a1d" },
+];
+
 const getPlatform = (): "android" | "ios" | "desktop" => {
   const ua = navigator.userAgent.toLowerCase();
   if (/iphone|ipad|ipod/.test(ua)) return "ios";
@@ -61,7 +75,7 @@ const WelcomeStep = ({ isDispatcher }: { isDispatcher: boolean }) => (
       className="text-sm text-muted-foreground leading-relaxed max-w-sm"
     >
       {isDispatcher
-        ? "Gruzli — ваш инструмент для управления заказами. Размещайте заявки, находите надёжных грузчиков, отслеживайте выполнение и контролируйте расходы."
+        ? "Gruzli — рабочий кабинет диспетчера. Принимайте запросы клиентов, предлагайте условия, находите грузчиков и контролируйте выполнение заказа."
         : "Gruzli — платформа для поиска работы. Находите заказы рядом, откликайтесь мгновенно, общайтесь с диспетчерами напрямую и зарабатывайте больше."}
     </motion.p>
 
@@ -73,16 +87,16 @@ const WelcomeStep = ({ isDispatcher }: { isDispatcher: boolean }) => (
     >
       {(isDispatcher
         ? [
-            { icon: ClipboardList, label: "Заявки", color: "text-blue-400" },
+            { icon: ClipboardList, label: "Заявки", color: "text-foreground" },
             { icon: Users, label: "Грузчики", color: "text-yellow-400" },
             { icon: BarChart3, label: "Аналитика", color: "text-green-400" },
-            { icon: MessageSquare, label: "Чат", color: "text-purple-400" },
+            { icon: MessageSquare, label: "Чат", color: "text-primary" },
           ]
         : [
-            { icon: Briefcase, label: "Заказы", color: "text-blue-400" },
+            { icon: Briefcase, label: "Заказы", color: "text-foreground" },
             { icon: Zap, label: "Быстро", color: "text-yellow-400" },
             { icon: Shield, label: "Надёжно", color: "text-green-400" },
-            { icon: MessageSquare, label: "Чат", color: "text-purple-400" },
+            { icon: MessageSquare, label: "Чат", color: "text-primary" },
           ]
       ).map((f, i) => (
         <motion.div
@@ -124,9 +138,9 @@ const UIGuideStep = ({ isDispatcher }: { isDispatcher: boolean }) => {
     { icon: DollarSign, text: "В профиле — ваш баланс, заработок за неделю и статистика выполненных заказов" },
   ];
   const dispatcherTips = [
-    { icon: Plus, text: "Создавайте заказы через кнопку «+»: укажите адрес, ставку, количество грузчиков и время" },
+    { icon: Plus, text: "Принимайте запросы клиентов и отправляйте предложение по ставке, количеству грузчиков и условиям" },
     { icon: Users, text: "Просматривайте отклики грузчиков — их рейтинг, опыт и навыки. Принимайте лучших" },
-    { icon: BarChart3, text: "В кабинете диспетчера — аналитика доходов, расходов и статистика по заказам" },
+    { icon: BarChart3, text: "В кабинете диспетчера — отклики, активные заказы, расходы и статистика" },
     { icon: Star, text: "После завершения заказа оставляйте отзывы грузчикам и заполняйте финансы" },
   ];
   const tips = isDispatcher ? dispatcherTips : workerTips;
@@ -137,7 +151,7 @@ const UIGuideStep = ({ isDispatcher }: { isDispatcher: boolean }) => {
         <h2 className="text-xl font-bold text-foreground mb-2">
           {isDispatcher ? "Ваши инструменты" : "Как устроено приложение"}
         </h2>
-        <p className="text-xs text-muted-foreground">Внизу экрана — главное меню</p>
+        <p className="text-xs text-muted-foreground">Меню меняется в зависимости от вашей роли</p>
       </motion.div>
 
       <motion.div
@@ -371,24 +385,24 @@ const AddToHomeStep = () => {
 const CelebrationStep = ({ onStart, isDispatcher }: { onStart: () => void; isDispatcher: boolean }) => (
   <div className="flex flex-col items-center text-center px-6">
     <div className="relative w-full h-32 mb-4 overflow-hidden">
-      {Array.from({ length: 20 }).map((_, i) => (
+      {CONFETTI.map((piece, i) => (
         <motion.div
           key={i}
-          initial={{ opacity: 0, y: 0, x: Math.random() * 300 - 150, scale: 0, rotate: Math.random() * 360 }}
+          initial={{ opacity: 0, x: piece.x, y: 8, scale: 0, rotate: piece.rotate }}
           animate={{
             opacity: [0, 1, 1, 0],
-            y: [0, -80 - Math.random() * 60],
-            x: (Math.random() - 0.5) * 200,
-            scale: [0, 1, 0.8],
-            rotate: Math.random() * 720,
+            x: piece.x,
+            y: piece.y,
+            scale: [0, piece.scale, piece.scale * 0.8],
+            rotate: piece.rotate + 180,
           }}
-          transition={{ duration: 2 + Math.random(), delay: 0.3 + Math.random() * 0.5, repeat: Infinity, repeatDelay: Math.random() * 2 }}
+          transition={{ duration: 2.2, delay: 0.2 + i * 0.06, repeat: Infinity, repeatDelay: 1.6 }}
           className="absolute left-1/2 bottom-0"
           style={{
-            width: 8 + Math.random() * 8,
-            height: 8 + Math.random() * 8,
-            borderRadius: Math.random() > 0.5 ? "50%" : "2px",
-            backgroundColor: ["#3B82F6", "#F59E0B", "#10B981", "#EF4444", "#8B5CF6", "#EC4899"][i % 6],
+            width: piece.size,
+            height: piece.size,
+            borderRadius: piece.shape === "round" ? "50%" : "2px",
+            backgroundColor: piece.color,
           }}
         />
       ))}
@@ -427,9 +441,9 @@ const CelebrationStep = ({ onStart, isDispatcher }: { onStart: () => void; isDis
       transition={{ delay: 0.8, type: "spring" }}
       whileTap={{ scale: 0.95 }}
       onClick={onStart}
-      className="w-full max-w-xs py-4 rounded-2xl bg-foreground text-foreground-foreground text-sm font-bold flex items-center justify-center gap-2"
+      className="w-full max-w-xs py-4 rounded-2xl bg-foreground text-background text-sm font-bold flex items-center justify-center gap-2"
     >
-      {isDispatcher ? "Создать первый заказ" : "Смотреть заказы"}
+      {isDispatcher ? "Открыть кабинет" : "Смотреть заказы"}
       <ChevronRight size={18} />
     </motion.button>
   </div>
@@ -542,7 +556,7 @@ const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
           )}
           <button
             onClick={goNext}
-            className="flex-1 py-3.5 rounded-2xl bg-foreground text-foreground-foreground text-sm font-bold flex items-center justify-center gap-1 active:scale-95 transition-transform"
+            className="flex-1 py-3.5 rounded-2xl bg-foreground text-background text-sm font-bold flex items-center justify-center gap-1 active:scale-95 transition-transform"
           >
             Далее
             <ChevronRight size={16} />
