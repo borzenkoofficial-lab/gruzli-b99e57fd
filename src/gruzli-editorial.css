@@ -6474,7 +6474,7 @@ button.bg-foreground:active{
     min-height:100dvh;
     overflow:hidden;
     box-sizing:border-box;
-    touch-action:none;
+    touch-action:pan-y;
   }
 
   .mobile-screen-viewport > .gruzli-company-screen,
