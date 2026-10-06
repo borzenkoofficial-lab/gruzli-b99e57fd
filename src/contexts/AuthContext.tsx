@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { DEMO_USERS, DEMO_WORKER_PROFILE, type DemoRole } from "@/data/demoData";
 
 type AppRole = "client" | "worker" | "dispatcher" | "admin";
 type User = { id: string; email?: string; phone?: string | null; user_metadata: Record<string, any> };
@@ -149,18 +150,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const demoNames: Record<"client" | "dispatcher" | "worker", string> = {
-    worker: "Алексей Морозов",
-    dispatcher: "Анна Петрова",
-    client: "Сергей Волков",
-  };
+  const demoUserData = DEMO_USERS[demoRole as DemoRole];
 
   const demoUser: User = {
-    id: `demo-${demoRole}`,
-    email: `demo-${demoRole}@gruzli.local`,
+    id: demoUserData.id,
+    email: demoUserData.email,
     user_metadata: {
       role: demoRole,
-      full_name: demoNames[demoRole],
+      full_name: demoUserData.name,
     },
   };
 
@@ -171,17 +168,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const effectiveRole = DEMO_ENABLED && demoMode ? demoRole : role;
   const effectiveProfile = DEMO_ENABLED && demoMode
     ? {
-        full_name: demoNames[demoRole],
+        ...DEMO_WORKER_PROFILE,
+        full_name: demoUserData.name,
         role: demoRole,
-        rating: 4.96,
-        completed_orders: 128,
-        total_earned: 186400,
-        balance: 12450,
-        is_premium: true,
-        premium_until: "2026-12-31T23:59:59Z",
         skills:
           demoRole === "worker"
-            ? ["Переезды", "Разгрузка", "Демонтаж"]
+            ? DEMO_WORKER_PROFILE.skills
             : demoRole === "dispatcher"
               ? ["Переезды", "Коммерческие объекты", "Бригады"]
               : ["Переезд", "Квартирные работы"],
