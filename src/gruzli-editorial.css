@@ -1421,7 +1421,6 @@ body{overflow-x:hidden;}
 }
 @media(max-width:767px){
   .app-scroll{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px));}
-  .app-scroll .px-5
 }
 @media(prefers-reduced-motion:reduce){
   .app-shell:before,.app-shell:after{animation:none!important;}
