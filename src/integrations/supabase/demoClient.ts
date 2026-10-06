@@ -12,7 +12,7 @@ type DemoSession = { user: DemoUser; access_token: string };
 
 type Row = Record<string, any>;
 
-const DB_KEY = "gruzli_demo_db_v2";
+const DB_KEY = "gruzli_demo_db_v3";
 const SESSION_KEY = "gruzli_demo_session_v1";
 
 const DEMO_DISPATCHER_PROFILES = Object.entries(DEMO_DISPATCHER_NAMES).map(([user_id, full_name]) => ({
