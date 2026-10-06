@@ -427,7 +427,7 @@ const CelebrationStep = ({ onStart, isDispatcher }: { onStart: () => void; isDis
       transition={{ delay: 0.8, type: "spring" }}
       whileTap={{ scale: 0.95 }}
       onClick={onStart}
-      className="w-full max-w-xs py-4 rounded-2xl bg-foreground text-foreground-foreground text-sm font-bold flex items-center justify-center gap-2"
+      className="w-full max-w-xs py-4 rounded-2xl bg-foreground text-background text-sm font-bold flex items-center justify-center gap-2"
     >
       {isDispatcher ? "Создать первый заказ" : "Смотреть заказы"}
       <ChevronRight size={18} />
@@ -542,7 +542,7 @@ const OnboardingTour = ({ onComplete }: OnboardingTourProps) => {
           )}
           <button
             onClick={goNext}
-            className="flex-1 py-3.5 rounded-2xl bg-foreground text-foreground-foreground text-sm font-bold flex items-center justify-center gap-1 active:scale-95 transition-transform"
+            className="flex-1 py-3.5 rounded-2xl bg-foreground text-background text-sm font-bold flex items-center justify-center gap-1 active:scale-95 transition-transform"
           >
             Далее
             <ChevronRight size={16} />
