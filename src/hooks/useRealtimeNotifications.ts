@@ -74,7 +74,7 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
       type: "job",
       title: "Новый заказ",
       body: `${job.title} · ${job.hourly_rate}₽/ч · ${job.address || ""}`,
-    });
+    }, userIdRef.current);
 
     const { overlay } = getNotificationSettings();
     if (overlay) {
@@ -120,7 +120,7 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
       type: "message",
       title: "Новое сообщение",
       body: msg.text || "Медиа-сообщение",
-    });
+    }, userIdRef.current);
   }, []);
 
   const handleResponseUpdate = useCallback((payload: any) => {
@@ -142,7 +142,7 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
         type: "response",
         title: "Вас выбрали на заказ!",
         body: "Перейдите в «Мои заказы» чтобы подтвердить участие",
-      });
+      }, userIdRef.current);
       return;
     }
 
@@ -171,7 +171,7 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
           type: "response",
           title: label,
           body: "Обновление статуса грузчика на заказе",
-        });
+        }, userIdRef.current);
       }
     }
   }, []);
