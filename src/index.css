@@ -47,14 +47,6 @@
     --surface-2: 0 0% 10%;
     --surface-3: 0 0% 13%;
     --surface-4: 0 0% 17%;
-
-    /* Shadows — very subtle */
-    --neu-shadow-light: 0 0% 16%;
-    --neu-shadow-dark: 0 0% 3%;
-
-    --cyan-glow: 0 0% 100%;
-    --cyan-light: 0 0% 85%;
-
     --online: 145 65% 50%;
     --badge: 0 0% 100%;
 
@@ -71,11 +63,6 @@
     --sidebar-ring: 0 0% 40%;
   }
 
-  .theme-emerald 
-
-  .theme-crimson 
-
-  .theme-amber 
 }
 
 @layer base {
@@ -186,8 +173,6 @@
 
 @layer utilities {
 
-  .neu-raised-sm 
-
   .neu-inset 
 
   .neu-card 
@@ -201,10 +186,6 @@
     box-shadow: 0 2px 8px hsl(0 0% 0% / 0.3);
   }
 
-  .gradient-cyan 
-
-  .glow-cyan 
-
   .shadow-card {
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
   }
@@ -212,10 +193,6 @@
   .shadow-soft {
     box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
   }
-
-  .text-gradient-cyan 
-
-  .text-gradient-primary 
 
   .scrollbar-hide {
     -ms-overflow-style: none;
