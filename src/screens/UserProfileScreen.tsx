@@ -66,7 +66,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
     if (reviewsData && reviewsData.length > 0) {
       const reviewerIds = [...new Set(reviewsData.map((r: any) => r.reviewer_id))];
       const { data: profiles } = await supabase
-        .from("profiles")
+        .from("profiles_public" as any)
         .select("user_id, full_name")
         .in("user_id", reviewerIds);
       const nameMap: Record<string, string> = {};
