@@ -88,5 +88,19 @@ describe("demo Supabase session", () => {
       dispatcher_id: "demo-dispatcher",
       status: "pending",
     });
+
+    localStorage.setItem("gruzli_demo_role", "client");
+    const selected = await demoSupabase.rpc("client_select_dispatcher_offer", {
+      _offer_id: offer.data.id,
+    });
+
+    expect(selected.error).toBeNull();
+    expect(selected.data).toMatchObject({
+      id: created.data.id,
+      dispatcher_id: "demo-dispatcher",
+      status: "active",
+      hourly_rate: 850,
+      workers_needed: 2,
+    });
   });
 });
