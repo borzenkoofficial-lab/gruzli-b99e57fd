@@ -1484,6 +1484,10 @@ export type Database = {
         Returns: number
       }
       get_weekly_completed_jobs: { Args: { _user_id: string }; Returns: number }
+      worker_review_dispatcher: {
+        Args: { _dispatcher_id: string; _rating: number; _text?: string | null }
+        Returns: Database["public"]["Tables"]["dispatcher_reviews"]["Row"]
+      }
       worker_update_response_status: {
         Args: { _next_status: string; _response_id: string }
         Returns: Json
