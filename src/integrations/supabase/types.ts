@@ -592,6 +592,7 @@ export type Database = {
       job_responses: {
         Row: {
           created_at: string
+          agreed_hourly_rate: number | null
           dispatcher_review_rating: number | null
           dispatcher_review_text: string | null
           earned: number | null
@@ -609,6 +610,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          agreed_hourly_rate?: number | null
           dispatcher_review_rating?: number | null
           dispatcher_review_text?: string | null
           earned?: number | null
@@ -626,6 +628,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          agreed_hourly_rate?: number | null
           dispatcher_review_rating?: number | null
           dispatcher_review_text?: string | null
           earned?: number | null
@@ -1427,6 +1430,10 @@ export type Database = {
       dispatcher_cancel_job: {
         Args: { _job_id: string }
         Returns: Json
+      }
+      dispatcher_republish_job: {
+        Args: { _job_id: string }
+        Returns: Database["public"]["Tables"]["jobs"]["Row"]
       }
       create_direct_conversation: {
         Args: { _other_user_id: string; _title?: string }
