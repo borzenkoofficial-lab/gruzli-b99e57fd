@@ -36,7 +36,6 @@ describe("demo Supabase session", () => {
       status: "pending",
     });
   });
-});
 
   it("keeps the client -> dispatcher offer flow aligned with production rules", async () => {
     localStorage.setItem("gruzli_demo_worker", "1");
@@ -90,3 +89,4 @@ describe("demo Supabase session", () => {
       status: "pending",
     });
   });
+});
