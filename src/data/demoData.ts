@@ -120,6 +120,37 @@ export const DEMO_PROFILES: Record<DemoRole, {
 
 export const DEMO_WORKER_PROFILE = DEMO_PROFILES.worker;
 
+export const DEMO_JOB_RESPONSES = [
+  {
+    id: "demo-response-1",
+    job_id: "demo-job-1",
+    worker_id: "demo-worker",
+    message: "Готов выйти на заказ.",
+    status: "accepted",
+    worker_status: "confirmed",
+    agreed_hourly_rate: 900,
+    created_at: "2026-09-29T18:10:00Z",
+    work_started_at: null,
+    work_finished_at: null,
+    hours_worked: null,
+    earned: null,
+  },
+  {
+    id: "demo-response-0",
+    job_id: "demo-job-2",
+    worker_id: "demo-worker",
+    message: "Заказ выполнен.",
+    status: "accepted",
+    worker_status: "completed",
+    agreed_hourly_rate: 750,
+    created_at: "2026-09-28T10:00:00Z",
+    work_started_at: "2026-09-28T10:00:00Z",
+    work_finished_at: "2026-09-28T14:00:00Z",
+    hours_worked: 4,
+    earned: 3000,
+  },
+];
+
 export const DEMO_RESPONSE_COUNTS: Record<string, number> = {
   "demo-job-1": 1,
   "demo-job-2": 3,
