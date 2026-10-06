@@ -60,7 +60,10 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
   const [requiresContract, setRequiresContract] = useState(false);
   const [contractTitle, setContractTitle] = useState("Договор подряда");
   const [contractBody, setContractBody] = useState(
-    "1. Исполнитель обязуется выполнить грузо-погрузочные работы по адресу и в срок, указанные выше.\n2. Заказчик обязуется оплатить работы по согласованной ставке за фактически отработанное время.\n3. Исполнитель несёт ответственность за сохранность перемещаемого имущества в пределах своей вины.\n4. Стороны обязуются соблюдать технику безопасности и нормы общения."
+    "1. Исполнитель обязуется выполнить грузо-погрузочные работы по адресу и в срок, указанные выше.
+2. Заказчик обязуется оплатить работы по согласованной ставке за фактически отработанное время.
+3. Исполнитель несёт ответственность за сохранность перемещаемого имущества в пределах своей вины.
+4. Стороны обязуются соблюдать технику безопасности и нормы общения."
   );
 
   const balance = profile?.balance || 0;
@@ -101,13 +104,20 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
         const { data: modResult, error: moderationError } = await supabase.functions.invoke("moderate-content", {
           body: { text: textToCheck, type: "job" },
         });
-        if (moderationError) {\n          toast.error("Не удалось проверить заявку. Попробуйте ещё раз.");\n          setLoading(false);\n          return;\n        }\n        if (!modResult?.safe) {
+        if (moderationError) {
+          toast.error("Не удалось проверить заявку. Попробуйте ещё раз.");
+          setLoading(false);
+          return;
+        }
+        if (!modResult?.safe) {
           toast.error(modResult.reason || "Содержимое не прошло модерацию");
           setLoading(false);
           return;
         }
       } catch {
-        // Fail-open: allow on error
+        toast.error("Не удалось проверить заявку. Попробуйте ещё раз.");
+        setLoading(false);
+        return;
       }
     }
 
