@@ -537,6 +537,10 @@ async function rpc(name: string, args: Record<string, any> = {}) {
     job.status = "active"; saveDb(db); return { data: job, error: null };
   }
   if (name === "admin_dashboard_stats") {
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "admin") {
+      return { data: null, error: { code: "42501", message: "Нужна роль администратора" } };
+    }
     const ratings = db.app_ratings || [];
     const now = Date.now();
     return { data: {
@@ -634,7 +638,13 @@ async function rpc(name: string, args: Record<string, any> = {}) {
     db.conversation_participants.push({ id: uid("participant"), conversation_id: id, user_id: args._other_user_id, last_read_at: null, created_at: new Date().toISOString() });
     saveDb(db); return { data: id, error: null };
   }
-  if (name === "admin_list_users") return { data: db.profiles.map((p) => ({ ...p, user_id: p.user_id, role: p.role || "worker", email: "", verified: true, blocked: false })), error: null };
+  if (name === "admin_list_users") {
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "admin") {
+      return { data: null, error: { code: "42501", message: "Нужна роль администратора" } };
+    }
+    return { data: db.profiles.map((p) => ({ ...p, user_id: p.user_id, role: p.role || "worker", email: "", verified: true, blocked: false })), error: null };
+  }
   return { data: null, error: null };
 }
 
