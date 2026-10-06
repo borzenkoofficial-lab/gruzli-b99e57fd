@@ -6240,3 +6240,131 @@ button.bg-foreground:active{
     transform:none!important;
   }
 }
+
+
+/* Dispatcher cabinet — visual alignment with the main Gruzli product shell. */
+.gruzli-dispatcher-cabinet{
+  background:var(--gruzli-canvas)!important;
+  color:var(--gruzli-ink);
+}
+
+.gruzli-dispatcher-cabinet > .px-5.safe-top.pb-4{
+  padding-top:18px;
+  padding-bottom:14px;
+}
+
+.gruzli-dispatcher-cabinet .gruzli-dispatcher-hero{
+  border:1px solid var(--gruzli-line)!important;
+  background:
+    radial-gradient(240px 140px at 100% 0%,rgba(242,196,0,.13),transparent 72%),
+    linear-gradient(180deg,#fff 0%,#fafafa 100%)!important;
+  color:var(--gruzli-ink)!important;
+  box-shadow:0 4px 16px rgba(18,20,25,.045)!important;
+}
+.gruzli-dispatcher-cabinet .gruzli-dispatcher-hero .text-white{
+  color:var(--gruzli-ink)!important;
+}
+.gruzli-dispatcher-cabinet .gruzli-dispatcher-hero .text-white\/50,
+.gruzli-dispatcher-cabinet .gruzli-dispatcher-hero .text-white\/45,
+.gruzli-dispatcher-cabinet .gruzli-dispatcher-hero .text-white\/40{
+  color:#85878d!important;
+}
+.gruzli-dispatcher-cabinet .gruzli-dispatcher-hero .border-white\/10{
+  border-color:rgba(18,20,25,.07)!important;
+}
+.gruzli-dispatcher-cabinet .gruzli-dispatcher-hero .border-\[\#f2c400\]\/30{
+  border-color:rgba(242,196,0,.32)!important;
+}
+.gruzli-dispatcher-cabinet .gruzli-dispatcher-hero > .absolute.bottom-0{
+  background:#f2c400!important;
+}
+
+.gruzli-dispatcher-community{
+  box-shadow:0 2px 10px rgba(18,20,25,.025);
+}
+.gruzli-dispatcher-community > span:first-child{
+  background:#f4f4f5!important;
+  color:#5f6168;
+}
+.gruzli-dispatcher-community b{
+  letter-spacing:-.01em;
+}
+
+.gruzli-dispatcher-actions{
+  gap:7px!important;
+}
+.gruzli-dispatcher-action{
+  min-height:82px;
+  border-color:var(--gruzli-line)!important;
+  box-shadow:0 2px 8px rgba(18,20,25,.022);
+}
+.gruzli-dispatcher-action:hover{
+  background:#fff!important;
+  border-color:var(--gruzli-line-strong)!important;
+}
+.gruzli-dispatcher-action > div{
+  background:#f4f4f5!important;
+  color:#5f6168!important;
+}
+.gruzli-dispatcher-action > div svg{
+  color:currentColor!important;
+}
+.gruzli-dispatcher-action:nth-child(3) > div{
+  background:#fff6cc!important;
+  color:#8a6a00!important;
+}
+
+.gruzli-dispatcher-tabs{
+  box-shadow:0 2px 8px rgba(18,20,25,.025);
+}
+.gruzli-dispatcher-tabs > button{
+  min-height:42px;
+  border-radius:11px!important;
+}
+.gruzli-dispatcher-tabs > button:not(.bg-foreground){
+  color:#777981!important;
+}
+.gruzli-dispatcher-tabs > button.bg-foreground{
+  background:#18191c!important;
+  box-shadow:none!important;
+}
+
+.gruzli-dispatcher-cabinet .rounded-3xl.border.border-border.bg-card{
+  border-color:var(--gruzli-line)!important;
+  box-shadow:0 2px 10px rgba(18,20,25,.028);
+}
+
+@media(min-width:768px){
+  .gruzli-dispatcher-cabinet{
+    background:transparent!important;
+    padding-bottom:28px!important;
+  }
+  .gruzli-dispatcher-cabinet > .px-5.safe-top.pb-4{
+    padding-top:6px;
+  }
+  .gruzli-dispatcher-cabinet .gruzli-dispatcher-hero{
+    border-radius:20px!important;
+  }
+  .gruzli-dispatcher-actions-wrap,
+  .gruzli-dispatcher-tabs-wrap{
+    padding-left:20px!important;
+    padding-right:20px!important;
+  }
+}
+
+@media(max-width:390px){
+  .gruzli-dispatcher-actions{
+    gap:5px!important;
+  }
+  .gruzli-dispatcher-action{
+    min-height:76px;
+    padding:8px 4px!important;
+  }
+  .gruzli-dispatcher-action > div{
+    width:32px!important;
+    height:32px!important;
+  }
+  .gruzli-dispatcher-action > span{
+    font-size:9px!important;
+  }
+}
