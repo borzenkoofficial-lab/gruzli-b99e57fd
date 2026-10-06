@@ -61,7 +61,7 @@ const WelcomeStep = ({ isDispatcher }: { isDispatcher: boolean }) => (
       className="text-sm text-muted-foreground leading-relaxed max-w-sm"
     >
       {isDispatcher
-        ? "Gruzli — ваш инструмент для управления заказами. Размещайте заявки, находите надёжных грузчиков, отслеживайте выполнение и контролируйте расходы."
+        ? "Gruzli — рабочий кабинет диспетчера. Принимайте запросы клиентов, предлагайте условия, находите грузчиков и контролируйте выполнение заказа."
         : "Gruzli — платформа для поиска работы. Находите заказы рядом, откликайтесь мгновенно, общайтесь с диспетчерами напрямую и зарабатывайте больше."}
     </motion.p>
 
@@ -124,9 +124,9 @@ const UIGuideStep = ({ isDispatcher }: { isDispatcher: boolean }) => {
     { icon: DollarSign, text: "В профиле — ваш баланс, заработок за неделю и статистика выполненных заказов" },
   ];
   const dispatcherTips = [
-    { icon: Plus, text: "Создавайте заказы через кнопку «+»: укажите адрес, ставку, количество грузчиков и время" },
+    { icon: Plus, text: "Принимайте запросы клиентов и отправляйте предложение по ставке, количеству грузчиков и условиям" },
     { icon: Users, text: "Просматривайте отклики грузчиков — их рейтинг, опыт и навыки. Принимайте лучших" },
-    { icon: BarChart3, text: "В кабинете диспетчера — аналитика доходов, расходов и статистика по заказам" },
+    { icon: BarChart3, text: "В кабинете диспетчера — отклики, активные заказы, расходы и статистика" },
     { icon: Star, text: "После завершения заказа оставляйте отзывы грузчикам и заполняйте финансы" },
   ];
   const tips = isDispatcher ? dispatcherTips : workerTips;
@@ -137,7 +137,7 @@ const UIGuideStep = ({ isDispatcher }: { isDispatcher: boolean }) => {
         <h2 className="text-xl font-bold text-foreground mb-2">
           {isDispatcher ? "Ваши инструменты" : "Как устроено приложение"}
         </h2>
-        <p className="text-xs text-muted-foreground">Внизу экрана — главное меню</p>
+        <p className="text-xs text-muted-foreground">Меню меняется в зависимости от вашей роли</p>
       </motion.div>
 
       <motion.div
@@ -429,7 +429,7 @@ const CelebrationStep = ({ onStart, isDispatcher }: { onStart: () => void; isDis
       onClick={onStart}
       className="w-full max-w-xs py-4 rounded-2xl bg-foreground text-background text-sm font-bold flex items-center justify-center gap-2"
     >
-      {isDispatcher ? "Создать первый заказ" : "Смотреть заказы"}
+      {isDispatcher ? "Открыть кабинет" : "Смотреть заказы"}
       <ChevronRight size={18} />
     </motion.button>
   </div>
