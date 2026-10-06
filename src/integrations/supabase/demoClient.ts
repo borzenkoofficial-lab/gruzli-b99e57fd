@@ -403,9 +403,14 @@ async function rpc(name: string, args: Record<string, any> = {}) {
     if (args._next_status === "completed") {
       response.work_finished_at = now;
       const started = response.work_started_at ? new Date(response.work_started_at).getTime() : Date.now();
-      response.hours_worked = Math.max(0, Math.round(((Date.now() - started) / 3600000) * 100) / 100);
+      response.hours_worked = Math.max(0.5, Math.round(((Date.now() - started) / 3600000) * 10) / 10);
       const job = db.jobs.find((j) => j.id === response.job_id);
-      response.earned = response.hours_worked * Number(response.agreed_hourly_rate || job?.hourly_rate || 0);
+      response.earned = Math.round(response.hours_worked * Number(response.agreed_hourly_rate || job?.hourly_rate || 0));
+      const profile = db.profiles.find((p) => p.user_id === user.id);
+      if (profile) {
+        profile.completed_orders = Number(profile.completed_orders || 0) + 1;
+        profile.total_earned = Number(profile.total_earned || 0) + Number(response.earned || 0);
+      }
       const otherActive = db.job_responses.some((r) => r.job_id === response.job_id && r.id !== response.id && r.status === "accepted" && r.worker_status !== "completed");
       if (!otherActive && job) job.status = "completed";
     }
