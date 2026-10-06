@@ -230,12 +230,11 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
     });
 
   const nearbyCount = filtered.length;
-  // Реалистичный средний заработок за день: ~3 заявки в день из доступных,
-  // берём средний чек по активным заявкам и умножаем на 3.
-  const avgJobPay = jobs.length > 0
-    ? jobs.reduce((sum, j) => sum + j.hourly_rate * (Number(j.duration_hours) || 4), 0) / jobs.length
+  const jobPay = jobs.map((j) => j.hourly_rate * (Number(j.duration_hours) || 4));
+  const avgJobPay = jobPay.length > 0
+    ? jobPay.reduce((sum, value) => sum + value, 0) / jobPay.length
     : 0;
-  const avgDailyEarnings = Math.round((avgJobPay * 3) / 50) * 50; // округляем до 50 ₽
+  const maxJobPay = jobPay.length > 0 ? Math.max(...jobPay) : 0;
 
   const handleRespond = async (jobId: string) => {
     if (!user) return;
@@ -270,7 +269,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
         <div className="gruzli-feed-earnings">
           <div><span>Средний заказ</span><strong>{avgJobPay ? Math.round(avgJobPay).toLocaleString("ru-RU") : "—"} ₽</strong></div>
           <div className="gruzli-feed-earnings-divider" />
-          <div><span>Сегодня можно</span><strong>{avgDailyEarnings ? `~${avgDailyEarnings.toLocaleString("ru-RU")} ₽` : "—"}</strong></div>
+          <div><span>Макс. заказ</span><strong>{maxJobPay ? `~${Math.round(maxJobPay).toLocaleString("ru-RU")} ₽` : "—"}</strong></div>
           <div className="gruzli-feed-earnings-arrow">↗</div>
         </div>
       </header>
