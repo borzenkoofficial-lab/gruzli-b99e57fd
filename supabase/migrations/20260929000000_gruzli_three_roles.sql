@@ -20,15 +20,6 @@ CREATE INDEX IF NOT EXISTS idx_jobs_client_id ON public.jobs(client_id);
 CREATE INDEX IF NOT EXISTS idx_jobs_dispatcher_status ON public.jobs(dispatcher_id, status);
 CREATE INDEX IF NOT EXISTS idx_jobs_open_requests ON public.jobs(status, dispatcher_id) WHERE dispatcher_id IS NULL;
 
-ALTER TABLE public.job_responses
-  ADD COLUMN IF NOT EXISTS agreed_hourly_rate integer;
-
-UPDATE public.job_responses jr
-SET agreed_hourly_rate = j.hourly_rate
-FROM public.jobs j
-WHERE jr.job_id = j.id
-  AND jr.agreed_hourly_rate IS NULL;
-
 CREATE OR REPLACE FUNCTION public.client_create_job(
   _title text,
   _description text,
