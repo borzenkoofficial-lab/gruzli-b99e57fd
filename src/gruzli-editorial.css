@@ -244,7 +244,6 @@ button,input,textarea,select{font-family:inherit;}
   background:#f4f4f5!important;
 }
 
-
 /* Make the primary mobile content feel like a premium product sheet. */
 @media(max-width:767px){
   body{background:hsl(var(--background));}
@@ -500,23 +499,14 @@ button,input,textarea,select{font-family:inherit;}
 
 /* Reduce the old neon / dark treatment without touching component logic. */
 [class*="glow"],[class*="shimmer"]{box-shadow:none;}
-.gradient-cyan,.gradient-primary{
-  background:#191a1d!important;
-  color:#fff!important;
-}
-.text-gradient-cyan,.text-gradient-primary{
-  color:#191a1d!important;
-  background:none!important;
-  -webkit-text-fill-color:initial!important;
-}
+.gradient-cyan,.gradient-primary
+.text-gradient-cyan,.text-gradient-primary
 
 /* Mobile typography and spacing */
 @media(max-width:430px){
   .app-scroll{padding-bottom:calc(var(--bottom-nav-height) + env(safe-area-inset-bottom,0px) + 30px);}
   .app-scroll .px-5{padding-left:16px!important;padding-right:16px!important;}
 }
-
-
 
 /* Mobile editorial composition — Gruzli hierarchy without changing business logic. */
 .gruzli-mobile-feed{padding-bottom:8px;}
@@ -767,7 +757,6 @@ button{ -webkit-tap-highlight-color:transparent; }
     #f7f7f8;
 }
 
-
 /* ===== Gruzli motion + mockup layer ===== */
 .gruzli-preview-frame{
   position:relative;
@@ -844,12 +833,9 @@ button{ -webkit-tap-highlight-color:transparent; }
 }
 @keyframes gruzli-chrome-in{
   from{opacity:0;transform:translateY(-5px)}
-  to{opacity:1;transform:translateY(0)}
+  to
 }
-.gruzli-cloud{
-  position:relative;
-  isolation:isolate;
-}
+.gruzli-cloud
 .gruzli-cloud::before{
   content:"";
   position:absolute;
@@ -1438,7 +1424,7 @@ body{overflow-x:hidden;}
 *{box-sizing:border-box;}
 
 @keyframes gruzli-orbit-a{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(16px,9px,0) scale(1.04)}}
-@keyframes gruzli-orbit-b{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(-14px,-8px,0) scale(.96)}}
+@keyframes gruzli-orbit-b{0%,100%50%{transform:translate3d(-14px,-8px,0) scale(.96)}}
 
 .app-shell{
   background:
@@ -1516,13 +1502,12 @@ body{overflow-x:hidden;}
 }
 @media(max-width:767px){
   .app-scroll{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px));}
-  .app-scroll .px-5{padding-left:16px!important;padding-right:16px!important;}
+  .app-scroll .px-5
 }
 @media(prefers-reduced-motion:reduce){
   .app-shell:before,.app-shell:after{animation:none!important;}
   *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;}
 }
-
 
 /* ============================================================
    GRUZLI DIGITAL EDITORIAL — FINAL VISUAL LAYER
@@ -1587,11 +1572,11 @@ body,
   animation:gd-orb-b 17s ease-in-out infinite;
 }
 @keyframes gd-orb-a{
-  0%,100%{transform:translate3d(0,0,0) scale(1)}
+  0%,100%
   50%{transform:translate3d(-45px,28px,0) scale(1.12)}
 }
 @keyframes gd-orb-b{
-  0%,100%{transform:translate3d(0,0,0) scale(1)}
+  0%,100%
   50%{transform:translate3d(36px,-22px,0) scale(1.08)}
 }
 
@@ -1855,7 +1840,7 @@ body,
 }
 @keyframes gd-card-enter{
   from{opacity:0;transform:translateY(18px)}
-  to{opacity:1;transform:translateY(0)}
+  to
 }
 .gruzli-mobile-feed > *{
   animation:gd-card-enter .52s var(--gd-ease) both;
@@ -1901,7 +1886,6 @@ body,
     pointer-events:none;
   }
 }
-
 
 /* ============================================================
    DIGITAL SYSTEM — SECOND PASS
@@ -2088,7 +2072,6 @@ body,
     animation:gd-card-enter .45s var(--gd-ease) both;
   }
 }
-
 
 /* ============================================================
    GRUZLI ORDER MOCKUP CARDS — magazine / product mockup pass
@@ -2546,7 +2529,6 @@ body,
   }
 }
 
-
 /* ============================================================
    FEED STABILITY HOTFIX
    Keep editorial blocks in normal document flow.
@@ -2608,7 +2590,6 @@ body,
   transform:none!important;
 }
 
-
 /* Feed layout stabilization v2 */
 .gruzli-mobile-feed{
   overflow-x:hidden!important;
@@ -2665,7 +2646,6 @@ body,
     white-space:nowrap!important;
   }
 }
-
 
 /* ===== FEED RESPONSIVE FINALIZATION =====
    One stable flow for compact phones; no transform-based layout tricks.
@@ -2737,7 +2717,6 @@ body,
     font-size:13px!important;
   }
 }
-
 
 /* ============================================================
    GRUZLI FEED — FINAL VISUAL POLISH
@@ -3085,7 +3064,6 @@ body,
   .gruzli-mobile-feed .gruzli-order-heading > div{min-width:76px!important;}
 }
 
-
 /* ============================================================
    GRUZLI WORKER PROFILE — editorial identity system
    ============================================================ */
@@ -3328,7 +3306,6 @@ body,
   .gruzli-worker-passport-body{grid-template-columns:1fr;gap:12px}
 }
 
-
 .gruzli-worker-dossier{overflow:hidden;position:relative;border:1px solid rgba(17,18,20,.1);border-radius:26px;padding:15px;color:#fff;background:radial-gradient(220px 150px at 100% 0%,rgba(242,189,22,.17),transparent 70%),linear-gradient(145deg,#17181b,#242529 58%,#303136);box-shadow:0 22px 55px rgba(17,18,20,.15),inset 0 1px 0 rgba(255,255,255,.08)}
 .gruzli-worker-dossier-head{display:flex;justify-content:space-between;gap:10px;padding-bottom:11px;border-bottom:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4);font-size:7px;font-weight:850;letter-spacing:.15em}
 .gruzli-worker-dossier-head span:last-child{color:#f2bd16}
@@ -3349,7 +3326,6 @@ body,
 .gruzli-worker-dossier-primary{display:flex;align-items:center;justify-content:center;gap:7px;border:0;background:#f2bd16;color:#17181b}
 .gruzli-worker-dossier-secondary{display:flex;align-items:center;justify-content:center;gap:6px;min-width:62px;padding:0 13px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.05);color:rgba(255,255,255,.78)}
 @media(max-width:390px){.gruzli-worker-dossier{padding:13px;border-radius:22px}.gruzli-worker-dossier-avatar{width:52px;height:52px;flex-basis:52px}.gruzli-worker-dossier-identity h3{font-size:16px}.gruzli-worker-dossier-rating>div{padding:0 6px}.gruzli-worker-dossier-rating strong{font-size:10px}}
-
 
 /* Worker identity mockup — physical card / editorial object */
 .gruzli-worker-id-mockup{
@@ -3535,7 +3511,6 @@ body,
 .gruzli-card-swipe-hint i{width:2px;height:2px;border-radius:50%;background:#c4c5c6}
 .gruzli-job-card:hover .gruzli-card-swipe-hint{opacity:1;color:#74767a}
 @media(max-width:390px){.gruzli-card-swipe-hint{margin-top:-2px;margin-bottom:7px;font-size:6px}}
-
 
 /* Profile v2 — editorial identity system */
 .gruzli-profile-screen{
@@ -3812,7 +3787,6 @@ body,
   .gruzli-work-history{transition:none}
 }
 
-
 /* Profile v3 — Worker ID as the primary physical/digital document */
 .gruzli-worker-id-hero{
   min-height:228px;
@@ -3982,7 +3956,6 @@ body,
   .gruzli-worker-id-top>span:last-child{font-size:5px}
 }
 
-
 /* Profile v4 — one editorial document, not a stack of cards */
 .gruzli-profile-screen{
   --profile-gap:18px;
@@ -4084,7 +4057,6 @@ body,
   .gruzli-wallet-section-head>b{display:none}
   .gruzli-worker-dashboard-grid>div{min-height:52px}
 }
-
 
 /* ==========================================================================
    GRUZLI EDITORIAL SYSTEM — KARTOTEKA + CHAT / DOCUMENT REDESIGN
@@ -4502,7 +4474,6 @@ body,
   }
 }
 
-
 /* ==========================================================================
    GRUZLI SETTINGS — CONTROL CENTER
    ========================================================================== */
@@ -4670,7 +4641,6 @@ body,
 @media(prefers-reduced-motion:reduce){
   .gruzli-settings-group>button{transition:none}
 }
-
 
 /* ==========================================================================
    GRUZLI SETTINGS — ALL SUBPAGES / FULL DOCUMENT SYSTEM
@@ -4851,7 +4821,6 @@ body,
   .gruzli-settings-subpage *{scroll-behavior:auto!important}
 }
 
-
 .gruzli-settings-profile-work{
   padding:18px;
   border:1px solid rgba(20,21,24,.07);
@@ -4876,7 +4845,6 @@ body,
 @media(max-width:420px){
   .gruzli-settings-profile-work{padding:15px}
 }
-
 
 /* SETTINGS — INTERIOR DESIGN SYSTEM */
 .gruzli-settings-section-intro{
@@ -4941,7 +4909,6 @@ body,
   .gruzli-settings-section-intro h2{font-size:34px}
 }
 
-
 /* ─────────────────────────────────────────────────────────────
    GRUZLI 2026 UI SYSTEM — final consistency layer
    One visual language for auth, app, overlays, forms and feedback.
@@ -4965,40 +4932,7 @@ body,
 }
 
 /* Never let legacy theme classes fragment the product identity. */
-html.light,html.theme-midnight,html.theme-emerald,html.theme-crimson,html.theme-amber{
-  --background:0 0% 96.8%;
-  --foreground:222 18% 10%;
-  --card:0 0% 100%;
-  --card-foreground:222 18% 10%;
-  --card-hover:0 0% 98%;
-  --popover:0 0% 100%;
-  --popover-foreground:222 18% 10%;
-  --primary:43 96% 48%;
-  --primary-foreground:222 18% 8%;
-  --secondary:0 0% 93%;
-  --secondary-foreground:222 12% 28%;
-  --muted:0 0% 93%;
-  --muted-foreground:220 8% 43%;
-  --accent:0 0% 94%;
-  --accent-foreground:222 18% 10%;
-  --border:220 10% 87%;
-  --input:220 10% 87%;
-  --ring:43 96% 48%;
-  --surface-1:0 0% 96.8%;
-  --surface-2:0 0% 100%;
-  --surface-3:0 0% 97%;
-  --surface-4:220 10% 89%;
-  --bubble-own:43 96% 91%;
-  --bubble-other:0 0% 100%;
-  --sidebar-background:0 0% 99%;
-  --sidebar-foreground:222 18% 10%;
-  --sidebar-primary:43 96% 48%;
-  --sidebar-primary-foreground:222 18% 8%;
-  --sidebar-accent:0 0% 95%;
-  --sidebar-accent-foreground:222 18% 10%;
-  --sidebar-border:220 10% 89%;
-  --sidebar-ring:43 96% 48%;
-}
+html.light,html.theme-midnight,html.theme-emerald,html.theme-crimson,html.theme-amber
 
 /* Auth / splash */
 .gruzli-auth-shell,
@@ -5141,7 +5075,7 @@ button.bg-foreground:active{
 }
 @keyframes gruzli-page-in{
   from{opacity:0;transform:translateY(5px)}
-  to{opacity:1;transform:translateY(0)}
+  to
 }
 
 /* Sheets and full-screen mobile detail screens */
@@ -5167,7 +5101,6 @@ button.bg-foreground:active{
 }
 .gruzli-role-selected svg{color:#7a6000!important;}
 .gruzli-role-selected p:last-child{color:#746216!important;}
-
 
 /* ==========================================================================
    GRUZLI ORDER MOCKUP — REFINED VISUAL LAYER
@@ -5547,7 +5480,6 @@ button.bg-foreground:active{
   .gruzli-job-card:hover{transform:none}
 }
 
-
 /* ==========================================================================
    GRUZLI — LIVING EDITORIAL CANVAS
    Animated paper / blueprint atmosphere behind the existing mockup cards.
@@ -5696,7 +5628,6 @@ button.bg-foreground:active{
   }
 }
 
-
 /* Swipe-responsive light: the card appears to illuminate the paper beneath it. */
 .gruzli-card-follow-light{
   background:
@@ -5743,11 +5674,8 @@ button.bg-foreground:active{
   .gruzli-card-follow-light{
     display:none;
   }
-  .gruzli-job-card:after{
-    display:none;
-  }
+  .gruzli-job-card:after
 }
-
 
 /* ===== GRUZLI PRODUCT POLISH / PASS 2 =====
    Visual-only refinement: editorial hierarchy, tactile controls, calmer surfaces.
@@ -5981,7 +5909,6 @@ button.bg-foreground:active{
   }
 }
 
-
 /* Refinement pass — preserve the established Gruzli editorial direction.
    Focus, reduced-motion and touch feedback only; no palette or layout redesign. */
 :where(button,a,[role="button"],input,textarea,select):focus-visible{
@@ -6019,7 +5946,6 @@ button.bg-foreground:active{
     -webkit-overflow-scrolling:touch;
   }
 }
-
 
 /* FINAL MOBILE STABILITY OVERRIDES */
 @media(max-width:767px){
@@ -6075,7 +6001,6 @@ button.bg-foreground:active{
   html,body,#root,.app-shell{background:#f7f7f8!important;}
 }
 
-
 /* Lightweight splash: opacity-only compositing, no spring/layout animation. */
 .gruzli-splash{
   opacity:1;
@@ -6086,7 +6011,6 @@ button.bg-foreground:active{
 .gruzli-splash-progress{animation:gruzli-splash-progress .8s linear infinite;will-change:transform;}
 @keyframes gruzli-splash-progress{from{transform:translateX(-100%)}to{transform:translateX(200%)}}
 @media(prefers-reduced-motion:reduce){.gruzli-splash{transition:none}.gruzli-splash-progress{animation:none}}
-
 
 /* ===== GRUZLI — UI POLISH PASS 3 / 2026-10 =====
    Readability, responsive card geometry, calmer canvas and deterministic mobile scrolling.
@@ -6256,7 +6180,6 @@ button.bg-foreground:active{
   }
 }
 
-
 /* Mobile detail shells own the vertical scroll. Settings must not introduce a
    second scroll container inside the surrounding mobile-screen-scroll. */
 @media(max-width:767px){
@@ -6272,7 +6195,6 @@ button.bg-foreground:active{
     padding-bottom:24px!important;
   }
 }
-
 
 /* ==========================================================================
    GRUZLI — UI POLISH PASS 4 / PRODUCT CLEANUP
@@ -6410,7 +6332,6 @@ button.bg-foreground:active{
   }
 }
 
-
 /* Secondary surfaces: keep the same light product language as the core feed. */
 .gruzli-company-screen,
 .gruzli-premium-screen,
@@ -6463,7 +6384,6 @@ button.bg-foreground:active{
   }
 }
 
-
 /* Full-screen surfaces with their own internal scroller must not receive a second
    vertical scroll container from the mobile shell. */
 @media (max-width:767px) {
@@ -6485,7 +6405,6 @@ button.bg-foreground:active{
   }
 }
 
-
 /* Keep compositor hints only while a card is actively moving. */
 .gruzli-job-card {
   will-change:auto;
@@ -6499,7 +6418,6 @@ button.bg-foreground:active{
     animation:none!important;
   }
 }
-
 
 /* Desktop detail owns its viewport: full-screen mobile roots become panel-local. */
 @media (min-width:768px) {
