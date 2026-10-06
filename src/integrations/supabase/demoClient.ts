@@ -302,6 +302,7 @@ async function rpc(name: string, args: Record<string, any> = {}) {
     const limit = Math.max(1, Number(job.workers_needed) || 1);
     if (acceptedCount >= limit) return { data: null, error: { code: "P0002", message: "Лимит грузчиков уже достигнут" } };
     response.status = "accepted";
+    response.agreed_hourly_rate = response.agreed_hourly_rate || Number(job.hourly_rate || 0);
     const nextCount = acceptedCount + 1;
     const filled = nextCount >= limit;
     if (filled) {
@@ -331,7 +332,7 @@ async function rpc(name: string, args: Record<string, any> = {}) {
       const started = response.work_started_at ? new Date(response.work_started_at).getTime() : Date.now();
       response.hours_worked = Math.max(0, Math.round(((Date.now() - started) / 3600000) * 100) / 100);
       const job = db.jobs.find((j) => j.id === response.job_id);
-      response.earned = response.hours_worked * Number(job?.hourly_rate || 0);
+      response.earned = response.hours_worked * Number(response.agreed_hourly_rate || job?.hourly_rate || 0);
       const otherActive = db.job_responses.some((r) => r.job_id === response.job_id && r.id !== response.id && r.status === "accepted" && r.worker_status !== "completed");
       if (!otherActive && job) job.status = "completed";
     }
@@ -352,6 +353,24 @@ async function rpc(name: string, args: Record<string, any> = {}) {
     if (!job || job.dispatcher_id !== user.id) return { data: null, error: { code: "42501", message: "Нет доступа к отклику" } };
     response.status = "rejected";
     saveDb(db); return { data: response, error: null };
+  }
+  if (name === "dispatcher_republish_job") {
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    const job = db.jobs.find((j) => j.id === args._job_id && j.dispatcher_id === user.id && j.status === "closed");
+    if (!job || db.job_responses.some((r) => r.job_id === args._job_id && r.status === "accepted")) return { data: null, error: { code: "P0001", message: "Заявка не может быть переопубликована" } };
+    job.status = "active"; saveDb(db); return { data: job, error: null };
+  }
+  if (name === "admin_dashboard_stats") {
+    const ratings = db.app_ratings || [];
+    const now = Date.now();
+    return { data: {
+      totalUsers: db.profiles.length,
+      onlineNow: db.profiles.filter((p) => p.last_seen_at && now - new Date(p.last_seen_at).getTime() < 120000).length,
+      newToday: db.profiles.filter((p) => now - new Date(p.created_at || 0).getTime() < 86400000).length,
+      newThisWeek: db.profiles.filter((p) => now - new Date(p.created_at || 0).getTime() < 7 * 86400000).length,
+      avgRating: ratings.length ? Math.round((ratings.reduce((s, r) => s + Number(r.rating || 0), 0) / ratings.length) * 10) / 10 : 0,
+      totalRatings: ratings.length,
+    }, error: null };
   }
   if (name === "dispatcher_finish_job" || name === "dispatcher_complete_job" || name === "dispatcher_review_worker") return { data: {}, error: null };
   if (name === "create_direct_conversation") {
