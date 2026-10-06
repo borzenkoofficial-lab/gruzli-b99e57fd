@@ -687,8 +687,8 @@ const SwipeableJobCard = ({
 
         {/* Title */}
         <div className="gruzli-order-heading flex items-start justify-between gap-3">
-          <h3 className="text-[17px] font-bold text-foreground leading-[1.14] tracking-[-0.025em] pr-1">{job.title}</h3>
-          <div className="shrink-0 text-right">
+          <h3 className="min-w-0 flex-1 text-[17px] font-bold text-foreground leading-[1.14] tracking-[-0.025em] break-words">{job.title}</h3>
+          <div className="w-[78px] shrink-0 text-right">
             <div className="text-[16px] font-extrabold tracking-[-0.02em] text-foreground">{job.hourly_rate.toLocaleString("ru-RU")} ₽</div>
             <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.08em]">в час</div>
           </div>
@@ -697,9 +697,9 @@ const SwipeableJobCard = ({
         {/* Mockup scene: location + time + team become one visual composition */}
         <div className="gruzli-order-scene" aria-label="Ключевые параметры заявки">
           <div className="gruzli-order-scene-main">
-            <div className="gruzli-order-route">
+            <div className="gruzli-order-route min-w-0">
               <span className="gruzli-order-route-dot" />
-              <div>
+              <div className="min-w-0 flex-1">
                 <span className="gruzli-order-scene-label">ЛОКАЦИЯ</span>
                 {job.metro ? <MetroBadge value={job.metro} /> : <strong>{job.address || "Москва"}</strong>}
               </div>
