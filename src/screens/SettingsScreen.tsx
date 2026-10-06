@@ -78,9 +78,6 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
 
-  // Theme state
-  const [theme, setTheme] = useState<string>("light");
-
   // Language state
   const [language, setLanguage] = useState(() => localStorage.getItem("app_language") || "ru");
 
@@ -176,17 +173,6 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
     if (!confirm("Вы уверены что хотите удалить аккаунт? Это действие необратимо.")) return;
     await signOut();
     toast.info("Обратитесь в поддержку для удаления аккаунта");
-  };
-
-  const toggleTheme = (_newTheme: string) => {
-    // Gruzli uses one product-wide visual language. Keep the legacy theme
-    // setting only as a compatibility value for older sessions.
-    const el = document.documentElement;
-    el.classList.remove("light", "theme-midnight", "theme-emerald", "theme-crimson", "theme-amber");
-    el.classList.add("light");
-    setTheme("light");
-    localStorage.setItem("theme", "light");
-    toast.success("Оформление Gruzli обновлено");
   };
 
   const changeLanguage = (lang: string) => {
