@@ -135,7 +135,7 @@ const Index = () => {
     if (action === "settings") {
       setShowSettings(true);
     }
-    if (chatId || action) {
+    if (chatId || action === "settings") {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
