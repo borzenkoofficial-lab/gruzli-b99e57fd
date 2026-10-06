@@ -205,15 +205,7 @@ button,input,textarea,select{font-family:inherit;}
 @media(max-width:767px){
   body{background:hsl(var(--background));}
   .app-shell{max-width:100%;background:hsl(var(--background));}
-  .app-scroll{
-
-  }
-  .app-scroll > div{
-
-  }
   .app-scroll .rounded-2xl{border-radius:18px;}
-  .app-scroll .rounded-xl{}
-  .app-scroll .bg-card{}
   .app-scroll .border-border{border-color:hsl(220 10% 88%);}
   .app-scroll .shadow-md,.app-scroll .shadow-lg{
     box-shadow:0 10px 30px rgba(20,24,32,.05)!important;
@@ -233,9 +225,6 @@ button,input,textarea,select{font-family:inherit;}
     background:#f6f6f7!important;
     color:#17181b;
   }
-  .app-scroll{
-
-  }
   .app-scroll h1{
     font-size:29px!important;
     line-height:1.04!important;
@@ -250,20 +239,12 @@ button,input,textarea,select{font-family:inherit;}
 
     font-weight:700!important;
   }
-  .app-scroll .bg-card,
-  .app-scroll [class*="bg-white"],
-  .app-scroll [class*="bg-background"]{
-
-  }
   .app-scroll .border,
   .app-scroll [class*="border-border"]{
     border-color:#e5e5e8!important;
   }
   .app-scroll .rounded-2xl{
     border-radius:20px!important;
-  }
-  .app-scroll .rounded-xl{
-
   }
   .app-scroll .shadow,
   .app-scroll .shadow-sm,
@@ -291,12 +272,6 @@ button,input,textarea,select{font-family:inherit;}
   }
   .app-scroll .text-primary{
     color:#191a1d!important;
-  }
-  .app-scroll [class*="text-muted-foreground"]{
-
-  }
-  .app-scroll [class*="bg-muted"]{
-
   }
 
   .app-scroll > div > .px-5:first-child,
@@ -840,11 +815,6 @@ button{ -webkit-tap-highlight-color:transparent; }
     box-shadow:0 4px 10px rgba(20,24,32,.10)!important;
   }
 
-  .gruzli-mobile-feed .gruzli-mobile-card,
-  .gruzli-mobile-feed [class*="rounded-2xl"][class*="border"]{
-
-  }
-
   .gruzli-mobile-feed > .px-5.space-y-3{
     padding-top:4px;
   }
@@ -882,9 +852,6 @@ button{ -webkit-tap-highlight-color:transparent; }
   }
   .gruzli-feed-search-action{
     box-shadow:0 5px 14px rgba(20,24,32,.12);
-  }
-  .gruzli-feed-filters{
-
   }
   .gruzli-feed-filters > div{
     scrollbar-width:none;
@@ -1090,12 +1057,6 @@ button{ -webkit-tap-highlight-color:transparent; }
   .gruzli-kartoteka-screen > div:not([class*="fixed"]){
     transition:transform .18s ease;
   }
-
-  .gruzli-chats-screen .bg-background,
-  .gruzli-orders-screen .bg-background,
-  .gruzli-kartoteka-screen .bg-background{
-
-  }
 }
 
 @media(max-width:767px){
@@ -1120,10 +1081,6 @@ button{ -webkit-tap-highlight-color:transparent; }
     -webkit-backdrop-filter:blur(22px) saturate(1.15);
   }
 
-  .gruzli-chats-screen .bg-background{
-
-  }
-
   .gruzli-chats-screen .cursor-pointer{
     transition:transform .18s ease,background .18s ease;
   }
@@ -1145,14 +1102,6 @@ button{ -webkit-tap-highlight-color:transparent; }
 
   .gruzli-kartoteka-screen .text-red-500{
     color:#d43b3b!important;
-  }
-
-  .gruzli-kartoteka-screen .text-orange-500{
-
-  }
-
-  .gruzli-kartoteka-screen .text-yellow-500{
-
   }
 
   .gruzli-kartoteka-screen [class*="bg-red-500/10"],
@@ -1755,7 +1704,6 @@ body,
 @media(max-width:390px){
   .gruzli-feed-title{font-size:40px!important;}
   .gruzli-feed-hero{padding-left:16px!important;padding-right:16px!important;}
-  .gruzli-feed-earnings strong{}
 }
 
 @media(min-width:768px){
@@ -2894,7 +2842,6 @@ body,
   .gruzli-mobile-feed .gruzli-feed-title{font-size:40px!important;}
   .gruzli-mobile-feed .gruzli-feed-mark{width:48px!important;height:48px!important;border-radius:15px!important;}
   .gruzli-mobile-feed .gruzli-feed-earnings{min-height:64px!important;}
-  .gruzli-mobile-feed .gruzli-order-heading h3{}
   .gruzli-mobile-feed .gruzli-order-heading > div{min-width:76px!important;}
 }
 
@@ -3933,14 +3880,6 @@ body,
   }
   .gruzli-document-kicker b{font-weight:750}
 
-  .gruzli-document-screen > .px-5:nth-of-type(2){
-
-  }
-
-  .gruzli-document-screen > .px-5:nth-of-type(2) > .flex{
-
-  }
-
   .gruzli-document-screen > .px-5:nth-of-type(2) > .flex > div{
     min-height:70px;
     border-radius:18px!important;
@@ -3980,10 +3919,6 @@ body,
     box-shadow:0 10px 22px rgba(20,21,24,.12);
   }
 
-  .gruzli-document-screen > .px-5:nth-of-type(5){
-
-  }
-
   .gruzli-document-screen > .px-5:nth-of-type(5) button{
 
     overflow:hidden;
@@ -4021,14 +3956,6 @@ body,
   .gruzli-document-screen > .px-5:nth-of-type(5) button h3{
 
     letter-spacing:-.025em;
-  }
-  .gruzli-document-screen > .px-5:nth-of-type(5) button p{
-
-  }
-
-  .gruzli-kartoteka-detail,
-  .gruzli-kartoteka-form{
-
   }
 
   .gruzli-kartoteka-detail > div:first-child,
@@ -4077,13 +4004,6 @@ body,
     background:rgba(255,255,255,.72)!important;
 
     box-shadow:0 14px 34px rgba(25,27,32,.045),inset 0 1px 0 #fff!important;
-  }
-
-  .gruzli-kartoteka-form > .px-5{
-
-  }
-  .gruzli-kartoteka-form > .px-5 > div{
-
   }
   .gruzli-kartoteka-form input,
   .gruzli-kartoteka-form textarea{
@@ -5455,9 +5375,6 @@ button.bg-foreground:active{
   .desktop-main-inner > *{
     animation:gruzli-editorial-rise .42s cubic-bezier(.22,1,.36,1) both;
   }
-  .desktop-sidebar{
-
-  }
 }
 
 .gruzli-job-card{
@@ -5740,9 +5657,6 @@ button.bg-foreground:active{
   .gruzli-order-dispatcher{
     max-width:112px;
   }
-  .gruzli-order-dispatcher > span:nth-child(2){
-
-  }
 }
 
 @media(prefers-reduced-motion:reduce){
@@ -5800,10 +5714,6 @@ button.bg-foreground:active{
   .desktop-main-inner .gruzli-job-card:hover {
     transform:translateY(-1px);
     box-shadow:0 16px 40px rgba(20,22,25,.07)!important;
-  }
-
-  .desktop-main-inner .bg-card {
-
   }
 }
 
@@ -5985,13 +5895,6 @@ button.bg-foreground:active{
     margin:0!important;
     border-radius:0!important;
     box-shadow:none!important;
-  }
-
-  .desktop-detail-body > .gruzli-create-job-screen form,
-  .desktop-detail-body > .gruzli-contract-screen > .flex-1.overflow-y-auto,
-  .desktop-detail-body > .gruzli-company-screen > .flex-1.overflow-y-auto,
-  .desktop-detail-body > .gruzli-premium-screen > .flex-1.overflow-y-auto {
-
   }
 
   .desktop-detail-body > .app-shell,
