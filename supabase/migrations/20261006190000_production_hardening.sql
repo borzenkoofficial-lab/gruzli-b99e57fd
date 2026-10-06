@@ -493,3 +493,9 @@ GRANT EXECUTE ON FUNCTION public.create_direct_conversation(uuid,text) TO authen
 DROP POLICY IF EXISTS "Authenticated can create conversations" ON public.conversations;
 DROP POLICY IF EXISTS "Authenticated can add participants" ON public.conversation_participants;
 
+
+
+-- Conversations and participants are created only by the secured direct-chat RPC.
+REVOKE INSERT, UPDATE, DELETE ON public.conversations FROM authenticated;
+REVOKE INSERT, UPDATE, DELETE ON public.conversation_participants FROM authenticated;
+REVOKE UPDATE, DELETE ON public.messages FROM authenticated;
