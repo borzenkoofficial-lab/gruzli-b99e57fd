@@ -563,7 +563,7 @@ function channel(name: string) {
   return api;
 }
 
-export const supabase = {
+const demoSupabase = {
   from: (table: string) => new QueryBuilder(table),
   rpc,
   auth: createAuth(),
@@ -596,5 +596,6 @@ export const supabase = {
   removeAllChannels: () => {},
 } as any;
 
+export const supabase = demoSupabase;
 export default demoSupabase;
 export type LocalDatabase = Database;
