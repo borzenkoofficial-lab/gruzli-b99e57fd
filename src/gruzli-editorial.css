@@ -6484,3 +6484,18 @@ button.bg-foreground:active{
     min-height:100%;
   }
 }
+
+
+/* Keep compositor hints only while a card is actively moving. */
+.gruzli-job-card {
+  will-change:auto;
+}
+.is-swipe-dragging .gruzli-job-card {
+  will-change:transform;
+}
+
+@media (hover:none) {
+  .gruzli-job-card:before {
+    animation:none!important;
+  }
+}
