@@ -701,3 +701,120 @@ $$;
 
 REVOKE ALL ON FUNCTION public.get_unread_message_count() FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.get_unread_message_count() TO authenticated;
+
+
+CREATE OR REPLACE FUNCTION public.get_job_party_profiles(
+  _job_id uuid,
+  _target_user_ids uuid[]
+)
+RETURNS TABLE (
+  user_id uuid,
+  full_name text,
+  phone text,
+  inn text,
+  is_self_employed boolean,
+  avatar_url text,
+  last_seen_at timestamptz
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path=public
+AS $$
+DECLARE
+  v_user uuid := auth.uid();
+  v_job public.jobs;
+BEGIN
+  IF v_user IS NULL THEN RAISE EXCEPTION 'not_authenticated' USING ERRCODE='42501'; END IF;
+
+  SELECT * INTO v_job FROM public.jobs WHERE id=_job_id;
+  IF NOT FOUND THEN RAISE EXCEPTION 'job_not_found' USING ERRCODE='P0002'; END IF;
+
+  IF NOT (
+    v_user = v_job.client_id
+    OR v_user = v_job.dispatcher_id
+    OR EXISTS (
+      SELECT 1 FROM public.job_responses
+      WHERE job_id=_job_id AND worker_id=v_user AND status='accepted'
+    )
+  ) THEN
+    RAISE EXCEPTION 'access_denied' USING ERRCODE='42501';
+  END IF;
+
+  RETURN QUERY
+  SELECT p.user_id, p.full_name, p.phone, p.inn, p.is_self_employed, p.avatar_url, p.last_seen_at
+  FROM public.profiles p
+  WHERE p.user_id = ANY(COALESCE(_target_user_ids, ARRAY[]::uuid[]))
+    AND (
+      p.user_id = v_job.client_id
+      OR p.user_id = v_job.dispatcher_id
+      OR EXISTS (
+        SELECT 1 FROM public.job_responses jr
+        WHERE jr.job_id=_job_id AND jr.worker_id=p.user_id AND jr.status='accepted'
+      )
+    );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_job_party_profiles(uuid,uuid[]) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_job_party_profiles(uuid,uuid[]) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.dispatcher_create_replacement_job(
+  _job_id uuid,
+  _worker_id uuid,
+  _bonus integer DEFAULT 100
+)
+RETURNS public.jobs
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path=public
+AS $$
+DECLARE
+  v_user uuid := auth.uid();
+  v_job public.jobs;
+  v_replacement public.jobs;
+BEGIN
+  IF v_user IS NULL THEN RAISE EXCEPTION 'not_authenticated' USING ERRCODE='42501'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.user_roles WHERE user_id=v_user AND role='dispatcher') THEN
+    RAISE EXCEPTION 'dispatcher_role_required' USING ERRCODE='42501';
+  END IF;
+  IF _bonus IS NULL OR _bonus < 0 THEN RAISE EXCEPTION 'invalid_bonus' USING ERRCODE='22023'; END IF;
+
+  SELECT * INTO v_job
+  FROM public.jobs
+  WHERE id=_job_id AND dispatcher_id=v_user
+  FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'job_not_found' USING ERRCODE='P0002'; END IF;
+
+  IF _worker_id IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM public.job_responses
+    WHERE job_id=_job_id AND worker_id=_worker_id AND status='accepted'
+  ) THEN
+    RAISE EXCEPTION 'worker_not_assigned' USING ERRCODE='P0001';
+  END IF;
+
+  IF _worker_id IS NOT NULL THEN
+    UPDATE public.job_responses
+    SET worker_status='no_show', status='rejected'
+    WHERE job_id=_job_id AND worker_id=_worker_id AND status='accepted';
+  END IF;
+
+  INSERT INTO public.jobs (
+    client_id, dispatcher_id, title, description, hourly_rate, duration_hours,
+    workers_needed, metro, address, urgent, quick_minimum, status,
+    replacement_for_job_id, replacement_for_worker_id, start_time
+  )
+  VALUES (
+    v_job.client_id, v_user, '🚨 СРОЧНО: ' || v_job.title,
+    trim('СРОЧНАЯ ЗАМЕНА. Грузчик не вышел.' || E'\n\n' || coalesce(v_job.description,'')),
+    coalesce(v_job.hourly_rate,0) + _bonus,
+    v_job.duration_hours, 1, v_job.metro, v_job.address, true, true, 'active',
+    v_job.id, _worker_id, now()
+  )
+  RETURNING * INTO v_replacement;
+
+  RETURN v_replacement;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.dispatcher_create_replacement_job(uuid,uuid,integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.dispatcher_create_replacement_job(uuid,uuid,integer) TO authenticated;
