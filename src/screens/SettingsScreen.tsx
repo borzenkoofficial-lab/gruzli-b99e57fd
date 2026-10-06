@@ -195,8 +195,21 @@ const SettingsScreen = ({ onBack, onOpenPremium }: SettingsScreenProps) => {
   };
 
   const clearCache = () => {
-    localStorage.clear();
-    toast.success("Кеш очищен");
+    const appKeys = [
+      "onboarding_completed",
+      "push-first-prompt-shown",
+      "push-banner-dismissed",
+      "app_language",
+      "theme",
+    ];
+
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith("gruzli") || appKeys.includes(key)) {
+        localStorage.removeItem(key);
+      }
+    });
+
+    toast.success("Кеш Gruzli очищен");
     setTimeout(() => window.location.reload(), 500);
   };
 
