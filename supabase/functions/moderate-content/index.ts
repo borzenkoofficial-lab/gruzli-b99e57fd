@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { allowRateLimit, requireUser } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -10,8 +11,11 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    const auth = await requireUser(req);
+    if (!auth.user) return new Response(JSON.stringify({ error: "Не авторизовано" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!allowRateLimit(`moderate:${auth.user.id}`, 20, 60_000)) return new Response(JSON.stringify({ error: "Слишком много запросов" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const { text, type } = await req.json();
-    if (!text || !type) {
+    if (!text || !type || typeof text !== "string" || text.length > 5000) {
       return new Response(JSON.stringify({ error: "Нужен текст и тип" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -61,15 +65,13 @@ serve(async (req) => {
 
     if (!response.ok) {
       if (response.status === 429 || response.status === 402) {
-        // On rate limit/credits issue, allow content through
-        return new Response(JSON.stringify({ safe: true }), {
+        return new Response(JSON.stringify({ error: "Модерация временно недоступна" }), { status: 503,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const t = await response.text();
       console.error("AI gateway error:", response.status, t);
-      // On error, allow content through (fail-open)
-      return new Response(JSON.stringify({ safe: true }), {
+      return new Response(JSON.stringify({ error: "Модерация временно недоступна" }), { status: 503,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -91,8 +93,7 @@ serve(async (req) => {
     });
   } catch (e) {
     console.error("moderate-content error:", e);
-    // Fail-open: allow content on error
-    return new Response(JSON.stringify({ safe: true }), {
+    return new Response(JSON.stringify({ error: "Модерация временно недоступна" }), { status: 503,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
