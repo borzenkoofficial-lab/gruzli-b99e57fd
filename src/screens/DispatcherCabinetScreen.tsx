@@ -510,7 +510,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   ];
 
   return (
-    <div className="gruzli-dispatcher-cabinet-scroll h-full w-full overflow-y-auto overflow-x-hidden bg-background overscroll-contain native-surface" style={{ WebkitOverflowScrolling: "touch", paddingBottom: "calc(var(--bottom-nav-height, 76px) + env(safe-area-inset-bottom, 0px) + 16px)" }}>
+    <div className="gruzli-dispatcher-cabinet-scroll gruzli-dispatcher-cabinet h-full w-full overflow-y-auto overflow-x-hidden bg-background overscroll-contain native-surface" style={{ WebkitOverflowScrolling: "touch", paddingBottom: "calc(var(--bottom-nav-height, 76px) + env(safe-area-inset-bottom, 0px) + 16px)" }}>
       {/* Dispatcher cabinet hero */}
       <div className="px-5 safe-top pb-4">
         <div className="flex items-center gap-3">
@@ -524,9 +524,9 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
       </div>
 
       <div className="px-5 pb-4">
-        <div className="relative overflow-hidden rounded-[28px] bg-[#181818] p-5 text-white">
-          <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full border border-white/10"/>
-          <div className="absolute right-6 bottom-5 h-16 w-16 rounded-full border border-[#f2c400]/30"/>
+        <div className="gruzli-dispatcher-hero relative overflow-hidden rounded-[24px] p-5">
+          <div className="gruzli-dispatcher-hero-orbit absolute -right-12 -top-12 h-40 w-40 rounded-full border"/>
+          <div className="gruzli-dispatcher-hero-orbit-small absolute right-6 bottom-5 h-16 w-16 rounded-full border"/>
           <div className="relative">
             <span className="text-[9px] font-bold uppercase tracking-[.18em] text-white/45">DISPATCHER WORKSPACE</span>
             <div className="mt-2 flex items-end justify-between gap-4">
@@ -544,15 +544,15 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
 
       {/* Cabinet shortcuts */}
       <div className="px-5 pb-4">
-        <button onClick={onOpenCommunity} className="w-full flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 active:bg-muted">
+        <button onClick={onOpenCommunity} className="gruzli-dispatcher-community w-full flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 active:bg-muted">
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-muted"><Users size={18}/></span>
           <span className="flex-1 text-left"><b className="block text-sm">Сообщество диспетчеров</b><small className="text-[11px] text-muted-foreground">Общий чат и рабочие обсуждения</small></span><ChevronDown size={16} className="-rotate-90 text-muted-foreground"/>
         </button>
       </div>
 
       {/* Quick actions: Templates, Top workers, Goals, Export */}
-      <div className="px-4 pb-3">
-        <div className="grid grid-cols-5 gap-2">
+      <div className="gruzli-dispatcher-actions-wrap px-4 pb-3">
+        <div className="gruzli-dispatcher-actions grid grid-cols-5 gap-2">
           {[
             { icon: FileText, label: "Шаблоны", color: "text-blue-400", bg: "bg-blue-500/10", onClick: () => setShowTemplates(true) },
             { icon: Trophy, label: "Топ", color: "text-yellow-500", bg: "bg-yellow-500/10", onClick: () => setShowTopWorkers(true) },
@@ -568,7 +568,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.04 }}
                 onClick={a.onClick}
-                className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl bg-card border border-border active:bg-surface-1 transition-all"
+                className="gruzli-dispatcher-action flex flex-col items-center gap-1.5 p-2.5 rounded-2xl bg-card border border-border active:bg-surface-1 transition-all"
               >
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${a.bg}`}>
                   <Ic size={16} className={a.color} />
@@ -581,8 +581,8 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
       </div>
 
       {/* Tab navigation */}
-      <div className="px-4 pb-3">
-        <div className="flex gap-1 bg-card border border-border rounded-2xl p-1">
+      <div className="gruzli-dispatcher-tabs-wrap px-4 pb-3">
+        <div className="gruzli-dispatcher-tabs flex gap-1 bg-card border border-border rounded-2xl p-1">
           {tabs.map((t) => {
             const Icon = t.icon;
             const isActive = currentTab === t.id;
