@@ -152,28 +152,13 @@ const PremiumScreen = ({ onBack, onOpenSupport }: PremiumScreenProps) => {
     }
 
     setPurchasing(true);
-    const { error: balanceError } = await supabase
-      .from("profiles")
-      .update({ balance: balance - totalPrice })
-      .eq("user_id", user.id);
+    const { error } = await supabase.rpc("purchase_premium", {
+      _tier_id: selectedTier.id,
+      _period_id: selectedPeriod,
+    });
 
-    if (balanceError) {
-      toast.error("Ошибка списания");
-      setPurchasing(false);
-      return;
-    }
-
-    const daysMap: Record<string, number> = { month: 30, quarter: 90, year: 365 };
-    const days = daysMap[selectedPeriod] || 30;
-    const premiumUntil = new Date(Date.now() + days * 86400000).toISOString();
-
-    const { error: premiumError } = await supabase
-      .from("profiles")
-      .update({ is_premium: true, premium_until: premiumUntil, company_plan: selectedTier.id })
-      .eq("user_id", user.id);
-
-    if (premiumError) {
-      toast.error("Ошибка активации тарифа");
+    if (error) {
+      toast.error(error.message.includes("insufficient_balance") ? `Недостаточно средств. Нужно ${totalPrice} ₽, на балансе ${balance} ₽` : "Не удалось активировать тариф");
       setPurchasing(false);
       return;
     }
