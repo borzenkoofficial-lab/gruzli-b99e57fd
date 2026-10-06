@@ -386,6 +386,29 @@ async function rpc(name: string, args: Record<string, any> = {}) {
     saveDb(db);
     return { data: { plan_id: args._plan_id, price, company_until: until, balance: balance - price }, error: null };
   }
+  if (name === "get_job_party_profiles") {
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    const job = db.jobs.find((j) => j.id === args._job_id);
+    const participant = job && (job.client_id === user.id || job.dispatcher_id === user.id || db.job_responses.some((r) => r.job_id === job.id && r.worker_id === user.id && r.status === "accepted"));
+    if (!participant) return { data: null, error: { code: "42501", message: "Нет доступа к заказу" } };
+    const ids = Array.isArray(args._target_user_ids) ? args._target_user_ids : [];
+    const rows = db.profiles.filter((p) => ids.includes(p.user_id) && job && (p.user_id === job.client_id || p.user_id === job.dispatcher_id || db.job_responses.some((r) => r.job_id === job.id && r.worker_id === p.user_id && r.status === "accepted")));
+    return { data: rows.map((p) => ({ user_id: p.user_id, full_name: p.full_name || "", phone: p.phone || null, inn: p.inn || null, is_self_employed: !!p.is_self_employed, avatar_url: p.avatar_url || null, last_seen_at: p.last_seen_at || null })), error: null };
+  }
+  if (name === "dispatcher_create_replacement_job") {
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    const job = db.jobs.find((j) => j.id === args._job_id && j.dispatcher_id === user.id);
+    if (!job) return { data: null, error: { code: "P0002", message: "Заказ не найден" } };
+    const workerId = args._worker_id || null;
+    if (workerId) {
+      const response = db.job_responses.find((r) => r.job_id === job.id && r.worker_id === workerId && r.status === "accepted");
+      if (!response) return { data: null, error: { code: "P0001", message: "Грузчик не назначен" } };
+      response.worker_status = "no_show"; response.status = "rejected";
+    }
+    const bonus = Math.max(0, Number(args._bonus) || 0);
+    const replacement = { id: uid("job"), client_id: job.client_id, dispatcher_id: user.id, title: "🚨 СРОЧНО: " + job.title, description: ("СРОЧНАЯ ЗАМЕНА. Грузчик не вышел.\n\n" + String(job.description || "")).trim(), hourly_rate: Number(job.hourly_rate || 0) + bonus, duration_hours: job.duration_hours, workers_needed: 1, metro: job.metro, address: job.address, urgent: true, quick_minimum: true, status: "active", replacement_for_job_id: job.id, replacement_for_worker_id: workerId, start_time: new Date().toISOString(), created_at: new Date().toISOString() };
+    db.jobs.push(replacement); saveDb(db); return { data: replacement, error: null };
+  }
   if (name === "dispatcher_republish_job") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
     const job = db.jobs.find((j) => j.id === args._job_id && j.dispatcher_id === user.id && j.status === "closed");
