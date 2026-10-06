@@ -1476,11 +1476,11 @@ body,
   animation:gd-orb-b 17s ease-in-out infinite;
 }
 @keyframes gd-orb-a{
-  0%,100%
+  0%,100%{transform:translate3d(0,0,0) scale(1)}
   50%{transform:translate3d(-45px,28px,0) scale(1.12)}
 }
 @keyframes gd-orb-b{
-  0%,100%
+  0%,100%{transform:translate3d(0,0,0) scale(1)}
   50%{transform:translate3d(36px,-22px,0) scale(1.08)}
 }
 
@@ -1732,7 +1732,7 @@ body,
 }
 @keyframes gd-card-enter{
   from{opacity:0;transform:translateY(18px)}
-  to
+  to{opacity:1;transform:translateY(0)}
 }
 .gruzli-mobile-feed > *{
   animation:gd-card-enter .52s var(--gd-ease) both;
@@ -4704,7 +4704,7 @@ button.bg-foreground:active{
 }
 @keyframes gruzli-page-in{
   from{opacity:0;transform:translateY(5px)}
-  to
+  to{opacity:1;transform:translateY(0)}
 }
 
 @media(max-width:767px){
