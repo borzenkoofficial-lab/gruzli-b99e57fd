@@ -1429,6 +1429,10 @@ export type Database = {
         Args: { _rating: number; _response_id: string; _text?: string | null }
         Returns: Json
       }
+      dispatcher_create_replacement_job: {
+        Args: { _bonus?: number; _job_id: string; _worker_id: string }
+        Returns: Database["public"]["Tables"]["jobs"]["Row"]
+      }
       dispatcher_cancel_job: {
         Args: { _job_id: string }
         Returns: Json
@@ -1462,6 +1466,18 @@ export type Database = {
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      get_job_party_profiles: {
+        Args: { _job_id: string; _target_user_ids: string[] }
+        Returns: {
+          user_id: string
+          full_name: string
+          phone: string | null
+          inn: string | null
+          is_self_employed: boolean
+          avatar_url: string | null
+          last_seen_at: string | null
+        }[]
       }
       get_unread_message_count: {
         Args: never
