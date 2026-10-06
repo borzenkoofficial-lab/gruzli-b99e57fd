@@ -133,20 +133,13 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
     setSubmittingReview(true);
 
     try {
-      if (existingReview) {
-        const { error } = await supabase
-          .from("dispatcher_reviews")
-          .update({ rating: reviewStars, text: reviewText })
-          .eq("id", existingReview.id);
-        if (error) throw error;
-        toast.success("Отзыв обновлён");
-      } else {
-        const { error } = await supabase
-          .from("dispatcher_reviews")
-          .insert({ reviewer_id: user.id, dispatcher_id: userId, rating: reviewStars, text: reviewText });
-        if (error) throw error;
-        toast.success("Отзыв отправлен");
-      }
+      const { error } = await supabase.rpc("worker_review_dispatcher", {
+        _dispatcher_id: userId,
+        _rating: reviewStars,
+        _text: reviewText || null,
+      });
+      if (error) throw error;
+      toast.success(existingReview ? "Отзыв обновлён" : "Отзыв отправлен");
 
       await fetchReviews();
       setShowReviewForm(false);
