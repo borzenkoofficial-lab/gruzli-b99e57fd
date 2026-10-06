@@ -76,7 +76,7 @@ const AppRoutes = () => {
   }
 
   if (!user && !isConsentRoute && !(DEMO_ENABLED && demoWorkerMode)) {
-    return <AuthPage onDemoLogin={() => { localStorage.setItem("gruzli_demo_worker", "1"); setDemoWorkerMode(true); window.dispatchEvent(new Event("gruzli-demo-change")); }} />;
+    return <AuthPage onDemoLogin={DEMO_ENABLED ? () => { localStorage.setItem("gruzli_demo_worker", "1"); setDemoWorkerMode(true); window.dispatchEvent(new Event("gruzli-demo-change")); } : undefined} />;
   }
 
   return (
