@@ -113,14 +113,14 @@ const ContractScreen = ({ contractId, onBack }: ContractScreenProps) => {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-background flex items-center justify-center" style={{ height: "calc(var(--vh, 1vh) * 100)" }}>
+      <div className="gruzli-contract-screen fixed inset-0 bg-background flex items-center justify-center" style={{ height: "calc(var(--vh, 1vh) * 100)" }}>
         <Loader2 size={28} className="animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-background flex flex-col" style={{ height: "calc(var(--vh, 1vh) * 100)" }}>
+    <div className="gruzli-contract-screen fixed inset-0 bg-background flex flex-col" style={{ height: "calc(var(--vh, 1vh) * 100)" }}>
       <div className="flex items-center gap-3 px-4 safe-top pb-3 flex-shrink-0">
         <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:scale-95">
           <ArrowLeft size={18} />
