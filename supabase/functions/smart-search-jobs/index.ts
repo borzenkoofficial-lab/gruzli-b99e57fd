@@ -98,7 +98,10 @@ ${jobsList}
     if (toolCall?.function?.arguments) {
       try {
         const args = JSON.parse(toolCall.function.arguments);
-        jobIds = args.job_ids || [];
+        const allowedIds = new Set(jobs.map((j: any) => String(j.id)));
+        jobIds = Array.isArray(args.job_ids)
+          ? args.job_ids.map((id: unknown) => String(id)).filter((id: string) => allowedIds.has(id)).slice(0, jobs.length)
+          : [];
       } catch {
         console.error("Failed to parse tool call arguments");
       }
