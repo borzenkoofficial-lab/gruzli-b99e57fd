@@ -343,6 +343,36 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       return;
     }
 
+    const [convRes, msgsRes] = await Promise.all([
+      supabase.from("conversations").select("job_id").eq("id", conversationId).single(),
+      supabase.from("messages").select("*").eq("conversation_id", conversationId).order("created_at", { ascending: true }),
+    ]);
+
+    if (convRes.data?.job_id) {
+      const { data: jobData } = await supabase.from("jobs").select("*").eq("id", convRes.data.job_id).single();
+      if (jobData) setLinkedJob(jobData);
+    }
+
+    if (msgsRes.data) {
+      setMessages(msgsRes.data as Message[]);
+      const senderIds = [...new Set(msgsRes.data.map((m) => m.sender_id))];
+      const unknownIds = senderIds.filter((id) => !senderNamesRef.current[id]);
+      if (unknownIds.length > 0) {
+        const { data: profilesRaw } = await supabase.from("profiles_public" as any).select("user_id, full_name").in("user_id", unknownIds);
+        const profiles = profilesRaw as any[] | null;
+        if (profiles) {
+          setSenderNames((prev) => {
+            const next = { ...prev };
+            profiles.forEach((p) => (next[p.user_id] = p.full_name));
+            return next;
+          });
+        }
+      }
+    }
+    setLoading(false);
+    setTimeout(() => scrollToBottom(false), 50);
+  }, [conversationId, isDemo, scrollToBottom, user?.id]);
+
   const markAsRead = useCallback(async () => {
     if (!user || !conversationId) return;
     await supabase.from("conversation_participants").update({ last_read_at: new Date().toISOString() })
