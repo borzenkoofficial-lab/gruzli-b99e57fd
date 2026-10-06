@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Bell, Briefcase, MessageSquare, UserCheck, Trash2 } from "lucide-react";
 
@@ -11,37 +12,48 @@ export interface AppNotification {
   read: boolean;
 }
 
-const STORAGE_KEY = "app_notifications";
+const STORAGE_KEY_PREFIX = "app_notifications";
+const getStorageKey = (userId?: string | null) => userId ? `${STORAGE_KEY_PREFIX}:${userId}` : null;
 
-export function getStoredNotifications(): AppNotification[] {
+export function getStoredNotifications(userId?: string | null): AppNotification[] {
+  const key = getStorageKey(userId);
+  if (!key) return [];
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    return JSON.parse(localStorage.getItem(key) || "[]");
   } catch {
     return [];
   }
 }
 
-export function pushNotification(n: Omit<AppNotification, "id" | "timestamp" | "read">) {
-  const list = getStoredNotifications();
+export function pushNotification(
+  n: Omit<AppNotification, "id" | "timestamp" | "read">,
+  userId?: string | null,
+) {
+  const key = getStorageKey(userId);
+  if (!key) return;
+  const list = getStoredNotifications(userId);
   list.unshift({ ...n, id: crypto.randomUUID(), timestamp: Date.now(), read: false });
-  // keep max 100
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, 100)));
+  localStorage.setItem(key, JSON.stringify(list.slice(0, 100)));
   window.dispatchEvent(new Event("notifications-updated"));
 }
 
-export function markAllRead() {
-  const list = getStoredNotifications().map((n) => ({ ...n, read: true }));
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+export function markAllRead(userId?: string | null) {
+  const key = getStorageKey(userId);
+  if (!key) return;
+  const list = getStoredNotifications(userId).map((n) => ({ ...n, read: true }));
+  localStorage.setItem(key, JSON.stringify(list));
   window.dispatchEvent(new Event("notifications-updated"));
 }
 
-export function clearNotifications() {
-  localStorage.setItem(STORAGE_KEY, "[]");
+export function clearNotifications(userId?: string | null) {
+  const key = getStorageKey(userId);
+  if (!key) return;
+  localStorage.setItem(key, "[]");
   window.dispatchEvent(new Event("notifications-updated"));
 }
 
-export function getUnreadCount(): number {
-  return getStoredNotifications().filter((n) => !n.read).length;
+export function getUnreadCount(userId?: string | null): number {
+  return getStoredNotifications(userId).filter((n) => !n.read).length;
 }
 
 interface Props {
@@ -71,17 +83,19 @@ function timeAgo(ts: number) {
 }
 
 const NotificationsScreen = ({ onBack }: Props) => {
-  const [items, setItems] = useState<AppNotification[]>(getStoredNotifications);
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
+  const [items, setItems] = useState<AppNotification[]>(() => getStoredNotifications(userId));
 
   useEffect(() => {
-    const handler = () => setItems(getStoredNotifications());
+    const handler = () => setItems(getStoredNotifications(userId));
     window.addEventListener("notifications-updated", handler);
 
-    markAllRead();
-    setItems(getStoredNotifications());
+    markAllRead(userId);
+    setItems(getStoredNotifications(userId));
 
     return () => window.removeEventListener("notifications-updated", handler);
-  }, []);
+  }, [userId]);
 
   return (
     <div className="gruzli-page-enter min-h-full w-full bg-background">
@@ -93,7 +107,7 @@ const NotificationsScreen = ({ onBack }: Props) => {
         <h1 className="text-lg font-bold text-foreground flex-1">Уведомления</h1>
         {items.length > 0 && (
           <button
-            onClick={() => { clearNotifications(); setItems([]); }}
+            onClick={() => { clearNotifications(userId); setItems([]); }}
             className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center"
           >
             <Trash2 size={16} className="text-muted-foreground" />
