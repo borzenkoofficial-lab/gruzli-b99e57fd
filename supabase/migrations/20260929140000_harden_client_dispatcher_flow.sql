@@ -37,7 +37,7 @@ BEGIN
     RAISE EXCEPTION 'title_required';
   END IF;
 
-  IF _hourly_rate IS NULL OR _hourly_rate < 0
+  IF _hourly_rate IS NULL OR _hourly_rate <= 0
      OR _duration_hours IS NULL OR _duration_hours <= 0
      OR _workers_needed IS NULL OR _workers_needed < 1 THEN
     RAISE EXCEPTION 'invalid_job_parameters';
