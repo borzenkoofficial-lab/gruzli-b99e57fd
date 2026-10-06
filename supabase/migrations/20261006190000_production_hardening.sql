@@ -830,3 +830,58 @@ $$;
 
 REVOKE ALL ON FUNCTION public.dispatcher_create_replacement_job(uuid,uuid,integer) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.dispatcher_create_replacement_job(uuid,uuid,integer) TO authenticated;
+
+
+CREATE OR REPLACE FUNCTION public.worker_review_dispatcher(
+  _dispatcher_id uuid,
+  _rating integer,
+  _text text DEFAULT NULL
+)
+RETURNS public.dispatcher_reviews
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path=public
+AS $$
+DECLARE
+  v_user uuid := auth.uid();
+  v_review public.dispatcher_reviews;
+BEGIN
+  IF v_user IS NULL THEN RAISE EXCEPTION 'not_authenticated' USING ERRCODE='42501'; END IF;
+  IF _dispatcher_id IS NULL OR _dispatcher_id = v_user THEN RAISE EXCEPTION 'invalid_dispatcher' USING ERRCODE='22023'; END IF;
+  IF _rating < 1 OR _rating > 5 THEN RAISE EXCEPTION 'invalid_rating' USING ERRCODE='22023'; END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.user_roles
+    WHERE user_id=v_user AND role='worker'
+  ) THEN
+    RAISE EXCEPTION 'worker_role_required' USING ERRCODE='42501';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.job_responses jr
+    JOIN public.jobs j ON j.id=jr.job_id
+    WHERE jr.worker_id=v_user
+      AND j.dispatcher_id=_dispatcher_id
+      AND jr.status='accepted'
+      AND jr.worker_status='completed'
+  ) THEN
+    RAISE EXCEPTION 'review_requires_completed_job' USING ERRCODE='P0001';
+  END IF;
+
+  INSERT INTO public.dispatcher_reviews(reviewer_id,dispatcher_id,rating,text)
+  VALUES (v_user,_dispatcher_id,_rating,NULLIF(trim(_text),''))
+  ON CONFLICT (reviewer_id,dispatcher_id)
+  DO UPDATE SET rating=EXCLUDED.rating,text=EXCLUDED.text
+  RETURNING * INTO v_review;
+
+  RETURN v_review;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.worker_review_dispatcher(uuid,integer,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.worker_review_dispatcher(uuid,integer,text) TO authenticated;
+
+DROP POLICY IF EXISTS "Workers can create reviews" ON public.dispatcher_reviews;
+DROP POLICY IF EXISTS "Authors can update own reviews" ON public.dispatcher_reviews;
+DROP POLICY IF EXISTS "Authors can delete own reviews" ON public.dispatcher_reviews;
