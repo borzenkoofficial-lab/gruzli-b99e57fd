@@ -869,7 +869,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-sm font-bold text-foreground truncate">{aj.job.title}</h3>
+                            <h3 className="min-w-0 break-words text-sm font-bold leading-snug text-foreground">{aj.job.title}</h3>
                             {aj.job.status === "filled" && <span className="shrink-0 px-2 py-0.5 rounded-lg bg-primary/15 text-[10px] font-bold text-primary flex items-center gap-1"><Lock size={9} /> Набрано</span>}
                             {isFinishing && <span className="shrink-0 px-2 py-0.5 rounded-lg bg-orange-500/10 text-[10px] font-bold text-orange-500">Завершается</span>}
                             {allDone && !isFinishing && <span className="shrink-0 px-2 py-0.5 rounded-lg bg-green-500/10 text-[10px] font-bold text-green-500">Готово</span>}
