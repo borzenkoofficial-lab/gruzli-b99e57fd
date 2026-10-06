@@ -59,7 +59,6 @@ export default function EditJobModal({ job, open, onClose, onSaved }: EditJobMod
       _start_time: startTime ? new Date(startTime).toISOString() : null,
       _urgent: urgent,
       _quick_minimum: quickMinimum,
-      _status: "active",
     });
 
     setLoading(false);
