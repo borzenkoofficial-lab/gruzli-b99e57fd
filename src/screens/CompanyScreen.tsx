@@ -63,30 +63,13 @@ const CompanyScreen = ({ onBack, onOpenSupport }: CompanyScreenProps) => {
     }
 
     setPurchasing(true);
-    const { error: balanceError } = await supabase
-      .from("profiles")
-      .update({ balance: balance - plan.price })
-      .eq("user_id", user.id);
+    const { error } = await supabase.rpc("purchase_company", {
+      _plan_id: plan.id,
+      _company_name: companyName.trim(),
+    });
 
-    if (balanceError) {
-      toast.error("Ошибка списания");
-      setPurchasing(false);
-      return;
-    }
-
-    const until = new Date(Date.now() + 30 * 86400000).toISOString();
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({
-        is_company: true,
-        company_until: until,
-        company_name: companyName.trim(),
-        company_plan: plan.id,
-      } as any)
-      .eq("user_id", user.id);
-
-    if (updateError) {
-      toast.error("Ошибка активации");
+    if (error) {
+      toast.error(error.message.includes("insufficient_balance") ? `Недостаточно средств. Нужно ${plan.price} ₽, на балансе ${balance} ₽` : "Не удалось активировать тариф");
       setPurchasing(false);
       return;
     }
