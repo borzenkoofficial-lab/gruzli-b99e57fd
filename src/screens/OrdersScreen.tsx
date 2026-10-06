@@ -38,28 +38,6 @@ const OrdersScreen = () => {
 
   const fetchAcceptedJobs = async () => {
     setLoading(true);
-    if (!user) {
-      const demoMode = localStorage.getItem("gruzli_demo_worker") === "1";
-      if (demoMode) {
-        setJobs([{
-          responseId: "demo-response-1", jobId: "demo-job-1", title: "Переезд квартиры · Сокольники",
-          address: "Москва, ул. Стромынка, 18", startTime: "2026-09-30T10:00:00+03:00",
-          hourlyRate: 900, durationHours: 5, dispatcherName: "Алексей", workerStatus: "confirmed",
-          workStartedAt: null, workFinishedAt: null, hoursWorked: null, earned: null,
-        }]);
-        setCompletedJobs([{
-          responseId: "demo-response-0", jobId: "demo-job-0", title: "Разгрузка фуры · Химки",
-          address: "Химки, Ленинградское шоссе, 23", startTime: null, hourlyRate: 750, durationHours: 4,
-          dispatcherName: "Мария", workerStatus: "completed", workStartedAt: null, workFinishedAt: null,
-          hoursWorked: 4, earned: 3000,
-        }]);
-      } else {
-        setJobs([]);
-        setCompletedJobs([]);
-      }
-      setLoading(false);
-      return;
-    }
     setLoading(true);
 
     if (role === "client") {
