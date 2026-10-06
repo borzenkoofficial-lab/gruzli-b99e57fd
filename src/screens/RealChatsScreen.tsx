@@ -149,8 +149,6 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
   const [communityId, setCommunityId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  const conversationsRef = useRef(conversations);
-  conversationsRef.current = conversations;
 
   const fetchConversations = useCallback(async () => {
     if (!user) return;
