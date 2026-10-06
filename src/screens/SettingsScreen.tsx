@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, User, Phone, Bell, Shield, Palette, LogOut, Camera, Check, Loader2, Volume2, Vibrate, Layers, Mail, Ban, Trash2, Info, Globe, Database, Share2, Smartphone, HardDrive, Crown, BadgeCheck, Send, FileText } from "lucide-react";
+import { ArrowLeft, User, Phone, Bell, Shield, Palette, LogOut, Camera, Check, Loader2, Volume2, Vibrate, Layers, Mail, Ban, Trash2, Info, Database, Share2, Smartphone, HardDrive, Crown, BadgeCheck, Send, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNotificationSettings } from "@/hooks/useNotificationSettings";
