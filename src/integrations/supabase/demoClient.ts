@@ -299,19 +299,25 @@ async function rpc(name: string, args: Record<string, any> = {}) {
   if (name === "get_support_user_id") return { data: "demo-support", error: null };
   if (name === "client_create_job") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "client") {
+      return { data: null, error: { code: "42501", message: "Нужна роль заказчика" } };
+    }
     const title = String(args._title || "").trim();
     const address = String(args._address || "").trim();
     const rate = Number(args._hourly_rate);
     const duration = Number(args._duration_hours);
     const workers = Number(args._workers_needed);
-    if (!title || !address || !Number.isFinite(rate) || rate <= 0 || !Number.isFinite(duration) || duration <= 0 || !Number.isInteger(workers) || workers < 1 || workers > 100) {
-      return { data: null, error: { code: "22023", message: "Проверьте название, адрес, ставку, длительность и количество грузчиков" } };
+    if (!title || !Number.isFinite(rate) || rate <= 0 || !Number.isFinite(duration) || duration <= 0 || !Number.isInteger(workers) || workers < 1 || workers > 100) {
+      return { data: null, error: { code: "22023", message: "Проверьте название, ставку, длительность и количество грузчиков" } };
     }
     const job = { id: uid("job"), title, description: String(args._description || "").trim(), address, metro: args._metro || null, duration_hours: duration, hourly_rate: rate, workers_needed: workers, start_time: args._start_time || null, status: "open", client_id: user.id, dispatcher_id: null, created_at: new Date().toISOString() };
     db.jobs.push(job); saveDb(db); return { data: job, error: null };
   }
   if (name === "dispatcher_submit_offer") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "dispatcher") {
+      return { data: null, error: { code: "42501", message: "Нужна роль диспетчера" } };
+    }
     const job = db.jobs.find((j) => j.id === args._job_id);
     if (!job || job.status !== "open" || job.dispatcher_id) return { data: null, error: { code: "P0001", message: "Заказ уже недоступен" } };
     const rate = Number(args._proposed_hourly_rate);
