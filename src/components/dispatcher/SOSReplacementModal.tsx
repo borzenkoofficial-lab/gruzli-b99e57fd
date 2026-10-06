@@ -21,28 +21,11 @@ const SOSReplacementModal = ({ open, onClose, job, workerId, workerName }: Props
   const handleCreate = async () => {
     if (!user || !job) return;
     setPosting(true);
-    const newRate = (job.hourly_rate || 0) + (parseInt(bonus) || 0);
-    // mark original worker as no_show
-    if (workerId) {
-      await supabase.from("job_responses").update({ worker_status: "no_show", status: "rejected" } as any)
-        .eq("job_id", job.id).eq("worker_id", workerId);
-    }
-    const { error } = await supabase.from("jobs").insert({
-      dispatcher_id: user.id,
-      title: `🚨 СРОЧНО: ${job.title}`,
-      description: `СРОЧНАЯ ЗАМЕНА. Грузчик не вышел.\n\n${job.description || ""}`.trim(),
-      hourly_rate: newRate,
-      duration_hours: job.duration_hours,
-      workers_needed: 1,
-      metro: job.metro,
-      address: job.address,
-      urgent: true,
-      quick_minimum: true,
-      status: "active",
-      replacement_for_job_id: job.id,
-      replacement_for_worker_id: workerId,
-      start_time: new Date().toISOString(),
-    } as any);
+    const { error } = await supabase.rpc("dispatcher_create_replacement_job", {
+      _job_id: job.id,
+      _worker_id: workerId || null,
+      _bonus: Math.max(0, parseInt(bonus) || 0),
+    });
     setPosting(false);
     if (error) {
       toast.error("Не удалось создать срочную заявку");
