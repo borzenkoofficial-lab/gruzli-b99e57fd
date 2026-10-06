@@ -543,7 +543,79 @@ async function rpc(name: string, args: Record<string, any> = {}) {
       totalRatings: ratings.length,
     }, error: null };
   }
-  if (name === "dispatcher_finish_job" || name === "dispatcher_complete_job" || name === "dispatcher_review_worker") return { data: {}, error: null };
+  if (name === "dispatcher_finish_job") {
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "dispatcher") {
+      return { data: null, error: { code: "42501", message: "Нужна роль диспетчера" } };
+    }
+    const job = db.jobs.find((j) => j.id === args._job_id);
+    if (!job || job.dispatcher_id !== user.id) {
+      return { data: null, error: { code: "42501", message: "Нет доступа к заказу" } };
+    }
+    let workersNotCompleted = 0;
+    db.job_responses.forEach((response) => {
+      if (response.job_id === job.id && response.status === "accepted" && response.worker_status !== "completed") {
+        response.worker_status = "finishing";
+        workersNotCompleted += 1;
+      }
+    });
+    job.status = "finishing";
+    job.updated_at = new Date().toISOString();
+    saveDb(db);
+    return { data: { job_id: job.id, status: "finishing", workers_not_completed: workersNotCompleted }, error: null };
+  }
+
+  if (name === "dispatcher_complete_job") {
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "dispatcher") {
+      return { data: null, error: { code: "42501", message: "Нужна роль диспетчера" } };
+    }
+    const expense = Number(args._expense_per_worker);
+    const income = Number(args._dispatcher_income);
+    if (!Number.isFinite(expense) || expense < 0 || !Number.isFinite(income) || income < 0) {
+      return { data: null, error: { code: "22023", message: "Недопустимые суммы" } };
+    }
+    const job = db.jobs.find((j) => j.id === args._job_id);
+    if (!job || job.dispatcher_id !== user.id) {
+      return { data: null, error: { code: "42501", message: "Нет доступа к заказу" } };
+    }
+    const unfinished = db.job_responses.some((response) =>
+      response.job_id === job.id && response.status === "accepted" && response.worker_status !== "completed"
+    );
+    if (unfinished) {
+      return { data: null, error: { code: "P0001", message: "Есть незавершённые грузчики" } };
+    }
+    job.status = "completed";
+    job.expense_per_worker = expense;
+    job.dispatcher_income = income;
+    job.updated_at = new Date().toISOString();
+    saveDb(db);
+    return { data: { job_id: job.id, status: "completed" }, error: null };
+  }
+
+  if (name === "dispatcher_review_worker") {
+    if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "dispatcher") {
+      return { data: null, error: { code: "42501", message: "Нужна роль диспетчера" } };
+    }
+    const rating = Number(args._rating);
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      return { data: null, error: { code: "22023", message: "Недопустимая оценка" } };
+    }
+    const response = db.job_responses.find((r) => r.id === args._response_id);
+    if (!response) return { data: null, error: { code: "P0002", message: "Отклик не найден" } };
+    const job = db.jobs.find((j) => j.id === response.job_id);
+    if (!job || job.dispatcher_id !== user.id) {
+      return { data: null, error: { code: "42501", message: "Нет доступа к отклику" } };
+    }
+    if (response.worker_status !== "completed") {
+      return { data: null, error: { code: "P0001", message: "Грузчик ещё не завершил работу" } };
+    }
+    response.dispatcher_review_rating = rating;
+    response.dispatcher_review_text = String(args._text || "").trim() || null;
+    saveDb(db);
+    return { data: { response_id: response.id, rating }, error: null };
+  }
   if (name === "create_direct_conversation") {
     if (!user || !args._other_user_id) return { data: null, error: { message: "invalid_participant" } };
     const existing = db.conversation_participants
