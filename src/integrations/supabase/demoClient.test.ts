@@ -66,6 +66,9 @@ describe("demo Supabase session", () => {
     expect(completed).toMatchObject({ status: "accepted", worker_status: "completed" });
     expect(Number(completed.hours_worked)).toBeGreaterThanOrEqual(0.5);
     expect(Number(completed.earned)).toBeGreaterThan(0);
+
+    const { data: jobAfterWorker } = await demoSupabase.from("jobs").select("*").eq("id", "demo-job-4").single();
+    expect(jobAfterWorker.status).not.toBe("completed");
   });
 
   it("does not allow closing a dispatcher job while a worker is unfinished", async () => {
