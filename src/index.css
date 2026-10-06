@@ -71,62 +71,7 @@
     --sidebar-ring: 0 0% 40%;
   }
 
-  .light {
-    --background: 0 0% 97%;
-    --foreground: 0 0% 9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 9%;
-    --card-hover: 0 0% 96%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
-
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 0 0% 93%;
-    --secondary-foreground: 0 0% 30%;
-
-    --muted: 0 0% 93%;
-    --muted-foreground: 0 0% 46%;
-
-    --accent: 0 0% 95%;
-    --accent-foreground: 0 0% 9%;
-
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
-    --ring: 0 0% 60%;
-
-    --surface-1: 0 0% 97%;
-    --surface-2: 0 0% 100%;
-    --surface-3: 0 0% 95%;
-    --surface-4: 0 0% 90%;
-
-    --neu-shadow-light: 0 0% 100%;
-    --neu-shadow-dark: 0 0% 85%;
-
-    --cyan-glow: 0 0% 9%;
-    --cyan-light: 0 0% 30%;
-
-    --online: 145 65% 42%;
-    --badge: 0 0% 9%;
-
-    --bubble-own: 0 0% 93%;
-    --bubble-other: 0 0% 96%;
-
-    --sidebar-background: 0 0% 97%;
-    --sidebar-foreground: 0 0% 9%;
-    --sidebar-primary: 0 0% 9%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 95%;
-    --sidebar-accent-foreground: 0 0% 9%;
-    --sidebar-border: 0 0% 90%;
-    --sidebar-ring: 0 0% 60%;
-  }
+  .light 
 
   /* Designer dark themes */
   .theme-midnight {
@@ -172,134 +117,11 @@
     --sidebar-ring: 217 91% 60%;
   }
 
-  .theme-emerald {
-    --background: 160 30% 6%;
-    --foreground: 150 20% 92%;
-    --card: 160 25% 9%;
-    --card-foreground: 150 20% 92%;
-    --card-hover: 160 20% 13%;
-    --popover: 160 25% 9%;
-    --popover-foreground: 150 20% 92%;
-    --primary: 160 84% 39%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 160 20% 13%;
-    --secondary-foreground: 155 15% 60%;
-    --muted: 160 18% 15%;
-    --muted-foreground: 155 10% 48%;
-    --accent: 160 40% 15%;
-    --accent-foreground: 150 20% 92%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 160 20% 14%;
-    --input: 160 20% 14%;
-    --ring: 160 84% 39%;
-    --surface-1: 160 30% 6%;
-    --surface-2: 160 25% 9%;
-    --surface-3: 160 20% 13%;
-    --surface-4: 160 18% 17%;
-    --neu-shadow-light: 160 18% 15%;
-    --neu-shadow-dark: 160 35% 3%;
-    --cyan-glow: 160 84% 39%;
-    --cyan-light: 160 60% 70%;
-    --online: 160 84% 39%;
-    --badge: 160 84% 39%;
-    --bubble-own: 160 35% 14%;
-    --bubble-other: 160 20% 11%;
-    --sidebar-background: 160 30% 6%;
-    --sidebar-foreground: 150 20% 92%;
-    --sidebar-primary: 160 84% 39%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 160 20% 13%;
-    --sidebar-accent-foreground: 150 20% 92%;
-    --sidebar-border: 160 20% 14%;
-    --sidebar-ring: 160 84% 39%;
-  }
+  .theme-emerald 
 
-  .theme-crimson {
-    --background: 0 20% 7%;
-    --foreground: 0 10% 92%;
-    --card: 0 15% 10%;
-    --card-foreground: 0 10% 92%;
-    --card-hover: 0 12% 14%;
-    --popover: 0 15% 10%;
-    --popover-foreground: 0 10% 92%;
-    --primary: 346 77% 50%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 0 12% 14%;
-    --secondary-foreground: 0 8% 60%;
-    --muted: 0 10% 16%;
-    --muted-foreground: 0 6% 48%;
-    --accent: 346 30% 16%;
-    --accent-foreground: 0 10% 92%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 12% 15%;
-    --input: 0 12% 15%;
-    --ring: 346 77% 50%;
-    --surface-1: 0 20% 7%;
-    --surface-2: 0 15% 10%;
-    --surface-3: 0 12% 14%;
-    --surface-4: 0 10% 18%;
-    --neu-shadow-light: 0 10% 16%;
-    --neu-shadow-dark: 0 25% 3%;
-    --cyan-glow: 346 77% 50%;
-    --cyan-light: 346 60% 72%;
-    --online: 145 65% 50%;
-    --badge: 346 77% 50%;
-    --bubble-own: 346 30% 15%;
-    --bubble-other: 0 12% 12%;
-    --sidebar-background: 0 20% 7%;
-    --sidebar-foreground: 0 10% 92%;
-    --sidebar-primary: 346 77% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 12% 14%;
-    --sidebar-accent-foreground: 0 10% 92%;
-    --sidebar-border: 0 12% 15%;
-    --sidebar-ring: 346 77% 50%;
-  }
+  .theme-crimson 
 
-  .theme-amber {
-    --background: 30 25% 6%;
-    --foreground: 35 20% 92%;
-    --card: 30 20% 9%;
-    --card-foreground: 35 20% 92%;
-    --card-hover: 30 16% 13%;
-    --popover: 30 20% 9%;
-    --popover-foreground: 35 20% 92%;
-    --primary: 38 92% 50%;
-    --primary-foreground: 30 25% 6%;
-    --secondary: 30 16% 14%;
-    --secondary-foreground: 35 12% 60%;
-    --muted: 30 14% 16%;
-    --muted-foreground: 35 8% 48%;
-    --accent: 38 35% 16%;
-    --accent-foreground: 35 20% 92%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 30 16% 14%;
-    --input: 30 16% 14%;
-    --ring: 38 92% 50%;
-    --surface-1: 30 25% 6%;
-    --surface-2: 30 20% 9%;
-    --surface-3: 30 16% 13%;
-    --surface-4: 30 14% 17%;
-    --neu-shadow-light: 30 14% 16%;
-    --neu-shadow-dark: 30 30% 3%;
-    --cyan-glow: 38 92% 50%;
-    --cyan-light: 38 70% 72%;
-    --online: 145 65% 50%;
-    --badge: 38 92% 50%;
-    --bubble-own: 38 30% 14%;
-    --bubble-other: 30 16% 11%;
-    --sidebar-background: 30 25% 6%;
-    --sidebar-foreground: 35 20% 92%;
-    --sidebar-primary: 38 92% 50%;
-    --sidebar-primary-foreground: 30 25% 6%;
-    --sidebar-accent: 30 16% 13%;
-    --sidebar-accent-foreground: 35 20% 92%;
-    --sidebar-border: 30 16% 14%;
-    --sidebar-ring: 38 92% 50%;
-  }
+  .theme-amber 
 }
 
 @layer base {
@@ -417,27 +239,13 @@
     border: 1px solid hsl(var(--surface-4) / 0.3);
   }
 
-  .neu-raised-sm {
-    background: hsl(var(--surface-3));
-    box-shadow: 0 1px 2px hsl(var(--neu-shadow-dark) / 0.3);
-    border: 1px solid hsl(var(--surface-4) / 0.2);
-  }
+  .neu-raised-sm 
 
-  .neu-inset {
-    background: hsl(var(--surface-1));
-    box-shadow: inset 0 1px 3px hsl(var(--neu-shadow-dark) / 0.3);
-  }
+  .neu-inset 
 
-  .neu-card {
-    background: hsl(var(--surface-2));
-    box-shadow: 0 2px 8px hsl(var(--neu-shadow-dark) / 0.3);
-    border: 1px solid hsl(var(--border));
-  }
+  .neu-card 
 
-  .neu-flat {
-    background: hsl(var(--surface-2));
-    box-shadow: 0 1px 4px hsl(var(--neu-shadow-dark) / 0.2);
-  }
+  .neu-flat 
 
   /* Primary button — clean B&W */
   .gradient-primary {
@@ -446,14 +254,9 @@
     box-shadow: 0 2px 8px hsl(0 0% 0% / 0.3);
   }
 
-  .gradient-cyan {
-    background: hsl(var(--foreground));
-    color: hsl(var(--background));
-  }
+  .gradient-cyan 
 
-  .glow-cyan {
-    box-shadow: 0 0 12px hsl(0 0% 100% / 0.1);
-  }
+  .glow-cyan 
 
   .shadow-card {
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
@@ -463,14 +266,9 @@
     box-shadow: 0 1px 6px rgba(0, 0, 0, 0.15);
   }
 
-  .text-gradient-cyan {
-    color: hsl(var(--foreground));
-  }
+  .text-gradient-cyan 
 
-  .text-gradient-primary {
-    color: hsl(var(--foreground));
-    font-weight: 700;
-  }
+  .text-gradient-primary 
 
   .scrollbar-hide {
     -ms-overflow-style: none;
@@ -569,25 +367,14 @@
     pointer-events: auto;
   }
 
-  .light .bottom-nav-pill {
-    background: linear-gradient(
-      135deg,
-      hsl(var(--surface-2) / 0.92) 0%,
-      hsl(var(--surface-3) / 0.88) 50%,
-      hsl(var(--surface-2) / 0.92) 100%
-    );
-    border: 1px solid hsl(0 0% 0% / 0.06);
-    box-shadow: 0 8px 28px hsl(0 0% 0% / 0.12), 0 2px 6px hsl(0 0% 0% / 0.06);
-  }
+  .light .bottom-nav-pill 
 
   .bottom-nav-active {
     background: hsl(0 0% 100% / 0.1);
     border-radius: 18px;
   }
 
-  .light .bottom-nav-active {
-    background: hsl(0 0% 0% / 0.06);
-  }
+  .light .bottom-nav-active 
 
   .fab-docked {
     position: fixed;
@@ -798,15 +585,9 @@
     border: 1px solid hsl(var(--border));
   }
 
-  .light .bubble-own {
-    background: hsl(var(--bubble-own));
-    border: 1px solid hsl(var(--border));
-  }
+  .light .bubble-own 
 
-  .light .bubble-other {
-    background: hsl(var(--bubble-other));
-    border: 1px solid hsl(var(--border));
-  }
+  .light .bubble-other 
 
   /* Tap animation utility */
   .tap-scale {
@@ -1121,7 +902,6 @@ html, body {
     }
   }
 
-
 /* Mobile stability pass — keep navigation attached to the app viewport, not to the scrolling compositor. */
 @media (max-width: 767px){
   .app-shell{
@@ -1205,7 +985,6 @@ html, body {
   .desktop-main-inner { padding-left:24px; padding-right:24px; }
   .desktop-detail { width:390px; min-width:390px; }
 }
-
 
 /* Desktop application shell — native workspace, not a marketing dashboard. */
 @media (min-width: 768px) {
@@ -1334,7 +1113,6 @@ html, body {
     width:100%;
     overflow:hidden;
   }
-
 
   /* One vertical scroll owner on mobile. Nested desktop-oriented scroll roots
      become content when rendered inside the mobile shell. */
