@@ -15,7 +15,7 @@ serve(async (req) => {
     if (!auth.user) return new Response(JSON.stringify({ error: "Не авторизовано" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     if (!allowRateLimit(`moderate:${auth.user.id}`, 20, 60_000)) return new Response(JSON.stringify({ error: "Слишком много запросов" }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const { text, type } = await req.json();
-    if (!text || !type || typeof text !== "string" || text.length > 5000) {
+    if (!text || !type || !["job", "chat"].includes(type) || typeof text !== "string" || text.length > 5000) {
       return new Response(JSON.stringify({ error: "Нужен текст и тип" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -78,14 +78,25 @@ serve(async (req) => {
 
     const data = await response.json();
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    let result = { safe: true, reason: undefined as string | undefined };
+    let result: { safe: boolean; reason?: string } | null = null;
 
     if (toolCall?.function?.arguments) {
       try {
-        result = JSON.parse(toolCall.function.arguments);
+        const parsed = JSON.parse(toolCall.function.arguments);
+        if (typeof parsed?.safe !== "boolean") throw new Error("Invalid moderation verdict");
+        result = { safe: parsed.safe, reason: typeof parsed.reason === "string" ? parsed.reason : undefined };
       } catch {
         console.error("Failed to parse moderation result");
+        return new Response(JSON.stringify({ error: "Некорректный результат модерации" }), {
+          status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
+    }
+
+    if (!result) {
+      return new Response(JSON.stringify({ error: "Модерация не вернула решение" }), {
+        status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     return new Response(JSON.stringify(result), {
