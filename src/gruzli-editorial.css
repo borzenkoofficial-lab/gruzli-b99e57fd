@@ -6462,3 +6462,25 @@ button.bg-foreground:active{
     padding-bottom:32px!important;
   }
 }
+
+
+/* Full-screen surfaces with their own internal scroller must not receive a second
+   vertical scroll container from the mobile shell. */
+@media (max-width:767px) {
+  .mobile-screen-viewport {
+    position:relative;
+    width:100%;
+    height:100dvh;
+    min-height:100dvh;
+    overflow:hidden;
+    box-sizing:border-box;
+    touch-action:none;
+  }
+
+  .mobile-screen-viewport > .gruzli-company-screen,
+  .mobile-screen-viewport > .gruzli-premium-screen,
+  .mobile-screen-viewport > .gruzli-chat-detail,
+  .mobile-screen-viewport > .gruzli-job-responses-screen {
+    min-height:100%;
+  }
+}
