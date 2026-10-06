@@ -36,7 +36,6 @@ const PremiumScreen = lazy(() => import("@/screens/PremiumScreen"));
 const CompanyScreen = lazy(() => import("@/screens/CompanyScreen"));
 const DispatcherCabinetScreen = lazy(() => import("@/screens/DispatcherCabinetScreen"));
 const DispatcherCommunityScreen = lazy(() => import("@/screens/DispatcherCommunityScreen"));
-const SupportChatScreen = lazy(() => import("@/screens/SupportChatScreen"));
 const ContractScreen = lazy(() => import("@/screens/ContractScreen"));
 import PullToRefresh from "@/components/PullToRefresh";
 
@@ -162,7 +161,6 @@ const Index = () => {
   const [showCompany, setShowCompany] = useState(false);
   const [showCommunity, setShowCommunity] = useState(false);
   const [showCabinet, setShowCabinet] = useState(false);
-  const [showSupportChat, setShowSupportChat] = useState(false);
   const [viewJobDetail, setViewJobDetail] = useState<Tables<"jobs"> | null>(null);
   const [viewContractId, setViewContractId] = useState<string | null>(null);
 
@@ -258,7 +256,6 @@ const Index = () => {
     Number(!!viewResponsesJob) +
     Number(!!showCommunity) +
     Number(!!showCabinet) +
-    Number(!!showSupportChat) +
     Number(!!viewJobDetail) +
     Number(!!viewContractId);
 
@@ -276,11 +273,10 @@ const Index = () => {
     if (viewResponsesJob) return setViewResponsesJob(null);
     if (showCommunity) return setShowCommunity(false);
     if (showCabinet) return setShowCabinet(false);
-    if (showSupportChat) return setShowSupportChat(false);
     if (viewJobDetail) return setViewJobDetail(null);
     if (viewContractId) return setViewContractId(null);
     return undefined;
-  }, [openChatId, viewProfileUserId, showSettings, showNotifications, showPremium, showCompany, showChannel, showCreateJob, viewResponsesJob, showCommunity, showCabinet, showSupportChat, viewJobDetail, viewContractId]);
+  }, [openChatId, viewProfileUserId, showSettings, showNotifications, showPremium, showCompany, showChannel, showCreateJob, viewResponsesJob, showCommunity, showCabinet, viewJobDetail, viewContractId]);
 
   // Keep gesture listeners stable while always invoking the latest navigation state.
   const goBackRef = useRef(goBack);
@@ -426,17 +422,6 @@ const Index = () => {
           />
         );
       }
-      if (showSupportChat) {
-        return (
-          <SupportChatScreen
-            onBack={() => setShowSupportChat(false)}
-            onOpenAdminChat={() => {
-              setShowSupportChat(false);
-              handleChatWithUser(supportUserId || '', SUPPORT_NAME);
-            }}
-          />
-        );
-      }
       if (viewJobDetail) {
         return (
           <JobDetailScreen
@@ -500,18 +485,6 @@ const Index = () => {
           onViewResponses={setViewResponsesJob}
           onCreateJob={() => setShowCreateJob(true)}
         />
-      );
-    }
-    if (showSupportChat) {
-      return wrapSuspense(
-        <SupportChatScreen
-          onBack={() => setShowSupportChat(false)}
-          onOpenAdminChat={() => {
-            setShowSupportChat(false);
-            handleChatWithUser(supportUserId || '', SUPPORT_NAME);
-          }}
-        />,
-        false
       );
     }
     if (viewProfileUserId) {
@@ -654,7 +627,6 @@ const Index = () => {
       isClient={isClient}
       unreadMessages={unreadMessages}
       newJobsCount={newJobsCount}
-      onCreateJob={() => setShowCreateJob(true)}
       onOpenNotifications={() => setShowNotifications(true)}
       onOpenPremium={() => setShowPremium(true)}
       onOpenSupport={() => handleChatWithUser(supportUserId || '', SUPPORT_NAME)}
@@ -691,7 +663,6 @@ const Index = () => {
     setViewResponsesJob(null);
     setShowCommunity(false);
     setShowCabinet(false);
-    setShowSupportChat(false);
     setViewJobDetail(null);
     setViewContractId(null);
   };
