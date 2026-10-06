@@ -370,6 +370,11 @@ CREATE OR REPLACE FUNCTION public.profile_self_update_allowed(
   _blocked boolean,
   _is_premium boolean,
   _premium_until timestamptz,
+  _premium_plan text,
+  _is_company boolean,
+  _company_plan text,
+  _company_until timestamptz,
+  _display_id text,
   _verified boolean,
   _recovery_code text
 )
@@ -391,13 +396,18 @@ BEGIN
      AND _blocked IS NOT DISTINCT FROM v.blocked
      AND _is_premium IS NOT DISTINCT FROM v.is_premium
      AND _premium_until IS NOT DISTINCT FROM v.premium_until
+     AND _premium_plan IS NOT DISTINCT FROM v.premium_plan
+     AND _is_company IS NOT DISTINCT FROM v.is_company
+     AND _company_plan IS NOT DISTINCT FROM v.company_plan
+     AND _company_until IS NOT DISTINCT FROM v.company_until
+     AND _display_id IS NOT DISTINCT FROM v.display_id
      AND _verified IS NOT DISTINCT FROM v.verified
      AND _recovery_code IS NOT DISTINCT FROM v.recovery_code;
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.profile_self_update_allowed(uuid,numeric,integer,integer,integer,boolean,boolean,timestamptz,boolean,text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.profile_self_update_allowed(uuid,numeric,integer,integer,integer,boolean,boolean,timestamptz,boolean,text) TO authenticated;
+REVOKE ALL ON FUNCTION public.profile_self_update_allowed(uuid,numeric,integer,integer,integer,boolean,boolean,timestamptz,text,boolean,text,timestamptz,text,boolean,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.profile_self_update_allowed(uuid,numeric,integer,integer,integer,boolean,boolean,timestamptz,text,boolean,text,timestamptz,text,boolean,text) TO authenticated;
 
 CREATE POLICY "Users can update safe profile fields"
   ON public.profiles FOR UPDATE TO authenticated
@@ -405,7 +415,9 @@ CREATE POLICY "Users can update safe profile fields"
   WITH CHECK (
     public.profile_self_update_allowed(
       user_id, rating, completed_orders, total_earned, balance,
-      blocked, is_premium, premium_until, verified, recovery_code
+      blocked, is_premium, premium_until, premium_plan,
+      is_company, company_plan, company_until, display_id,
+      verified, recovery_code
     )
   );
 
