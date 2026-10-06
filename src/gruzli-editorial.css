@@ -6499,3 +6499,38 @@ button.bg-foreground:active{
     animation:none!important;
   }
 }
+
+
+/* Desktop detail owns its viewport: full-screen mobile roots become panel-local. */
+@media (min-width:768px) {
+  .desktop-detail-body > .gruzli-create-job-screen,
+  .desktop-detail-body > .gruzli-company-screen,
+  .desktop-detail-body > .gruzli-premium-screen,
+  .desktop-detail-body > .gruzli-contract-screen {
+    position:relative!important;
+    inset:auto!important;
+    width:100%!important;
+    height:100%!important;
+    min-height:100%!important;
+    max-height:none!important;
+    margin:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+  }
+
+  .desktop-detail-body > .gruzli-create-job-screen form,
+  .desktop-detail-body > .gruzli-contract-screen > .flex-1.overflow-y-auto,
+  .desktop-detail-body > .gruzli-company-screen > .flex-1.overflow-y-auto,
+  .desktop-detail-body > .gruzli-premium-screen > .flex-1.overflow-y-auto {
+    min-height:0;
+  }
+
+  .desktop-detail-body > .app-shell,
+  .desktop-detail-body > .gruzli-chat-detail.app-shell {
+    width:100%!important;
+    max-width:none!important;
+    min-height:100%!important;
+    margin:0!important;
+    box-shadow:none!important;
+  }
+}
