@@ -507,7 +507,13 @@ DROP POLICY IF EXISTS "Authenticated can add participants" ON public.conversatio
 
 -- Conversations and participants are created only by the secured direct-chat RPC.
 REVOKE INSERT, UPDATE, DELETE ON public.conversations FROM authenticated;
-REVOKE INSERT, UPDATE, DELETE ON public.conversation_participants FROM authenticated;
+REVOKE INSERT, DELETE ON public.conversation_participants FROM authenticated;
+GRANT UPDATE ON public.conversation_participants TO authenticated;
+DROP POLICY IF EXISTS "Users can update own participation" ON public.conversation_participants;
+CREATE POLICY "Users can update own participation"
+  ON public.conversation_participants FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 REVOKE UPDATE, DELETE ON public.messages FROM authenticated;
 
 
