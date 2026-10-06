@@ -220,7 +220,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     });
     setAdjustingId(null);
     if (error) {
-      toast.error("Не удалось изменить оплату");
+      toast.error(error?.message?.includes("hourly_rate_locked") ? "Нельзя менять ставку после отклика/назначения грузчиков" : "Не удалось изменить оплату");
       return;
     }
     setMyJobs((prev) => prev.map((j) => (j.id === job.id ? { ...j, hourly_rate: newRate, status: "active" } : j)));
