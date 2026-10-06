@@ -411,8 +411,8 @@ async function rpc(name: string, args: Record<string, any> = {}) {
         profile.completed_orders = Number(profile.completed_orders || 0) + 1;
         profile.total_earned = Number(profile.total_earned || 0) + Number(response.earned || 0);
       }
-      const otherActive = db.job_responses.some((r) => r.job_id === response.job_id && r.id !== response.id && r.status === "accepted" && r.worker_status !== "completed");
-      if (!otherActive && job) job.status = "completed";
+      // The dispatcher owns final job closure and financial settlement.
+      // Worker completion only updates the response/profile, matching production RPC semantics.
     }
     saveDb(db); return { data: response, error: null };
   }
