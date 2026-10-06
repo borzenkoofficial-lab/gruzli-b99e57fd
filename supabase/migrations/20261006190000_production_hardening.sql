@@ -4,6 +4,9 @@
 ALTER TABLE public.job_responses
   ADD COLUMN IF NOT EXISTS agreed_hourly_rate integer;
 
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS premium_plan text;
+
 UPDATE public.job_responses jr
 SET agreed_hourly_rate = j.hourly_rate
 FROM public.jobs j
