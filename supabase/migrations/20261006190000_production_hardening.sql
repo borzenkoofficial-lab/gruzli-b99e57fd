@@ -393,6 +393,9 @@ BEGIN
 END;
 $$;
 
+REVOKE ALL ON FUNCTION public.profile_self_update_allowed(uuid,numeric,integer,integer,integer,boolean,boolean,timestamptz,boolean,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.profile_self_update_allowed(uuid,numeric,integer,integer,integer,boolean,boolean,timestamptz,boolean,text) TO authenticated;
+
 CREATE POLICY "Users can update safe profile fields"
   ON public.profiles FOR UPDATE TO authenticated
   USING (auth.uid() = user_id)
