@@ -477,4 +477,5 @@ export const supabase = {
   removeAllChannels: () => {},
 } as any;
 
+export default demoSupabase;
 export type LocalDatabase = Database;
