@@ -182,7 +182,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-full bg-background">
         <div className="flex items-center gap-3 px-4 safe-top pb-4">
           <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center">
             <ArrowLeft size={18} className="text-foreground" />
@@ -208,7 +208,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
   const workerStatus = profile.is_available === false ? "Сейчас занят" : "Готов к работе";
 
   return (
-    <div className="min-h-screen bg-background animate-fade-in pb-[calc(var(--bottom-nav-height,80px)+env(safe-area-inset-bottom,0px)+32px)]">
+    <div className="min-h-full bg-background animate-fade-in pb-[calc(var(--bottom-nav-height,80px)+env(safe-area-inset-bottom,0px)+32px)]">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 safe-top pb-4">
         <button onClick={onBack} className="w-10 h-10 rounded-2xl bg-card border border-border flex items-center justify-center active:bg-surface-1 border border-border transition-all">
