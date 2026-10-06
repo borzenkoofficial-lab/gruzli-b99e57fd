@@ -6412,3 +6412,96 @@ button.bg-foreground:active{
     border-color:rgba(242,196,0,.28)!important;
   }
 }
+
+
+/* Dispatcher cabinet — detail surfaces: same material language as feed/cards. */
+.gruzli-dispatcher-cabinet .bg-card{
+  background:var(--gruzli-surface)!important;
+}
+.gruzli-dispatcher-cabinet .border-border{
+  border-color:var(--gruzli-line)!important;
+}
+.gruzli-dispatcher-cabinet .shadow-sm{
+  box-shadow:0 2px 10px rgba(18,20,25,.035)!important;
+}
+.gruzli-dispatcher-cabinet .rounded-2xl{
+  border-radius:16px!important;
+}
+.gruzli-dispatcher-cabinet .rounded-xl{
+  border-radius:12px!important;
+}
+
+/* Job and worker rows stay quiet; status is carried by color, not glass. */
+.gruzli-dispatcher-cabinet .bg-surface-1{
+  background:#fafafa!important;
+}
+.gruzli-dispatcher-cabinet .bg-primary\/10{
+  background:#fff8d9!important;
+}
+.gruzli-dispatcher-cabinet .bg-primary\/15{
+  background:#fff3bb!important;
+}
+.gruzli-dispatcher-cabinet .bg-destructive\/10{
+  background:#fff1f1!important;
+}
+.gruzli-dispatcher-cabinet .border-destructive\/30{
+  border-color:#f0cccc!important;
+}
+
+/* Legacy white/glass utility buttons become explicit neutral controls. */
+.gruzli-dispatcher-cabinet button.border-white\/10,
+.gruzli-dispatcher-cabinet button.bg-white\/5,
+.gruzli-dispatcher-cabinet button.bg-white\/10{
+  background:#fff!important;
+  border-color:var(--gruzli-line)!important;
+  box-shadow:0 1px 4px rgba(18,20,25,.025)!important;
+}
+.gruzli-dispatcher-cabinet button.border-white\/10:hover,
+.gruzli-dispatcher-cabinet button.bg-white\/5:hover,
+.gruzli-dispatcher-cabinet button.bg-white\/10:hover{
+  background:#fafafa!important;
+}
+
+/* Rate controls read like ordinary marketplace controls. */
+.gruzli-dispatcher-cabinet .min-w-\[80px\]{
+  color:var(--gruzli-ink)!important;
+}
+
+/* Keep success / warning states legible without high-saturation panels. */
+.gruzli-dispatcher-cabinet .text-green-500\/70{
+  color:#6b8b74!important;
+}
+.gruzli-dispatcher-cabinet .text-destructive{
+  color:#b54242!important;
+}
+.gruzli-dispatcher-cabinet .bg-green-500\/5{
+  background:#f4faf5!important;
+}
+
+/* Worker premium marker is a restrained outline instead of a gradient halo. */
+.gruzli-dispatcher-cabinet .bg-gradient-to-tr{
+  background:var(--gruzli-yellow)!important;
+}
+
+/* Analytics cards and chart share the same surface/radius rhythm. */
+.gruzli-dispatcher-cabinet .grid.grid-cols-2 > .bg-card,
+.gruzli-dispatcher-cabinet .bg-card.border.border-border.native-surface{
+  box-shadow:0 2px 10px rgba(18,20,25,.03)!important;
+}
+.gruzli-dispatcher-cabinet .w-4.rounded-full{
+  border-radius:4px!important;
+}
+
+/* AI analytics remains functional, but its presentation is neutral and product-like. */
+.gruzli-dispatcher-cabinet .border-primary\/20{
+  border-color:#e7dfb3!important;
+}
+.gruzli-dispatcher-cabinet .bg-primary\/20{
+  background:#fff7d6!important;
+}
+
+@media(max-width:767px){
+  .gruzli-dispatcher-cabinet .gruzli-dispatcher-cabinet-scroll{
+    padding-bottom:calc(28px + env(safe-area-inset-bottom))!important;
+  }
+}
