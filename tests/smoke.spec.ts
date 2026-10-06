@@ -24,7 +24,7 @@ test("Gruzli keeps the mobile shell usable at 390px", async ({ page }) => {
 
   await page.goto("/");
   await expect(page.locator("#root")).not.toBeEmpty();
-  await expect(page.getByText("Лента заявок").first()).toBeVisible();
+  await expect(page.locator(".gruzli-mobile-feed")).toBeVisible();
   await expect(page.locator(".bottom-nav-wrapper")).toBeVisible();
   await expect(page.locator(".gruzli-job-card").first()).toBeVisible();
 });
