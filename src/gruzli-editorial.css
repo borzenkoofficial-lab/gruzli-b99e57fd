@@ -2519,11 +2519,11 @@ body,
 
 .gruzli-mobile-feed .gruzli-order-description{
   margin:11px 3px 0;
-  font-size:11px;
-  line-height:1.42;
-  color:#7a7c82;
+  font-size:11.5px;
+  line-height:1.5;
+  color:#6f7279;
   display:-webkit-box;
-  -webkit-line-clamp:2;
+  -webkit-line-clamp:3;
   -webkit-box-orient:vertical;
   overflow:hidden;
 }
