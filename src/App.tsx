@@ -24,7 +24,7 @@ const AdminPage = lazy(() => import("./pages/AdminPage"));
 const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
-const DEMO_ENABLED = import.meta.env.VITE_GRUZLI_DEMO_MODE === "true";
+const DEMO_ENABLED = import.meta.env.DEV && import.meta.env.VITE_GRUZLI_DEMO_MODE === "true";
 
 const queryClient = new QueryClient({
   defaultOptions: {
