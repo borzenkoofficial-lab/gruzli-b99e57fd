@@ -13,6 +13,20 @@ interface OnboardingTourProps {
 
 const SWIPE_THRESHOLD = 50;
 
+const CONFETTI = [
+  { x: -112, y: -18, scale: 0.9, rotate: -18, size: 9, shape: "square" as const, color: "#191a1d" },
+  { x: -76, y: -46, scale: 1, rotate: 24, size: 11, shape: "round" as const, color: "#f2c400" },
+  { x: -42, y: -76, scale: 0.82, rotate: -12, size: 8, shape: "round" as const, color: "#d9dadd" },
+  { x: -8, y: -104, scale: 1.08, rotate: 28, size: 10, shape: "square" as const, color: "#191a1d" },
+  { x: 24, y: -62, scale: 0.9, rotate: -22, size: 9, shape: "round" as const, color: "#f2c400" },
+  { x: 58, y: -88, scale: 1, rotate: 14, size: 12, shape: "square" as const, color: "#d9dadd" },
+  { x: 92, y: -34, scale: 0.82, rotate: -16, size: 8, shape: "round" as const, color: "#191a1d" },
+  { x: 118, y: -74, scale: 1.04, rotate: 20, size: 10, shape: "square" as const, color: "#f2c400" },
+  { x: -95, y: 6, scale: 0.78, rotate: 10, size: 8, shape: "round" as const, color: "#d9dadd" },
+  { x: -18, y: 14, scale: 0.86, rotate: -28, size: 9, shape: "square" as const, color: "#f2c400" },
+  { x: 82, y: 8, scale: 0.84, rotate: 32, size: 9, shape: "round" as const, color: "#191a1d" },
+];
+
 const getPlatform = (): "android" | "ios" | "desktop" => {
   const ua = navigator.userAgent.toLowerCase();
   if (/iphone|ipad|ipod/.test(ua)) return "ios";
@@ -371,24 +385,24 @@ const AddToHomeStep = () => {
 const CelebrationStep = ({ onStart, isDispatcher }: { onStart: () => void; isDispatcher: boolean }) => (
   <div className="flex flex-col items-center text-center px-6">
     <div className="relative w-full h-32 mb-4 overflow-hidden">
-      {Array.from({ length: 20 }).map((_, i) => (
+      {CONFETTI.map((piece, i) => (
         <motion.div
           key={i}
-          initial={{ opacity: 0, y: 0, x: Math.random() * 300 - 150, scale: 0, rotate: Math.random() * 360 }}
+          initial={{ opacity: 0, x: piece.x, y: 8, scale: 0, rotate: piece.rotate }}
           animate={{
             opacity: [0, 1, 1, 0],
-            y: [0, -80 - Math.random() * 60],
-            x: (Math.random() - 0.5) * 200,
-            scale: [0, 1, 0.8],
-            rotate: Math.random() * 720,
+            x: piece.x,
+            y: piece.y,
+            scale: [0, piece.scale, piece.scale * 0.8],
+            rotate: piece.rotate + 180,
           }}
-          transition={{ duration: 2 + Math.random(), delay: 0.3 + Math.random() * 0.5, repeat: Infinity, repeatDelay: Math.random() * 2 }}
+          transition={{ duration: 2.2, delay: 0.2 + i * 0.06, repeat: Infinity, repeatDelay: 1.6 }}
           className="absolute left-1/2 bottom-0"
           style={{
-            width: 8 + Math.random() * 8,
-            height: 8 + Math.random() * 8,
-            borderRadius: Math.random() > 0.5 ? "50%" : "2px",
-            backgroundColor: i % 3 === 0 ? "#191a1d" : i % 3 === 1 ? "#f2c400" : "#d9dadd",
+            width: piece.size,
+            height: piece.size,
+            borderRadius: piece.shape === "round" ? "50%" : "2px",
+            backgroundColor: piece.color,
           }}
         />
       ))}
