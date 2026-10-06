@@ -60,7 +60,7 @@ const FAB = ({ onOpenSupport }: FABProps) => {
                 }`} style={{
                   boxShadow: action.id === "sos"
                     ? '0 4px 20px hsl(0 72% 51% / 0.4)'
-                    : '0 4px 20px hsl(230 60% 58% / 0.35)',
+                    : '0 4px 20px hsl(45 95% 55% / 0.22)',
                 }}>
                   <action.icon size={20} className="text-white" />
                 </div>
@@ -74,7 +74,7 @@ const FAB = ({ onOpenSupport }: FABProps) => {
         onClick={() => setOpen(!open)}
         className="w-14 h-14 rounded-full bg-foreground flex items-center justify-center tap-scale"
         style={{
-          boxShadow: '6px 6px 14px hsl(228 22% 6%), -4px -4px 10px hsl(228 18% 20%), 0 4px 20px hsl(230 60% 58% / 0.4)',
+          boxShadow: '0 8px 24px rgba(20,22,25,.18), 0 3px 12px hsl(45 95% 55% / 0.16)',
         }}
       >
         <motion.div animate={{ rotate: open ? 45 : 0 }}>
