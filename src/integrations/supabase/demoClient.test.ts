@@ -31,7 +31,7 @@ describe("demo Supabase session", () => {
 
     expect(error).toBeNull();
     expect(data).toMatchObject({
-      job_id: "demo-job-1",
+      job_id: "demo-job-4",
       worker_id: "demo-worker",
       status: "pending",
     });
