@@ -1343,7 +1343,7 @@ body{overflow-x:hidden;}
 *{box-sizing:border-box;}
 
 @keyframes gruzli-orbit-a{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(16px,9px,0) scale(1.04)}}
-@keyframes gruzli-orbit-b{0%,100%50%{transform:translate3d(-14px,-8px,0) scale(.96)}}
+@keyframes gruzli-orbit-b{0%,100%{transform:translate3d(-14px,-8px,0) scale(.96)}}
 
 .app-shell{
   background:
@@ -4583,8 +4583,6 @@ adius:17px!important;
   --gruzli-ease:cubic-bezier(.22,1,.36,1);
 }
 
-html.light,html.theme-midnight,html.theme-emerald,html.theme-crimson,html.theme-amber
-
 .gruzli-auth-shell,
 .gruzli-auth-shell *{
   -webkit-font-smoothing:antialiased;
@@ -5304,7 +5302,6 @@ button.bg-foreground:active{
   .gruzli-card-follow-light{
     display:none;
   }
-  .gruzli-job-card:after
 }
 
 :root{
