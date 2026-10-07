@@ -227,14 +227,13 @@ async function collectDom(page: Page, viewport: QaViewport) {
       if (!box) continue;
 
       const label = (await readLocatorLabel(item)).slice(0, 60);
-      if (
-        box.x < -2 ||
-        box.y < -2 ||
-        box.x + box.width > viewport.width + 2 ||
-        box.y + box.height > viewport.height + 2
-      ) {
+      const horizontalOverflow =
+        box.x < -2 || box.x + box.width > viewport.width + 2;
+
+      // Being below/above the viewport is expected on a scrollable page.
+      if (horizontalOverflow) {
         geometryIssues.push(
-          `Interactive element outside viewport: "${label}" [${Math.round(
+          `Interactive element exceeds horizontal viewport: "${label}" [${Math.round(
             box.x,
           )},${Math.round(box.y)},${Math.round(box.width)},${Math.round(box.height)}]`,
         );
@@ -331,7 +330,9 @@ function deterministicFindings(capture: QaCapture): QaFinding[] {
     findings.push({
       severity: overflow ? "high" : "medium",
       category: overflow ? "responsive" : "visual",
-      title: overflow ? "Горизонтальный overflow" : "Проблема геометрии интерфейса",
+      title: overflow
+        ? "Горизонтальный overflow"
+        : "Проблема геометрии интерфейса",
       description: issue,
       confidence: 1,
       role: capture.role,
@@ -667,8 +668,21 @@ async function runScan(config: QaScanConfig): Promise<QaScanReport> {
         ]),
       ),
       captures: allCaptures.length,
-      deterministicFindings: rawFindings.filter((finding) => finding.title !== "AI analyzer request failed").length,
-      aiFindings: rawFindings.filter((finding) => finding.evidence?.screenshot && finding.category !== "runtime").length,
+      deterministicFindings: rawFindings.filter(
+        (finding) =>
+          finding.title !== "AI analyzer request failed" &&
+          finding.category !== "ux" &&
+          finding.category !== "visual" &&
+          finding.category !== "responsive",
+      ).length,
+      aiFindings: rawFindings.filter(
+        (finding) =>
+          finding.evidence?.screenshot &&
+          !["Console error", "Network error", "Горизонтальный overflow", "Проблема геометрии интерфейса"].includes(
+            finding.title,
+          ) &&
+          finding.category !== "runtime",
+      ).length,
     },
     findings,
     captures: allCaptures.map(({ screenshotBase64: _screenshotBase64, ...capture }) => capture),
