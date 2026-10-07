@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "qa:server": "bun qa/scanner/server.ts",
     "qa:health": "curl -fsS http://127.0.0.1:4174/health",
-    "qa:typecheck": "tsc -p qa/tsconfig.json"
+    "qa:typecheck": "tsc -p qa/tsconfig.json",
+    "qa:app": "VITE_GRUZLI_DEMO_MODE=true vite --host 127.0.0.1 --port 4173"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
