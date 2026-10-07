@@ -169,85 +169,103 @@ async function analyzeWithAi(
   }));
 }
 
-async function collectDom(page: Page) {
-  return page.evaluate(() => {
-    const visible = (el: Element) => {
-      const r = (el as HTMLElement).getBoundingClientRect();
-      const s = getComputedStyle(el as HTMLElement);
-      return r.width > 0 && r.height > 0 && s.visibility !== "hidden" && s.display !== "none";
-    };
-    const label = (el: Element) => {
-      const html = el as HTMLElement;
-      return (
-        html.getAttribute("aria-label") ||
-        html.textContent ||
-        html.getAttribute("title") ||
-        (html as HTMLInputElement).placeholder ||
-        ""
-      )
-        .replace(/\s+/g, " ")
-        .trim();
-    };
+async function readLocatorLabel(locator: import("@playwright/test").Locator): Promise<string> {
+  const aria = await locator.getAttribute("aria-label").catch(() => null);
+  const title = await locator.getAttribute("title").catch(() => null);
+  const placeholder = await locator.getAttribute("placeholder").catch(() => null);
+  const text = await locator.textContent().catch(() => null);
+  return safeText(String(aria || text || title || placeholder || ""));
+}
 
-    const buttons = Array.from(document.querySelectorAll("button,[role='button']"))
-      .filter(visible)
-      .map(label)
-      .filter(Boolean);
-    const links = Array.from(document.querySelectorAll("a"))
-      .filter(visible)
-      .map(label)
-      .filter(Boolean);
-    const headings = Array.from(document.querySelectorAll("h1,h2,h3,h4,h5"))
-      .filter(visible)
-      .map(label)
-      .filter(Boolean);
+async function readVisibleLabels(
+  page: Page,
+  selector: string,
+  limit = 250,
+): Promise<string[]> {
+  const locator = page.locator(selector);
+  const count = Math.min(await locator.count(), limit);
+  const labels: string[] = [];
 
-    const geometryIssues: string[] = [];
-    if (document.body.scrollWidth > window.innerWidth + 4) {
-      geometryIssues.push(
-        `Horizontal overflow: body scrollWidth=${document.body.scrollWidth}, viewport=${window.innerWidth}`,
-      );
+  for (let index = 0; index < count; index += 1) {
+    const item = locator.nth(index);
+    try {
+      if (!(await item.isVisible())) continue;
+      const label = (await readLocatorLabel(item)).slice(0, 200);
+      if (label) labels.push(label);
+    } catch {
+      // Element may disappear while the UI rerenders.
     }
+  }
 
-    for (const el of Array.from(
-      document.querySelectorAll("button,input,textarea,select,[role='button']"),
-    ).filter(visible)) {
-      const r = (el as HTMLElement).getBoundingClientRect();
-      const text = label(el).slice(0, 60);
-      if (r.right > window.innerWidth + 2 || r.left < -2 || r.bottom > window.innerHeight + 2) {
-        geometryIssues.push(
-          `Interactive element outside viewport: "${text}" [${Math.round(r.left)},${Math.round(
-            r.top,
-          )},${Math.round(r.width)},${Math.round(r.height)}]`,
-        );
-      }
+  return Array.from(new Set(labels));
+}
+
+async function collectDom(page: Page, viewport: QaViewport) {
+  const buttons = await readVisibleLabels(page, "button,[role='button']", 250);
+  const links = await readVisibleLabels(page, "a", 150);
+  const headings = await readVisibleLabels(page, "h1,h2,h3,h4,h5", 50);
+
+  const geometryIssues: string[] = [];
+
+  // Use a string expression so tsx cannot inject browser-side helpers such as __name.
+  const scrollWidth = Number(await page.evaluate("document.body.scrollWidth"));
+  const innerWidth = Number(await page.evaluate("window.innerWidth"));
+  if (scrollWidth > innerWidth + 4) {
+    geometryIssues.push(
+      `Horizontal overflow: body scrollWidth=${scrollWidth}, viewport=${innerWidth}`,
+    );
+  }
+
+  const interactive = page.locator("button,input,textarea,select,[role='button']");
+  const interactiveCount = Math.min(await interactive.count(), 300);
+
+  for (let index = 0; index < interactiveCount; index += 1) {
+    const item = interactive.nth(index);
+    try {
+      if (!(await item.isVisible())) continue;
+      const box = await item.boundingBox();
+      if (!box) continue;
+
+      const label = (await readLocatorLabel(item)).slice(0, 60);
       if (
-        (el.tagName === "BUTTON" || el.getAttribute("role") === "button") &&
-        (r.width < 24 || r.height < 24)
+        box.x < -2 ||
+        box.y < -2 ||
+        box.x + box.width > viewport.width + 2 ||
+        box.y + box.height > viewport.height + 2
       ) {
         geometryIssues.push(
-          `Small interactive target: "${text}" size=${Math.round(r.width)}x${Math.round(
-            r.height,
+          `Interactive element outside viewport: "${label}" [${Math.round(
+            box.x,
+          )},${Math.round(box.y)},${Math.round(box.width)},${Math.round(box.height)}]`,
+        );
+      }
+
+      const role = await item.getAttribute("role").catch(() => null);
+      const tagName = await item.evaluate("el => el.tagName").catch(() => "");
+      if (
+        (tagName === "BUTTON" || role === "button") &&
+        (box.width < 24 || box.height < 24)
+      ) {
+        geometryIssues.push(
+          `Small interactive target: "${label}" size=${Math.round(box.width)}x${Math.round(
+            box.height,
           )}`,
         );
       }
+    } catch {
+      // Element may disappear while the UI rerenders.
     }
+  }
 
-    const bodyText = Array.from(document.body.querySelectorAll("*"))
-      .filter((el) => visible(el) && el.children.length === 0)
-      .map(label)
-      .filter(Boolean)
-      .slice(0, 250)
-      .join(" | ");
+  const bodyText = safeText((await page.locator("body").innerText()).slice(0, 12000));
 
-    return {
-      buttons: Array.from(new Set(buttons)),
-      links: Array.from(new Set(links)),
-      headings: Array.from(new Set(headings)),
-      bodyText,
-      geometryIssues: Array.from(new Set(geometryIssues)).slice(0, 40),
-    };
-  });
+  return {
+    buttons,
+    links,
+    headings,
+    bodyText: bodyText.slice(0, 5000),
+    geometryIssues: Array.from(new Set(geometryIssues)).slice(0, 40),
+  };
 }
 
 function isSafeAction(label: string) {
@@ -378,11 +396,11 @@ async function runForRoleViewport(
     deviceScaleFactor: 1,
   });
 
-  await context.addInitScript(({ role: demoRole }) => {
-    localStorage.setItem("gruzli_demo_worker", "1");
-    localStorage.setItem("gruzli_demo_role", demoRole);
-    localStorage.setItem("onboarding_completed", "1");
-  }, { role });
+  await context.addInitScript({
+    content: `localStorage.setItem("gruzli_demo_worker", "1");
+localStorage.setItem("gruzli_demo_role", ${JSON.stringify(role)});
+localStorage.setItem("onboarding_completed", "1");`,
+  });
 
   const page = await context.newPage();
   const captures: QaCapture[] = [];
@@ -417,24 +435,11 @@ async function runForRoleViewport(
     await page.goto(config.baseUrl, { waitUntil: "domcontentloaded", timeout: 120000 });
     await visit("Старт", "open application");
 
-    const navCandidates = await page
-      .locator("nav button, .desktop-nav-item, .bottom-nav-pill button, [role='tab']")
-      .evaluateAll((els) =>
-        els
-          .map((el) => ({
-            label: (
-              (el as HTMLElement).getAttribute("aria-label") ||
-              (el as HTMLElement).textContent ||
-              (el as HTMLElement).getAttribute("title") ||
-              ""
-            )
-              .replace(/\s+/g, " ")
-              .trim(),
-          }))
-          .filter((x) => x.label),
-      );
-
-    const uniqueNav = Array.from(new Set(navCandidates.map((x) => x.label))).slice(0, 20);
+    const uniqueNav = await readVisibleLabels(
+      page,
+      "nav button, .desktop-nav-item, .bottom-nav-pill button, [role='tab']",
+      40,
+    );
 
     for (const label of uniqueNav) {
       if (!isSafeAction(label)) continue;
@@ -453,25 +458,14 @@ async function runForRoleViewport(
         await visit(label, `click "${label}"`);
 
         if (config.maxActionsPerSurface > 1) {
-          const innerCandidates = await page
-            .locator("main button, main a, .desktop-detail button, [role='dialog'] button")
-            .evaluateAll((els) =>
-              els
-                .map((el) => ({
-                  label: (
-                    (el as HTMLElement).getAttribute("aria-label") ||
-                    (el as HTMLElement).textContent ||
-                    (el as HTMLElement).getAttribute("title") ||
-                    ""
-                  )
-                    .replace(/\s+/g, " ")
-                    .trim(),
-                }))
-                .filter((x) => x.label),
-            );
+          const innerCandidates = await readVisibleLabels(
+            page,
+            "main button, main a, .desktop-detail button, [role='dialog'] button",
+            80,
+          );
 
           const navSet = new Set(uniqueNav);
-          const innerLabels = Array.from(new Set(innerCandidates.map((x) => x.label)))
+          const innerLabels = innerCandidates
             .filter((value) => !navSet.has(value) && isSafeAction(value))
             .slice(0, Math.max(0, config.maxActionsPerSurface - 1));
 
