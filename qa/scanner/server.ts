@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { chromium, type Browser, type BrowserContext, type Page } from "@playwright/test";
+import { chromium, type Browser, type BrowserContext, type Locator, type Page } from "@playwright/test";
 import type {
   QaAiConfig,
   QaCapture,
@@ -169,7 +169,7 @@ async function analyzeWithAi(
   }));
 }
 
-async function readLocatorLabel(locator: import("@playwright/test").Locator): Promise<string> {
+async function readLocatorLabel(locator: Locator): Promise<string> {
   const aria = await locator.getAttribute("aria-label").catch(() => null);
   const title = await locator.getAttribute("title").catch(() => null);
   const placeholder = await locator.getAttribute("placeholder").catch(() => null);
@@ -241,11 +241,7 @@ async function collectDom(page: Page, viewport: QaViewport) {
       }
 
       const role = await item.getAttribute("role").catch(() => null);
-      const tagName = await item.evaluate("el => el.tagName").catch(() => "");
-      if (
-        (tagName === "BUTTON" || role === "button") &&
-        (box.width < 24 || box.height < 24)
-      ) {
+      if (role === "button" && (box.width < 24 || box.height < 24)) {
         geometryIssues.push(
           `Small interactive target: "${label}" size=${Math.round(box.width)}x${Math.round(
             box.height,
@@ -296,7 +292,7 @@ async function captureState(
   runDir: string,
   errors: { console: string[]; network: string[] },
 ): Promise<QaCapture> {
-  const dom = await collectDom(page);
+  const dom = await collectDom(page, viewport);
   const fileName = `${role}-${viewport.name}-${slug(surface)}-${Date.now()}.png`;
   const absolute = join(runDir, fileName);
   const buffer = await page.screenshot({ type: "png" });
