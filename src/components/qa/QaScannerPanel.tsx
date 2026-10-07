@@ -22,7 +22,8 @@ export default function QaScannerPanel() {
   const [apiKey, setApiKey] = useState("");
   const [baseUrl, setBaseUrl] = useState("http://127.0.0.1:4173");
   const [roles, setRoles] = useState<Role[]>(["worker", "dispatcher", "client"]);
-  const [viewports, setViewports] = useState<Viewport[]>(DEFAULT_VIEWPORTS);\n  const [maxAiAnalyses, setMaxAiAnalyses] = useState(24);
+  const [viewports, setViewports] = useState<Viewport[]>(DEFAULT_VIEWPORTS);
+  const [maxAiAnalyses, setMaxAiAnalyses] = useState(24);
   const [running, setRunning] = useState(false);
   const [status, setStatus] = useState("Готов");
   const [report, setReport] = useState<any>(null);
@@ -55,6 +56,7 @@ export default function QaScannerPanel() {
           roles,
           viewports,
           maxActionsPerSurface: 2,
+          maxAiAnalyses,
           ai: {
             endpoint: endpoint.trim(),
             apiKey: apiKey.trim(),
@@ -84,8 +86,14 @@ export default function QaScannerPanel() {
           `Run: ${report.runId}`,
           `Issues: ${report.findings?.length ?? 0}`,
           "",
-          ...(report.findings || []).map((f: any) => `## ${f.id} — ${String(f.severity).toUpperCase()} — ${f.title}\n- ${f.role}\n- ${f.viewport?.name}\n- ${f.surface}\n- ${f.description}\n`),
-        ].join("\n");
+          ...(report.findings || []).map((f: any) => `## ${f.id} — ${String(f.severity).toUpperCase()} — ${f.title}
+- ${f.role}
+- ${f.viewport?.name}
+- ${f.surface}
+- ${f.description}
+`),
+        ].join("
+");
     const blob = new Blob([content], { type: kind === "json" ? "application/json" : "text/markdown" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -124,7 +132,8 @@ export default function QaScannerPanel() {
 
         <div className="qa-section">
           <div className="qa-section-title">Приложение</div>
-          <label>App URL<input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} /></label>\n          <label>AI snapshots per run (лимит)<input type="number" min={0} max={100} value={maxAiAnalyses} onChange={(e) => setMaxAiAnalyses(Math.max(0, Math.min(100, Number(e.target.value) || 0)))} /></label>
+          <label>App URL<input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} /></label>
+          <label>AI snapshots per run (лимит)<input type="number" min={0} max={100} value={maxAiAnalyses} onChange={(e) => setMaxAiAnalyses(Math.max(0, Math.min(100, Number(e.target.value) || 0)))} /></label>
           <div className="qa-chip-row">
             {(Object.keys(ROLE_LABELS) as Role[]).map((role) => (
               <button key={role} className={`qa-chip ${roles.includes(role) ? "is-on" : ""}`} onClick={() => toggleRole(role)}>
