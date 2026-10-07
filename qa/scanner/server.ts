@@ -355,108 +355,51 @@ async function runForRoleViewport(
       await candidate.click({ timeout: 4000 });
       await visit(label, `click "${label}"`);
 
-      // Open the first visible job/card or obvious detail action for a second-level state.
+      // Explore one additional safe inner action from the current surface.
       if (config.maxActionsPerSurface > 1) {
-        const detailCandidate = page.locator(".gruzli-job-card, [data-testid='job-card']").first();
-        if (await detailCandidate.count()) {
-          const detailLabel = await detailCandidate.getAttribute("aria-label").catch(() => null) || await detailCandidate.textContent().catch(() => "");
-          if (isSafeAction(String(detailLabel))) {
-            try {
-              await detailCandidate.scrollIntoViewIfNeeded();
-              await detailCandidate.click({ timeout: 2500 });
-              await visit(`${label} → detail`, `open first detail from "${label}"`);
-            } catch {}
+        const innerCandidates = await page.locator("main button, main a, .desktop-detail button, [role='dialog'] button")
+          .evaluateAll((els) => els.map((el) => ({
+            label: (
+              (el as HTMLElement).getAttribute("aria-label") ||
+              (el as HTMLElement).textContent ||
+              (el as HTMLElement).getAttribute("title") ||
+              ""
+            ).replace(/\s+/g, " ").trim(),
+          })).filter((x) => x.label));
+
+        const navSet = new Set(uniqueNav);
+        const innerLabels = Array.from(new Set(innerCandidates.map((x) => x.label)))
+          .filter((value) => !navSet.has(value) && isSafeAction(value))
+          .slice(0, Math.max(0, config.maxActionsPerSurface - 1));
+
+        for (const innerLabel of innerLabels) {
+          await page.goto(config.baseUrl, { waitUntil: "domcontentloaded", timeout: 120000 });
+          await sleep(300);
+          const surfaceButton = page.getByRole("button", { name: label, exact: false }).first();
+          if (!await surfaceButton.count()) break;
+          try {
+            await surfaceButton.click({ timeout: 4000 });
+            await sleep(350);
+            const inner = page.getByRole("button", { name: innerLabel, exact: false }).first();
+            if (!await inner.count()) continue;
+            await inner.scrollIntoViewIfNeeded();
+            await inner.click({ timeout: 3000 });
+            await visit(`${label} → ${innerLabel}`, `click "${innerLabel}" inside "${label}"`);
+          } catch (error) {
+            findings.push({
+              severity: "medium",
+              category: "functional",
+              title: "Внутреннее действие не выполняется",
+              description: `"${innerLabel}" внутри "${label}": ${String(error instanceof Error ? error.message : error)}`,
+              confidence: 1,
+              role,
+              viewport,
+              surface: label,
+              url: page.url(),
+              action: `click "${innerLabel}"`,
+            });
           }
         }
-      }
-    } catch (error) {
-      findings.push({
-        severity: "high",
-        category: "functional",
-        title: "Не удалось выполнить действие навигации",
-        description: `"${label}": ${String(error instanceof Error ? error.message : error)}`,
-        confidence: 1,
-        role,
-        viewport,
-        surface: label,
-        url: page.url(),
-        action: `click "${label}"`,
-      });
-    }
-  }
-
-  await context.close();
-  return { captures, findings };
-}
-
-function dedupeFindings(findings: QaFinding[]) {
-  const rank: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
-  const groups = new Map<string, QaFinding>();
-  for (const finding of findings) {
-    const key = [
-      finding.category,
-      finding.role,
-      finding.surface,
-      safeText(finding.title).toLowerCase().slice(0, 120),
-    ].join("|");
-    const previous = groups.get(key);
-    if (!previous || rank[finding.severity] > rank[previous.severity] || finding.confidence > previous.confidence) {
-      groups.set(key, finding);
-    }
-  }
-  return Array.from(groups.values()).map((finding, index) => ({ ...finding, id: `BUG-${String(index + 1).padStart(3, "0")}` }));
-}
-
-async function runScan(config: QaScanConfig): Promise<QaScanReport> {
-  const startedAt = new Date().toISOString();
-  const runId = new Date().toISOString().replace(/[:.]/g, "-");
-  const reportRoot = join(process.cwd(), "qa", "reports");
-  const runDir = join(reportRoot, "runs", runId);
-  await mkdir(runDir, { recursive: true });
-
-  const browser = await chromium.launch({ headless: true });
-  const allCaptures: QaCapture[] = [];
-  const rawFindings: QaFinding[] = [];
-  const roles = config.roles.length ? config.roles : ["worker", "dispatcher", "client"] as QaRole[];
-  const viewports = config.viewports.length ? config.viewports : [
-    { name: "mobile", width: 390, height: 844 },
-    { name: "desktop", width: 1440, height: 900 },
-  ];
-
-  for (const role of roles) {
-    for (const viewport of viewports) {
-      const result = await runForRoleViewport(browser, config, role, viewport, runDir);
-      allCaptures.push(...result.captures);
-      rawFindings.push(...result.findings);
-    }
-  }
-
-  await browser.close();
-
-  if (config.ai.apiKey && config.maxAiAnalyses > 0) {
-    const roleOrder: Record<QaRole, number> = { dispatcher: 0, client: 1, worker: 2 };
-    const viewportOrder: Record<string, number> = { mobile: 0, desktop: 1, tablet: 2 };
-    const selected = [...allCaptures]
-      .sort((a, b) => (roleOrder[a.role] - roleOrder[b.role]) || ((viewportOrder[a.viewport.name] ?? 9) - (viewportOrder[b.viewport.name] ?? 9)))
-      .slice(0, Math.max(1, Math.min(config.maxAiAnalyses, allCaptures.length)));
-
-    for (const capture of selected) {
-      try {
-        rawFindings.push(...await analyzeWithAi(config.ai, capture, capture.role, capture.viewport));
-      } catch (error) {
-        rawFindings.push({
-          severity: "medium",
-          category: "runtime",
-          title: "AI analyzer request failed",
-          description: String(error instanceof Error ? error.message : error),
-          confidence: 1,
-          role: capture.role,
-          viewport: capture.viewport,
-          surface: capture.surface,
-          url: capture.url,
-          action: capture.action,
-          evidence: { screenshot: capture.screenshotFile, console: capture.consoleErrors, network: capture.networkErrors },
-        });
       }
     }
   }
