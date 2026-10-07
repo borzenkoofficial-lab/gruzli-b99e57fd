@@ -708,6 +708,57 @@ async function runScan(config: QaScanConfig): Promise<QaScanReport> {
   return report;
 }
 
+type QaScanJob = {
+  id: string;
+  status: "queued" | "running" | "completed" | "failed";
+  startedAt: string;
+  finishedAt?: string;
+  report?: QaScanReport;
+  error?: string;
+};
+
+const scanJobs = new Map<string, QaScanJob>();
+const JOB_TTL_MS = 30 * 60 * 1000;
+
+function createScanJob(): QaScanJob {
+  const id = `qa-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const job: QaScanJob = {
+    id,
+    status: "queued",
+    startedAt: new Date().toISOString(),
+  };
+  scanJobs.set(id, job);
+  return job;
+}
+
+function cleanupScanJobs() {
+  const cutoff = Date.now() - JOB_TTL_MS;
+  for (const [id, job] of scanJobs) {
+    const timestamp = Date.parse(job.finishedAt || job.startedAt);
+    if (timestamp < cutoff) scanJobs.delete(id);
+  }
+}
+
+async function startScanJob(config: QaScanConfig): Promise<QaScanJob> {
+  cleanupScanJobs();
+  const job = createScanJob();
+  job.status = "running";
+
+  void runScan(config)
+    .then((report) => {
+      job.status = "completed";
+      job.finishedAt = new Date().toISOString();
+      job.report = report;
+    })
+    .catch((error) => {
+      job.status = "failed";
+      job.finishedAt = new Date().toISOString();
+      job.error = String(error instanceof Error ? error.message : error);
+    });
+
+  return job;
+}
+
 const server = createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -730,14 +781,54 @@ const server = createServer(async (req, res) => {
     try {
       const input = (await parseBody(req)) as Partial<QaScanConfig>;
       const config = normalizeConfig(input);
-      const report = await runScan(config);
-      return json(res, 200, report);
+      const job = await startScanJob(config);
+      return json(res, 202, {
+        ok: true,
+        jobId: job.id,
+        status: job.status,
+        message: "Scan started",
+      });
     } catch (error) {
       return json(res, 500, {
         ok: false,
         error: String(error instanceof Error ? error.message : error),
       });
     }
+  }
+
+  if (req.method === "GET" && req.url?.startsWith("/scan/")) {
+    cleanupScanJobs();
+    const jobId = req.url.slice("/scan/".length).split("?")[0];
+    const job = scanJobs.get(jobId);
+
+    if (!job) {
+      return json(res, 404, { ok: false, error: "Scan job not found" });
+    }
+
+    if (job.status === "completed") {
+      return json(res, 200, {
+        ok: true,
+        jobId: job.id,
+        status: job.status,
+        report: job.report,
+      });
+    }
+
+    if (job.status === "failed") {
+      return json(res, 500, {
+        ok: false,
+        jobId: job.id,
+        status: job.status,
+        error: job.error || "Scan failed",
+      });
+    }
+
+    return json(res, 200, {
+      ok: true,
+      jobId: job.id,
+      status: job.status,
+      startedAt: job.startedAt,
+    });
   }
 
   return json(res, 404, { ok: false, error: "Not found" });
