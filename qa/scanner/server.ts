@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { chromium, type Page, type BrowserContext } from "@playwright/test";
+import { chromium, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import type {
   QaAiConfig,
   QaCapture,
@@ -14,15 +14,29 @@ import type {
 
 const PORT = Number(process.env.QA_PORT || 4174);
 const DEFAULT_BASE_URL = process.env.QA_BASE_URL || "http://127.0.0.1:4173";
-
-const safeText = (value: string) => value.replace(/\\s+/g, " ").trim();
-const slug = (value: string) =>
-  safeText(value).toLowerCase().replace(/[^a-z0-9а-яё]+/gi, "-").replace(/^-|-$/g, "").slice(0, 80) || "surface";
+const REPORT_ROOT = join(process.cwd(), "qa", "reports");
+const DEFAULT_VIEWPORTS: QaViewport[] = [
+  { name: "mobile", width: 390, height: 844 },
+  { name: "tablet", width: 768, height: 1024 },
+  { name: "desktop", width: 1440, height: 900 },
+];
+const DEFAULT_ROLES: QaRole[] = ["worker", "dispatcher", "client"];
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const safeText = (value: string) => value.replace(/\s+/g, " ").trim();
+const slug = (value: string) =>
+  safeText(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9а-яё]+/gi, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 80) || "surface";
 
 function json(res: any, status: number, data: unknown) {
-  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Access-Control-Allow-Origin": "*", "Cache-Control": "no-store" });
+  res.writeHead(status, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Access-Control-Allow-Origin": "*",
+    "Cache-Control": "no-store",
+  });
   res.end(JSON.stringify(data, null, 2));
 }
 
@@ -37,14 +51,38 @@ function parseBody(req: any): Promise<any> {
       }
     });
     req.on("end", () => {
-      try { resolve(JSON.parse(body || "{}")); } catch (error) { reject(error); }
+      try {
+        resolve(JSON.parse(body || "{}"));
+      } catch (error) {
+        reject(error);
+      }
     });
     req.on("error", reject);
   });
 }
 
+function normalizeConfig(input: Partial<QaScanConfig>): QaScanConfig {
+  return {
+    baseUrl: String(input.baseUrl || DEFAULT_BASE_URL).replace(/\/$/, ""),
+    roles: Array.isArray(input.roles) && input.roles.length ? input.roles : DEFAULT_ROLES,
+    viewports:
+      Array.isArray(input.viewports) && input.viewports.length ? input.viewports : DEFAULT_VIEWPORTS,
+    maxActionsPerSurface: Math.max(1, Math.min(5, Number(input.maxActionsPerSurface) || 2)),
+    maxAiAnalyses: Math.max(0, Math.min(100, Number(input.maxAiAnalyses) || 0)),
+    ai: {
+      endpoint: String(input.ai?.endpoint || "").trim(),
+      apiKey: String(input.ai?.apiKey || "").trim(),
+      model: String(input.ai?.model || "").trim(),
+    },
+  };
+}
+
 function parseAiJson(content: string): QaFinding[] {
-  const cleaned = content.replace(/^﻿/, "").trim().replace(/^\`\`\`json\s*/i, "").replace(/\s*\`\`\`$/i, "");
+  const cleaned = content
+    .replace(/^\uFEFF/, "")
+    .trim()
+    .replace(/^\x60\x60\x60json\s*/i, "")
+    .replace(/\s*\x60\x60\x60$/i, "");
   const start = cleaned.indexOf("[");
   const end = cleaned.lastIndexOf("]");
   if (start < 0 || end <= start) return [];
@@ -67,9 +105,10 @@ async function analyzeWithAi(
   const prompt = [
     "Ты senior QA/UI reviewer для web marketplace Gruzli.",
     "Анализируй только то, что подтверждено screenshot и telemetry.",
-    "Не выдумывай бизнес-правила. Не называй нормальный пустой экран ошибкой без доказательства.",
-    "Особенно ищи: кривый layout, overlap, overflow, обрезанный текст, несогласованные кнопки/отступы, dead-end UX, runtime/network evidence.",
-    "Верни ТОЛЬКО JSON-массив. Каждый объект: severity(critical|high|medium|low), category(functional|runtime|visual|ux|responsive|accessibility), title, description, confidence(0..1).",
+    "Не выдумывай бизнес-правила.",
+    "Ищи: layout, overlap, overflow, обрезанный текст, несогласованные кнопки/отступы, dead-end UX, runtime/network evidence.",
+    "Верни только JSON-массив объектов.",
+    "Поля объекта: severity(critical|high|medium|low), category(functional|runtime|visual|ux|responsive|accessibility), title, description, confidence(0..1).",
     "Если проблем нет — верни [].",
     "",
     JSON.stringify({
@@ -103,7 +142,10 @@ async function analyzeWithAi(
           role: "user",
           content: [
             { type: "text", text: prompt },
-            { type: "image_url", image_url: { url: `data:image/png;base64,${capture.screenshotBase64}` } },
+            {
+              type: "image_url",
+              image_url: { url: `data:image/png;base64,${capture.screenshotBase64}` },
+            },
           ],
         },
       ],
@@ -115,7 +157,7 @@ async function analyzeWithAi(
     throw new Error(`AI request failed: ${response.status} ${body.slice(0, 500)}`);
   }
 
-  const payload = await response.json() as any;
+  const payload = (await response.json()) as any;
   const content = String(payload?.choices?.[0]?.message?.content || "");
   return parseAiJson(content).map((finding) => ({
     ...finding,
@@ -124,11 +166,6 @@ async function analyzeWithAi(
     surface: capture.surface,
     url: capture.url,
     action: capture.action,
-    evidence: {
-      screenshot: capture.screenshotFile,
-      console: capture.consoleErrors,
-      network: capture.networkErrors,
-    },
   }));
 }
 
@@ -147,33 +184,58 @@ async function collectDom(page: Page) {
         html.getAttribute("title") ||
         (html as HTMLInputElement).placeholder ||
         ""
-      ).replace(/\s+/g, " ").trim();
+      )
+        .replace(/\s+/g, " ")
+        .trim();
     };
 
-    const buttons = Array.from(document.querySelectorAll("button,[role='button']")).filter(visible).map(label).filter(Boolean);
-    const links = Array.from(document.querySelectorAll("a")).filter(visible).map(label).filter(Boolean);
-    const headings = Array.from(document.querySelectorAll("h1,h2,h3,h4,h5")).filter(visible).map(label).filter(Boolean);
+    const buttons = Array.from(document.querySelectorAll("button,[role='button']"))
+      .filter(visible)
+      .map(label)
+      .filter(Boolean);
+    const links = Array.from(document.querySelectorAll("a"))
+      .filter(visible)
+      .map(label)
+      .filter(Boolean);
+    const headings = Array.from(document.querySelectorAll("h1,h2,h3,h4,h5"))
+      .filter(visible)
+      .map(label)
+      .filter(Boolean);
 
-    const body = document.body;
     const geometryIssues: string[] = [];
-    if (body.scrollWidth > window.innerWidth + 4) {
-      geometryIssues.push(`Horizontal overflow: body scrollWidth=${body.scrollWidth}, viewport=${window.innerWidth}`);
+    if (document.body.scrollWidth > window.innerWidth + 4) {
+      geometryIssues.push(
+        `Horizontal overflow: body scrollWidth=${document.body.scrollWidth}, viewport=${window.innerWidth}`,
+      );
     }
 
-    for (const el of Array.from(document.querySelectorAll("button,input,textarea,select,[role='button']")).filter(visible)) {
+    for (const el of Array.from(
+      document.querySelectorAll("button,input,textarea,select,[role='button']"),
+    ).filter(visible)) {
       const r = (el as HTMLElement).getBoundingClientRect();
+      const text = label(el).slice(0, 60);
       if (r.right > window.innerWidth + 2 || r.left < -2 || r.bottom > window.innerHeight + 2) {
-        const text = label(el).slice(0, 60);
-        geometryIssues.push(`Interactive element outside viewport: "${text}" [${Math.round(r.left)},${Math.round(r.top)},${Math.round(r.width)},${Math.round(r.height)}]`);
+        geometryIssues.push(
+          `Interactive element outside viewport: "${text}" [${Math.round(r.left)},${Math.round(
+            r.top,
+          )},${Math.round(r.width)},${Math.round(r.height)}]`,
+        );
       }
-      if ((el.tagName === "BUTTON" || el.getAttribute("role") === "button") && (r.width < 24 || r.height < 24)) {
-        geometryIssues.push(`Small interactive target: "${label(el).slice(0, 60)}" size=${Math.round(r.width)}x${Math.round(r.height)}`);
+      if (
+        (el.tagName === "BUTTON" || el.getAttribute("role") === "button") &&
+        (r.width < 24 || r.height < 24)
+      ) {
+        geometryIssues.push(
+          `Small interactive target: "${text}" size=${Math.round(r.width)}x${Math.round(
+            r.height,
+          )}`,
+        );
       }
     }
 
-    const text = Array.from(document.body.querySelectorAll("*"))
+    const bodyText = Array.from(document.body.querySelectorAll("*"))
       .filter((el) => visible(el) && el.children.length === 0)
-      .map((el) => label(el))
+      .map(label)
       .filter(Boolean)
       .slice(0, 250)
       .join(" | ");
@@ -182,7 +244,7 @@ async function collectDom(page: Page) {
       buttons: Array.from(new Set(buttons)),
       links: Array.from(new Set(links)),
       headings: Array.from(new Set(headings)),
-      bodyText: text,
+      bodyText,
       geometryIssues: Array.from(new Set(geometryIssues)).slice(0, 40),
     };
   });
@@ -191,11 +253,20 @@ async function collectDom(page: Page) {
 function isSafeAction(label: string) {
   const value = label.toLowerCase();
   const blocked = [
-    "выйти", "удалить", "отменить", "закрыть", "отклонить", "принять",
-    "купить", "оплатить", "подтвердить", "подписать", "отправить",
-    "удалить аккаунт", "заблокировать",
+    "выйти",
+    "удалить",
+    "отменить",
+    "закрыть",
+    "отклонить",
+    "принять",
+    "купить",
+    "оплатить",
+    "подтвердить",
+    "подписать",
+    "отправить",
+    "заблокировать",
   ];
-  return !blocked.some((token) => value.includes(token)) && value.length > 0;
+  return value.length > 0 && !blocked.some((token) => value.includes(token));
 }
 
 async function captureState(
@@ -208,7 +279,7 @@ async function captureState(
   errors: { console: string[]; network: string[] },
 ): Promise<QaCapture> {
   const dom = await collectDom(page);
-  const fileName = `${role}-${viewport.name}-${slug(surface)}-${String(Date.now())}.png`;
+  const fileName = `${role}-${viewport.name}-${slug(surface)}-${Date.now()}.png`;
   const absolute = join(runDir, fileName);
   const buffer = await page.screenshot({ type: "png" });
   await writeFile(absolute, buffer);
@@ -233,13 +304,20 @@ async function captureState(
   };
 }
 
-async function addDeterministicFindings(capture: QaCapture): Promise<QaFinding[]> {
+function deterministicFindings(capture: QaCapture): QaFinding[] {
   const findings: QaFinding[] = [];
+  const evidence = {
+    screenshot: capture.screenshotFile,
+    console: capture.consoleErrors,
+    network: capture.networkErrors,
+  };
+
   for (const issue of capture.geometryIssues) {
+    const overflow = issue.startsWith("Horizontal overflow");
     findings.push({
-      severity: issue.startsWith("Horizontal overflow") ? "high" : "medium",
-      category: issue.startsWith("Horizontal overflow") ? "responsive" : "visual",
-      title: issue.startsWith("Horizontal overflow") ? "Горизонтальный overflow" : "Проблема геометрии интерфейса",
+      severity: overflow ? "high" : "medium",
+      category: overflow ? "responsive" : "visual",
+      title: overflow ? "Горизонтальный overflow" : "Проблема геометрии интерфейса",
       description: issue,
       confidence: 1,
       role: capture.role,
@@ -247,9 +325,10 @@ async function addDeterministicFindings(capture: QaCapture): Promise<QaFinding[]
       surface: capture.surface,
       url: capture.url,
       action: capture.action,
-      evidence: { screenshot: capture.screenshotFile, console: capture.consoleErrors, network: capture.networkErrors },
+      evidence,
     });
   }
+
   for (const error of capture.consoleErrors) {
     findings.push({
       severity: "high",
@@ -262,9 +341,10 @@ async function addDeterministicFindings(capture: QaCapture): Promise<QaFinding[]
       surface: capture.surface,
       url: capture.url,
       action: capture.action,
-      evidence: { screenshot: capture.screenshotFile, console: capture.consoleErrors, network: capture.networkErrors },
+      evidence,
     });
   }
+
   for (const error of capture.networkErrors) {
     findings.push({
       severity: "high",
@@ -277,14 +357,15 @@ async function addDeterministicFindings(capture: QaCapture): Promise<QaFinding[]
       surface: capture.surface,
       url: capture.url,
       action: capture.action,
-      evidence: { screenshot: capture.screenshotFile, console: capture.consoleErrors, network: capture.networkErrors },
+      evidence,
     });
   }
+
   return findings;
 }
 
 async function runForRoleViewport(
-  browser: any,
+  browser: Browser,
   config: QaScanConfig,
   role: QaRole,
   viewport: QaViewport,
@@ -297,135 +378,310 @@ async function runForRoleViewport(
     deviceScaleFactor: 1,
   });
 
-  await context.addInitScript(({ role }) => {
+  await context.addInitScript(({ role: demoRole }) => {
     localStorage.setItem("gruzli_demo_worker", "1");
-    localStorage.setItem("gruzli_demo_role", role);
+    localStorage.setItem("gruzli_demo_role", demoRole);
     localStorage.setItem("onboarding_completed", "1");
   }, { role });
 
   const page = await context.newPage();
   const captures: QaCapture[] = [];
   const findings: QaFinding[] = [];
-
   const errors = { console: [] as string[], network: [] as string[] };
+
   page.on("console", (msg) => {
     if (msg.type() === "error") errors.console.push(msg.text());
   });
   page.on("pageerror", (error) => errors.console.push(`PAGEERROR: ${error.message}`));
-  page.on("requestfailed", (request) => errors.network.push(`REQUESTFAILED ${request.method()} ${request.url()} :: ${request.failure()?.errorText || "unknown"}`));
+  page.on("requestfailed", (request) => {
+    errors.network.push(
+      `REQUESTFAILED ${request.method()} ${request.url()} :: ${request.failure()?.errorText || "unknown"}`,
+    );
+  });
   page.on("response", (response) => {
-    if (response.status() >= 400) errors.network.push(`HTTP ${response.status()} ${response.request().method()} ${response.url()}`);
+    if (response.status() >= 400) {
+      errors.network.push(
+        `HTTP ${response.status()} ${response.request().method()} ${response.url()}`,
+      );
+    }
   });
 
   const visit = async (surface: string, action: string) => {
     await sleep(350);
     const capture = await captureState(page, role, viewport, surface, action, runDir, errors);
     captures.push(capture);
-    findings.push(...await addDeterministicFindings(capture));
+    findings.push(...deterministicFindings(capture));
   };
 
-  await page.goto(config.baseUrl, { waitUntil: "domcontentloaded", timeout: 120000 });
-  await visit("Старт", "open application");
-
-  const navCandidates = await page.locator("nav button, .desktop-nav-item, .bottom-nav-pill button, [role='tab']").evaluateAll((els) =>
-    els.map((el) => ({
-      label: (
-        (el as HTMLElement).getAttribute("aria-label") ||
-        (el as HTMLElement).textContent ||
-        (el as HTMLElement).getAttribute("title") ||
-        ""
-      ).replace(/\s+/g, " ").trim(),
-    })).filter((x) => x.label),
-  );
-
-  const uniqueNav = Array.from(new Set(navCandidates.map((x) => x.label))).slice(0, 20);
-
-  for (const label of uniqueNav) {
+  try {
     await page.goto(config.baseUrl, { waitUntil: "domcontentloaded", timeout: 120000 });
-    await sleep(300);
-    const candidate = page.getByRole("button", { name: label, exact: false }).first();
-    if (!await candidate.count()) continue;
-    if (!isSafeAction(label)) continue;
+    await visit("Старт", "open application");
 
-    errors.console.length = 0;
-    errors.network.length = 0;
-
-    try {
-      await candidate.scrollIntoViewIfNeeded();
-      await candidate.click({ timeout: 4000 });
-      await visit(label, `click "${label}"`);
-
-      // Explore one additional safe inner action from the current surface.
-      if (config.maxActionsPerSurface > 1) {
-        const innerCandidates = await page.locator("main button, main a, .desktop-detail button, [role='dialog'] button")
-          .evaluateAll((els) => els.map((el) => ({
+    const navCandidates = await page
+      .locator("nav button, .desktop-nav-item, .bottom-nav-pill button, [role='tab']")
+      .evaluateAll((els) =>
+        els
+          .map((el) => ({
             label: (
               (el as HTMLElement).getAttribute("aria-label") ||
               (el as HTMLElement).textContent ||
               (el as HTMLElement).getAttribute("title") ||
               ""
-            ).replace(/\s+/g, " ").trim(),
-          })).filter((x) => x.label));
+            )
+              .replace(/\s+/g, " ")
+              .trim(),
+          }))
+          .filter((x) => x.label),
+      );
 
-        const navSet = new Set(uniqueNav);
-        const innerLabels = Array.from(new Set(innerCandidates.map((x) => x.label)))
-          .filter((value) => !navSet.has(value) && isSafeAction(value))
-          .slice(0, Math.max(0, config.maxActionsPerSurface - 1));
+    const uniqueNav = Array.from(new Set(navCandidates.map((x) => x.label))).slice(0, 20);
 
-        for (const innerLabel of innerLabels) {
-          await page.goto(config.baseUrl, { waitUntil: "domcontentloaded", timeout: 120000 });
-          await sleep(300);
-          const surfaceButton = page.getByRole("button", { name: label, exact: false }).first();
-          if (!await surfaceButton.count()) break;
-          try {
-            await surfaceButton.click({ timeout: 4000 });
-            await sleep(350);
-            const inner = page.getByRole("button", { name: innerLabel, exact: false }).first();
-            if (!await inner.count()) continue;
-            await inner.scrollIntoViewIfNeeded();
-            await inner.click({ timeout: 3000 });
-            await visit(`${label} → ${innerLabel}`, `click "${innerLabel}" inside "${label}"`);
-          } catch (error) {
-            findings.push({
-              severity: "medium",
-              category: "functional",
-              title: "Внутреннее действие не выполняется",
-              description: `"${innerLabel}" внутри "${label}": ${String(error instanceof Error ? error.message : error)}`,
-              confidence: 1,
-              role,
-              viewport,
-              surface: label,
-              url: page.url(),
-              action: `click "${innerLabel}"`,
-            });
+    for (const label of uniqueNav) {
+      if (!isSafeAction(label)) continue;
+
+      await page.goto(config.baseUrl, { waitUntil: "domcontentloaded", timeout: 120000 });
+      await sleep(300);
+      const candidate = page.getByRole("button", { name: label, exact: false }).first();
+      if (!(await candidate.count())) continue;
+
+      errors.console.length = 0;
+      errors.network.length = 0;
+
+      try {
+        await candidate.scrollIntoViewIfNeeded();
+        await candidate.click({ timeout: 4000 });
+        await visit(label, `click "${label}"`);
+
+        if (config.maxActionsPerSurface > 1) {
+          const innerCandidates = await page
+            .locator("main button, main a, .desktop-detail button, [role='dialog'] button")
+            .evaluateAll((els) =>
+              els
+                .map((el) => ({
+                  label: (
+                    (el as HTMLElement).getAttribute("aria-label") ||
+                    (el as HTMLElement).textContent ||
+                    (el as HTMLElement).getAttribute("title") ||
+                    ""
+                  )
+                    .replace(/\s+/g, " ")
+                    .trim(),
+                }))
+                .filter((x) => x.label),
+            );
+
+          const navSet = new Set(uniqueNav);
+          const innerLabels = Array.from(new Set(innerCandidates.map((x) => x.label)))
+            .filter((value) => !navSet.has(value) && isSafeAction(value))
+            .slice(0, Math.max(0, config.maxActionsPerSurface - 1));
+
+          for (const innerLabel of innerLabels) {
+            await page.goto(config.baseUrl, { waitUntil: "domcontentloaded", timeout: 120000 });
+            await sleep(300);
+
+            const surfaceButton = page.getByRole("button", { name: label, exact: false }).first();
+            if (!(await surfaceButton.count())) break;
+
+            try {
+              await surfaceButton.click({ timeout: 4000 });
+              await sleep(350);
+
+              const inner = page.getByRole("button", { name: innerLabel, exact: false }).first();
+              if (!(await inner.count())) continue;
+
+              await inner.scrollIntoViewIfNeeded();
+              await inner.click({ timeout: 3000 });
+              await visit(
+                `${label} → ${innerLabel}`,
+                `click "${innerLabel}" inside "${label}"`,
+              );
+            } catch (error) {
+              findings.push({
+                severity: "medium",
+                category: "functional",
+                title: "Внутреннее действие не выполняется",
+                description: `"${innerLabel}" внутри "${label}": ${String(
+                  error instanceof Error ? error.message : error,
+                )}`,
+                confidence: 1,
+                role,
+                viewport,
+                surface: label,
+                url: page.url(),
+                action: `click "${innerLabel}"`,
+              });
+            }
           }
+        }
+      } catch (error) {
+        findings.push({
+          severity: "medium",
+          category: "functional",
+          title: "Навигационное действие не выполняется",
+          description: `"${label}": ${String(
+            error instanceof Error ? error.message : error,
+          )}`,
+          confidence: 1,
+          role,
+          viewport,
+          surface: label,
+          url: page.url(),
+          action: `click "${label}"`,
+        });
+      }
+    }
+  } catch (error) {
+    findings.push({
+      severity: "critical",
+      category: "runtime",
+      title: "Приложение не удалось открыть",
+      description: String(error instanceof Error ? error.message : error),
+      confidence: 1,
+      role,
+      viewport,
+      surface: "Старт",
+      url: config.baseUrl,
+      action: "open application",
+    });
+  } finally {
+    await context.close();
+  }
+
+  return { captures, findings };
+}
+
+function dedupeFindings(findings: QaFinding[]): QaFinding[] {
+  const seen = new Set<string>();
+  const result: QaFinding[] = [];
+
+  for (const finding of findings) {
+    const key = [
+      finding.category,
+      finding.severity,
+      finding.role,
+      finding.viewport.name,
+      finding.surface,
+      finding.title,
+      finding.description,
+    ]
+      .join("|")
+      .toLowerCase();
+
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push({
+      ...finding,
+      id: finding.id || `QA-${String(result.length + 1).padStart(3, "0")}`,
+    });
+  }
+
+  return result;
+}
+
+async function runScan(config: QaScanConfig): Promise<QaScanReport> {
+  const runId = new Date().toISOString().replace(/[:.]/g, "-");
+  const startedAt = new Date().toISOString();
+  const reportRoot = join(REPORT_ROOT, "runs", runId);
+
+  await mkdir(reportRoot, { recursive: true });
+
+  const browser = await chromium.launch({ headless: true });
+  const allCaptures: QaCapture[] = [];
+  const rawFindings: QaFinding[] = [];
+
+  try {
+    for (const role of config.roles) {
+      for (const viewport of config.viewports) {
+        const result = await runForRoleViewport(browser, config, role, viewport, reportRoot);
+        allCaptures.push(...result.captures);
+        rawFindings.push(...result.findings);
+      }
+    }
+
+    if (config.ai.apiKey && config.ai.endpoint && config.ai.model && config.maxAiAnalyses > 0) {
+      const priority = (capture: QaCapture) => {
+        const roleRank = capture.role === "dispatcher" ? 0 : capture.role === "client" ? 1 : 2;
+        const viewportRank = capture.viewport.name === "mobile" ? 0 : capture.viewport.name === "desktop" ? 1 : 2;
+        return roleRank * 10 + viewportRank;
+      };
+
+      const selected = [...allCaptures]
+        .sort((a, b) => priority(a) - priority(b))
+        .slice(0, config.maxAiAnalyses);
+
+      for (const capture of selected) {
+        try {
+          const aiFindings = await analyzeWithAi(
+            config.ai,
+            capture,
+            capture.role,
+            capture.viewport,
+          );
+
+          for (const finding of aiFindings) {
+            finding.evidence = {
+              screenshot: capture.screenshotFile,
+              console: capture.consoleErrors,
+              network: capture.networkErrors,
+            };
+            rawFindings.push(finding);
+          }
+        } catch (error) {
+          rawFindings.push({
+            severity: "high",
+            category: "runtime",
+            title: "AI analyzer request failed",
+            description: String(error instanceof Error ? error.message : error),
+            confidence: 1,
+            role: capture.role,
+            viewport: capture.viewport,
+            surface: capture.surface,
+            url: capture.url,
+            action: capture.action,
+            evidence: {
+              screenshot: capture.screenshotFile,
+              console: capture.consoleErrors,
+              network: capture.networkErrors,
+            },
+          });
         }
       }
     }
+  } finally {
+    await browser.close();
   }
 
   const findings = dedupeFindings(rawFindings);
   const finishedAt = new Date().toISOString();
+
   const report: QaScanReport = {
     runId,
     startedAt,
     finishedAt,
     config: {
       baseUrl: config.baseUrl,
-      roles,
-      viewports,
+      roles: config.roles,
+      viewports: config.viewports,
       maxActionsPerSurface: config.maxActionsPerSurface,
       maxAiAnalyses: config.maxAiAnalyses,
-      ai: { enabled: Boolean(config.ai.apiKey), model: config.ai.model || undefined },
+      ai: {
+        enabled: Boolean(config.ai.apiKey && config.ai.endpoint && config.ai.model),
+        model: config.ai.model || undefined,
+      },
     },
     coverage: {
-      roles: Object.fromEntries(roles.map((role) => [role, allCaptures.filter((capture) => capture.role === role).length])),
+      roles: Object.fromEntries(
+        config.roles.map((role) => [
+          role,
+          allCaptures.filter((capture) => capture.role === role).length,
+        ]),
+      ),
       captures: allCaptures.length,
-      deterministicFindings: rawFindings.filter((f) => f.title !== "AI analyzer request failed" && !f.title.includes("AI analyzer")).length,
-      aiFindings: rawFindings.filter((f) => f.evidence?.screenshot && !["Console error","Network error","Горизонтальный overflow","Проблема геометрии интерфейса"].includes(f.title) && f.category !== "runtime").length,
+      deterministicFindings: rawFindings.filter((finding) => finding.title !== "AI analyzer request failed").length,
+      aiFindings: rawFindings.filter((finding) => finding.evidence?.screenshot && finding.category !== "runtime").length,
     },
     findings,
-    captures: allCaptures.map(({ screenshotBase64, ...capture }) => capture),
+    captures: allCaptures.map(({ screenshotBase64: _screenshotBase64, ...capture }) => capture),
   };
 
   const md = [
@@ -438,22 +694,26 @@ async function runForRoleViewport(
     `Captures: ${report.coverage.captures}`,
     `Issues: ${report.findings.length}`,
     "",
-    ...report.findings.map((f) => [
-      `## ${f.id} — ${f.severity.toUpperCase()} — ${f.title}`,
-      `- Role: ${f.role}`,
-      `- Viewport: ${f.viewport.name} (${f.viewport.width}×${f.viewport.height})`,
-      `- Surface: ${f.surface}`,
-      `- Category: ${f.category}`,
-      `- Confidence: ${Math.round(f.confidence * 100)}%`,
-      `- Description: ${f.description}`,
-      f.action ? `- Action: ${f.action}` : "",
-      f.evidence?.screenshot ? `- Evidence: ${f.evidence.screenshot}` : "",
-      "",
-    ].filter(Boolean).join("\n")),
+    ...report.findings.map((finding) =>
+      [
+        `## ${finding.id} — ${finding.severity.toUpperCase()} — ${finding.title}`,
+        `- Role: ${finding.role}`,
+        `- Viewport: ${finding.viewport.name} (${finding.viewport.width}×${finding.viewport.height})`,
+        `- Surface: ${finding.surface}`,
+        `- Category: ${finding.category}`,
+        `- Confidence: ${Math.round(finding.confidence * 100)}%`,
+        `- Description: ${finding.description}`,
+        finding.action ? `- Action: ${finding.action}` : "",
+        finding.evidence?.screenshot ? `- Evidence: ${finding.evidence.screenshot}` : "",
+        "",
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    ),
   ].join("\n");
 
-  await writeFile(join(reportRoot, "latest.json"), JSON.stringify(report, null, 2), "utf8");
-  await writeFile(join(reportRoot, "latest.md"), md, "utf8");
+  await writeFile(join(REPORT_ROOT, "latest.json"), JSON.stringify(report, null, 2), "utf8");
+  await writeFile(join(REPORT_ROOT, "latest.md"), md, "utf8");
 
   return report;
 }
@@ -469,17 +729,24 @@ const server = createServer(async (req, res) => {
   }
 
   if (req.method === "GET" && req.url === "/health") {
-    return json(res, 200, { ok: true, service: "gruzli-ai-qa-scanner", port: PORT });
+    return json(res, 200, {
+      ok: true,
+      service: "gruzli-ai-qa-scanner",
+      port: PORT,
+    });
   }
 
   if (req.method === "POST" && req.url === "/scan") {
     try {
-      const config = await parseBody(req) as QaScanConfig;
-      if (!config.baseUrl) config.baseUrl = DEFAULT_BASE_URL;
+      const input = (await parseBody(req)) as Partial<QaScanConfig>;
+      const config = normalizeConfig(input);
       const report = await runScan(config);
       return json(res, 200, report);
     } catch (error) {
-      return json(res, 500, { ok: false, error: String(error instanceof Error ? error.message : error) });
+      return json(res, 500, {
+        ok: false,
+        error: String(error instanceof Error ? error.message : error),
+      });
     }
   }
 
