@@ -12,6 +12,7 @@ export interface QaScanConfig {
   roles: QaRole[];
   viewports: QaViewport[];
   maxActionsPerSurface: number;
+  maxAiAnalyses: number;
   ai: QaAiConfig;
 }
 
