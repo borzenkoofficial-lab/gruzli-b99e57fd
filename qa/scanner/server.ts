@@ -376,7 +376,7 @@ async function runForRoleViewport(
 
       // Open the first visible job/card or obvious detail action for a second-level state.
       if (config.maxActionsPerSurface > 1) {
-        const detailCandidate = page.locator(".gruzli-job-card, [data-testid='job-card'], button").filter({ visible: true }).first();
+        const detailCandidate = page.locator(".gruzli-job-card, [data-testid='job-card']").first();
         if (await detailCandidate.count()) {
           const detailLabel = await detailCandidate.getAttribute("aria-label").catch(() => null) || await detailCandidate.textContent().catch(() => "");
           if (isSafeAction(String(detailLabel))) {
