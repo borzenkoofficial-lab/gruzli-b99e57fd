@@ -62,14 +62,6 @@ const AppRoutes = () => {
   const isConsentRoute = location.pathname === "/.lovable/oauth/consent";
   const qaEnabled = import.meta.env.DEV && new URLSearchParams(window.location.search).get("qa") === "1";
 
-  if (qaEnabled) {
-    return (
-      <Suspense fallback={null}>
-        <QaScannerPanel />
-      </Suspense>
-    );
-  }
-
   // After a successful sign-in, resume a pending OAuth consent flow if one was preserved.
   useEffect(() => {
     if (!user) return;
@@ -79,6 +71,14 @@ const AppRoutes = () => {
       window.location.replace(next);
     }
   }, [user]);
+
+  if (qaEnabled) {
+    return (
+      <Suspense fallback={null}>
+        <QaScannerPanel />
+      </Suspense>
+    );
+  }
 
   if (!(DEMO_ENABLED && demoWorkerMode) && (loading || (!splashDone && !isConsentRoute))) {
     return <SplashScreen onFinished={handleSplashFinished} />;
