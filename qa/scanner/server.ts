@@ -322,25 +322,6 @@ async function runForRoleViewport(
     const capture = await captureState(page, role, viewport, surface, action, runDir, errors);
     captures.push(capture);
     findings.push(...await addDeterministicFindings(capture));
-    if (config.ai.apiKey) {
-      try {
-        findings.push(...await analyzeWithAi(config.ai, capture, role, viewport));
-      } catch (error) {
-        findings.push({
-          severity: "medium",
-          category: "runtime",
-          title: "AI analyzer request failed",
-          description: String(error instanceof Error ? error.message : error),
-          confidence: 1,
-          role,
-          viewport,
-          surface,
-          url: page.url(),
-          action,
-          evidence: { screenshot: capture.screenshotFile, console: capture.consoleErrors, network: capture.networkErrors },
-        });
-      }
-    }
   };
 
   await page.goto(config.baseUrl, { waitUntil: "domcontentloaded", timeout: 120000 });
@@ -452,6 +433,34 @@ async function runScan(config: QaScanConfig): Promise<QaScanReport> {
 
   await browser.close();
 
+  if (config.ai.apiKey && config.maxAiAnalyses > 0) {
+    const roleOrder: Record<QaRole, number> = { dispatcher: 0, client: 1, worker: 2 };
+    const viewportOrder: Record<string, number> = { mobile: 0, desktop: 1, tablet: 2 };
+    const selected = [...allCaptures]
+      .sort((a, b) => (roleOrder[a.role] - roleOrder[b.role]) || ((viewportOrder[a.viewport.name] ?? 9) - (viewportOrder[b.viewport.name] ?? 9)))
+      .slice(0, Math.max(1, Math.min(config.maxAiAnalyses, allCaptures.length)));
+
+    for (const capture of selected) {
+      try {
+        rawFindings.push(...await analyzeWithAi(config.ai, capture, capture.role, capture.viewport));
+      } catch (error) {
+        rawFindings.push({
+          severity: "medium",
+          category: "runtime",
+          title: "AI analyzer request failed",
+          description: String(error instanceof Error ? error.message : error),
+          confidence: 1,
+          role: capture.role,
+          viewport: capture.viewport,
+          surface: capture.surface,
+          url: capture.url,
+          action: capture.action,
+          evidence: { screenshot: capture.screenshotFile, console: capture.consoleErrors, network: capture.networkErrors },
+        });
+      }
+    }
+  }
+
   const findings = dedupeFindings(rawFindings);
   const finishedAt = new Date().toISOString();
   const report: QaScanReport = {
@@ -463,6 +472,7 @@ async function runScan(config: QaScanConfig): Promise<QaScanReport> {
       roles,
       viewports,
       maxActionsPerSurface: config.maxActionsPerSurface,
+      maxAiAnalyses: config.maxAiAnalyses,
       ai: { enabled: Boolean(config.ai.apiKey), model: config.ai.model || undefined },
     },
     coverage: {
