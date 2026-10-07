@@ -16,6 +16,8 @@ const DEFAULT_VIEWPORTS: Viewport[] = [
   { name: "desktop", width: 1440, height: 900 },
 ];
 
+const QA_API_BASE = "/__qa";
+
 export default function QaScannerPanel() {
   const [endpoint, setEndpoint] = useState("https://api.openai.com/v1/chat/completions");
   const [model, setModel] = useState("");
@@ -49,11 +51,16 @@ export default function QaScannerPanel() {
     setRunning(true);
     setReport(null);
     setStatus("Проверяю scanner server…");
+
     try {
-      const health = await fetch("http://127.0.0.1:4174/health");
-      if (!health.ok) throw new Error("QA Scanner не запущен. Выполни npm run qa:server.");
+      const health = await fetch(`${QA_API_BASE}/health`, { cache: "no-store" });
+      if (!health.ok) {
+        throw new Error("QA Scanner не запущен. Выполни npm run qa:server.");
+      }
+
       setStatus(aiEnabled ? "Сканирую приложение + AI анализ…" : "Сканирую приложение без AI…");
-      const response = await fetch("http://127.0.0.1:4174/scan", {
+
+      const response = await fetch(`${QA_API_BASE}/scan`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -69,14 +76,21 @@ export default function QaScannerPanel() {
           },
         }),
       });
+
       const data = await response.json();
       if (!response.ok) throw new Error(data?.error || "Scan failed");
+
       setReport(data);
       setStatus(
         `Готово: ${data?.findings?.length ?? 0} проблем, ${data?.coverage?.captures ?? 0} состояний.`,
       );
     } catch (error) {
-      setStatus(String(error instanceof Error ? error.message : error));
+      const message = error instanceof Error ? error.message : String(error);
+      setStatus(
+        message.includes("Failed to fetch")
+          ? "Не удалось подключиться к QA Scanner. Проверь, что в Терминале 2 запущен npm run qa:server."
+          : message,
+      );
     } finally {
       setRunning(false);
     }
@@ -103,6 +117,7 @@ export default function QaScannerPanel() {
 `,
             ),
           ].join("\n");
+
     const blob = new Blob([content], {
       type: kind === "json" ? "application/json" : "text/markdown",
     });
@@ -116,8 +131,8 @@ export default function QaScannerPanel() {
 
   const severityCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const f of report?.findings || []) {
-      counts[f.severity] = (counts[f.severity] || 0) + 1;
+    for (const finding of report?.findings || []) {
+      counts[finding.severity] = (counts[finding.severity] || 0) + 1;
     }
     return counts;
   }, [report]);
@@ -152,7 +167,7 @@ export default function QaScannerPanel() {
               API endpoint
               <input
                 value={endpoint}
-                onChange={(e) => setEndpoint(e.target.value)}
+                onChange={(event) => setEndpoint(event.target.value)}
                 placeholder="OpenAI-compatible /chat/completions"
               />
             </label>
@@ -160,7 +175,7 @@ export default function QaScannerPanel() {
               Model
               <input
                 value={model}
-                onChange={(e) => setModel(e.target.value)}
+                onChange={(event) => setModel(event.target.value)}
                 placeholder="vision-capable model"
               />
             </label>
@@ -170,7 +185,7 @@ export default function QaScannerPanel() {
             <input
               type="password"
               value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
+              onChange={(event) => setApiKey(event.target.value)}
               placeholder="Вставь ключ для этого запуска"
               autoComplete="off"
             />
@@ -181,7 +196,7 @@ export default function QaScannerPanel() {
           <div className="qa-section-title">Приложение</div>
           <label>
             App URL
-            <input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} />
+            <input value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} />
           </label>
           <div className="qa-grid">
             <label>
@@ -191,8 +206,8 @@ export default function QaScannerPanel() {
                 min={0}
                 max={100}
                 value={maxAiAnalyses}
-                onChange={(e) =>
-                  setMaxAiAnalyses(Math.max(0, Math.min(100, Number(e.target.value) || 0)))
+                onChange={(event) =>
+                  setMaxAiAnalyses(Math.max(0, Math.min(100, Number(event.target.value) || 0)))
                 }
               />
             </label>
@@ -203,14 +218,15 @@ export default function QaScannerPanel() {
                 min={1}
                 max={5}
                 value={maxActionsPerSurface}
-                onChange={(e) =>
+                onChange={(event) =>
                   setMaxActionsPerSurface(
-                    Math.max(1, Math.min(5, Number(e.target.value) || 1)),
+                    Math.max(1, Math.min(5, Number(event.target.value) || 1)),
                   )
                 }
               />
             </label>
           </div>
+
           <div className="qa-chip-row">
             {(Object.keys(ROLE_LABELS) as Role[]).map((role) => (
               <button
@@ -222,11 +238,12 @@ export default function QaScannerPanel() {
               </button>
             ))}
           </div>
+
           <div className="qa-chip-row">
             {DEFAULT_VIEWPORTS.map((viewport) => (
               <button
                 key={viewport.name}
-                className={`qa-chip ${viewports.some((v) => v.name === viewport.name) ? "is-on" : ""}`}
+                className={`qa-chip ${viewports.some((item) => item.name === viewport.name) ? "is-on" : ""}`}
                 onClick={() => toggleViewport(viewport)}
               >
                 {viewport.name} · {viewport.width}×{viewport.height}
@@ -268,15 +285,13 @@ export default function QaScannerPanel() {
               <span>{report.coverage?.captures ?? 0} captures</span>
               <span>
                 {Object.entries(severityCounts)
-                  .map(([k, v]) => `${k}: ${v}`)
+                  .map(([key, value]) => `${key}: ${value}`)
                   .join(" · ")}
               </span>
             </div>
+
             {(report.findings || []).map((finding: any) => (
-              <div
-                className={`qa-finding qa-${finding.severity}`}
-                key={finding.id}
-              >
+              <div className={`qa-finding qa-${finding.severity}`} key={finding.id}>
                 <div className="qa-finding-top">
                   <strong>{finding.id}</strong>
                   <span>{String(finding.severity).toUpperCase()}</span>
