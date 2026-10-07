@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "qa:server": "bun qa/scanner/server.ts",
-    "qa:health": "curl -fsS http://127.0.0.1:4174/health"
+    "qa:health": "curl -fsS http://127.0.0.1:4174/health",
+    "qa:typecheck": "tsc -p qa/tsconfig.json"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -89,4 +90,4 @@
     "vitest": "^3.2.4",
     "eslint-plugin-react-refresh": "^0.4.20"
   }
-}\n
+}
