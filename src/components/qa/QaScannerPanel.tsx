@@ -58,9 +58,9 @@ export default function QaScannerPanel() {
         throw new Error("QA Scanner не запущен. Выполни npm run qa:server.");
       }
 
-      setStatus(aiEnabled ? "Сканирую приложение + AI анализ…" : "Сканирую приложение без AI…");
+      setStatus(aiEnabled ? "Запускаю сканирование + AI анализ…" : "Запускаю сканирование…");
 
-      const response = await fetch(`${QA_API_BASE}/scan`, {
+      const startResponse = await fetch(`${QA_API_BASE}/scan`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -77,29 +77,74 @@ export default function QaScannerPanel() {
         }),
       });
 
-      const raw = await response.text();
-      let data: any = null;
+      const startRaw = await startResponse.text();
+      let startData: any = null;
 
       try {
-        data = raw ? JSON.parse(raw) : null;
+        startData = startRaw ? JSON.parse(startRaw) : null;
       } catch {
         throw new Error(
-          `QA Scanner вернул некорректный ответ (HTTP ${response.status}). Ответ: ${raw.slice(0, 500) || "пусто"}`,
+          `QA Scanner вернул некорректный ответ при запуске (HTTP ${startResponse.status}). Ответ: ${startRaw.slice(0, 500) || "пусто"}`,
         );
       }
 
-      if (!response.ok) {
-        throw new Error(data?.error || `Scan failed (HTTP ${response.status})`);
+      if (!startResponse.ok || !startData?.jobId) {
+        throw new Error(
+          startData?.error || `Не удалось запустить scan (HTTP ${startResponse.status})`,
+        );
       }
 
-      if (!data || typeof data !== "object") {
-        throw new Error("QA Scanner вернул пустой ответ.");
-      }
+      const jobId = String(startData.jobId);
+      setStatus(aiEnabled ? "Сканирую приложение + AI анализ… 0%" : "Сканирую приложение…");
 
-      setReport(data);
-      setStatus(
-        `Готово: ${data?.findings?.length ?? 0} проблем, ${data?.coverage?.captures ?? 0} состояний.`,
-      );
+      for (;;) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        const statusResponse = await fetch(
+          `${QA_API_BASE}/scan/${encodeURIComponent(jobId)}`,
+          { cache: "no-store" },
+        );
+
+        const statusRaw = await statusResponse.text();
+        let statusData: any = null;
+
+        try {
+          statusData = statusRaw ? JSON.parse(statusRaw) : null;
+        } catch {
+          throw new Error(
+            `QA Scanner вернул некорректный статус (HTTP ${statusResponse.status}). Ответ: ${statusRaw.slice(0, 500) || "пусто"}`,
+          );
+        }
+
+        if (statusData?.status === "queued") {
+          setStatus("Сканирование в очереди…");
+          continue;
+        }
+
+        if (statusData?.status === "running") {
+          setStatus(aiEnabled ? "Сканирую приложение + AI анализ…" : "Сканирую приложение…");
+          continue;
+        }
+
+        if (statusData?.status === "failed") {
+          throw new Error(statusData?.error || "Scanner job failed");
+        }
+
+        if (statusData?.status === "completed" && statusData?.report) {
+          const reportData = statusData.report;
+          setReport(reportData);
+          setStatus(
+            `Готово: ${reportData?.findings?.length ?? 0} проблем, ${reportData?.coverage?.captures ?? 0} состояний.`,
+          );
+          break;
+        }
+
+        if (!statusResponse.ok) {
+          throw new Error(
+            statusData?.error || `Scanner status failed (HTTP ${statusResponse.status})`,
+          );
+        }
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setStatus(
