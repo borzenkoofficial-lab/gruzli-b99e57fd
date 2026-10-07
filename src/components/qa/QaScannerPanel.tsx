@@ -23,7 +23,7 @@ export default function QaScannerPanel() {
   const [baseUrl, setBaseUrl] = useState("http://127.0.0.1:4173");
   const [roles, setRoles] = useState<Role[]>(["worker", "dispatcher", "client"]);
   const [viewports, setViewports] = useState<Viewport[]>(DEFAULT_VIEWPORTS);
-  const [maxAiAnalyses, setMaxAiAnalyses] = useState(24);
+  const [maxAiAnalyses, setMaxAiAnalyses] = useState(24);\n  const [maxActionsPerSurface, setMaxActionsPerSurface] = useState(2);
   const [running, setRunning] = useState(false);
   const [status, setStatus] = useState("Готов");
   const [report, setReport] = useState<any>(null);
@@ -55,7 +55,7 @@ export default function QaScannerPanel() {
           baseUrl,
           roles,
           viewports,
-          maxActionsPerSurface: 2,
+          maxActionsPerSurface,
           maxAiAnalyses,
           ai: {
             endpoint: endpoint.trim(),
@@ -133,7 +133,7 @@ export default function QaScannerPanel() {
         <div className="qa-section">
           <div className="qa-section-title">Приложение</div>
           <label>App URL<input value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} /></label>
-          <label>AI snapshots per run (лимит)<input type="number" min={0} max={100} value={maxAiAnalyses} onChange={(e) => setMaxAiAnalyses(Math.max(0, Math.min(100, Number(e.target.value) || 0)))} /></label>
+          <div className="qa-grid">\n            <label>AI snapshots per run (лимит)<input type="number" min={0} max={100} value={maxAiAnalyses} onChange={(e) => setMaxAiAnalyses(Math.max(0, Math.min(100, Number(e.target.value) || 0)))} /></label>\n            <label>Действий на раздел<input type="number" min={1} max={5} value={maxActionsPerSurface} onChange={(e) => setMaxActionsPerSurface(Math.max(1, Math.min(5, Number(e.target.value) || 1)))} /></label>\n          </div>
           <div className="qa-chip-row">
             {(Object.keys(ROLE_LABELS) as Role[]).map((role) => (
               <button key={role} className={`qa-chip ${roles.includes(role) ? "is-on" : ""}`} onClick={() => toggleRole(role)}>
