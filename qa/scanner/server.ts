@@ -430,18 +430,50 @@ localStorage.setItem("onboarding_completed", "1");`,
 
   try {
     await page.goto(config.baseUrl, { waitUntil: "domcontentloaded", timeout: 120000 });
+    await page.waitForLoadState("networkidle", { timeout: 8000 }).catch(() => undefined);
+    await sleep(1000);
+
+    const shell = page.locator(".app-shell, .bottom-nav-wrapper, .desktop-sidebar").first();
+    await shell.waitFor({ state: "visible", timeout: 15000 }).catch(() => undefined);
+
     await visit("Старт", "open application");
 
-    const uniqueNav = await readVisibleLabels(
+    let uniqueNav = await readVisibleLabels(
       page,
-      "nav button, .desktop-nav-item, .bottom-nav-pill button, [role='tab']",
-      40,
+      ".bottom-nav-wrapper button, .desktop-sidebar .desktop-nav-item, nav[role='navigation'] button, [role='tab']",
+      60,
     );
 
-    for (const label of uniqueNav) {
+    if (uniqueNav.length === 0) {
+      uniqueNav = await readVisibleLabels(
+        page,
+        "button",
+        80,
+      );
+    }
+
+    if (uniqueNav.length === 0) {
+      findings.push({
+        severity: "high",
+        category: "functional",
+        title: "Навигация приложения не обнаружена",
+        description:
+          "После загрузки Gruzli Scanner не обнаружил ни одной видимой кнопки навигации. Проверка остановлена на стартовом состоянии.",
+        confidence: 1,
+        role,
+        viewport,
+        surface: "Старт",
+        url: page.url(),
+        action: "discover navigation",
+      });
+    }
+
+    for (const label of uniqueNav.slice(0, 30)) {
       if (!isSafeAction(label)) continue;
 
       await page.goto(config.baseUrl, { waitUntil: "domcontentloaded", timeout: 120000 });
+      await page.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => undefined);
+      await sleep(700);
       await sleep(300);
       const candidate = page.getByRole("button", { name: label, exact: false }).first();
       if (!(await candidate.count())) continue;
@@ -468,7 +500,8 @@ localStorage.setItem("onboarding_completed", "1");`,
 
           for (const innerLabel of innerLabels) {
             await page.goto(config.baseUrl, { waitUntil: "domcontentloaded", timeout: 120000 });
-            await sleep(300);
+            await page.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => undefined);
+            await sleep(700);
 
             const surfaceButton = page.getByRole("button", { name: label, exact: false }).first();
             if (!(await surfaceButton.count())) break;
