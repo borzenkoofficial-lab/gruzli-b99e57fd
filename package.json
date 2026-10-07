@@ -11,7 +11,11 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "qa:server": "npx --yes tsx qa/scanner/server.ts",
+    "qa:health": "curl -fsS http://127.0.0.1:4174/health",
+    "qa:typecheck": "tsc -p qa/tsconfig.json",
+    "qa:app": "VITE_GRUZLI_DEMO_MODE=true vite --host 127.0.0.1 --port 4173"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

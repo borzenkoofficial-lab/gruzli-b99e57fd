@@ -22,6 +22,7 @@ import NotFound from "./pages/NotFound";
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
+const QaScannerPanel = lazy(() => import("./components/qa/QaScannerPanel"));
 
 const DEMO_ENABLED = import.meta.env.DEV && import.meta.env.VITE_GRUZLI_DEMO_MODE === "true";
 
@@ -59,6 +60,7 @@ const AppRoutes = () => {
 
   const location = useLocation();
   const isConsentRoute = location.pathname === "/.lovable/oauth/consent";
+  const qaEnabled = import.meta.env.DEV && new URLSearchParams(window.location.search).get("qa") === "1";
 
   // After a successful sign-in, resume a pending OAuth consent flow if one was preserved.
   useEffect(() => {
@@ -69,6 +71,14 @@ const AppRoutes = () => {
       window.location.replace(next);
     }
   }, [user]);
+
+  if (qaEnabled) {
+    return (
+      <Suspense fallback={null}>
+        <QaScannerPanel />
+      </Suspense>
+    );
+  }
 
   if (!(DEMO_ENABLED && demoWorkerMode) && (loading || (!splashDone && !isConsentRoute))) {
     return <SplashScreen onFinished={handleSplashFinished} />;

@@ -1,0 +1,372 @@
+import { useMemo, useState } from "react";
+import "./qa.css";
+
+type Role = "worker" | "dispatcher" | "client";
+type Viewport = { name: string; width: number; height: number };
+
+const ROLE_LABELS: Record<Role, string> = {
+  worker: "Грузчик",
+  dispatcher: "Диспетчер",
+  client: "Заказчик",
+};
+
+const DEFAULT_VIEWPORTS: Viewport[] = [
+  { name: "mobile", width: 390, height: 844 },
+  { name: "tablet", width: 768, height: 1024 },
+  { name: "desktop", width: 1440, height: 900 },
+];
+
+const QA_API_BASE = "/__qa";
+
+export default function QaScannerPanel() {
+  const [endpoint, setEndpoint] = useState("https://api.openai.com/v1/chat/completions");
+  const [model, setModel] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [baseUrl, setBaseUrl] = useState("http://127.0.0.1:4173");
+  const [roles, setRoles] = useState<Role[]>(["worker", "dispatcher", "client"]);
+  const [viewports, setViewports] = useState<Viewport[]>(DEFAULT_VIEWPORTS);
+  const [maxAiAnalyses, setMaxAiAnalyses] = useState(24);
+  const [maxActionsPerSurface, setMaxActionsPerSurface] = useState(2);
+  const [running, setRunning] = useState(false);
+  const [status, setStatus] = useState("Готов");
+  const [report, setReport] = useState<any>(null);
+
+  const aiEnabled = Boolean(apiKey.trim() && model.trim() && endpoint.trim());
+
+  const toggleRole = (role: Role) => {
+    setRoles((current) =>
+      current.includes(role) ? current.filter((r) => r !== role) : [...current, role],
+    );
+  };
+
+  const toggleViewport = (viewport: Viewport) => {
+    setViewports((current) =>
+      current.some((v) => v.name === viewport.name)
+        ? current.filter((v) => v.name !== viewport.name)
+        : [...current, viewport],
+    );
+  };
+
+  const run = async () => {
+    setRunning(true);
+    setReport(null);
+    setStatus("Проверяю scanner server…");
+
+    try {
+      const health = await fetch(`${QA_API_BASE}/health`, { cache: "no-store" });
+      if (!health.ok) {
+        throw new Error("QA Scanner не запущен. Выполни npm run qa:server.");
+      }
+
+      setStatus(aiEnabled ? "Запускаю сканирование + AI анализ…" : "Запускаю сканирование…");
+
+      const startResponse = await fetch(`${QA_API_BASE}/scan`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          baseUrl,
+          roles,
+          viewports,
+          maxActionsPerSurface,
+          maxAiAnalyses,
+          ai: {
+            endpoint: endpoint.trim(),
+            apiKey: apiKey.trim(),
+            model: model.trim(),
+          },
+        }),
+      });
+
+      const startRaw = await startResponse.text();
+      let startData: any = null;
+
+      try {
+        startData = startRaw ? JSON.parse(startRaw) : null;
+      } catch {
+        throw new Error(
+          `QA Scanner вернул некорректный ответ при запуске (HTTP ${startResponse.status}). Ответ: ${startRaw.slice(0, 500) || "пусто"}`,
+        );
+      }
+
+      if (!startResponse.ok || !startData?.jobId) {
+        throw new Error(
+          startData?.error || `Не удалось запустить scan (HTTP ${startResponse.status})`,
+        );
+      }
+
+      const jobId = String(startData.jobId);
+      setStatus(aiEnabled ? "Сканирую приложение + AI анализ… 0%" : "Сканирую приложение…");
+
+      for (;;) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+
+        const statusResponse = await fetch(
+          `${QA_API_BASE}/scan/${encodeURIComponent(jobId)}`,
+          { cache: "no-store" },
+        );
+
+        const statusRaw = await statusResponse.text();
+        let statusData: any = null;
+
+        try {
+          statusData = statusRaw ? JSON.parse(statusRaw) : null;
+        } catch {
+          throw new Error(
+            `QA Scanner вернул некорректный статус (HTTP ${statusResponse.status}). Ответ: ${statusRaw.slice(0, 500) || "пусто"}`,
+          );
+        }
+
+        if (statusData?.status === "queued") {
+          setStatus("Сканирование в очереди…");
+          continue;
+        }
+
+        if (statusData?.status === "running") {
+          setStatus(aiEnabled ? "Сканирую приложение + AI анализ…" : "Сканирую приложение…");
+          continue;
+        }
+
+        if (statusData?.status === "failed") {
+          throw new Error(statusData?.error || "Scanner job failed");
+        }
+
+        if (statusData?.status === "completed" && statusData?.report) {
+          const reportData = statusData.report;
+          setReport(reportData);
+          setStatus(
+            `Готово: ${reportData?.findings?.length ?? 0} проблем, ${reportData?.coverage?.captures ?? 0} состояний.`,
+          );
+          break;
+        }
+
+        if (!statusResponse.ok) {
+          throw new Error(
+            statusData?.error || `Scanner status failed (HTTP ${statusResponse.status})`,
+          );
+        }
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setStatus(
+        message.includes("Failed to fetch")
+          ? "Не удалось подключиться к QA Scanner. Проверь, что в Терминале 2 запущен npm run qa:server."
+          : message,
+      );
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  const download = (kind: "json" | "md") => {
+    if (!report) return;
+    const filename = `gruzli-qa-${report.runId || "latest"}.${kind}`;
+    const content =
+      kind === "json"
+        ? JSON.stringify(report, null, 2)
+        : [
+            "# GRUZLI AI QA REPORT",
+            "",
+            `Run: ${report.runId}`,
+            `Issues: ${report.findings?.length ?? 0}`,
+            "",
+            ...(report.findings || []).map(
+              (f: any) => `## ${f.id} — ${String(f.severity).toUpperCase()} — ${f.title}
+- ${f.role}
+- ${f.viewport?.name}
+- ${f.surface}
+- ${f.description}
+`,
+            ),
+          ].join("\n");
+
+    const blob = new Blob([content], {
+      type: kind === "json" ? "application/json" : "text/markdown",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const severityCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const finding of report?.findings || []) {
+      counts[finding.severity] = (counts[finding.severity] || 0) + 1;
+    }
+    return counts;
+  }, [report]);
+
+  return (
+    <div className="qa-overlay">
+      <div
+        className="qa-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Gruzli AI QA Scanner"
+      >
+        <div className="qa-header">
+          <div>
+            <div className="qa-kicker">TEMPORARY DEV TOOL</div>
+            <h2>Gruzli AI QA Scanner</h2>
+            <p>Ключ живёт только в этой вкладке. В production панель не показывается.</p>
+          </div>
+          <button
+            className="qa-close"
+            onClick={() => window.history.back()}
+            aria-label="Закрыть"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="qa-section">
+          <div className="qa-section-title">ИИ</div>
+          <div className="qa-grid">
+            <label>
+              API endpoint
+              <input
+                value={endpoint}
+                onChange={(event) => setEndpoint(event.target.value)}
+                placeholder="OpenAI-compatible /chat/completions"
+              />
+            </label>
+            <label>
+              Model
+              <input
+                value={model}
+                onChange={(event) => setModel(event.target.value)}
+                placeholder="vision-capable model"
+              />
+            </label>
+          </div>
+          <label>
+            API key
+            <input
+              type="password"
+              value={apiKey}
+              onChange={(event) => setApiKey(event.target.value)}
+              placeholder="Вставь ключ для этого запуска"
+              autoComplete="off"
+            />
+          </label>
+        </div>
+
+        <div className="qa-section">
+          <div className="qa-section-title">Приложение</div>
+          <label>
+            App URL
+            <input value={baseUrl} onChange={(event) => setBaseUrl(event.target.value)} />
+          </label>
+          <div className="qa-grid">
+            <label>
+              AI snapshots per run (лимит)
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={maxAiAnalyses}
+                onChange={(event) =>
+                  setMaxAiAnalyses(Math.max(0, Math.min(100, Number(event.target.value) || 0)))
+                }
+              />
+            </label>
+            <label>
+              Действий на раздел
+              <input
+                type="number"
+                min={1}
+                max={5}
+                value={maxActionsPerSurface}
+                onChange={(event) =>
+                  setMaxActionsPerSurface(
+                    Math.max(1, Math.min(5, Number(event.target.value) || 1)),
+                  )
+                }
+              />
+            </label>
+          </div>
+
+          <div className="qa-chip-row">
+            {(Object.keys(ROLE_LABELS) as Role[]).map((role) => (
+              <button
+                key={role}
+                className={`qa-chip ${roles.includes(role) ? "is-on" : ""}`}
+                onClick={() => toggleRole(role)}
+              >
+                {ROLE_LABELS[role]}
+              </button>
+            ))}
+          </div>
+
+          <div className="qa-chip-row">
+            {DEFAULT_VIEWPORTS.map((viewport) => (
+              <button
+                key={viewport.name}
+                className={`qa-chip ${viewports.some((item) => item.name === viewport.name) ? "is-on" : ""}`}
+                onClick={() => toggleViewport(viewport)}
+              >
+                {viewport.name} · {viewport.width}×{viewport.height}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="qa-actions">
+          <button
+            className="qa-primary"
+            disabled={running || roles.length === 0 || viewports.length === 0}
+            onClick={run}
+          >
+            {running ? "СКАНИРУЮ…" : aiEnabled ? "ЗАПУСТИТЬ AI QA" : "ЗАПУСТИТЬ SCAN"}
+          </button>
+          <button
+            className="qa-secondary"
+            disabled={!report}
+            onClick={() => download("json")}
+          >
+            JSON
+          </button>
+          <button
+            className="qa-secondary"
+            disabled={!report}
+            onClick={() => download("md")}
+          >
+            REPORT
+          </button>
+        </div>
+
+        <div className="qa-status">{status}</div>
+
+        {report && (
+          <div className="qa-report">
+            <div className="qa-report-head">
+              <strong>{report.findings?.length ?? 0} issues</strong>
+              <span>{report.coverage?.captures ?? 0} captures</span>
+              <span>
+                {Object.entries(severityCounts)
+                  .map(([key, value]) => `${key}: ${value}`)
+                  .join(" · ")}
+              </span>
+            </div>
+
+            {(report.findings || []).map((finding: any) => (
+              <div className={`qa-finding qa-${finding.severity}`} key={finding.id}>
+                <div className="qa-finding-top">
+                  <strong>{finding.id}</strong>
+                  <span>{String(finding.severity).toUpperCase()}</span>
+                </div>
+                <div className="qa-finding-title">{finding.title}</div>
+                <div className="qa-finding-meta">
+                  {finding.role} · {finding.viewport?.name} · {finding.surface}
+                </div>
+                <div className="qa-finding-description">{finding.description}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

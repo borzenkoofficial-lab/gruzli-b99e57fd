@@ -25,3 +25,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Temporary AI QA artifacts
+qa/reports/latest.json
+qa/reports/latest.md
+qa/reports/runs/
