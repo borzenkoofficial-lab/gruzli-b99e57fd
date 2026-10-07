@@ -42,3 +42,5 @@ src/components/qa/
 изменение .gitignore
 изменение CI, если добавлен qa:typecheck
 ```
+
+Модель для AI-части должна поддерживать image input в OpenAI-compatible `chat/completions`; deterministic scan работает и без ключа.
