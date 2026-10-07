@@ -77,8 +77,24 @@ export default function QaScannerPanel() {
         }),
       });
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data?.error || "Scan failed");
+      const raw = await response.text();
+      let data: any = null;
+
+      try {
+        data = raw ? JSON.parse(raw) : null;
+      } catch {
+        throw new Error(
+          `QA Scanner вернул некорректный ответ (HTTP ${response.status}). Ответ: ${raw.slice(0, 500) || "пусто"}`,
+        );
+      }
+
+      if (!response.ok) {
+        throw new Error(data?.error || `Scan failed (HTTP ${response.status})`);
+      }
+
+      if (!data || typeof data !== "object") {
+        throw new Error("QA Scanner вернул пустой ответ.");
+      }
 
       setReport(data);
       setStatus(
