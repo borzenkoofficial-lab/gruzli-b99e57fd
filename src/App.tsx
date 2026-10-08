@@ -14,6 +14,7 @@ import AppRatingModal from "@/components/AppRatingModal";
 import OnboardingTour from "@/components/OnboardingTour";
 import IncomingCallListener from "@/components/chat/IncomingCallListener";
 import type { Tables } from "@/integrations/supabase/types";
+import { useNetworkLifecycle } from "@/hooks/useNetworkLifecycle";
 
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
@@ -31,6 +32,7 @@ const queryClient = new QueryClient({
       staleTime: 30_000,
       gcTime: 5 * 60_000,
       refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
       retry: 1,
     },
   },
@@ -46,6 +48,7 @@ const AppRoutes = () => {
   });
   useViewportHeight();
   usePresence();
+  useNetworkLifecycle(queryClient);
 
   const handleNewJob = useCallback((job: Tables<"jobs">) => {
     setAlertQueue((q) => [...q, job]);
