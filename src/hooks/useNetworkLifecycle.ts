@@ -3,8 +3,8 @@ import { onlineManager, type QueryClient } from "@tanstack/react-query";
 
 /**
  * Revalidates active stale queries when the installed app returns to the
- * foreground. TanStack Query's onlineManager already handles browser
- * online/offline events and reconnect refetches; this hook handles resume only.
+ * foreground. TanStack Query's onlineManager handles browser network events;
+ * this hook handles resume without duplicating a recent reconnect refetch.
  *
  * Supabase remains the source of truth. No business mutations are queued here.
  */
@@ -12,6 +12,16 @@ export function useNetworkLifecycle(queryClient: QueryClient) {
   const lastRefreshRef = useRef(0);
 
   useEffect(() => {
+    let wasOnline = onlineManager.isOnline();
+    let lastReconnectAt = Number.NEGATIVE_INFINITY;
+
+    const unsubscribeOnline = onlineManager.subscribe((isOnline) => {
+      if (isOnline && !wasOnline) {
+        lastReconnectAt = Date.now();
+      }
+      wasOnline = isOnline;
+    });
+
     const refreshActiveQueries = () => {
       const now = Date.now();
 
@@ -28,12 +38,11 @@ export function useNetworkLifecycle(queryClient: QueryClient) {
     const handleVisibility = () => {
       if (document.visibilityState !== "visible" || !navigator.onLine) return;
 
-      // If the browser's connection state changed while the app was suspended,
-      // setting this to online lets React Query run its normal reconnect logic.
-      // Do not also force-refetch in that case: it would duplicate that work.
+      // If the browser's connection state changed while suspended, let
+      // TanStack Query's normal reconnect handler refetch active queries.
       const wasOffline = !onlineManager.isOnline();
       onlineManager.setOnline(true);
-      if (wasOffline) return;
+      if (wasOffline || Date.now() - lastReconnectAt < 1500) return;
 
       refreshActiveQueries();
     };
@@ -44,6 +53,7 @@ export function useNetworkLifecycle(queryClient: QueryClient) {
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
+      unsubscribeOnline();
     };
   }, [queryClient]);
 }
