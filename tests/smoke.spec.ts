@@ -1,6 +1,13 @@
 import { test, expect } from "@playwright/test";
 
-test("Gruzli boots into the demo worker workspace", async ({ page }) => {
+test("Gruzli boots into the demo worker workspace without a live Supabase connection", async ({ page }) => {
+  const supabaseRequests: string[] = [];
+  page.on("request", (request) => {
+    if (/https:\/\/[^/]+\.supabase\.(co|in|com)\//i.test(request.url())) {
+      supabaseRequests.push(request.url());
+    }
+  });
+
   await page.addInitScript(() => {
     localStorage.setItem("gruzli_demo_worker", "1");
     localStorage.setItem("gruzli_demo_role", "worker");
