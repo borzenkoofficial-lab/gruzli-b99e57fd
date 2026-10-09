@@ -130,7 +130,7 @@ self.addEventListener("fetch", (event) => {
     caches.match(request).then((cached) => {
       if (cached) return cached;
 
-      return fetch(request).then((response) => {
+      return fetch(request).then(async (response) => {
         if (response.ok) {
           await cacheRuntimeResponse(request, response.clone());
         }
