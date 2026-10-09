@@ -11,6 +11,8 @@ npm run dev
 
 Production builds use the real Supabase backend.
 
+For a static-hosting demo build that keeps all demo state in each browser's local storage and does not connect to Supabase, see [`docs/REG_RU_STATIC_DEMO_DEPLOYMENT.md`](docs/REG_RU_STATIC_DEMO_DEPLOYMENT.md).
+
 The production branch keeps demo mode isolated behind an explicit build flag. Demo mode is enabled only with:
 
 ```env
