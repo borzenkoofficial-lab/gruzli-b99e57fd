@@ -7,6 +7,7 @@ const CACHE_PREFIX = "gruzli-pwa";
 const CACHE_VERSION = "v1";
 const SHELL_CACHE = `${CACHE_PREFIX}-shell-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}-runtime-${CACHE_VERSION}`;
+const MAX_RUNTIME_CACHE_ENTRIES = 200;
 
 const SHELL_ASSETS = [
   "/",
@@ -16,6 +17,22 @@ const SHELL_ASSETS = [
   "/favicon.jpeg",
   "/badge-96x96.png",
 ];
+
+async function cacheRuntimeResponse(request, response) {
+  try {
+    const cache = await caches.open(RUNTIME_CACHE);
+    await cache.put(request, response);
+
+    // Keep deployments from accumulating an unlimited number of hashed assets.
+    const keys = await cache.keys();
+    const excess = keys.length - MAX_RUNTIME_CACHE_ENTRIES;
+    if (excess > 0) {
+      await Promise.all(keys.slice(0, excess).map((key) => cache.delete(key)));
+    }
+  } catch {
+    // Cache failures must never turn a successful network response into a failure.
+  }
+}
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -62,16 +79,21 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // SPA navigation: network first, cached app shell as offline fallback.
+  // SPA navigation: network first, cached app shell as offline/server-error fallback.
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            void caches.open(RUNTIME_CACHE).then((cache) => cache.put("/", copy));
+        .then(async (response) => {
+          const contentType = response.headers.get("content-type") || "";
+          if (response.ok && contentType.includes("text/html")) {
+            void cacheRuntimeResponse("/", response.clone());
+            return response;
           }
-          return response;
+
+          if (response.ok) return response;
+
+          const cached = await caches.match("/");
+          return cached || response;
         })
         .catch(async () => {
           const cached = await caches.match("/");
@@ -98,11 +120,10 @@ self.addEventListener("fetch", (event) => {
 
       return fetch(request).then((response) => {
         if (response.ok) {
-          const copy = response.clone();
-          void caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, copy));
+          void cacheRuntimeResponse(request, response.clone());
         }
         return response;
-      });
+      })
     })
   );
 });
@@ -132,7 +153,15 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
   const targetUrl = event.notification?.data?.url || "/";
-  const absoluteUrl = new URL(targetUrl, self.location.origin).href;
+  let absoluteUrl = new URL("/", self.location.origin).href;
+  try {
+    const parsedUrl = new URL(targetUrl, self.location.origin);
+    if (parsedUrl.origin === self.location.origin) {
+      absoluteUrl = parsedUrl.href;
+    }
+  } catch {
+    // Invalid notification targets safely fall back to the Gruzli home page.
+  }
 
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (clients) => {
