@@ -27,11 +27,23 @@ async function cacheRuntimeResponse(request, response) {
     const keys = await cache.keys();
     const excess = keys.length - MAX_RUNTIME_CACHE_ENTRIES;
     if (excess > 0) {
-      await Promise.all(keys.slice(0, excess).map((key) => cache.delete(key)));
+      // Preserve the latest app shell even when the runtime cache is full.
+      const evictableKeys = keys.filter((key) => new URL(key.url).pathname !== "/");
+      await Promise.all(evictableKeys.slice(0, excess).map((key) => cache.delete(key)));
     }
   } catch {
     // Cache failures must never turn a successful network response into a failure.
   }
+}
+
+async function getCachedAppShell() {
+  // The runtime copy is refreshed after every successful online navigation.
+  const runtimeCache = await caches.open(RUNTIME_CACHE);
+  const latestShell = await runtimeCache.match("/");
+  if (latestShell) return latestShell;
+
+  const shellCache = await caches.open(SHELL_CACHE);
+  return shellCache.match("/");
 }
 
 self.addEventListener("install", (event) => {
@@ -92,11 +104,11 @@ self.addEventListener("fetch", (event) => {
 
           if (response.ok) return response;
 
-          const cached = await caches.match("/");
+          const cached = await getCachedAppShell();
           return cached || response;
         })
         .catch(async () => {
-          const cached = await caches.match("/");
+          const cached = await getCachedAppShell();
           return cached || Response.error();
         })
     );
