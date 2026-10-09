@@ -123,6 +123,16 @@ const App = () => (
         <Sonner />
         <AuthProvider>
           <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            {DEMO_ENABLED && (
+              <div
+                role="status"
+                aria-label="Gruzli test mode. Data is stored only in this browser"
+                className="fixed right-3 z-[10000] pointer-events-none select-none rounded-full border border-amber-300 bg-amber-100 px-3 py-1.5 text-[10px] font-bold tracking-wide text-amber-950 shadow-sm"
+                style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 88px)" }}
+              >
+                ДЕМО · ТЕСТОВЫЕ ДАННЫЕ
+              </div>
+            )}
             <AppRoutes />
           </BrowserRouter>
         </AuthProvider>
