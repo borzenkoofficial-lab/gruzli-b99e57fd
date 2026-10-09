@@ -5,6 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { savePushSubscriptionForUser } from "@/lib/pushSubscriptionLifecycle";
 
 const DISMISSED_KEY = "push-banner-dismissed";
+const DEMO_ENABLED =
+  import.meta.env.VITE_GRUZLI_DEMO_MODE === "true" &&
+  (import.meta.env.DEV || import.meta.env.MODE === "demo");
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
