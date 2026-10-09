@@ -129,7 +129,8 @@ const EnablePushButton = ({ variant = "banner", className = "" }: EnablePushButt
     localStorage.setItem(DISMISSED_KEY, "true");
   };
 
-  if (!supported || subscribed || dismissed) return null;
+  // Push subscriptions require a real backend and must stay disabled in static demo builds.
+  if (DEMO_ENABLED || !supported || subscribed || dismissed) return null;
 
   if (variant === "compact") {
     return (
