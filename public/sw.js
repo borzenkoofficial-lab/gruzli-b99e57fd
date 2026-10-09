@@ -21,7 +21,13 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(SHELL_CACHE)
       .then((cache) => cache.addAll(SHELL_ASSETS))
-      .then(() => self.skipWaiting())
+      .then(async () => {
+        // Activate immediately on first install. On updates, allow the current
+        // worker to keep controlling existing tabs until they are closed.
+        if (!self.registration.active) {
+          await self.skipWaiting();
+        }
+      })
   );
 });
 
