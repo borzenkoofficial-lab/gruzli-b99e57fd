@@ -98,7 +98,7 @@ self.addEventListener("fetch", (event) => {
         .then(async (response) => {
           const contentType = response.headers.get("content-type") || "";
           if (response.ok && contentType.includes("text/html")) {
-            void cacheRuntimeResponse("/", response.clone());
+            await cacheRuntimeResponse("/", response.clone());
             return response;
           }
 
@@ -132,7 +132,7 @@ self.addEventListener("fetch", (event) => {
 
       return fetch(request).then((response) => {
         if (response.ok) {
-          void cacheRuntimeResponse(request, response.clone());
+          await cacheRuntimeResponse(request, response.clone());
         }
         return response;
       })
