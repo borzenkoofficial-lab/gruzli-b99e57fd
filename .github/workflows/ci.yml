@@ -2,9 +2,9 @@ name: Gruzli CI
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "feat/pwa-mobile-0.2.0", "feat/reg-ru-static-demo-deploy"]
   pull_request:
-    branches: ["main"]
+    branches: ["main", "feat/pwa-mobile-0.2.0"]
 
 concurrency:
   group: gruzli-ci-${{ github.event.pull_request.number || github.ref }}
