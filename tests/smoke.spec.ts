@@ -18,6 +18,9 @@ test("Gruzli boots into the demo worker workspace without a live Supabase connec
   await expect(page.locator("#root")).not.toBeEmpty();
   await expect(page.getByText("Gruzli").first()).toBeVisible();
   await expect(page.getByText("Лента заявок").first()).toBeVisible();
+  await expect(page.getByText("ДЕМО · ТЕСТОВЫЕ ДАННЫЕ")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Разрешить уведомления/i })).toHaveCount(0);
+  expect(supabaseRequests).toEqual([]);
 });
 
 
