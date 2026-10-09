@@ -2,29 +2,13 @@ import { Bell, BellOff, Check, Loader2, X } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { savePushSubscriptionForUser } from "@/lib/pushSubscriptionLifecycle";
 
 const DISMISSED_KEY = "push-banner-dismissed";
 
 interface EnablePushButtonProps {
   variant?: "banner" | "compact";
   className?: string;
-}
-
-function urlBase64ToUint8Array(base64String: string) {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const raw = atob(base64);
-  const out = new Uint8Array(raw.length);
-  for (let i = 0; i < raw.length; ++i) out[i] = raw.charCodeAt(i);
-  return out;
-}
-
-function abToB64Url(buf: ArrayBuffer | null) {
-  if (!buf) return "";
-  const bytes = new Uint8Array(buf);
-  let bin = "";
-  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
-  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 const EnablePushButton = ({ variant = "banner", className = "" }: EnablePushButtonProps) => {
@@ -48,9 +32,19 @@ const EnablePushButton = ({ variant = "banner", className = "" }: EnablePushButt
     try {
       const reg = await navigator.serviceWorker.getRegistration();
       const sub = await reg?.pushManager.getSubscription();
-      setSubscribed(!!sub);
+      const { data: auth } = await supabase.auth.getUser();
+
+      // Browser subscription alone is not enough: it must be associated with
+      // the current account in Supabase before the control is shown as enabled.
+      const synced = !!sub && !!auth.user
+        ? await savePushSubscriptionForUser(auth.user.id, sub)
+        : false;
+
+      setSubscribed(synced);
       setPermission(Notification.permission);
-    } catch {/* noop */}
+    } catch {
+      setSubscribed(false);
+    }
   }, [supported]);
 
   useEffect(() => { checkSubscribed(); }, [checkSubscribed]);
@@ -82,19 +76,8 @@ const EnablePushButton = ({ variant = "banner", className = "" }: EnablePushButt
       });
     }
 
-    const json: any = sub.toJSON();
-    const endpoint = json.endpoint || sub.endpoint;
-    const p256dh = json.keys?.p256dh || abToB64Url(sub.getKey?.("p256dh") ?? null);
-    const authKey = json.keys?.auth || abToB64Url(sub.getKey?.("auth") ?? null);
-
-    const { error: insErr } = await supabase
-      .from("push_subscriptions")
-      .upsert(
-        { user_id: auth.user.id, endpoint, p256dh, auth: authKey, user_agent: navigator.userAgent },
-        { onConflict: "endpoint" },
-      );
-    if (insErr) {
-      console.error("[push] save subscription failed:", insErr);
+    const saved = await savePushSubscriptionForUser(auth.user.id, sub);
+    if (!saved) {
       toast.error("Не удалось сохранить подписку");
       return false;
     }
