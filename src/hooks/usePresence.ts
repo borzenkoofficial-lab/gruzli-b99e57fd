@@ -4,8 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 /**
  * Keeps last_seen_at fresh only while the app is visible and the browser is online.
- * Supabase remains authoritative; a failed write is retried on a later heartbeat
- * or when the app/network becomes active again.
+ * Failed writes are retried on a later heartbeat or when the app becomes active again.
  */
 export const usePresence = () => {
   const { user } = useAuth();
@@ -16,7 +15,7 @@ export const usePresence = () => {
     let heartbeat: ReturnType<typeof setInterval> | null = null;
     let disposed = false;
     let requestInFlight = false;
-    let lastSuccessfulPingAt = 0;
+    let lastAttemptAt: number | null = null;
 
     const stopHeartbeat = () => {
       if (heartbeat !== null) {
@@ -26,16 +25,20 @@ export const usePresence = () => {
     };
 
     const ping = async () => {
+      const now = Date.now();
       if (
         disposed ||
         document.visibilityState !== "visible" ||
         !navigator.onLine ||
         requestInFlight ||
-        Date.now() - lastSuccessfulPingAt < 15_000
+        (lastAttemptAt !== null && now - lastAttemptAt < 15_000)
       ) {
         return;
       }
 
+      // Throttle attempts, not just successful writes, to avoid request bursts
+      // when the backend is unavailable and visibility changes repeatedly.
+      lastAttemptAt = now;
       requestInFlight = true;
 
       try {
@@ -44,10 +47,9 @@ export const usePresence = () => {
           .update({ last_seen_at: new Date().toISOString() })
           .eq("user_id", user.id);
 
-        // Only throttle future writes after the backend confirms this one.
-        // Failed requests remain eligible for retry.
-        if (!error) {
-          lastSuccessfulPingAt = Date.now();
+        if (error) {
+          // Presence is best-effort; a later heartbeat will retry.
+          return;
         }
       } catch {
         // Presence is best-effort: transient failures must not break the app.
@@ -100,7 +102,6 @@ export const usePresence = () => {
       window.removeEventListener("offline", handleOffline);
     };
   }, [user]);
-
 };
 
 /**
