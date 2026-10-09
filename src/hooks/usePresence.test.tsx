@@ -67,9 +67,13 @@ describe("usePresence lifecycle", () => {
 
     if (originalVisibility) {
       Object.defineProperty(document, "visibilityState", originalVisibility);
+    } else {
+      Reflect.deleteProperty(document, "visibilityState");
     }
     if (originalOnline) {
       Object.defineProperty(navigator, "onLine", originalOnline);
+    } else {
+      Reflect.deleteProperty(navigator, "onLine");
     }
 
     vi.useRealTimers();
