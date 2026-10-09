@@ -2,11 +2,11 @@ import { useEffect, useRef } from "react";
 import { onlineManager, type QueryClient } from "@tanstack/react-query";
 
 /**
- * Connects the existing React Query layer to the browser lifecycle.
+ * Revalidates active stale queries when the installed app returns to the
+ * foreground. TanStack Query's onlineManager already handles browser
+ * online/offline events and reconnect refetches; this hook handles resume only.
  *
- * Supabase remains the source of truth. This hook only controls when cached
- * queries should be considered stale and revalidated; it does not queue
- * business mutations or invent offline success states.
+ * Supabase remains the source of truth. No business mutations are queued here.
  */
 export function useNetworkLifecycle(queryClient: QueryClient) {
   const lastRefreshRef = useRef(0);
@@ -15,8 +15,7 @@ export function useNetworkLifecycle(queryClient: QueryClient) {
     const refreshActiveQueries = () => {
       const now = Date.now();
 
-      // Network + visibility events can fire together. Avoid a burst of
-      // identical refetches when a phone resumes from the background.
+      // Mobile browsers may emit several lifecycle events when resuming.
       if (now - lastRefreshRef.current < 1500) return;
       lastRefreshRef.current = now;
 
@@ -26,32 +25,24 @@ export function useNetworkLifecycle(queryClient: QueryClient) {
       });
     };
 
-    const handleOnline = () => {
+    const handleVisibility = () => {
+      if (document.visibilityState !== "visible" || !navigator.onLine) return;
+
+      // If the browser's connection state changed while the app was suspended,
+      // setting this to online lets React Query run its normal reconnect logic.
+      // Do not also force-refetch in that case: it would duplicate that work.
+      const wasOffline = !onlineManager.isOnline();
       onlineManager.setOnline(true);
+      if (wasOffline) return;
+
       refreshActiveQueries();
     };
 
-    const handleOffline = () => {
-      onlineManager.setOnline(false);
-    };
-
-    const handleVisibility = () => {
-      if (document.visibilityState === "visible" && navigator.onLine) {
-        onlineManager.setOnline(true);
-        refreshActiveQueries();
-      }
-    };
-
-    // Browser state is only a transport signal. It is not proof that
-    // Supabase is reachable, so React Query still handles request failures.
+    // Keep React Query aligned with the browser's initial transport state.
     onlineManager.setOnline(navigator.onLine);
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
     document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
       document.removeEventListener("visibilitychange", handleVisibility);
     };
   }, [queryClient]);
