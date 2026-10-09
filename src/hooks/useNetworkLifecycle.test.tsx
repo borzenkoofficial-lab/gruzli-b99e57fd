@@ -113,15 +113,28 @@ describe("useNetworkLifecycle", () => {
 
   it("lets React Query own reconnect refetches instead of forcing a duplicate", async () => {
     await mountLifecycle();
-    vi.spyOn(onlineManager, "isOnline").mockReturnValue(false);
     const setOnlineSpy = vi.spyOn(onlineManager, "setOnline");
 
     act(() => {
+      onlineManager.setOnline(false);
       setVisibility("visible");
       document.dispatchEvent(new Event("visibilitychange"));
     });
 
     expect(setOnlineSpy).toHaveBeenCalledWith(true);
+    expect(queryClient.refetchQueries).not.toHaveBeenCalled();
+  });
+
+  it("does not force another refresh immediately after a reconnect", async () => {
+    await mountLifecycle();
+
+    act(() => {
+      onlineManager.setOnline(false);
+      onlineManager.setOnline(true);
+      setVisibility("visible");
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+
     expect(queryClient.refetchQueries).not.toHaveBeenCalled();
   });
 });
