@@ -12,6 +12,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e:demo": "playwright test --config=playwright.demo.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
