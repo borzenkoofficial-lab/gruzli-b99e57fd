@@ -17,6 +17,7 @@ const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => 
   useEffect(() => {
     let cancelled = false;
     const fetchDispatchers = async () => {
+      setLoadError(false);
       try {
         const { data: roles, error: rolesError } = await supabase
           .from("user_roles")
@@ -58,7 +59,14 @@ const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => 
     };
 
     void fetchDispatchers();
-    return () => { cancelled = true; };
+    const refreshTimer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void fetchDispatchers();
+    }, 60_000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(refreshTimer);
+    };
   }, []);
 
   const filtered = dispatchers.filter((d) =>
