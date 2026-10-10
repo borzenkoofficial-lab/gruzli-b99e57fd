@@ -420,27 +420,57 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
     fetchTransactions();
   }, [user?.id, role, isDemo]);
 
-  // Fetch reviews for dispatcher
+  // Fetch dispatcher reviews and clear them when the signed-in role/account changes.
   useEffect(() => {
-    if (!isDispatcher || !user) return;
+    if (!isDispatcher || !user) {
+      setReviews([]);
+      setAvgRating(0);
+      return;
+    }
+
+    let cancelled = false;
     const fetchReviews = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("dispatcher_reviews")
         .select("*")
         .eq("dispatcher_id", user.id)
         .order("created_at", { ascending: false });
-      if (data && data.length > 0) {
-        const reviewerIds = [...new Set(data.map((r: any) => r.reviewer_id))];
-        const { data: profiles } = await supabase.from("profiles_public" as any).select("user_id, full_name").in("user_id", reviewerIds);
-        const nameMap: Record<string, string> = {};
-        (profiles as any[])?.forEach((p) => { nameMap[p.user_id] = p.full_name; });
-        const withNames = data.map((r: any) => ({ ...r, reviewer_name: nameMap[r.reviewer_id] || "Исполнитель" }));
-        setReviews(withNames);
-        setAvgRating(Math.round(data.reduce((s: number, r: any) => s + r.rating, 0) / data.length * 10) / 10);
+
+      if (cancelled) return;
+      if (error) {
+        console.error("[Gruzli Profile] dispatcher reviews failed:", error);
+        setReviews([]);
+        setAvgRating(0);
+        toast.error("Не удалось загрузить отзывы");
+        return;
       }
+
+      const rows = data || [];
+      if (rows.length === 0) {
+        setReviews([]);
+        setAvgRating(0);
+        return;
+      }
+
+      const reviewerIds = [...new Set(rows.map((r: any) => r.reviewer_id))];
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles_public" as any)
+        .select("user_id, full_name")
+        .in("user_id", reviewerIds);
+
+      if (cancelled) return;
+      if (profilesError) console.error("[Gruzli Profile] review author profiles failed:", profilesError);
+
+      const nameMap: Record<string, string> = {};
+      (profiles as any[] || []).forEach((p) => { nameMap[p.user_id] = p.full_name; });
+      const withNames = rows.map((r: any) => ({ ...r, reviewer_name: nameMap[r.reviewer_id] || "Исполнитель" }));
+      setReviews(withNames);
+      setAvgRating(Math.round(rows.reduce((sum: number, review: any) => sum + review.rating, 0) / rows.length * 10) / 10);
     };
-    fetchReviews();
-  }, [isDispatcher, user]);
+
+    void fetchReviews();
+    return () => { cancelled = true; };
+  }, [isDispatcher, user?.id]);
 
   const copyId = () => {
     navigator.clipboard.writeText(shortId);
