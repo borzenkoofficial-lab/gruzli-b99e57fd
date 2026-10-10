@@ -4,7 +4,6 @@ import { Star, Briefcase, Wallet, Calendar, ChevronRight, Settings, LogOut, Shie
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { leaderboard } from "@/data/mockData";
 import { toast } from "sonner";
 import BankCard from "@/components/BankCard";
 import { aggregateProfileMetrics } from "@/lib/profileMetrics";
@@ -167,7 +166,6 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
   const { user, profile, role, signOut } = useAuth();
   const [availability, setAvailability] = useState<boolean[]>(Array(7).fill(false));
   const [statsPeriod, setStatsPeriod] = useState<"today" | "week" | "month">("today");
-  const [showWallet, setShowWallet] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [avgRating, setAvgRating] = useState(0);
   const [idCopied, setIdCopied] = useState(false);
@@ -575,8 +573,8 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
               <div className="flex gap-2 pt-1">
                 <button onClick={() => setShowTopUp(false)} className="flex-1 py-3 rounded-2xl bg-surface-1 border border-border text-sm font-semibold text-muted-foreground active:scale-95 transition-all">Отмена</button>
                 <button onClick={() => {
-                  const amt = parseInt(topUpAmount);
-                  if (!amt || amt <= 0) { toast.error("Введите корректную сумму"); return; }
+                  const amt = Number(topUpAmount);
+                  if (!Number.isSafeInteger(amt) || amt <= 0) { toast.error("Введите целую сумму больше нуля"); return; }
                   setShowTopUp(false);
                   onOpenSupport?.(`💰 Заявка на пополнение баланса\n\nСумма: ${amt} ₽\nID пользователя: ${user?.id?.slice(0, 8).toUpperCase()}\nИмя: ${displayName}\n\nПрошу пополнить баланс.`);
                 }} className="flex-1 py-3 rounded-2xl bg-foreground text-sm font-bold text-primary-foreground active:scale-95 transition-all">Отправить заявку</button>
@@ -820,7 +818,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
                     <h3 className="text-sm font-bold text-foreground">Верификация</h3>
                     <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">Поднимите доверие исполнителей</p>
                   </div>
-                  <button onClick={() => toast.info("Функция верификации скоро будет доступна")} className="px-3.5 py-2 rounded-xl bg-foreground text-primary-foreground text-xs font-bold active:scale-95 transition-transform flex-shrink-0">Пройти</button>
+                  <button onClick={() => onOpenSupport?.(`Запрос на верификацию аккаунта Gruzli\n\nID пользователя: ${shortId}\nИмя: ${displayName}\n\nПрошу сообщить порядок прохождения верификации.`)} className="px-3.5 py-2 rounded-xl bg-foreground text-primary-foreground text-xs font-bold active:scale-95 transition-transform flex-shrink-0">Запросить</button>
                 </div>
               </div>
             </motion.div>
@@ -1147,10 +1145,10 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
               <button onClick={() => setShowTopUp(false)} className="flex-1 py-2.5 rounded-2xl bg-card border border-border text-sm font-semibold text-muted-foreground active:bg-surface-1 transition-all">Отмена</button>
               <button onClick={() => {
                 const amt = parseInt(topUpAmount);
-                if (!amt || amt <= 0) { toast.error("Введите корректную сумму"); return; }
+                if (!Number.isSafeInteger(amt) || amt <= 0) { toast.error("Введите целую сумму больше нуля"); return; }
                 setShowTopUp(false);
-                onOpenSupport?.(`💰 Заявка на пополнение баланса\n\nСумма: ${amt.toLocaleString("ru-RU")} ₽\nID пользователя: ${profile?.display_id || user?.id?.slice(0, 8).toUpperCase()}\nИмя: ${profile?.full_name || "—"}\n\nПрошу пополнить баланс.`);
-              }} className="flex-1 py-2.5 rounded-2xl bg-foreground text-sm font-bold text-primary-foreground tap-scale">Отправить</button>
+                onOpenSupport?.(`💰 Заявка на пополнение баланса\n\nСумма: ${amt.toLocaleString("ru-RU")} ₽\nID пользователя: ${profile?.display_id || user?.id?.slice(0, 8).toUpperCase()}\nИмя: ${displayName}\n\nПрошу пополнить баланс.`);
+              }} className="flex-1 py-2.5 rounded-2xl bg-foreground text-sm font-bold text-primary-foreground tap-scale">Отправить заявку</button>
             </div>
           </motion.div>
         </div>
