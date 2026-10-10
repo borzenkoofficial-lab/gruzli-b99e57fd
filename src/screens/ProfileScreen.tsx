@@ -8,8 +8,6 @@ import { leaderboard } from "@/data/mockData";
 import { toast } from "sonner";
 import BankCard from "@/components/BankCard";
 
-const defaultSkills = ["Переезды", "Такелаж", "Сборка мебели", "Погрузка", "Межэтаж"];
-
 interface ProfileScreenProps {
   onOpenSettings?: () => void;
   onOpenNotifications?: () => void;
@@ -17,6 +15,7 @@ interface ProfileScreenProps {
   onOpenPremium?: () => void;
   onOpenCabinet?: () => void;
   onOpenCompany?: () => void;
+  onOpenChats?: () => void;
 }
 
 interface Review {
@@ -96,20 +95,46 @@ const AvatarWithUpload = ({ profile, user, editable = false }: { profile: any; u
   const initials = (profile?.full_name || "").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const input = e.currentTarget;
+    const file = input.files?.[0];
     if (!file || !user) return;
+    if (user.id.startsWith("demo-")) {
+      toast.info("Загрузка фото доступна в личном аккаунте");
+      input.value = "";
+      return;
+    }
+    if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
+      toast.error("Выберите изображение размером до 5 МБ");
+      input.value = "";
+      return;
+    }
+
     setUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `avatars/${user.id}.${ext}`;
-    const { error: uploadErr } = await supabase.storage.from("kartoteka-photos").upload(path, file, { upsert: true });
-    if (uploadErr) { toast.error("Ошибка загрузки"); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from("kartoteka-photos").getPublicUrl(path);
-    const avatarUrl = urlData.publicUrl + "?t=" + Date.now();
-    await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("user_id", user.id);
-    toast.success("Фото обновлено");
-    setUploading(false);
-    // Refresh profile without full page reload
-    window.dispatchEvent(new CustomEvent("profile-avatar-updated"));
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+    // Storage RLS requires the first path segment to be the authenticated user ID.
+    const path = `${user.id}/avatar.${ext}`;
+
+    try {
+      const { error: uploadErr } = await supabase.storage.from("kartoteka-photos").upload(path, file, { upsert: true });
+      if (uploadErr) throw uploadErr;
+
+      const { data: urlData } = supabase.storage.from("kartoteka-photos").getPublicUrl(path);
+      const avatarUrl = urlData.publicUrl + "?t=" + Date.now();
+      const { error: profileError } = await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("user_id", user.id);
+      if (profileError) {
+        await supabase.storage.from("kartoteka-photos").remove([path]);
+        throw profileError;
+      }
+
+      toast.success("Фото обновлено");
+      window.dispatchEvent(new CustomEvent("profile-updated"));
+    } catch (error) {
+      console.error("[Gruzli Profile] avatar upload failed:", error);
+      toast.error("Не удалось сохранить фото. Попробуйте ещё раз.");
+    } finally {
+      setUploading(false);
+      input.value = "";
+    }
   };
 
   return (
@@ -133,7 +158,7 @@ const AvatarWithUpload = ({ profile, user, editable = false }: { profile: any; u
 
 const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onOpenPremium, onOpenCabinet, onOpenCompany }: ProfileScreenProps) => {
   const { user, profile, role, signOut } = useAuth();
-  const [availability, setAvailability] = useState<boolean[]>([true, true, true, false, true, true, false]);
+  const [availability, setAvailability] = useState<boolean[]>(Array(7).fill(false));
   const [statsPeriod, setStatsPeriod] = useState<"today" | "week" | "month">("today");
   const [showWallet, setShowWallet] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -145,8 +170,12 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
   const [editingSkills, setEditingSkills] = useState(false);
   const [userSkills, setUserSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState("");
+  const [todayStats, setTodayStats] = useState({ orders: 0, earned: 0, hours: 0 });
   const [weeklyStats, setWeeklyStats] = useState({ orders: 0, earned: 0, hours: 0 });
   const [monthlyStats, setMonthlyStats] = useState({ orders: 0, earned: 0, hours: 0 });
+  const [dispatcherTotalIncome, setDispatcherTotalIncome] = useState(0);
+  const [dispatcherCompletedJobs, setDispatcherCompletedJobs] = useState(0);
+  const [clientOrdersCount, setClientOrdersCount] = useState<number | null>(null);
   const [showTransactions, setShowTransactions] = useState(false);
   const [transactions, setTransactions] = useState<{ type: "income" | "expense"; amount: number; description: string; date: string }[]>([]);
 
@@ -165,9 +194,8 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
   // Load availability from DB
   useEffect(() => {
-    if (profile?.availability) {
-      setAvailability(profile.availability);
-    }
+    const saved = profile?.availability;
+    setAvailability(Array.isArray(saved) && saved.length === 7 ? [...saved] : Array(7).fill(false));
   }, [profile]);
 
   // Load skills
@@ -177,16 +205,34 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
   // Save availability to DB
   const saveAvailability = async (next: boolean[]) => {
+    const previous = availability;
     setAvailability(next);
-    if (!user) return;
-    await supabase.from("profiles").update({ availability: next } as any).eq("user_id", user.id);
+    if (!user || isDemo) return;
+
+    const { error } = await supabase.from("profiles").update({ availability: next } as any).eq("user_id", user.id);
+    if (error) {
+      console.error("[Gruzli Profile] availability save failed:", error);
+      setAvailability(previous);
+      toast.error("Не удалось сохранить расписание доступности");
+      return;
+    }
+    window.dispatchEvent(new CustomEvent("profile-updated"));
   };
 
-  // Save skills to DB
+  // Save only real profile skills; never silently pretend that demo defaults were saved.
   const saveSkills = async (skills: string[]) => {
+    const previous = userSkills;
     setUserSkills(skills);
-    if (!user) return;
-    await supabase.from("profiles").update({ skills }).eq("user_id", user.id);
+    if (!user || isDemo) return;
+
+    const { error } = await supabase.from("profiles").update({ skills }).eq("user_id", user.id);
+    if (error) {
+      console.error("[Gruzli Profile] skills save failed:", error);
+      setUserSkills(previous);
+      toast.error("Не удалось сохранить навыки");
+      return;
+    }
+    window.dispatchEvent(new CustomEvent("profile-updated"));
   };
 
   const addSkill = () => {
