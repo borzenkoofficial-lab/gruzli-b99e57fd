@@ -18,10 +18,22 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
         return false;
       }
 
-      // Check weekly completed jobs limit for non-premium workers
+      // The dispatcher-first workflow only allows responses to assigned jobs.
+      // Check before the RPC so a rejected attempt cannot leave an orphan response.
+      if (!job.dispatcher_id) {
+        toast.error("Сейчас заявка ожидает выбора диспетчера.");
+        return false;
+      }
+
+      // Check weekly completed jobs limit for non-premium workers.
       if (!profile?.is_premium) {
-        const { data: weeklyCount } = await supabase.rpc("get_weekly_completed_jobs", { _user_id: user.id });
-        if (weeklyCount !== null && weeklyCount >= FREE_WEEKLY_LIMIT) {
+        const { data: weeklyCount, error: weeklyCountError } = await supabase.rpc("get_weekly_completed_jobs", { _user_id: user.id });
+        if (weeklyCountError || weeklyCount === null || weeklyCount === undefined) {
+          console.error("Failed to check weekly worker limit", weeklyCountError);
+          toast.error("Не удалось проверить лимит заказов. Попробуйте ещё раз.");
+          return false;
+        }
+        if (weeklyCount >= FREE_WEEKLY_LIMIT) {
           toast.error(`Лимит ${FREE_WEEKLY_LIMIT} выполненных заказов в неделю. Оформите Premium для безлимита!`, { duration: 5000 });
           return false;
         }
@@ -49,11 +61,6 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
       }
 
       // 2. Find or create conversation with the assigned dispatcher.
-      // Open requests without a dispatcher are not worker-respondable.
-      if (!job.dispatcher_id) {
-        toast.error("Сейчас заявка ожидает выбора диспетчера.");
-        return false;
-      }
       const { data: dispProfile } = await supabase
         .from("profiles_public" as any)
         .select("full_name")
@@ -70,9 +77,21 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
         return false;
       }
 
-      // Only create the initial message and notification for a newly inserted response.
-      // Keep chat/notification behavior separate from the transactional response creation.
-      if (isNewResponse) {
+      // Ensure the initial message exists even when the worker retries an already-saved response.
+      // This recovers from a previous partial success without duplicating the same message.
+      let initialMessageFailed = false;
+      const { data: existingMessages, error: messageLookupError } = await supabase
+        .from("messages")
+        .select("id")
+        .eq("conversation_id", conversationId)
+        .eq("sender_id", user.id)
+        .eq("text", responseMessage)
+        .limit(1);
+
+      if (messageLookupError) {
+        initialMessageFailed = true;
+        console.error("Could not verify initial response message", messageLookupError);
+      } else if (!existingMessages || existingMessages.length === 0) {
         const { error: messageError } = await supabase.from("messages").insert({
           conversation_id: conversationId,
           sender_id: user.id,
@@ -80,9 +99,13 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
           message_type: "text",
         });
         if (messageError) {
-          toast.error("Отклик сохранён, но сообщение не отправлено. Откройте чат и отправьте его повторно.");
+          initialMessageFailed = true;
+          console.error("Response saved but initial chat message failed", messageError);
         }
+      }
 
+      // Notify only for a newly inserted response, never on a duplicate retry.
+      if (isNewResponse) {
         supabase.functions.invoke("notify-email", {
           body: {
             type: "new_job_response",
@@ -93,9 +116,13 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
         }).catch(() => {});
       }
 
-      // 3. Open chat
+      // 3. Open chat. Never show a success toast if the initial message failed.
       if (navigator.vibrate) navigator.vibrate(50);
-      toast.success("Отклик отправлен ✓ Чат с диспетчером открыт");
+      if (initialMessageFailed) {
+        toast.error("Отклик сохранён, но сообщение не отправлено. Отправьте его повторно в чате.");
+      } else {
+        toast.success("Отклик отправлен ✓ Чат с диспетчером открыт");
+      }
       onOpenChat?.(conversationId, job.title || "Чат");
       return true;
     },
