@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { leaderboard } from "@/data/mockData";
 import { toast } from "sonner";
 import BankCard from "@/components/BankCard";
+import { aggregateProfileMetrics } from "@/lib/profileMetrics";
 
 interface ProfileScreenProps {
   onOpenSettings?: () => void;
@@ -277,14 +278,6 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
       weekStart.setHours(0, 0, 0, 0);
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      const toStats = (rows: any[], incomeKey: "earned" | "dispatcher_income" = "earned") => ({
-        orders: rows.length,
-        earned: rows.reduce((sum, row) => sum + Number(row[incomeKey] || 0), 0),
-        hours: Math.round(rows.reduce((sum, row) => sum + Number(row.hours_worked || 0), 0) * 10) / 10,
-      });
-      const inRange = (rows: any[], start: Date) =>
-        rows.filter((row) => row.completedAt && new Date(row.completedAt).getTime() >= start.getTime());
-
       if (isDemo) {
         if (!cancelled) {
           setTodayStats({ orders: 0, earned: 0, hours: 0 });
@@ -315,12 +308,9 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         }
 
         const rows = (data || []).map((job) => ({ ...job, completedAt: job.updated_at }));
-        const todayRows = inRange(rows, todayStart);
-        const weekRows = inRange(rows, weekStart);
-        const monthRows = inRange(rows, monthStart);
-        setTodayStats(toStats(todayRows, "dispatcher_income"));
-        setWeeklyStats(toStats(weekRows, "dispatcher_income"));
-        setMonthlyStats(toStats(monthRows, "dispatcher_income"));
+        setTodayStats(aggregateProfileMetrics(rows, todayStart.getTime(), now.getTime(), "dispatcher_income"));
+        setWeeklyStats(aggregateProfileMetrics(rows, weekStart.getTime(), now.getTime(), "dispatcher_income"));
+        setMonthlyStats(aggregateProfileMetrics(rows, monthStart.getTime(), now.getTime(), "dispatcher_income"));
         setDispatcherTotalIncome(rows.reduce((sum, row) => sum + Number(row.dispatcher_income || 0), 0));
         setDispatcherCompletedJobs(rows.length);
         return;
@@ -347,9 +337,9 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
       }
 
       const rows = (data || []).map((row) => ({ ...row, completedAt: row.work_finished_at }));
-      setTodayStats(toStats(inRange(rows, todayStart)));
-      setWeeklyStats(toStats(inRange(rows, weekStart)));
-      setMonthlyStats(toStats(rows));
+      setTodayStats(aggregateProfileMetrics(rows, todayStart.getTime(), now.getTime()));
+      setWeeklyStats(aggregateProfileMetrics(rows, weekStart.getTime(), now.getTime()));
+      setMonthlyStats(aggregateProfileMetrics(rows, monthStart.getTime(), now.getTime()));
     };
 
     void fetchStats();
