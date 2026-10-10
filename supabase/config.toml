@@ -13,6 +13,9 @@ project_id = "iudtdfznyzpqkfhprbad"
     verify_jwt = true
   [functions.send-transactional-email]
     verify_jwt = true
+# Database triggers call these endpoints with SEND_PUSH_INTERNAL_SECRET.
+  # verify_jwt is disabled only because this is a shared internal bearer, which
+  # each handler validates before processing the request. Never remove that check.
   [functions.send-push4site]
     verify_jwt = false
   [functions.send-push]

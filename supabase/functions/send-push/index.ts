@@ -1,4 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { hasValidInternalBearer } from "../_shared/internalAuth.ts";
 import webpush from "npm:web-push@3.6.7";
 
 const corsHeaders = {
@@ -46,6 +47,28 @@ async function sendPushToUsers(supabase: any, userIds: string[], payload: { titl
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const internalSecret = Deno.env.get("SEND_PUSH_INTERNAL_SECRET") ?? "";
+  if (!internalSecret) {
+    return new Response(JSON.stringify({ error: "Push endpoint is not configured" }), {
+      status: 503,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  if (!hasValidInternalBearer(req, internalSecret)) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   try {
     const body = await req.json();

@@ -1,29 +1,201 @@
-// Web Push service worker for Gruzli
-self.addEventListener('install', (e) => self.skipWaiting());
-self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
+/* Gruzli PWA service worker.
+ * Stage 1: app-shell caching + safe offline navigation + existing Web Push.
+ * Business/API requests are deliberately NOT cached here.
+ */
 
-self.addEventListener('push', (event) => {
+const CACHE_PREFIX = "gruzli-pwa";
+const CACHE_VERSION = "v1";
+const SHELL_CACHE = `${CACHE_PREFIX}-shell-${CACHE_VERSION}`;
+const RUNTIME_CACHE = `${CACHE_PREFIX}-runtime-${CACHE_VERSION}`;
+const MAX_RUNTIME_CACHE_ENTRIES = 200;
+
+const SHELL_ASSETS = [
+  "/",
+  "/manifest.json",
+  "/pwa-192x192.png",
+  "/pwa-512x512.png",
+  "/favicon.jpeg",
+  "/badge-96x96.png",
+];
+
+async function cacheRuntimeResponse(request, response) {
+  try {
+    const cache = await caches.open(RUNTIME_CACHE);
+    await cache.put(request, response);
+
+    // Keep deployments from accumulating an unlimited number of hashed assets.
+    const keys = await cache.keys();
+    const excess = keys.length - MAX_RUNTIME_CACHE_ENTRIES;
+    if (excess > 0) {
+      // Preserve the latest app shell even when the runtime cache is full.
+      const evictableKeys = keys.filter((key) => new URL(key.url).pathname !== "/");
+      await Promise.all(evictableKeys.slice(0, excess).map((key) => cache.delete(key)));
+    }
+  } catch {
+    // Cache failures must never turn a successful network response into a failure.
+  }
+}
+
+async function getCachedAppShell() {
+  // The runtime copy is refreshed after every successful online navigation.
+  const runtimeCache = await caches.open(RUNTIME_CACHE);
+  const latestShell = await runtimeCache.match("/");
+  if (latestShell) return latestShell;
+
+  const shellCache = await caches.open(SHELL_CACHE);
+  return shellCache.match("/");
+}
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(SHELL_CACHE)
+      .then((cache) => cache.addAll(SHELL_ASSETS))
+      .then(async () => {
+        // Activate immediately on first install. On updates, allow the current
+        // worker to keep controlling existing tabs until they are closed.
+        if (!self.registration.active) {
+          await self.skipWaiting();
+        }
+      })
+  );
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key.startsWith(CACHE_PREFIX + "-") && key !== SHELL_CACHE && key !== RUNTIME_CACHE)
+            .map((key) => caches.delete(key))
+        )
+      )
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener("fetch", (event) => {
+  const request = event.request;
+
+  // Only handle safe GET requests. Never cache mutations.
+  if (request.method !== "GET") return;
+
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+
+  // Never cache backend/API calls. Supabase traffic must remain server-authoritative.
+  if (
+    url.hostname.includes("supabase") ||
+    url.pathname.startsWith("/api/")
+  ) {
+    return;
+  }
+
+  // SPA navigation: network first, cached app shell as offline/server-error fallback.
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request)
+        .then(async (response) => {
+          const contentType = response.headers.get("content-type") || "";
+          if (response.ok && contentType.includes("text/html")) {
+            await cacheRuntimeResponse("/", response.clone());
+            return response;
+          }
+
+          if (response.ok) return response;
+
+          const cached = await getCachedAppShell();
+          return cached || response;
+        })
+        .catch(async () => {
+          const cached = await getCachedAppShell();
+          return cached || Response.error();
+        })
+    );
+    return;
+  }
+
+  // Static same-origin assets: cache first after they have been fetched once.
+  const destination = request.destination;
+  const isStaticAsset =
+    destination === "script" ||
+    destination === "style" ||
+    destination === "image" ||
+    destination === "font" ||
+    destination === "manifest";
+
+  if (!isStaticAsset) return;
+
+  event.respondWith(
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+
+      return fetch(request).then(async (response) => {
+        if (response.ok) {
+          await cacheRuntimeResponse(request, response.clone());
+        }
+        return response;
+      })
+    })
+  );
+});
+
+// Web Push service worker behavior retained from the existing Gruzli implementation.
+self.addEventListener("push", (event) => {
   let data = {};
-  try { data = event.data ? event.data.json() : {}; } catch { data = { title: 'Gruzli', body: event.data?.text() || '' }; }
-  const title = data.title || 'Gruzli';
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { title: "Gruzli", body: event.data?.text?.() || "" };
+  }
+
+  const title = data.title || "Gruzli";
   const options = {
-    body: data.body || '',
-    icon: data.icon || '/pwa-192x192.png',
-    badge: '/badge-96x96.png',
+    body: data.body || "",
+    icon: data.icon || "/pwa-192x192.png",
+    badge: "/badge-96x96.png",
     tag: data.tag,
-    data: { url: data.url || '/' },
+    data: { url: data.url || "/" },
   };
+
   event.waitUntil(self.registration.showNotification(title, options));
 });
 
-self.addEventListener('notificationclick', (event) => {
+self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || '/';
-  event.waitUntil((async () => {
-    const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    for (const c of all) {
-      if ('focus' in c) { try { await c.navigate(url); } catch {} return c.focus(); }
+
+  const targetUrl = event.notification?.data?.url || "/";
+  let absoluteUrl = new URL("/", self.location.origin).href;
+  try {
+    const parsedUrl = new URL(targetUrl, self.location.origin);
+    if (parsedUrl.origin === self.location.origin) {
+      absoluteUrl = parsedUrl.href;
     }
-    if (self.clients.openWindow) return self.clients.openWindow(url);
-  })());
+  } catch {
+    // Invalid notification targets safely fall back to the Gruzli home page.
+  }
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (clients) => {
+      for (const client of clients) {
+        if ("focus" in client) {
+          try {
+            await client.navigate(absoluteUrl);
+          } catch {}
+          return client.focus();
+        }
+      }
+
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(absoluteUrl);
+      }
+      return undefined;
+    })
+  );
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    void self.skipWaiting();
+  }
 });
