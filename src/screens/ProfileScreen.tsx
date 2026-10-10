@@ -247,62 +247,166 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
     saveSkills(userSkills.filter((s) => s !== skill));
   };
 
-  // Fetch real stats with actual hours and earnings
+  // Load metrics from completed work, using the completion timestamp rather than
+  // the time the worker first responded to an order.
   useEffect(() => {
-    if (!user) return;
+    if (!user || !role) return;
+    let cancelled = false;
+
     const fetchStats = async () => {
       const now = new Date();
+      const todayStart = new Date(now);
+      todayStart.setHours(0, 0, 0, 0);
       const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - now.getDay() + 1);
+      weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7));
       weekStart.setHours(0, 0, 0, 0);
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-      const { data: weekData } = await supabase
+      const toStats = (rows: any[], incomeKey: "earned" | "dispatcher_income" = "earned") => ({
+        orders: rows.length,
+        earned: rows.reduce((sum, row) => sum + Number(row[incomeKey] || 0), 0),
+        hours: Math.round(rows.reduce((sum, row) => sum + Number(row.hours_worked || 0), 0) * 10) / 10,
+      });
+      const inRange = (rows: any[], start: Date) =>
+        rows.filter((row) => row.completedAt && new Date(row.completedAt).getTime() >= start.getTime());
+
+      if (isDemo) {
+        if (!cancelled) {
+          setTodayStats({ orders: 0, earned: 0, hours: 0 });
+          setWeeklyStats({ orders: 0, earned: 0, hours: 0 });
+          setMonthlyStats({ orders: 0, earned: 0, hours: 0 });
+          setDispatcherTotalIncome(0);
+          setDispatcherCompletedJobs(0);
+        }
+        return;
+      }
+
+      if (role === "dispatcher") {
+        const { data, error } = await supabase
+          .from("jobs")
+          .select("id, dispatcher_income, updated_at")
+          .eq("dispatcher_id", user.id)
+          .eq("status", "completed")
+          .order("updated_at", { ascending: false });
+
+        if (cancelled) return;
+        if (error) {
+          console.error("[Gruzli Profile] dispatcher statistics failed:", error);
+          setTodayStats({ orders: 0, earned: 0, hours: 0 });
+          setWeeklyStats({ orders: 0, earned: 0, hours: 0 });
+          setMonthlyStats({ orders: 0, earned: 0, hours: 0 });
+          toast.error("Не удалось загрузить статистику диспетчера");
+          return;
+        }
+
+        const rows = (data || []).map((job) => ({ ...job, completedAt: job.updated_at }));
+        const todayRows = inRange(rows, todayStart);
+        const weekRows = inRange(rows, weekStart);
+        const monthRows = inRange(rows, monthStart);
+        setTodayStats(toStats(todayRows, "dispatcher_income"));
+        setWeeklyStats(toStats(weekRows, "dispatcher_income"));
+        setMonthlyStats(toStats(monthRows, "dispatcher_income"));
+        setDispatcherTotalIncome(rows.reduce((sum, row) => sum + Number(row.dispatcher_income || 0), 0));
+        setDispatcherCompletedJobs(rows.length);
+        return;
+      }
+
+      if (role !== "worker") return;
+
+      const { data, error } = await supabase
         .from("job_responses")
-        .select("id, job_id, created_at, hours_worked, earned")
+        .select("id, job_id, work_finished_at, hours_worked, earned")
         .eq("worker_id", user.id)
         .eq("worker_status", "completed")
-        .gte("created_at", weekStart.toISOString());
+        .gte("work_finished_at", monthStart.toISOString())
+        .lte("work_finished_at", now.toISOString());
 
-      const { data: monthData } = await supabase
-        .from("job_responses")
-        .select("id, job_id, created_at, hours_worked, earned")
-        .eq("worker_id", user.id)
-        .eq("worker_status", "completed")
-        .gte("created_at", monthStart.toISOString());
+      if (cancelled) return;
+      if (error) {
+        console.error("[Gruzli Profile] worker statistics failed:", error);
+        setTodayStats({ orders: 0, earned: 0, hours: 0 });
+        setWeeklyStats({ orders: 0, earned: 0, hours: 0 });
+        setMonthlyStats({ orders: 0, earned: 0, hours: 0 });
+        toast.error("Не удалось загрузить статистику работы");
+        return;
+      }
 
-      if (weekData) {
-        const earned = weekData.reduce((s, r: any) => s + (r.earned || 0), 0);
-        const hours = weekData.reduce((s, r: any) => s + (r.hours_worked ? Number(r.hours_worked) : 0), 0);
-        setWeeklyStats({ orders: weekData.length, earned, hours: Math.round(hours * 10) / 10 });
-      }
-      if (monthData) {
-        const earned = monthData.reduce((s, r: any) => s + (r.earned || 0), 0);
-        const hours = monthData.reduce((s, r: any) => s + (r.hours_worked ? Number(r.hours_worked) : 0), 0);
-        setMonthlyStats({ orders: monthData.length, earned, hours: Math.round(hours * 10) / 10 });
-      }
+      const rows = (data || []).map((row) => ({ ...row, completedAt: row.work_finished_at }));
+      setTodayStats(toStats(inRange(rows, todayStart)));
+      setWeeklyStats(toStats(inRange(rows, weekStart)));
+      setMonthlyStats(toStats(rows));
     };
-    fetchStats();
-  }, [user]);
+
+    void fetchStats();
+    return () => { cancelled = true; };
+  }, [user?.id, role, isDemo]);
+
+  // Client order count comes from the client's actual job rows, not the worker-oriented profile counter.
+  useEffect(() => {
+    if (!user || role !== "client" || isDemo) {
+      setClientOrdersCount(null);
+      return;
+    }
+
+    let cancelled = false;
+    const fetchClientOrderCount = async () => {
+      const { count, error } = await supabase
+        .from("jobs")
+        .select("id", { count: "exact", head: true })
+        .eq("client_id", user.id);
+
+      if (cancelled) return;
+      if (error) {
+        console.error("[Gruzli Profile] client order count failed:", error);
+        setClientOrdersCount(null);
+        return;
+      }
+      setClientOrdersCount(count ?? 0);
+    };
+
+    void fetchClientOrderCount();
+    const channel = supabase
+      .channel(`client-profile-orders-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "jobs", filter: `client_id=eq.${user.id}` }, () => {
+        void fetchClientOrderCount();
+      })
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      void supabase.removeChannel(channel);
+    };
+  }, [user?.id, role, isDemo]);
 
   // Fetch transaction history from completed jobs
   useEffect(() => {
     if (!user) return;
     const fetchTransactions = async () => {
-      const { data } = await supabase
+      if (isDemo || role !== "worker") {
+        setTransactions([]);
+        return;
+      }
+
+      const { data, error } = await supabase
         .from("job_responses")
-        .select("id, created_at, earned, hours_worked, job_id, jobs(title)")
+        .select("id, created_at, work_finished_at, earned, hours_worked, job_id, jobs(title)")
         .eq("worker_id", user.id)
         .eq("worker_status", "completed")
-        .order("created_at", { ascending: false })
+        .order("work_finished_at", { ascending: false })
         .limit(20);
-      
+
+      if (error) {
+        console.error("[Gruzli Profile] work history failed:", error);
+        toast.error("Не удалось загрузить историю работы");
+        return;
+      }
+
       if (data) {
         const txs = data.map((r: any) => ({
           type: "income" as const,
-          amount: r.earned || 0,
+          amount: Number(r.earned || 0),
           description: r.jobs?.title || "Выполненный заказ",
-          date: new Date(r.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" }),
+          date: new Date(r.work_finished_at || r.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" }),
         }));
         setTransactions(txs);
       }
