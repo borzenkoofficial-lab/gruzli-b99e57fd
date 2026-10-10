@@ -607,7 +607,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
           <div className="mx-5 mb-4 grid grid-cols-3 gap-2">
             {[
-              ["Рейтинг", ratingValue.toFixed(1), "из 5"],
+              ["Рейтинг", ratingLabel, "из 5"],
               ["Заказы", String(dispatcherCompletedJobs), "завершено"],
               ["Доход", totalProfit.toLocaleString("ru-RU") + " ₽", "всего"],
             ].map(([label,value,caption]) => (
