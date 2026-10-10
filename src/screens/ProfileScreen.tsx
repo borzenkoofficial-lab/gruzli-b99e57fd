@@ -4,11 +4,9 @@ import { Star, Briefcase, Wallet, Calendar, ChevronRight, Settings, LogOut, Shie
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { leaderboard } from "@/data/mockData";
 import { toast } from "sonner";
 import BankCard from "@/components/BankCard";
-
-const defaultSkills = ["Переезды", "Такелаж", "Сборка мебели", "Погрузка", "Межэтаж"];
+import { aggregateProfileMetrics } from "@/lib/profileMetrics";
 
 interface ProfileScreenProps {
   onOpenSettings?: () => void;
@@ -17,6 +15,8 @@ interface ProfileScreenProps {
   onOpenPremium?: () => void;
   onOpenCabinet?: () => void;
   onOpenCompany?: () => void;
+  onOpenChats?: () => void;
+  onOpenDispatcherCabinet?: () => void;
 }
 
 interface Review {
@@ -93,23 +93,54 @@ const VerifiedPopup = ({ open, onClose }: { open: boolean; onClose: () => void }
 const AvatarWithUpload = ({ profile, user, editable = false }: { profile: any; user: any; editable?: boolean }) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const initials = (profile?.full_name || "").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
+  const initials = (profile?.full_name || user?.user_metadata?.full_name || "").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const input = e.currentTarget;
+    const file = input.files?.[0];
     if (!file || !user) return;
+    if (user.id.startsWith("demo-")) {
+      toast.info("Загрузка фото доступна в личном аккаунте");
+      input.value = "";
+      return;
+    }
+    if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
+      toast.error("Выберите изображение размером до 5 МБ");
+      input.value = "";
+      return;
+    }
+
     setUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `avatars/${user.id}.${ext}`;
-    const { error: uploadErr } = await supabase.storage.from("kartoteka-photos").upload(path, file, { upsert: true });
-    if (uploadErr) { toast.error("Ошибка загрузки"); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from("kartoteka-photos").getPublicUrl(path);
-    const avatarUrl = urlData.publicUrl + "?t=" + Date.now();
-    await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("user_id", user.id);
-    toast.success("Фото обновлено");
-    setUploading(false);
-    // Refresh profile without full page reload
-    window.dispatchEvent(new CustomEvent("profile-avatar-updated"));
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+    // Storage RLS requires the first path segment to be the authenticated user ID.
+    const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+
+    try {
+      const { error: uploadErr } = await supabase.storage.from("kartoteka-photos").upload(path, file, { upsert: true });
+      if (uploadErr) throw uploadErr;
+
+      const { data: urlData } = supabase.storage.from("kartoteka-photos").getPublicUrl(path);
+      const avatarUrl = urlData.publicUrl + "?t=" + Date.now();
+      const { data: updatedProfile, error: profileError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("user_id", user.id)
+        .select("user_id")
+        .single();
+      if (profileError || !updatedProfile) {
+        await supabase.storage.from("kartoteka-photos").remove([path]);
+        throw profileError || new Error("Профиль не найден");
+      }
+
+      toast.success("Фото обновлено");
+      window.dispatchEvent(new CustomEvent("profile-updated"));
+    } catch (error) {
+      console.error("[Gruzli Profile] avatar upload failed:", error);
+      toast.error("Не удалось сохранить фото. Попробуйте ещё раз.");
+    } finally {
+      setUploading(false);
+      input.value = "";
+    }
   };
 
   return (
@@ -131,11 +162,10 @@ const AvatarWithUpload = ({ profile, user, editable = false }: { profile: any; u
   );
 };
 
-const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onOpenPremium, onOpenCabinet, onOpenCompany }: ProfileScreenProps) => {
+const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onOpenPremium, onOpenCabinet, onOpenCompany, onOpenChats, onOpenDispatcherCabinet }: ProfileScreenProps) => {
   const { user, profile, role, signOut } = useAuth();
-  const [availability, setAvailability] = useState<boolean[]>([true, true, true, false, true, true, false]);
+  const [availability, setAvailability] = useState<boolean[]>(Array(7).fill(false));
   const [statsPeriod, setStatsPeriod] = useState<"today" | "week" | "month">("today");
-  const [showWallet, setShowWallet] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [avgRating, setAvgRating] = useState(0);
   const [idCopied, setIdCopied] = useState(false);
@@ -145,8 +175,12 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
   const [editingSkills, setEditingSkills] = useState(false);
   const [userSkills, setUserSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState("");
+  const [todayStats, setTodayStats] = useState({ orders: 0, earned: 0, hours: 0 });
   const [weeklyStats, setWeeklyStats] = useState({ orders: 0, earned: 0, hours: 0 });
   const [monthlyStats, setMonthlyStats] = useState({ orders: 0, earned: 0, hours: 0 });
+  const [dispatcherTotalIncome, setDispatcherTotalIncome] = useState(0);
+  const [dispatcherCompletedJobs, setDispatcherCompletedJobs] = useState(0);
+  const [clientOrdersCount, setClientOrdersCount] = useState<number | null>(null);
   const [showTransactions, setShowTransactions] = useState(false);
   const [transactions, setTransactions] = useState<{ type: "income" | "expense"; amount: number; description: string; date: string }[]>([]);
 
@@ -160,14 +194,27 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
     window.dispatchEvent(new Event("navigate-to-feed"));
     toast.success(`Демо: ${nextRole === "worker" ? "Грузчик" : nextRole === "dispatcher" ? "Диспетчер" : "Заказчик"}`);
   };
-  const initials = (profile?.full_name || "").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
+  const displayName = profile?.full_name?.trim()
+    || String(user?.user_metadata?.full_name || "").trim()
+    || (isDispatcher ? "Диспетчер" : role === "client" ? "Заказчик" : role === "worker" ? "Грузчик" : "Пользователь");
+  const birthDateLabel = profile?.birth_date
+    ? new Date(`${profile.birth_date}T00:00:00`).toLocaleDateString("ru-RU")
+    : null;
+  const initials = displayName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
   const shortId = profile?.display_id || user?.id?.slice(0, 8).toUpperCase() || "—";
+  const lastSeenMs = profile?.last_seen_at ? Date.parse(profile.last_seen_at) : Number.NaN;
+  const lastSeenAge = Date.now() - lastSeenMs;
+  const workerPresenceLabel =
+    Number.isFinite(lastSeenMs) && lastSeenAge >= 0 && lastSeenAge <= 2 * 60 * 1000
+      ? "В СЕТИ"
+      : profile?.last_seen_at
+        ? "НЕ В СЕТИ"
+        : "СТАТУС НЕ УКАЗАН";
 
   // Load availability from DB
   useEffect(() => {
-    if (profile?.availability) {
-      setAvailability(profile.availability);
-    }
+    const saved = profile?.availability;
+    setAvailability(Array.isArray(saved) && saved.length === 7 ? [...saved] : Array(7).fill(false));
   }, [profile]);
 
   // Load skills
@@ -177,16 +224,34 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
   // Save availability to DB
   const saveAvailability = async (next: boolean[]) => {
+    const previous = availability;
     setAvailability(next);
-    if (!user) return;
-    await supabase.from("profiles").update({ availability: next } as any).eq("user_id", user.id);
+    if (!user || isDemo) return;
+
+    const { data: updatedProfile, error } = await supabase.from("profiles").update({ availability: next } as any).eq("user_id", user.id).select("user_id").single();
+    if (error || !updatedProfile) {
+      console.error("[Gruzli Profile] availability save failed:", error);
+      setAvailability(previous);
+      toast.error("Не удалось сохранить расписание доступности");
+      return;
+    }
+    window.dispatchEvent(new CustomEvent("profile-updated"));
   };
 
-  // Save skills to DB
+  // Save only real profile skills; never silently pretend that demo defaults were saved.
   const saveSkills = async (skills: string[]) => {
+    const previous = userSkills;
     setUserSkills(skills);
-    if (!user) return;
-    await supabase.from("profiles").update({ skills }).eq("user_id", user.id);
+    if (!user || isDemo) return;
+
+    const { data: updatedProfile, error } = await supabase.from("profiles").update({ skills }).eq("user_id", user.id).select("user_id").single();
+    if (error || !updatedProfile) {
+      console.error("[Gruzli Profile] skills save failed:", error);
+      setUserSkills(previous);
+      toast.error("Не удалось сохранить навыки");
+      return;
+    }
+    window.dispatchEvent(new CustomEvent("profile-updated"));
   };
 
   const addSkill = () => {
@@ -201,90 +266,224 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
     saveSkills(userSkills.filter((s) => s !== skill));
   };
 
-  // Fetch real stats with actual hours and earnings
+  // Load metrics from completed work, using the completion timestamp rather than
+  // the time the worker first responded to an order.
   useEffect(() => {
-    if (!user) return;
+    if (!user || !role) return;
+    let cancelled = false;
+
     const fetchStats = async () => {
       const now = new Date();
+      const todayStart = new Date(now);
+      todayStart.setHours(0, 0, 0, 0);
       const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - now.getDay() + 1);
+      weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7));
       weekStart.setHours(0, 0, 0, 0);
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const queryStart = weekStart < monthStart ? weekStart : monthStart;
 
-      const { data: weekData } = await supabase
+      if (isDemo) {
+        if (!cancelled) {
+          setTodayStats({ orders: 0, earned: 0, hours: 0 });
+          setWeeklyStats({ orders: 0, earned: 0, hours: 0 });
+          setMonthlyStats({ orders: 0, earned: 0, hours: 0 });
+          setDispatcherTotalIncome(0);
+          setDispatcherCompletedJobs(0);
+        }
+        return;
+      }
+
+      if (role === "dispatcher") {
+        const { data, error } = await supabase
+          .from("jobs")
+          .select("id, dispatcher_income, updated_at")
+          .eq("dispatcher_id", user.id)
+          .eq("status", "completed")
+          .order("updated_at", { ascending: false });
+
+        if (cancelled) return;
+        if (error) {
+          console.error("[Gruzli Profile] dispatcher statistics failed:", error);
+          setTodayStats({ orders: 0, earned: 0, hours: 0 });
+          setWeeklyStats({ orders: 0, earned: 0, hours: 0 });
+          setMonthlyStats({ orders: 0, earned: 0, hours: 0 });
+          toast.error("Не удалось загрузить статистику диспетчера");
+          return;
+        }
+
+        const rows = (data || []).map((job) => ({ ...job, completedAt: job.updated_at }));
+        setTodayStats(aggregateProfileMetrics(rows, todayStart.getTime(), now.getTime(), "dispatcher_income"));
+        setWeeklyStats(aggregateProfileMetrics(rows, weekStart.getTime(), now.getTime(), "dispatcher_income"));
+        setMonthlyStats(aggregateProfileMetrics(rows, monthStart.getTime(), now.getTime(), "dispatcher_income"));
+        setDispatcherTotalIncome(rows.reduce((sum, row) => sum + Number(row.dispatcher_income || 0), 0));
+        setDispatcherCompletedJobs(rows.length);
+        return;
+      }
+
+      if (role !== "worker") return;
+
+      const { data, error } = await supabase
         .from("job_responses")
-        .select("id, job_id, created_at, hours_worked, earned")
+        .select("id, job_id, work_finished_at, hours_worked, earned")
         .eq("worker_id", user.id)
         .eq("worker_status", "completed")
-        .gte("created_at", weekStart.toISOString());
+        .gte("work_finished_at", queryStart.toISOString())
+        .lte("work_finished_at", now.toISOString());
 
-      const { data: monthData } = await supabase
-        .from("job_responses")
-        .select("id, job_id, created_at, hours_worked, earned")
-        .eq("worker_id", user.id)
-        .eq("worker_status", "completed")
-        .gte("created_at", monthStart.toISOString());
+      if (cancelled) return;
+      if (error) {
+        console.error("[Gruzli Profile] worker statistics failed:", error);
+        setTodayStats({ orders: 0, earned: 0, hours: 0 });
+        setWeeklyStats({ orders: 0, earned: 0, hours: 0 });
+        setMonthlyStats({ orders: 0, earned: 0, hours: 0 });
+        toast.error("Не удалось загрузить статистику работы");
+        return;
+      }
 
-      if (weekData) {
-        const earned = weekData.reduce((s, r: any) => s + (r.earned || 0), 0);
-        const hours = weekData.reduce((s, r: any) => s + (r.hours_worked ? Number(r.hours_worked) : 0), 0);
-        setWeeklyStats({ orders: weekData.length, earned, hours: Math.round(hours * 10) / 10 });
-      }
-      if (monthData) {
-        const earned = monthData.reduce((s, r: any) => s + (r.earned || 0), 0);
-        const hours = monthData.reduce((s, r: any) => s + (r.hours_worked ? Number(r.hours_worked) : 0), 0);
-        setMonthlyStats({ orders: monthData.length, earned, hours: Math.round(hours * 10) / 10 });
-      }
+      const rows = (data || []).map((row) => ({ ...row, completedAt: row.work_finished_at }));
+      setTodayStats(aggregateProfileMetrics(rows, todayStart.getTime(), now.getTime()));
+      setWeeklyStats(aggregateProfileMetrics(rows, weekStart.getTime(), now.getTime()));
+      setMonthlyStats(aggregateProfileMetrics(rows, monthStart.getTime(), now.getTime()));
     };
-    fetchStats();
-  }, [user]);
 
-  // Fetch transaction history from completed jobs
+    void fetchStats();
+    return () => { cancelled = true; };
+  }, [user?.id, role, isDemo]);
+
+  // Client order count comes from the client's actual job rows, not the worker-oriented profile counter.
   useEffect(() => {
-    if (!user) return;
+    if (!user || role !== "client" || isDemo) {
+      setClientOrdersCount(null);
+      return;
+    }
+
+    let cancelled = false;
+    const fetchClientOrderCount = async () => {
+      const { count, error } = await supabase
+        .from("jobs")
+        .select("id", { count: "exact", head: true })
+        .eq("client_id", user.id);
+
+      if (cancelled) return;
+      if (error) {
+        console.error("[Gruzli Profile] client order count failed:", error);
+        setClientOrdersCount(null);
+        return;
+      }
+      setClientOrdersCount(count ?? 0);
+    };
+
+    void fetchClientOrderCount();
+    const channel = supabase
+      .channel(`client-profile-orders-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "jobs", filter: `client_id=eq.${user.id}` }, () => {
+        void fetchClientOrderCount();
+      })
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      void supabase.removeChannel(channel);
+    };
+  }, [user?.id, role, isDemo]);
+
+  // Fetch transaction history from completed jobs without allowing a prior account's
+  // slower request to overwrite the current account's history.
+  useEffect(() => {
+    if (!user) {
+      setTransactions([]);
+      return;
+    }
+
+    let cancelled = false;
     const fetchTransactions = async () => {
-      const { data } = await supabase
+      if (isDemo || role !== "worker") {
+        setTransactions([]);
+        return;
+      }
+
+      const { data, error } = await supabase
         .from("job_responses")
-        .select("id, created_at, earned, hours_worked, job_id, jobs(title)")
+        .select("id, created_at, work_finished_at, earned, hours_worked, job_id, jobs(title)")
         .eq("worker_id", user.id)
         .eq("worker_status", "completed")
-        .order("created_at", { ascending: false })
+        .order("work_finished_at", { ascending: false, nullsFirst: false })
         .limit(20);
-      
+
+      if (cancelled) return;
+      if (error) {
+        console.error("[Gruzli Profile] work history failed:", error);
+        setTransactions([]);
+        toast.error("Не удалось загрузить историю работы");
+        return;
+      }
+
       if (data) {
         const txs = data.map((r: any) => ({
           type: "income" as const,
-          amount: r.earned || 0,
+          amount: Number(r.earned || 0),
           description: r.jobs?.title || "Выполненный заказ",
-          date: new Date(r.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" }),
+          date: new Date(r.work_finished_at || r.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" }),
         }));
-        setTransactions(txs);
+        if (!cancelled) setTransactions(txs);
       }
     };
-    fetchTransactions();
-  }, [user]);
 
-  // Fetch reviews for dispatcher
+    void fetchTransactions();
+    return () => { cancelled = true; };
+  }, [user?.id, role, isDemo]);
+
+  // Fetch dispatcher reviews and clear them when the signed-in role/account changes.
   useEffect(() => {
-    if (!isDispatcher || !user) return;
+    if (!isDispatcher || !user) {
+      setReviews([]);
+      setAvgRating(0);
+      return;
+    }
+
+    let cancelled = false;
     const fetchReviews = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("dispatcher_reviews")
         .select("*")
         .eq("dispatcher_id", user.id)
         .order("created_at", { ascending: false });
-      if (data && data.length > 0) {
-        const reviewerIds = [...new Set(data.map((r: any) => r.reviewer_id))];
-        const { data: profiles } = await supabase.from("profiles_public" as any).select("user_id, full_name").in("user_id", reviewerIds);
-        const nameMap: Record<string, string> = {};
-        (profiles as any[])?.forEach((p) => { nameMap[p.user_id] = p.full_name; });
-        const withNames = data.map((r: any) => ({ ...r, reviewer_name: nameMap[r.reviewer_id] || "Исполнитель" }));
-        setReviews(withNames);
-        setAvgRating(Math.round(data.reduce((s: number, r: any) => s + r.rating, 0) / data.length * 10) / 10);
+
+      if (cancelled) return;
+      if (error) {
+        console.error("[Gruzli Profile] dispatcher reviews failed:", error);
+        setReviews([]);
+        setAvgRating(0);
+        toast.error("Не удалось загрузить отзывы");
+        return;
       }
+
+      const rows = data || [];
+      if (rows.length === 0) {
+        setReviews([]);
+        setAvgRating(0);
+        return;
+      }
+
+      const reviewerIds = [...new Set(rows.map((r: any) => r.reviewer_id))];
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles_public" as any)
+        .select("user_id, full_name")
+        .in("user_id", reviewerIds);
+
+      if (cancelled) return;
+      if (profilesError) console.error("[Gruzli Profile] review author profiles failed:", profilesError);
+
+      const nameMap: Record<string, string> = {};
+      (profiles as any[] || []).forEach((p) => { nameMap[p.user_id] = p.full_name; });
+      const withNames = rows.map((r: any) => ({ ...r, reviewer_name: nameMap[r.reviewer_id] || "Исполнитель" }));
+      setReviews(withNames);
+      setAvgRating(Math.round(rows.reduce((sum: number, review: any) => sum + review.rating, 0) / rows.length * 10) / 10);
     };
-    fetchReviews();
-  }, [isDispatcher, user]);
+
+    void fetchReviews();
+    return () => { cancelled = true; };
+  }, [isDispatcher, user?.id]);
 
   const copyId = () => {
     navigator.clipboard.writeText(shortId);
@@ -344,9 +543,12 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
   // ─── DISPATCHER PROFILE ───
   if (isDispatcher) {
-    const totalProfit = (profile as any)?.total_earned || 0;
+    const totalProfit = dispatcherTotalIncome;
     const weekProfit = weeklyStats.earned || 0;
-    const ratingValue = avgRating || Number(profile?.rating) || 5.0;
+    const ratingValue = reviews.length > 0
+      ? avgRating
+      : profile?.rating == null ? null : Number(profile.rating);
+    const ratingLabel = ratingValue == null ? "—" : ratingValue.toFixed(1);
 
     return (
       <>
@@ -381,11 +583,11 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
               <div className="flex gap-2 pt-1">
                 <button onClick={() => setShowTopUp(false)} className="flex-1 py-3 rounded-2xl bg-surface-1 border border-border text-sm font-semibold text-muted-foreground active:scale-95 transition-all">Отмена</button>
                 <button onClick={() => {
-                  const amt = parseInt(topUpAmount);
-                  if (!amt || amt <= 0) { toast.error("Введите корректную сумму"); return; }
+                  const amt = Number(topUpAmount);
+                  if (!Number.isSafeInteger(amt) || amt <= 0) { toast.error("Введите целую сумму больше нуля"); return; }
                   setShowTopUp(false);
-                  onOpenSupport?.(`💰 Заявка на пополнение баланса\n\nСумма: ${amt} ₽\nID пользователя: ${user?.id?.slice(0, 8).toUpperCase()}\nИмя: ${profile?.full_name || "—"}\n\nПрошу пополнить баланс.`);
-                }} className="flex-1 py-3 rounded-2xl bg-foreground text-sm font-bold text-primary-foreground active:scale-95 transition-all">Пополнить</button>
+                  onOpenSupport?.(`💰 Заявка на пополнение баланса\n\nСумма: ${amt} ₽\nID пользователя: ${user?.id?.slice(0, 8).toUpperCase()}\nИмя: ${displayName}\n\nПрошу пополнить баланс.`);
+                }} className="flex-1 py-3 rounded-2xl bg-foreground text-sm font-bold text-primary-foreground active:scale-95 transition-all">Отправить заявку</button>
               </div>
             </motion.div>
           </div>
@@ -421,15 +623,16 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
                 <div className="min-w-0 flex-1">
                   <span className="text-[9px] uppercase tracking-[.18em] text-white/45">DISPATCHER / ID</span>
                   <div className="mt-1 flex items-center gap-1.5">
-                    <h2 className="text-xl font-extrabold truncate">{profile?.full_name || "Диспетчер"}</h2>
+                    <h2 className="text-xl font-extrabold truncate">{displayName}</h2>
                     {profile?.verified && <BadgeCheck size={17} className="shrink-0 text-[#f2c400]" />}
+                    {birthDateLabel && <p className="mt-1 text-[11px] text-white/55">Дата рождения: {birthDateLabel}</p>}
                   </div>
                   <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-2.5 py-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#f2c400]" />
                     <span className="text-[10px] font-bold">ДИСПЕТЧЕР</span>
                   </div>
                   <div className="mt-3 flex items-center gap-3">
-                    <span className="flex items-center gap-1 text-xs font-bold"><Star size={12} className="fill-[#f2c400] text-[#f2c400]"/>{ratingValue.toFixed(1)}</span>
+                    <span className="flex items-center gap-1 text-xs font-bold"><Star size={12} className="fill-[#f2c400] text-[#f2c400]"/>{ratingLabel}</span>
                     <span className="text-[10px] text-white/45">{reviews.length} отзывов</span>
                   </div>
                 </div>
@@ -443,8 +646,8 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
           <div className="mx-5 mb-4 grid grid-cols-3 gap-2">
             {[
-              ["Рейтинг", ratingValue.toFixed(1), "из 5"],
-              ["Заказы", String(profile?.completed_orders || 0), "завершено"],
+              ["Рейтинг", ratingLabel, "из 5"],
+              ["Заказы", String(dispatcherCompletedJobs), "завершено"],
               ["Доход", totalProfit.toLocaleString("ru-RU") + " ₽", "всего"],
             ].map(([label,value,caption]) => (
               <div key={label} className="rounded-2xl border border-border bg-card p-3">
@@ -463,7 +666,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             className="mx-5 mb-3"
           >
             <button
-              onClick={onOpenCabinet}
+              onClick={onOpenDispatcherCabinet}
               className="w-full relative overflow-hidden rounded-3xl p-5 text-left active:scale-[0.98] transition-transform bg-card border border-border"
             >
               <div className="relative flex items-center gap-4">
@@ -583,7 +786,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           >
             <BankCard
               balance={profile?.balance || 0}
-              holderName={profile?.full_name || "DISPATCHER"}
+              holderName={displayName.toUpperCase()}
               cardLast4={(profile?.display_id || "0000").slice(-4)}
               onTopUp={() => { setTopUpAmount(""); setShowTopUp(true); }}
             />
@@ -625,7 +828,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
                     <h3 className="text-sm font-bold text-foreground">Верификация</h3>
                     <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">Поднимите доверие исполнителей</p>
                   </div>
-                  <button onClick={() => toast.info("Функция верификации скоро будет доступна")} className="px-3.5 py-2 rounded-xl bg-foreground text-primary-foreground text-xs font-bold active:scale-95 transition-transform flex-shrink-0">Пройти</button>
+                  <button onClick={() => onOpenSupport?.(`Запрос на верификацию аккаунта Gruzli\n\nID пользователя: ${shortId}\nИмя: ${displayName}\n\nПрошу сообщить порядок прохождения верификации.`)} className="px-3.5 py-2 rounded-xl bg-foreground text-primary-foreground text-xs font-bold active:scale-95 transition-transform flex-shrink-0">Запросить</button>
                 </div>
               </div>
             </motion.div>
@@ -639,14 +842,14 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
                   <Star size={15} className="text-primary fill-primary" />
                   <span className="text-sm font-bold text-foreground">Рейтинг</span>
                 </div>
-                <span className="text-2xl font-extrabold text-foreground">{ratingValue.toFixed(1)}</span>
+                <span className="text-2xl font-extrabold text-foreground">{ratingLabel}</span>
               </div>
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <div key={s} className="flex-1 h-1.5 rounded-full overflow-hidden bg-muted">
                     <div
                       className="h-full rounded-full bg-primary transition-all"
-                      style={{ width: `${reviews.length > 0 ? (reviews.filter((r) => r.rating >= s).length / reviews.length) * 100 : (s <= Math.round(ratingValue) ? 100 : 0)}%` }}
+                      style={{ width: `${reviews.length > 0 ? (reviews.filter((r) => r.rating >= s).length / reviews.length) * 100 : 0}%` }}
                     />
                   </div>
                 ))}
@@ -714,7 +917,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
   // ─── CLIENT PROFILE ───
   if (role === "client") {
-    const clientOrders = Number(profile?.completed_orders || 0);
+    const clientOrders = clientOrdersCount === null ? "—" : clientOrdersCount;
     return (
       <div className="gruzli-profile-screen pb-8">
         {isDemo && <div className="px-5 pt-3"><DemoRoleSwitcher role={role} onSwitch={switchDemoRole} /></div>}
@@ -737,7 +940,8 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
               <AvatarWithUpload profile={profile} user={user} editable />
               <div className="min-w-0 flex-1">
                 <span className="text-[9px] uppercase tracking-[.18em] text-white/45">CLIENT ID</span>
-                <h2 className="mt-1 text-xl font-extrabold truncate">{profile?.full_name || "Заказчик"}</h2>
+                <h2 className="mt-1 text-xl font-extrabold truncate">{displayName}</h2>
+                {birthDateLabel && <p className="mt-1 text-[11px] text-white/55">Дата рождения: {birthDateLabel}</p>}
                 <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold">
                   <Building2 size={11} className="text-[#f2c400]"/> ЗАКАЗЧИК
                 </div>
@@ -763,7 +967,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
           <div className="rounded-[24px] border border-border bg-card overflow-hidden">
             {[
-              {icon: MessageSquare,label:"Чаты с диспетчерами",action:onOpenSupport},
+              {icon: MessageSquare,label:"Чаты с диспетчерами",action:onOpenChats},
               {icon: ShieldCheck,label:"Безопасность аккаунта",action:onOpenSettings},
               {icon: Headphones,label:"Поддержка Gruzli",action:()=>onOpenSupport?.()},
             ].map(({icon:Icon,label,action})=>(
@@ -780,15 +984,10 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
   }
 
   // ─── WORKER PROFILE ───
-  const statsData = {
-    today: { orders: profile?.completed_orders || 0, earned: `${((profile as any)?.total_earned || 0).toLocaleString("ru-RU")} ₽`, hours: `${monthlyStats.hours}ч` },
-    week: { orders: weeklyStats.orders, earned: `${weeklyStats.earned.toLocaleString("ru-RU")} ₽`, hours: `${weeklyStats.hours}ч` },
-    month: { orders: monthlyStats.orders, earned: `${monthlyStats.earned.toLocaleString("ru-RU")} ₽`, hours: `${monthlyStats.hours}ч` },
-  };
-  const stats = statsData[statsPeriod];
   const activeDays = availability.filter(Boolean).length;
+  const selectedStats = statsPeriod === "today" ? todayStats : statsPeriod === "week" ? weeklyStats : monthlyStats;
   const profileCompletion = Math.min(100, Math.round(
-    ([profile?.full_name, profile?.avatar_url, userSkills.length, profile?.phone, profile?.rating].filter(Boolean).length / 5) * 100
+    ([profile?.full_name, profile?.avatar_url, userSkills.length > 0, profile?.phone, profile?.birth_date].filter(Boolean).length / 5) * 100
   ));
 
   return (
@@ -829,10 +1028,11 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             </div>
             <div className="gruzli-worker-id-info">
               <span className="gruzli-worker-id-label">ИСПОЛНИТЕЛЬ</span>
-              <strong>{profile?.full_name || "Пользователь"}</strong>
+              <strong>{displayName}</strong>
+              {birthDateLabel && <small>Дата рождения: {birthDateLabel}</small>}
               <span className="gruzli-worker-id-role">ГРУЗЧИК · {profile?.is_premium ? "PREMIUM" : "STANDARD"}</span>
               <div className="gruzli-worker-id-meta">
-                <span><b>{profile?.rating || "5.00"}</b> рейтинг</span>
+                <span><b>{profile?.rating == null ? "—" : Number(profile.rating).toFixed(2)}</b> рейтинг</span>
                 <span><b>{profile?.completed_orders || 0}</b> заказов</span>
               </div>
             </div>
@@ -848,7 +1048,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             </div>
             <div className="gruzli-worker-id-status">
               <span />
-              ONLINE
+              {workerPresenceLabel}
             </div>
           </div>
         </motion.div>
@@ -861,7 +1061,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             <span className="gruzli-worker-dashboard-live"><i /> LIVE</span>
           </div>
           <div className="gruzli-worker-dashboard-grid">
-            <div><span>РЕЙТИНГ</span><strong>{profile?.rating || "5.00"}</strong><small>из 5.0</small></div>
+            <div><span>РЕЙТИНГ</span><strong>{profile?.rating == null ? "—" : Number(profile.rating).toFixed(2)}</strong><small>из 5.0</small></div>
             <div><span>ЗАКАЗОВ</span><strong>{profile?.completed_orders || 0}</strong><small>завершено</small></div>
             <div><span>ДОСТУПНО</span><strong>{activeDays}/7</strong><small>дней</small></div>
             <div><span>ПРОФИЛЬ</span><strong>{profileCompletion}%</strong><small>заполнено</small></div>
@@ -892,14 +1092,14 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           <div className="gruzli-earnings-main">
             <div>
               <span>ЗАРАБОТАНО</span>
-              <strong>{(statsPeriod === "week" ? weeklyStats.earned : statsPeriod === "month" ? monthlyStats.earned : 0).toLocaleString("ru-RU")} ₽</strong>
+              <strong>{selectedStats.earned.toLocaleString("ru-RU")} ₽</strong>
             </div>
             <div className="gruzli-earnings-ring">
-              <strong>{statsPeriod === "week" ? weeklyStats.orders : statsPeriod === "month" ? monthlyStats.orders : 0}</strong><span>заказов</span>
+              <strong>{selectedStats.orders}</strong><span>заказов</span>
             </div>
           </div>
           <div className="gruzli-earnings-meta">
-            <span><b>{statsPeriod === "week" ? weeklyStats.hours : statsPeriod === "month" ? monthlyStats.hours : 0}</b> ч. работы</span>
+            <span><b>{selectedStats.hours}</b> ч. работы</span>
             <span><b>{activeDays}</b> дней доступен</span>
           </div>
         </div>
@@ -955,10 +1155,10 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
               <button onClick={() => setShowTopUp(false)} className="flex-1 py-2.5 rounded-2xl bg-card border border-border text-sm font-semibold text-muted-foreground active:bg-surface-1 transition-all">Отмена</button>
               <button onClick={() => {
                 const amt = parseInt(topUpAmount);
-                if (!amt || amt <= 0) { toast.error("Введите корректную сумму"); return; }
+                if (!Number.isSafeInteger(amt) || amt <= 0) { toast.error("Введите целую сумму больше нуля"); return; }
                 setShowTopUp(false);
-                onOpenSupport?.(`💰 Заявка на пополнение баланса\n\nСумма: ${amt.toLocaleString("ru-RU")} ₽\nID пользователя: ${profile?.display_id || user?.id?.slice(0, 8).toUpperCase()}\nИмя: ${profile?.full_name || "—"}\n\nПрошу пополнить баланс.`);
-              }} className="flex-1 py-2.5 rounded-2xl bg-foreground text-sm font-bold text-primary-foreground tap-scale">Отправить</button>
+                onOpenSupport?.(`💰 Заявка на пополнение баланса\n\nСумма: ${amt.toLocaleString("ru-RU")} ₽\nID пользователя: ${profile?.display_id || user?.id?.slice(0, 8).toUpperCase()}\nИмя: ${displayName}\n\nПрошу пополнить баланс.`);
+              }} className="flex-1 py-2.5 rounded-2xl bg-foreground text-sm font-bold text-primary-foreground tap-scale">Отправить заявку</button>
             </div>
           </motion.div>
         </div>
@@ -969,11 +1169,11 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         <div className="gruzli-wallet-section-head"><span>05 / WALLET</span><i /><b>ЛИЧНЫЙ БАЛАНС</b></div>
         <BankCard
           balance={profile?.balance || 0}
-          holderName={profile?.full_name || "WORKER"}
+          holderName={displayName.toUpperCase()}
           cardLast4={(profile?.display_id || "0000").slice(-4)}
           onTopUp={() => { setTopUpAmount(""); setShowTopUp(true); }}
           onSecondary={() => setShowTransactions(!showTransactions)}
-          secondaryLabel="История"
+          secondaryLabel="Заработок"
           secondaryIcon={<span>📋</span>}
         />
 
@@ -986,7 +1186,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             className="mt-3 bg-card border border-border rounded-2xl overflow-hidden"
           >
             <div className="px-4 py-3 border-b border-border/50">
-              <h3 className="text-sm font-bold text-foreground">История транзакций</h3>
+              <h3 className="text-sm font-bold text-foreground">История заработка</h3>
             </div>
             {transactions.length === 0 ? (
               <div className="px-4 py-6 text-center">
@@ -1028,14 +1228,18 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           </button>
         </div>
         <div className="flex flex-wrap gap-2">
-          {(userSkills.length ? userSkills : defaultSkills).map((skill: string) => (
+          {userSkills.length > 0 ? userSkills.map((skill: string) => (
             <span key={skill} className="px-3 py-2 rounded-xl bg-card border border-border text-xs font-medium text-muted-foreground flex items-center gap-1.5">
               {skill}
-              {editingSkills && userSkills.includes(skill) && (
-                <button onClick={() => removeSkill(skill)} className="text-destructive"><X size={12} /></button>
+              {editingSkills && (
+                <button onClick={() => removeSkill(skill)} className="text-destructive" aria-label={`Удалить навык ${skill}`}><X size={12} /></button>
               )}
             </span>
-          ))}
+          )) : (
+            <p className="w-full text-xs text-muted-foreground">
+              {editingSkills ? "Добавьте навыки, которыми владеете." : "Навыки пока не указаны."}
+            </p>
+          )}
           {editingSkills && (
             <div className="flex items-center gap-1">
               <input
