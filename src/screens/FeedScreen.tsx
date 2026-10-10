@@ -144,9 +144,56 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
         { event: 'INSERT', schema: 'public', table: 'jobs' },
         (payload) => {
           const newJob = payload.new as Tables<"jobs">;
+          // The initial feed query only includes active jobs. Keep realtime inserts
+          // consistent with that rule instead of leaking drafts/completed jobs into the feed.
+          if (newJob.status !== "active") return;
           setJobs((prev) => {
-            if (prev.some(j => j.id === newJob.id)) return prev;
-            return [newJob, ...prev];
+            if (prev.some((j) => j.id === newJob.id)) return prev;
+            return [newJob, ...prev].sort(
+              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+            );
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'jobs' },
+        (payload) => {
+          const updatedJob = payload.new as Tables<"jobs">;
+          setJobs((prev) => {
+            if (updatedJob.status !== "active") {
+              return prev.filter((job) => job.id !== updatedJob.id);
+            }
+
+            const exists = prev.some((job) => job.id === updatedJob.id);
+            const next = exists
+              ? prev.map((job) => job.id === updatedJob.id ? updatedJob : job)
+              : [updatedJob, ...prev];
+            return next.sort(
+              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+            );
+          });
+
+          if (updatedJob.status !== "active") {
+            setWorkersFound((prev) => {
+              const next = { ...prev };
+              delete next[updatedJob.id];
+              return next;
+            });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'jobs' },
+        (payload) => {
+          const deletedJob = payload.old as Partial<Tables<"jobs">>;
+          if (!deletedJob.id) return;
+          setJobs((prev) => prev.filter((job) => job.id !== deletedJob.id));
+          setWorkersFound((prev) => {
+            const next = { ...prev };
+            delete next[deletedJob.id!];
+            return next;
           });
         }
       )
