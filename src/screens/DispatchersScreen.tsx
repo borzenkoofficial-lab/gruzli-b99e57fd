@@ -2,7 +2,15 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Search, Star, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
+type DispatcherDirectoryProfile = {
+  user_id: string;
+  full_name: string;
+  avatar_url: string | null;
+  rating: number | null;
+  completed_orders: number | null;
+  last_seen_at: string | null;
+  isOnline: boolean;
+};
 
 interface DispatchersScreenProps {
   onChatWithDispatcher: (d: { id: string; name: string; avatar: string }) => void;
@@ -10,7 +18,7 @@ interface DispatchersScreenProps {
 
 const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => {
   const [search, setSearch] = useState("");
-  const [dispatchers, setDispatchers] = useState<(Tables<"profiles"> & { isOnline: boolean })[]>([]);
+  const [dispatchers, setDispatchers] = useState<DispatcherDirectoryProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
 
@@ -19,27 +27,15 @@ const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => 
     const fetchDispatchers = async () => {
       setLoadError(false);
       try {
-        const { data: roles, error: rolesError } = await supabase
-          .from("user_roles")
-          .select("user_id")
-          .eq("role", "dispatcher");
+        // This scoped RPC returns only public-safe dispatcher profile fields.
+        // Reading user_roles directly is denied by the table's owner-only RLS.
+        const { data: profiles, error } = await supabase.rpc("get_dispatcher_directory");
 
-        if (rolesError) throw rolesError;
-        if (!roles?.length) {
-          if (!cancelled) setDispatchers([]);
-          return;
-        }
-
-        const { data: profiles, error: profilesError } = await supabase
-          .from("profiles_public" as any)
-          .select("*")
-          .in("user_id", roles.map((r) => r.user_id));
-
-        if (profilesError) throw profilesError;
+        if (error) throw error;
         if (cancelled) return;
 
         const now = Date.now();
-        setDispatchers(((profiles || []) as any[]).map((profile) => {
+        setDispatchers((profiles || []).map((profile) => {
           const lastSeen = profile.last_seen_at ? Date.parse(profile.last_seen_at) : Number.NaN;
           const age = now - lastSeen;
           return {
@@ -106,7 +102,7 @@ const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => 
         <div className="px-5 space-y-3">
           {filtered.map((d, i) => (
             <motion.div
-              key={d.id}
+              key={d.user_id}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
