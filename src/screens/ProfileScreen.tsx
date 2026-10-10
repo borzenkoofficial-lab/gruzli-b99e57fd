@@ -387,9 +387,15 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
     };
   }, [user?.id, role, isDemo]);
 
-  // Fetch transaction history from completed jobs
+  // Fetch transaction history from completed jobs without allowing a prior account's
+  // slower request to overwrite the current account's history.
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setTransactions([]);
+      return;
+    }
+
+    let cancelled = false;
     const fetchTransactions = async () => {
       if (isDemo || role !== "worker") {
         setTransactions([]);
@@ -404,8 +410,10 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         .order("work_finished_at", { ascending: false, nullsFirst: false })
         .limit(20);
 
+      if (cancelled) return;
       if (error) {
         console.error("[Gruzli Profile] work history failed:", error);
+        setTransactions([]);
         toast.error("Не удалось загрузить историю работы");
         return;
       }
@@ -417,10 +425,12 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           description: r.jobs?.title || "Выполненный заказ",
           date: new Date(r.work_finished_at || r.created_at).toLocaleDateString("ru-RU", { day: "numeric", month: "short", year: "numeric" }),
         }));
-        setTransactions(txs);
+        if (!cancelled) setTransactions(txs);
       }
     };
-    fetchTransactions();
+
+    void fetchTransactions();
+    return () => { cancelled = true; };
   }, [user?.id, role, isDemo]);
 
   // Fetch dispatcher reviews and clear them when the signed-in role/account changes.
