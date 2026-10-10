@@ -566,6 +566,7 @@ const Index = () => {
                       onOpenCabinet={() => { setShowCabinet(false); handleNavigate("feed"); }}
                       onOpenCompany={() => setShowCompany(true)}
                       onOpenChats={() => handleNavigate("chats")}
+                      onOpenDispatcherCabinet={() => setShowCabinet(true)}
                     />
                   )}
                 </div>
