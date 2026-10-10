@@ -402,7 +402,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
       </div>
 
       {/* Skills for worker */}
-      {!isDispatcher && profile.skills?.length > 0 && (
+      {isWorker && profile.skills?.length > 0 && (
         <div className="mx-5 mb-4">
           <h3 className="text-sm font-bold text-foreground mb-2">Навыки</h3>
           <div className="flex flex-wrap gap-2">
