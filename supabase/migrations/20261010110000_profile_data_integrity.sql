@@ -42,6 +42,47 @@ BEGIN
 END;
 $$;
 
+-- Repair missing registration fields on existing accounts from their auth metadata.
+-- This is intentionally one-way: populated profile fields are not overwritten.
+CREATE OR REPLACE FUNCTION public._gruzli_try_parse_birth_date(p_value text)
+RETURNS date
+LANGUAGE plpgsql
+IMMUTABLE
+SET search_path = pg_catalog, public
+AS $
+BEGIN
+  RETURN NULLIF(trim(p_value), '')::date;
+EXCEPTION WHEN others THEN
+  RETURN NULL;
+END;
+$;
+
+UPDATE public.profiles AS p
+SET
+  full_name = COALESCE(NULLIF(trim(p.full_name), ''), NULLIF(trim(u.raw_user_meta_data->>'full_name'), ''), ''),
+  phone = COALESCE(NULLIF(trim(p.phone), ''), NULLIF(trim(u.raw_user_meta_data->>'phone'), ''), ''),
+  birth_date = COALESCE(p.birth_date, public._gruzli_try_parse_birth_date(u.raw_user_meta_data->>'birth_date'))
+FROM auth.users AS u
+WHERE u.id = p.user_id
+  AND (
+    (NULLIF(trim(p.full_name), '') IS NULL AND NULLIF(trim(u.raw_user_meta_data->>'full_name'), '') IS NOT NULL)
+    OR (NULLIF(trim(p.phone), '') IS NULL AND NULLIF(trim(u.raw_user_meta_data->>'phone'), '') IS NOT NULL)
+    OR (p.birth_date IS NULL AND public._gruzli_try_parse_birth_date(u.raw_user_meta_data->>'birth_date') IS NOT NULL)
+  );
+
+INSERT INTO public.profiles (user_id, full_name, phone, birth_date)
+SELECT
+  u.id,
+  COALESCE(NULLIF(trim(u.raw_user_meta_data->>'full_name'), ''), ''),
+  COALESCE(NULLIF(trim(u.raw_user_meta_data->>'phone'), ''), ''),
+  public._gruzli_try_parse_birth_date(u.raw_user_meta_data->>'birth_date')
+FROM auth.users AS u
+LEFT JOIN public.profiles AS p ON p.user_id = u.id
+WHERE p.user_id IS NULL
+ON CONFLICT (user_id) DO NOTHING;
+
+DROP FUNCTION public._gruzli_try_parse_birth_date(text);
+
 -- A profile's rating must reflect ratings earned through completed work.
 -- A default 5.00 was misleading: it made new/unreviewed accounts look rated.
 ALTER TABLE public.profiles
