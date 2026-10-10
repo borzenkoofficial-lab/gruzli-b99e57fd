@@ -49,13 +49,13 @@ RETURNS date
 LANGUAGE plpgsql
 IMMUTABLE
 SET search_path = pg_catalog, public
-AS $
+AS $profile_birthdate$
 BEGIN
   RETURN NULLIF(trim(p_value), '')::date;
 EXCEPTION WHEN others THEN
   RETURN NULL;
 END;
-$;
+$profile_birthdate$;
 
 UPDATE public.profiles AS p
 SET
