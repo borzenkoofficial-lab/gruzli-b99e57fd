@@ -77,10 +77,21 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
         return false;
       }
 
-      // Only create the initial message and notification for a newly inserted response.
-      // Keep chat/notification behavior separate from the transactional response creation.
+      // Ensure the initial message exists even when the worker retries an already-saved response.
+      // This recovers from a previous partial success without duplicating the same message.
       let initialMessageFailed = false;
-      if (isNewResponse) {
+      const { data: existingMessages, error: messageLookupError } = await supabase
+        .from("messages")
+        .select("id")
+        .eq("conversation_id", conversationId)
+        .eq("sender_id", user.id)
+        .eq("text", responseMessage)
+        .limit(1);
+
+      if (messageLookupError) {
+        initialMessageFailed = true;
+        console.error("Could not verify initial response message", messageLookupError);
+      } else if (!existingMessages || existingMessages.length === 0) {
         const { error: messageError } = await supabase.from("messages").insert({
           conversation_id: conversationId,
           sender_id: user.id,
@@ -91,7 +102,10 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
           initialMessageFailed = true;
           console.error("Response saved but initial chat message failed", messageError);
         }
+      }
 
+      // Notify only for a newly inserted response, never on a duplicate retry.
+      if (isNewResponse) {
         supabase.functions.invoke("notify-email", {
           body: {
             type: "new_job_response",
