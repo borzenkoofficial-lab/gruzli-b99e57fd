@@ -81,6 +81,22 @@ LEFT JOIN public.profiles AS p ON p.user_id = u.id
 WHERE p.user_id IS NULL
 ON CONFLICT (user_id) DO NOTHING;
 
+-- Repair orphaned accounts that have a profile but no role assignment.
+-- Never replace an existing role; accept only the three public signup roles.
+INSERT INTO public.user_roles (user_id, role)
+SELECT
+  u.id,
+  CASE lower(coalesce(u.raw_user_meta_data->>'role', 'worker'))
+    WHEN 'client' THEN 'client'::public.app_role
+    WHEN 'dispatcher' THEN 'dispatcher'::public.app_role
+    ELSE 'worker'::public.app_role
+  END
+FROM auth.users AS u
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.user_roles AS ur WHERE ur.user_id = u.id
+)
+ON CONFLICT (user_id, role) DO NOTHING;
+
 DROP FUNCTION public._gruzli_try_parse_birth_date(text);
 
 -- A profile's rating must reflect ratings earned through completed work.
