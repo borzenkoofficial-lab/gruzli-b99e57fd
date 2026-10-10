@@ -122,10 +122,15 @@ const AvatarWithUpload = ({ profile, user, editable = false }: { profile: any; u
 
       const { data: urlData } = supabase.storage.from("kartoteka-photos").getPublicUrl(path);
       const avatarUrl = urlData.publicUrl + "?t=" + Date.now();
-      const { error: profileError } = await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("user_id", user.id);
-      if (profileError) {
+      const { data: updatedProfile, error: profileError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("user_id", user.id)
+        .select("user_id")
+        .single();
+      if (profileError || !updatedProfile) {
         await supabase.storage.from("kartoteka-photos").remove([path]);
-        throw profileError;
+        throw profileError || new Error("Профиль не найден");
       }
 
       toast.success("Фото обновлено");
@@ -225,8 +230,8 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
     setAvailability(next);
     if (!user || isDemo) return;
 
-    const { error } = await supabase.from("profiles").update({ availability: next } as any).eq("user_id", user.id);
-    if (error) {
+    const { data: updatedProfile, error } = await supabase.from("profiles").update({ availability: next } as any).eq("user_id", user.id).select("user_id").single();
+    if (error || !updatedProfile) {
       console.error("[Gruzli Profile] availability save failed:", error);
       setAvailability(previous);
       toast.error("Не удалось сохранить расписание доступности");
@@ -241,8 +246,8 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
     setUserSkills(skills);
     if (!user || isDemo) return;
 
-    const { error } = await supabase.from("profiles").update({ skills }).eq("user_id", user.id);
-    if (error) {
+    const { data: updatedProfile, error } = await supabase.from("profiles").update({ skills }).eq("user_id", user.id).select("user_id").single();
+    if (error || !updatedProfile) {
       console.error("[Gruzli Profile] skills save failed:", error);
       setUserSkills(previous);
       toast.error("Не удалось сохранить навыки");
@@ -573,7 +578,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
                   const amt = parseInt(topUpAmount);
                   if (!amt || amt <= 0) { toast.error("Введите корректную сумму"); return; }
                   setShowTopUp(false);
-                  onOpenSupport?.(`💰 Заявка на пополнение баланса\n\nСумма: ${amt} ₽\nID пользователя: ${user?.id?.slice(0, 8).toUpperCase()}\nИмя: ${profile?.full_name || "—"}\n\nПрошу пополнить баланс.`);
+                  onOpenSupport?.(`💰 Заявка на пополнение баланса\n\nСумма: ${amt} ₽\nID пользователя: ${user?.id?.slice(0, 8).toUpperCase()}\nИмя: ${displayName}\n\nПрошу пополнить баланс.`);
                 }} className="flex-1 py-3 rounded-2xl bg-foreground text-sm font-bold text-primary-foreground active:scale-95 transition-all">Отправить заявку</button>
               </div>
             </motion.div>
@@ -1160,7 +1165,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           cardLast4={(profile?.display_id || "0000").slice(-4)}
           onTopUp={() => { setTopUpAmount(""); setShowTopUp(true); }}
           onSecondary={() => setShowTransactions(!showTransactions)}
-          secondaryLabel="История"
+          secondaryLabel="Заработок"
           secondaryIcon={<span>📋</span>}
         />
 
@@ -1173,7 +1178,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             className="mt-3 bg-card border border-border rounded-2xl overflow-hidden"
           >
             <div className="px-4 py-3 border-b border-border/50">
-              <h3 className="text-sm font-bold text-foreground">История транзакций</h3>
+              <h3 className="text-sm font-bold text-foreground">История заработка</h3>
             </div>
             {transactions.length === 0 ? (
               <div className="px-4 py-6 text-center">
