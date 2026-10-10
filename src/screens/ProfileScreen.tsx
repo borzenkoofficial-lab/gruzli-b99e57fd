@@ -277,6 +277,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
       weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7));
       weekStart.setHours(0, 0, 0, 0);
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const queryStart = weekStart < monthStart ? weekStart : monthStart;
 
       if (isDemo) {
         if (!cancelled) {
@@ -323,7 +324,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         .select("id, job_id, work_finished_at, hours_worked, earned")
         .eq("worker_id", user.id)
         .eq("worker_status", "completed")
-        .gte("work_finished_at", monthStart.toISOString())
+        .gte("work_finished_at", queryStart.toISOString())
         .lte("work_finished_at", now.toISOString());
 
       if (cancelled) return;
@@ -397,7 +398,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         .select("id, created_at, work_finished_at, earned, hours_worked, job_id, jobs(title)")
         .eq("worker_id", user.id)
         .eq("worker_status", "completed")
-        .order("work_finished_at", { ascending: false })
+        .order("work_finished_at", { ascending: false, nullsFirst: false })
         .limit(20);
 
       if (error) {
