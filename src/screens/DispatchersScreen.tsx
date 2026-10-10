@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Star, MessageCircle, Menu, Zap, Users, Send, User } from "lucide-react";
+import { Search, Star, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -12,28 +12,53 @@ const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => 
   const [search, setSearch] = useState("");
   const [dispatchers, setDispatchers] = useState<(Tables<"profiles"> & { isOnline: boolean })[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchDispatchers = async () => {
-      // Get all users with dispatcher role
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "dispatcher");
+      try {
+        const { data: roles, error: rolesError } = await supabase
+          .from("user_roles")
+          .select("user_id")
+          .eq("role", "dispatcher");
 
-      if (roles && roles.length > 0) {
-        const { data: profiles } = await supabase
+        if (rolesError) throw rolesError;
+        if (!roles?.length) {
+          if (!cancelled) setDispatchers([]);
+          return;
+        }
+
+        const { data: profiles, error: profilesError } = await supabase
           .from("profiles_public" as any)
           .select("*")
           .in("user_id", roles.map((r) => r.user_id));
 
-        if (profiles) {
-          setDispatchers((profiles as any[]).map((p) => ({ ...p, isOnline: true })));
-        }
+        if (profilesError) throw profilesError;
+        if (cancelled) return;
+
+        const now = Date.now();
+        setDispatchers(((profiles || []) as any[]).map((profile) => {
+          const lastSeen = profile.last_seen_at ? Date.parse(profile.last_seen_at) : Number.NaN;
+          const age = now - lastSeen;
+          return {
+            ...profile,
+            full_name: String(profile.full_name || "").trim() || "Имя не указано",
+            isOnline: Number.isFinite(lastSeen) && age >= 0 && age <= 2 * 60 * 1000,
+          };
+        }));
+      } catch (error) {
+        if (cancelled) return;
+        console.error("[Gruzli Dispatchers] failed to load list:", error);
+        setLoadError(true);
+        setDispatchers([]);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setLoading(false);
     };
-    fetchDispatchers();
+
+    void fetchDispatchers();
+    return () => { cancelled = true; };
   }, []);
 
   const filtered = dispatchers.filter((d) =>
@@ -67,7 +92,7 @@ const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => 
         <div className="text-center py-12 text-muted-foreground text-sm">Загрузка...</div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground text-sm">
-          {dispatchers.length === 0 ? "Нет зарегистрированных диспетчеров" : "Ничего не найдено"}
+          {loadError ? "Не удалось загрузить список диспетчеров. Попробуйте позже." : dispatchers.length === 0 ? "Нет зарегистрированных диспетчеров" : "Ничего не найдено"}
         </div>
       ) : (
         <div className="px-5 space-y-3">
@@ -88,7 +113,11 @@ const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => 
                       {getInitials(d.full_name)}
                     </div>
                   )}
-                  <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-online border-2 border-card" />
+                  <div
+                    className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-card ${d.isOnline ? "bg-online" : "bg-muted-foreground"}`}
+                    title={d.isOnline ? "В сети" : "Нет недавней активности"}
+                    aria-label={d.isOnline ? "В сети" : "Нет недавней активности"}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-bold text-foreground">{d.full_name}</h3>
