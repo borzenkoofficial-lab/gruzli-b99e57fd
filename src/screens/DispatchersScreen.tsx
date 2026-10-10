@@ -94,7 +94,7 @@ const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => 
                   <h3 className="text-sm font-bold text-foreground">{d.full_name}</h3>
                   <div className="flex items-center gap-1 mt-0.5">
                     <Star size={12} className="text-primary fill-primary" />
-                    <span className="text-xs font-semibold text-foreground">{d.rating || "5.00"}</span>
+                    <span className="text-xs font-semibold text-foreground">{d.rating == null ? "—" : Number(d.rating).toFixed(1)}</span>
                     <span className="text-[11px] text-muted-foreground ml-2">{d.completed_orders || 0} заказов</span>
                   </div>
                 </div>
