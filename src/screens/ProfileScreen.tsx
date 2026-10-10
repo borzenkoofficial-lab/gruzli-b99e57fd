@@ -16,6 +16,7 @@ interface ProfileScreenProps {
   onOpenCabinet?: () => void;
   onOpenCompany?: () => void;
   onOpenChats?: () => void;
+  onOpenDispatcherCabinet?: () => void;
 }
 
 interface Review {
@@ -156,7 +157,7 @@ const AvatarWithUpload = ({ profile, user, editable = false }: { profile: any; u
   );
 };
 
-const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onOpenPremium, onOpenCabinet, onOpenCompany }: ProfileScreenProps) => {
+const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onOpenPremium, onOpenCabinet, onOpenCompany, onOpenChats, onOpenDispatcherCabinet }: ProfileScreenProps) => {
   const { user, profile, role, signOut } = useAuth();
   const [availability, setAvailability] = useState<boolean[]>(Array(7).fill(false));
   const [statsPeriod, setStatsPeriod] = useState<"today" | "week" | "month">("today");
@@ -552,7 +553,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
                   if (!amt || amt <= 0) { toast.error("Введите корректную сумму"); return; }
                   setShowTopUp(false);
                   onOpenSupport?.(`💰 Заявка на пополнение баланса\n\nСумма: ${amt} ₽\nID пользователя: ${user?.id?.slice(0, 8).toUpperCase()}\nИмя: ${profile?.full_name || "—"}\n\nПрошу пополнить баланс.`);
-                }} className="flex-1 py-3 rounded-2xl bg-foreground text-sm font-bold text-primary-foreground active:scale-95 transition-all">Пополнить</button>
+                }} className="flex-1 py-3 rounded-2xl bg-foreground text-sm font-bold text-primary-foreground active:scale-95 transition-all">Отправить заявку</button>
               </div>
             </motion.div>
           </div>
@@ -631,7 +632,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             className="mx-5 mb-3"
           >
             <button
-              onClick={onOpenCabinet}
+              onClick={onOpenDispatcherCabinet}
               className="w-full relative overflow-hidden rounded-3xl p-5 text-left active:scale-[0.98] transition-transform bg-card border border-border"
             >
               <div className="relative flex items-center gap-4">
