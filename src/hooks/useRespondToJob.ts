@@ -18,10 +18,22 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
         return false;
       }
 
-      // Check weekly completed jobs limit for non-premium workers
+      // The dispatcher-first workflow only allows responses to assigned jobs.
+      // Check before the RPC so a rejected attempt cannot leave an orphan response.
+      if (!job.dispatcher_id) {
+        toast.error("Сейчас заявка ожидает выбора диспетчера.");
+        return false;
+      }
+
+      // Check weekly completed jobs limit for non-premium workers.
       if (!profile?.is_premium) {
-        const { data: weeklyCount } = await supabase.rpc("get_weekly_completed_jobs", { _user_id: user.id });
-        if (weeklyCount !== null && weeklyCount >= FREE_WEEKLY_LIMIT) {
+        const { data: weeklyCount, error: weeklyCountError } = await supabase.rpc("get_weekly_completed_jobs", { _user_id: user.id });
+        if (weeklyCountError || weeklyCount === null || weeklyCount === undefined) {
+          console.error("Failed to check weekly worker limit", weeklyCountError);
+          toast.error("Не удалось проверить лимит заказов. Попробуйте ещё раз.");
+          return false;
+        }
+        if (weeklyCount >= FREE_WEEKLY_LIMIT) {
           toast.error(`Лимит ${FREE_WEEKLY_LIMIT} выполненных заказов в неделю. Оформите Premium для безлимита!`, { duration: 5000 });
           return false;
         }
@@ -49,11 +61,6 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
       }
 
       // 2. Find or create conversation with the assigned dispatcher.
-      // Open requests without a dispatcher are not worker-respondable.
-      if (!job.dispatcher_id) {
-        toast.error("Сейчас заявка ожидает выбора диспетчера.");
-        return false;
-      }
       const { data: dispProfile } = await supabase
         .from("profiles_public" as any)
         .select("full_name")
