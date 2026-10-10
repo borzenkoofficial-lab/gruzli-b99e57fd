@@ -211,6 +211,13 @@ BEGIN
 END;
 $$;
 
+DROP TRIGGER IF EXISTS sync_worker_rating_after_review_insert ON public.job_responses;
+CREATE TRIGGER sync_worker_rating_after_review_insert
+AFTER INSERT ON public.job_responses
+FOR EACH ROW
+WHEN (NEW.dispatcher_review_rating IS NOT NULL)
+EXECUTE FUNCTION public.sync_worker_profile_rating();
+
 DROP TRIGGER IF EXISTS sync_worker_rating_after_review_update ON public.job_responses;
 CREATE TRIGGER sync_worker_rating_after_review_update
 AFTER UPDATE OF dispatcher_review_rating ON public.job_responses
