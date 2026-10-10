@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DEMO_PROFILES, DEMO_USERS, type DemoRole } from "@/data/demoData";
 
@@ -34,6 +34,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<AppRole | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const activeUserIdRef = useRef<string | null>(null);
   const [demoMode, setDemoMode] = useState(() => DEMO_ENABLED && localStorage.getItem("gruzli_demo_worker") === "1");
   const [demoRole, setDemoRole] = useState<AppRole>(() => {
     if (!DEMO_ENABLED) return "worker";
@@ -46,6 +47,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       supabase.rpc("get_user_role", { _user_id: nextUser.id }),
       supabase.from("profiles").select("*").eq("user_id", nextUser.id).maybeSingle(),
     ]);
+
+    // Authentication may switch accounts while these requests are in flight.
+    // Ignore stale responses so one user's profile can never render for another.
+    if (activeUserIdRef.current !== nextUser.id) return {
+      roleError: null,
+      profileError: null,
+    };
 
     if (roleRes.error) {
       console.error("[Gruzli Auth] failed to load user role:", roleRes.error);
@@ -80,6 +88,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const nextSession = data.session as Session | null;
+      activeUserIdRef.current = nextSession?.user?.id ?? null;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
 
@@ -95,6 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!mounted) return;
 
       const normalized = nextSession as Session | null;
+      activeUserIdRef.current = normalized?.user?.id ?? null;
       setSession(normalized);
       setUser(normalized?.user ?? null);
 
@@ -198,6 +208,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await supabase.auth.signOut();
     }
 
+    activeUserIdRef.current = null;
     setUser(null);
     setSession(null);
     setRole(null);
