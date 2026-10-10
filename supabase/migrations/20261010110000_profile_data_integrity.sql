@@ -99,6 +99,25 @@ ON CONFLICT (user_id, role) DO NOTHING;
 
 DROP FUNCTION public._gruzli_try_parse_birth_date(text);
 
+-- Resolve a public profile's role only for authenticated callers, without
+-- granting table-level reads on user_roles.
+CREATE OR REPLACE FUNCTION public.get_user_role(_user_id uuid)
+RETURNS public.app_role
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $public_profile_role$
+  SELECT ur.role
+  FROM public.user_roles AS ur
+  WHERE ur.user_id = _user_id
+    AND auth.uid() IS NOT NULL
+  LIMIT 1;
+$public_profile_role$;
+
+REVOKE ALL ON FUNCTION public.get_user_role(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_user_role(uuid) TO authenticated;
+
 -- The public directory reads only safe profile fields and does not expose
 -- the user_roles table through broad SELECT permissions.
 CREATE OR REPLACE FUNCTION public.get_dispatcher_directory()
