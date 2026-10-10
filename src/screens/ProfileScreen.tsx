@@ -191,6 +191,14 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
   };
   const initials = (profile?.full_name || "").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
   const shortId = profile?.display_id || user?.id?.slice(0, 8).toUpperCase() || "—";
+  const lastSeenMs = profile?.last_seen_at ? Date.parse(profile.last_seen_at) : Number.NaN;
+  const lastSeenAge = Date.now() - lastSeenMs;
+  const workerPresenceLabel =
+    Number.isFinite(lastSeenMs) && lastSeenAge >= 0 && lastSeenAge <= 2 * 60 * 1000
+      ? "В СЕТИ"
+      : profile?.last_seen_at
+        ? "НЕ В СЕТИ"
+        : "СТАТУС НЕ УКАЗАН";
 
   // Load availability from DB
   useEffect(() => {
@@ -494,9 +502,12 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
   // ─── DISPATCHER PROFILE ───
   if (isDispatcher) {
-    const totalProfit = (profile as any)?.total_earned || 0;
+    const totalProfit = dispatcherTotalIncome;
     const weekProfit = weeklyStats.earned || 0;
-    const ratingValue = avgRating || Number(profile?.rating) || 5.0;
+    const ratingValue = reviews.length > 0
+      ? avgRating
+      : profile?.rating == null ? null : Number(profile.rating);
+    const ratingLabel = ratingValue == null ? "—" : ratingValue.toFixed(1);
 
     return (
       <>
@@ -579,7 +590,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
                     <span className="text-[10px] font-bold">ДИСПЕТЧЕР</span>
                   </div>
                   <div className="mt-3 flex items-center gap-3">
-                    <span className="flex items-center gap-1 text-xs font-bold"><Star size={12} className="fill-[#f2c400] text-[#f2c400]"/>{ratingValue.toFixed(1)}</span>
+                    <span className="flex items-center gap-1 text-xs font-bold"><Star size={12} className="fill-[#f2c400] text-[#f2c400]"/>{ratingLabel}</span>
                     <span className="text-[10px] text-white/45">{reviews.length} отзывов</span>
                   </div>
                 </div>
@@ -594,7 +605,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           <div className="mx-5 mb-4 grid grid-cols-3 gap-2">
             {[
               ["Рейтинг", ratingValue.toFixed(1), "из 5"],
-              ["Заказы", String(profile?.completed_orders || 0), "завершено"],
+              ["Заказы", String(dispatcherCompletedJobs), "завершено"],
               ["Доход", totalProfit.toLocaleString("ru-RU") + " ₽", "всего"],
             ].map(([label,value,caption]) => (
               <div key={label} className="rounded-2xl border border-border bg-card p-3">
@@ -789,14 +800,14 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
                   <Star size={15} className="text-primary fill-primary" />
                   <span className="text-sm font-bold text-foreground">Рейтинг</span>
                 </div>
-                <span className="text-2xl font-extrabold text-foreground">{ratingValue.toFixed(1)}</span>
+                <span className="text-2xl font-extrabold text-foreground">{ratingLabel}</span>
               </div>
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((s) => (
                   <div key={s} className="flex-1 h-1.5 rounded-full overflow-hidden bg-muted">
                     <div
                       className="h-full rounded-full bg-primary transition-all"
-                      style={{ width: `${reviews.length > 0 ? (reviews.filter((r) => r.rating >= s).length / reviews.length) * 100 : (s <= Math.round(ratingValue) ? 100 : 0)}%` }}
+                      style={{ width: `${reviews.length > 0 ? (reviews.filter((r) => r.rating >= s).length / reviews.length) * 100 : 0}%` }}
                     />
                   </div>
                 ))}
@@ -864,7 +875,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
   // ─── CLIENT PROFILE ───
   if (role === "client") {
-    const clientOrders = Number(profile?.completed_orders || 0);
+    const clientOrders = clientOrdersCount === null ? "—" : clientOrdersCount;
     return (
       <div className="gruzli-profile-screen pb-8">
         {isDemo && <div className="px-5 pt-3"><DemoRoleSwitcher role={role} onSwitch={switchDemoRole} /></div>}
@@ -913,7 +924,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
 
           <div className="rounded-[24px] border border-border bg-card overflow-hidden">
             {[
-              {icon: MessageSquare,label:"Чаты с диспетчерами",action:onOpenSupport},
+              {icon: MessageSquare,label:"Чаты с диспетчерами",action:onOpenChats},
               {icon: ShieldCheck,label:"Безопасность аккаунта",action:onOpenSettings},
               {icon: Headphones,label:"Поддержка Gruzli",action:()=>onOpenSupport?.()},
             ].map(({icon:Icon,label,action})=>(
@@ -930,15 +941,10 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
   }
 
   // ─── WORKER PROFILE ───
-  const statsData = {
-    today: { orders: profile?.completed_orders || 0, earned: `${((profile as any)?.total_earned || 0).toLocaleString("ru-RU")} ₽`, hours: `${monthlyStats.hours}ч` },
-    week: { orders: weeklyStats.orders, earned: `${weeklyStats.earned.toLocaleString("ru-RU")} ₽`, hours: `${weeklyStats.hours}ч` },
-    month: { orders: monthlyStats.orders, earned: `${monthlyStats.earned.toLocaleString("ru-RU")} ₽`, hours: `${monthlyStats.hours}ч` },
-  };
-  const stats = statsData[statsPeriod];
   const activeDays = availability.filter(Boolean).length;
+  const selectedStats = statsPeriod === "today" ? todayStats : statsPeriod === "week" ? weeklyStats : monthlyStats;
   const profileCompletion = Math.min(100, Math.round(
-    ([profile?.full_name, profile?.avatar_url, userSkills.length, profile?.phone, profile?.rating].filter(Boolean).length / 5) * 100
+    ([profile?.full_name, profile?.avatar_url, userSkills.length > 0, profile?.phone, profile?.birth_date].filter(Boolean).length / 5) * 100
   ));
 
   return (
@@ -982,7 +988,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
               <strong>{profile?.full_name || "Пользователь"}</strong>
               <span className="gruzli-worker-id-role">ГРУЗЧИК · {profile?.is_premium ? "PREMIUM" : "STANDARD"}</span>
               <div className="gruzli-worker-id-meta">
-                <span><b>{profile?.rating || "5.00"}</b> рейтинг</span>
+                <span><b>{profile?.rating == null ? "—" : Number(profile.rating).toFixed(2)}</b> рейтинг</span>
                 <span><b>{profile?.completed_orders || 0}</b> заказов</span>
               </div>
             </div>
@@ -998,7 +1004,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             </div>
             <div className="gruzli-worker-id-status">
               <span />
-              ONLINE
+              {workerPresenceLabel}
             </div>
           </div>
         </motion.div>
@@ -1011,7 +1017,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             <span className="gruzli-worker-dashboard-live"><i /> LIVE</span>
           </div>
           <div className="gruzli-worker-dashboard-grid">
-            <div><span>РЕЙТИНГ</span><strong>{profile?.rating || "5.00"}</strong><small>из 5.0</small></div>
+            <div><span>РЕЙТИНГ</span><strong>{profile?.rating == null ? "—" : Number(profile.rating).toFixed(2)}</strong><small>из 5.0</small></div>
             <div><span>ЗАКАЗОВ</span><strong>{profile?.completed_orders || 0}</strong><small>завершено</small></div>
             <div><span>ДОСТУПНО</span><strong>{activeDays}/7</strong><small>дней</small></div>
             <div><span>ПРОФИЛЬ</span><strong>{profileCompletion}%</strong><small>заполнено</small></div>
@@ -1042,14 +1048,14 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           <div className="gruzli-earnings-main">
             <div>
               <span>ЗАРАБОТАНО</span>
-              <strong>{(statsPeriod === "week" ? weeklyStats.earned : statsPeriod === "month" ? monthlyStats.earned : 0).toLocaleString("ru-RU")} ₽</strong>
+              <strong>{selectedStats.earned.toLocaleString("ru-RU")} ₽</strong>
             </div>
             <div className="gruzli-earnings-ring">
-              <strong>{statsPeriod === "week" ? weeklyStats.orders : statsPeriod === "month" ? monthlyStats.orders : 0}</strong><span>заказов</span>
+              <strong>{selectedStats.orders}</strong><span>заказов</span>
             </div>
           </div>
           <div className="gruzli-earnings-meta">
-            <span><b>{statsPeriod === "week" ? weeklyStats.hours : statsPeriod === "month" ? monthlyStats.hours : 0}</b> ч. работы</span>
+            <span><b>{selectedStats.hours}</b> ч. работы</span>
             <span><b>{activeDays}</b> дней доступен</span>
           </div>
         </div>
