@@ -112,7 +112,7 @@ const AvatarWithUpload = ({ profile, user, editable = false }: { profile: any; u
     setUploading(true);
     const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
     // Storage RLS requires the first path segment to be the authenticated user ID.
-    const path = `${user.id}/avatar.${ext}`;
+    const path = `${user.id}/avatar-${Date.now()}.${ext}`;
 
     try {
       const { error: uploadErr } = await supabase.storage.from("kartoteka-photos").upload(path, file, { upsert: true });
@@ -189,7 +189,10 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
     window.dispatchEvent(new Event("navigate-to-feed"));
     toast.success(`Демо: ${nextRole === "worker" ? "Грузчик" : nextRole === "dispatcher" ? "Диспетчер" : "Заказчик"}`);
   };
-  const initials = (profile?.full_name || "").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
+  const displayName = profile?.full_name?.trim()
+    || String(user?.user_metadata?.full_name || "").trim()
+    || (isDispatcher ? "Диспетчер" : role === "client" ? "Заказчик" : role === "worker" ? "Грузчик" : "Пользователь");
+  const initials = displayName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
   const shortId = profile?.display_id || user?.id?.slice(0, 8).toUpperCase() || "—";
   const lastSeenMs = profile?.last_seen_at ? Date.parse(profile.last_seen_at) : Number.NaN;
   const lastSeenAge = Date.now() - lastSeenMs;
@@ -582,7 +585,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
                 <div className="min-w-0 flex-1">
                   <span className="text-[9px] uppercase tracking-[.18em] text-white/45">DISPATCHER / ID</span>
                   <div className="mt-1 flex items-center gap-1.5">
-                    <h2 className="text-xl font-extrabold truncate">{profile?.full_name || "Диспетчер"}</h2>
+                    <h2 className="text-xl font-extrabold truncate">{displayName}</h2>
                     {profile?.verified && <BadgeCheck size={17} className="shrink-0 text-[#f2c400]" />}
                   </div>
                   <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-2.5 py-1">
@@ -744,7 +747,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           >
             <BankCard
               balance={profile?.balance || 0}
-              holderName={profile?.full_name || "DISPATCHER"}
+              holderName={displayName.toUpperCase()}
               cardLast4={(profile?.display_id || "0000").slice(-4)}
               onTopUp={() => { setTopUpAmount(""); setShowTopUp(true); }}
             />
@@ -898,7 +901,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
               <AvatarWithUpload profile={profile} user={user} editable />
               <div className="min-w-0 flex-1">
                 <span className="text-[9px] uppercase tracking-[.18em] text-white/45">CLIENT ID</span>
-                <h2 className="mt-1 text-xl font-extrabold truncate">{profile?.full_name || "Заказчик"}</h2>
+                <h2 className="mt-1 text-xl font-extrabold truncate">{displayName}</h2>
                 <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold">
                   <Building2 size={11} className="text-[#f2c400]"/> ЗАКАЗЧИК
                 </div>
@@ -985,7 +988,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             </div>
             <div className="gruzli-worker-id-info">
               <span className="gruzli-worker-id-label">ИСПОЛНИТЕЛЬ</span>
-              <strong>{profile?.full_name || "Пользователь"}</strong>
+              <strong>{displayName}</strong>
               <span className="gruzli-worker-id-role">ГРУЗЧИК · {profile?.is_premium ? "PREMIUM" : "STANDARD"}</span>
               <div className="gruzli-worker-id-meta">
                 <span><b>{profile?.rating == null ? "—" : Number(profile.rating).toFixed(2)}</b> рейтинг</span>
@@ -1125,7 +1128,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         <div className="gruzli-wallet-section-head"><span>05 / WALLET</span><i /><b>ЛИЧНЫЙ БАЛАНС</b></div>
         <BankCard
           balance={profile?.balance || 0}
-          holderName={profile?.full_name || "WORKER"}
+          holderName={displayName.toUpperCase()}
           cardLast4={(profile?.display_id || "0000").slice(-4)}
           onTopUp={() => { setTopUpAmount(""); setShowTopUp(true); }}
           onSecondary={() => setShowTransactions(!showTransactions)}
@@ -1184,14 +1187,18 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
           </button>
         </div>
         <div className="flex flex-wrap gap-2">
-          {(userSkills.length ? userSkills : defaultSkills).map((skill: string) => (
+          {userSkills.length > 0 ? userSkills.map((skill: string) => (
             <span key={skill} className="px-3 py-2 rounded-xl bg-card border border-border text-xs font-medium text-muted-foreground flex items-center gap-1.5">
               {skill}
-              {editingSkills && userSkills.includes(skill) && (
-                <button onClick={() => removeSkill(skill)} className="text-destructive"><X size={12} /></button>
+              {editingSkills && (
+                <button onClick={() => removeSkill(skill)} className="text-destructive" aria-label={`Удалить навык ${skill}`}><X size={12} /></button>
               )}
             </span>
-          ))}
+          )) : (
+            <p className="w-full text-xs text-muted-foreground">
+              {editingSkills ? "Добавьте навыки, которыми владеете." : "Навыки пока не указаны."}
+            </p>
+          )}
           {editingSkills && (
             <div className="flex items-center gap-1">
               <input
