@@ -51,8 +51,11 @@ describe("demo Supabase session", () => {
       }),
     ]));
     expect(data.every((row: Record<string, unknown>) =>
-      ["user_id", "full_name", "avatar_url", "rating", "completed_orders", "last_seen_at", "isOnline"]
+      ["user_id", "full_name", "avatar_url", "rating", "completed_orders", "last_seen_at"]
         .every((key) => key in row)
+    )).toBe(true);
+    expect(data.every((row: Record<string, unknown>) =>
+      !("phone" in row) && !("birth_date" in row) && !("recovery_code" in row)
     )).toBe(true);
   });
 
