@@ -99,6 +99,33 @@ ON CONFLICT (user_id, role) DO NOTHING;
 
 DROP FUNCTION public._gruzli_try_parse_birth_date(text);
 
+-- The public directory reads only safe profile fields and does not expose
+-- the user_roles table through broad SELECT permissions.
+CREATE OR REPLACE FUNCTION public.get_dispatcher_directory()
+RETURNS TABLE (
+  user_id uuid,
+  full_name text,
+  avatar_url text,
+  rating numeric,
+  completed_orders integer,
+  last_seen_at timestamptz
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $dispatcher_directory$
+  SELECT p.user_id, p.full_name, p.avatar_url, p.rating, p.completed_orders, p.last_seen_at
+  FROM public.profiles AS p
+  JOIN public.user_roles AS ur ON ur.user_id = p.user_id
+  WHERE auth.uid() IS NOT NULL
+    AND ur.role = 'dispatcher'
+  ORDER BY p.created_at DESC;
+$dispatcher_directory$;
+
+REVOKE ALL ON FUNCTION public.get_dispatcher_directory() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_dispatcher_directory() TO authenticated;
+
 -- A profile's rating must reflect ratings earned through completed work.
 -- A default 5.00 was misleading: it made new/unreviewed accounts look rated.
 ALTER TABLE public.profiles
