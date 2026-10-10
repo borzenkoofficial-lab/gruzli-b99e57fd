@@ -79,6 +79,7 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
 
       // Only create the initial message and notification for a newly inserted response.
       // Keep chat/notification behavior separate from the transactional response creation.
+      let initialMessageFailed = false;
       if (isNewResponse) {
         const { error: messageError } = await supabase.from("messages").insert({
           conversation_id: conversationId,
@@ -87,7 +88,8 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
           message_type: "text",
         });
         if (messageError) {
-          toast.error("Отклик сохранён, но сообщение не отправлено. Откройте чат и отправьте его повторно.");
+          initialMessageFailed = true;
+          console.error("Response saved but initial chat message failed", messageError);
         }
 
         supabase.functions.invoke("notify-email", {
@@ -100,9 +102,13 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
         }).catch(() => {});
       }
 
-      // 3. Open chat
+      // 3. Open chat. Never show a success toast if the initial message failed.
       if (navigator.vibrate) navigator.vibrate(50);
-      toast.success("Отклик отправлен ✓ Чат с диспетчером открыт");
+      if (initialMessageFailed) {
+        toast.error("Отклик сохранён, но сообщение не отправлено. Отправьте его повторно в чате.");
+      } else {
+        toast.success("Отклик отправлен ✓ Чат с диспетчером открыт");
+      }
       onOpenChat?.(conversationId, job.title || "Чат");
       return true;
     },
