@@ -171,7 +171,12 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
           email,
           password,
           options: {
-            data: { full_name: fullName, role, phone: isEmail(input) ? "" : input },
+            data: {
+              full_name: fullName.trim(),
+              role,
+              phone: isEmail(input) ? "" : input,
+              birth_date: birthDate || null,
+            },
           },
         });
         if (error) throw error;
@@ -184,16 +189,11 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
         }
 
         if (data.user) {
-          await supabase
-            .from("profiles")
-            .update({
-              phone: isEmail(input) ? "" : input,
-              ...(birthDate ? { birth_date: birthDate } : {}),
-            })
-            .eq("user_id", data.user.id);
+          // Profile fields are persisted by the auth.users trigger from metadata.
+          // Do not rely exclusively on a client UPDATE: email confirmation may mean
+          // there is no authenticated browser session and RLS would block that write.
 
           // Show recovery code banner before entering the app.
-          // The user is signed in, so RLS allows reading their own recovery_code.
           setShowRecoveryFor(data.user.id);
           setLoading(false);
           return;
