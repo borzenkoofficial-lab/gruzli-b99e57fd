@@ -220,9 +220,12 @@ EXECUTE FUNCTION public.sync_worker_profile_rating();
 
 DROP TRIGGER IF EXISTS sync_worker_rating_after_review_update ON public.job_responses;
 CREATE TRIGGER sync_worker_rating_after_review_update
-AFTER UPDATE OF dispatcher_review_rating ON public.job_responses
+AFTER UPDATE OF dispatcher_review_rating, worker_id ON public.job_responses
 FOR EACH ROW
-WHEN (OLD.dispatcher_review_rating IS DISTINCT FROM NEW.dispatcher_review_rating)
+WHEN (
+  OLD.dispatcher_review_rating IS DISTINCT FROM NEW.dispatcher_review_rating
+  OR OLD.worker_id IS DISTINCT FROM NEW.worker_id
+)
 EXECUTE FUNCTION public.sync_worker_profile_rating();
 
 DROP TRIGGER IF EXISTS sync_worker_rating_after_review_delete ON public.job_responses;
