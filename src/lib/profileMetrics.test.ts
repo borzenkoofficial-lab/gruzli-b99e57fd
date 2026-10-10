@@ -36,7 +36,7 @@ describe("aggregateProfileMetrics", () => {
   it("ignores invalid timestamps and invalid numeric values without inventing a rating or metric", () => {
     const rows = [
       { completedAt: "not-a-date", earned: 100, hours_worked: 1 },
-      { completedAt: "2026-10-07T12:00:00.000Z", earned: null, hours_worked: null },
+      { completedAt: "2026-10-07T12:00:00.000Z", earned: "not-a-number", hours_worked: null },
     ];
 
     expect(aggregateProfileMetrics(rows, start, end)).toEqual({
