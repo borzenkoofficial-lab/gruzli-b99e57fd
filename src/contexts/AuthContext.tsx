@@ -47,8 +47,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       supabase.from("profiles").select("*").eq("user_id", nextUser.id).maybeSingle(),
     ]);
 
-    if (roleRes.data) setRole(roleRes.data as AppRole);
-    if (profileRes.data) setProfile(profileRes.data);
+    if (roleRes.error) {
+      console.error("[Gruzli Auth] failed to load user role:", roleRes.error);
+    }
+    if (profileRes.error) {
+      console.error("[Gruzli Auth] failed to load user profile:", profileRes.error);
+    }
+
+    // Clear stale values when a new account has no readable row; never leave
+    // the previous account's role/profile rendered as if it belonged to this user.
+    setRole(roleRes.data ? (roleRes.data as AppRole) : null);
+    setProfile(profileRes.data ?? null);
 
     return {
       roleError: roleRes.error?.message ?? null,
@@ -102,19 +111,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     void initialize();
 
-    const handleAvatarUpdate = () => {
+    const handleProfileUpdate = () => {
       if (!mounted) return;
       void supabase.auth.getSession().then(({ data }) => {
         if (data.session?.user) void fetchRoleAndProfile(data.session.user as User);
       });
     };
 
-    window.addEventListener("profile-avatar-updated", handleAvatarUpdate);
+    // Keep the legacy avatar event temporarily for existing call sites.
+    window.addEventListener("profile-updated", handleProfileUpdate);
+    window.addEventListener("profile-avatar-updated", handleProfileUpdate);
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
-      window.removeEventListener("profile-avatar-updated", handleAvatarUpdate);
+      window.removeEventListener("profile-updated", handleProfileUpdate);
+      window.removeEventListener("profile-avatar-updated", handleProfileUpdate);
     };
   }, [fetchRoleAndProfile]);
 
