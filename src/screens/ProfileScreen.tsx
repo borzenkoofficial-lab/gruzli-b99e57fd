@@ -92,7 +92,7 @@ const VerifiedPopup = ({ open, onClose }: { open: boolean; onClose: () => void }
 const AvatarWithUpload = ({ profile, user, editable = false }: { profile: any; user: any; editable?: boolean }) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const initials = (profile?.full_name || "").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
+  const initials = (profile?.full_name || user?.user_metadata?.full_name || "").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.currentTarget;
@@ -192,6 +192,9 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
   const displayName = profile?.full_name?.trim()
     || String(user?.user_metadata?.full_name || "").trim()
     || (isDispatcher ? "Диспетчер" : role === "client" ? "Заказчик" : role === "worker" ? "Грузчик" : "Пользователь");
+  const birthDateLabel = profile?.birth_date
+    ? new Date(`${profile.birth_date}T00:00:00`).toLocaleDateString("ru-RU")
+    : null;
   const initials = displayName.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
   const shortId = profile?.display_id || user?.id?.slice(0, 8).toUpperCase() || "—";
   const lastSeenMs = profile?.last_seen_at ? Date.parse(profile.last_seen_at) : Number.NaN;
@@ -423,7 +426,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
       }
     };
     fetchTransactions();
-  }, [user]);
+  }, [user?.id, role, isDemo]);
 
   // Fetch reviews for dispatcher
   useEffect(() => {
@@ -587,6 +590,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
                   <div className="mt-1 flex items-center gap-1.5">
                     <h2 className="text-xl font-extrabold truncate">{displayName}</h2>
                     {profile?.verified && <BadgeCheck size={17} className="shrink-0 text-[#f2c400]" />}
+                    {birthDateLabel && <p className="mt-1 text-[11px] text-white/55">Дата рождения: {birthDateLabel}</p>}
                   </div>
                   <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-2.5 py-1">
                     <span className="h-1.5 w-1.5 rounded-full bg-[#f2c400]" />
@@ -902,6 +906,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
               <div className="min-w-0 flex-1">
                 <span className="text-[9px] uppercase tracking-[.18em] text-white/45">CLIENT ID</span>
                 <h2 className="mt-1 text-xl font-extrabold truncate">{displayName}</h2>
+                {birthDateLabel && <p className="mt-1 text-[11px] text-white/55">Дата рождения: {birthDateLabel}</p>}
                 <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold">
                   <Building2 size={11} className="text-[#f2c400]"/> ЗАКАЗЧИК
                 </div>
@@ -989,6 +994,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             <div className="gruzli-worker-id-info">
               <span className="gruzli-worker-id-label">ИСПОЛНИТЕЛЬ</span>
               <strong>{displayName}</strong>
+              {birthDateLabel && <small>Дата рождения: {birthDateLabel}</small>}
               <span className="gruzli-worker-id-role">ГРУЗЧИК · {profile?.is_premium ? "PREMIUM" : "STANDARD"}</span>
               <div className="gruzli-worker-id-meta">
                 <span><b>{profile?.rating == null ? "—" : Number(profile.rating).toFixed(2)}</b> рейтинг</span>
