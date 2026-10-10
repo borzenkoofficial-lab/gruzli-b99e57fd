@@ -96,7 +96,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
       // Parallelize the two independent base queries — was sequential, costing ~2x latency.
       const [profileRes, roleRes] = await Promise.all([
         supabase.from("profiles_public" as any).select("*").eq("user_id", userId).single(),
-        supabase.from("user_roles").select("role").eq("user_id", userId).single(),
+        supabase.rpc("get_user_role", { _user_id: userId }),
       ]);
 
       if (cancelled) return;
@@ -111,7 +111,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
       }
 
       setProfile(profileRes.data);
-      const detectedRole = roleRes.data?.role || null;
+      const detectedRole = roleRes.data || null;
       setUserRole(detectedRole);
 
       // Show the screen as soon as base data is in — reviews & jobs count
