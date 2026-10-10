@@ -35,6 +35,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const activeUserIdRef = useRef<string | null>(null);
+  const profileRequestId = useRef(0);
+  const loadedProfileUserId = useRef<string | null>(null);
   const [demoMode, setDemoMode] = useState(() => DEMO_ENABLED && localStorage.getItem("gruzli_demo_worker") === "1");
   const [demoRole, setDemoRole] = useState<AppRole>(() => {
     if (!DEMO_ENABLED) return "worker";
@@ -43,6 +45,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const fetchRoleAndProfile = useCallback(async (nextUser: User) => {
+    const requestId = ++profileRequestId.current;
+
+    // Clear the previous account immediately, but keep the current account's
+    // profile visible during same-user refreshes (e.g. after avatar updates).
+    if (loadedProfileUserId.current !== nextUser.id) {
+      loadedProfileUserId.current = nextUser.id;
+      setRole(null);
+      setProfile(null);
+    }
+
     const [roleRes, profileRes] = await Promise.all([
       supabase.rpc("get_user_role", { _user_id: nextUser.id }),
       supabase.from("profiles").select("*").eq("user_id", nextUser.id).maybeSingle(),
@@ -50,9 +62,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Authentication may switch accounts while these requests are in flight.
     // Ignore stale responses so one user's profile can never render for another.
-    if (activeUserIdRef.current !== nextUser.id) return {
-      roleError: null,
-      profileError: null,
+    if (activeUserIdRef.current !== nextUser.id || requestId !== profileRequestId.current) return {
+      roleError: roleRes.error?.message ?? null,
+      profileError: profileRes.error?.message ?? null,
     };
 
     if (roleRes.error) {
@@ -109,6 +121,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(normalized?.user ?? null);
 
       if (!normalized?.user) {
+        // Invalidate in-flight profile requests on sign-out.
+        profileRequestId.current += 1;
+        loadedProfileUserId.current = null;
         setRole(null);
         setProfile(null);
         setLoading(false);
@@ -209,6 +224,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     activeUserIdRef.current = null;
+    profileRequestId.current += 1;
+    loadedProfileUserId.current = null;
     setUser(null);
     setSession(null);
     setRole(null);
