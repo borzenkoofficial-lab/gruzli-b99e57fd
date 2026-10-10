@@ -49,21 +49,25 @@ ALTER TABLE public.profiles
 
 UPDATE public.profiles AS p
 SET rating = CASE
-  WHEN ur.role = 'worker' THEN (
+  WHEN EXISTS (
+    SELECT 1 FROM public.user_roles AS ur
+    WHERE ur.user_id = p.user_id AND ur.role = 'worker'
+  ) THEN (
     SELECT round(avg(jr.dispatcher_review_rating)::numeric, 2)::numeric(3,2)
     FROM public.job_responses AS jr
     WHERE jr.worker_id = p.user_id
       AND jr.dispatcher_review_rating IS NOT NULL
   )
-  WHEN ur.role = 'dispatcher' THEN (
+  WHEN EXISTS (
+    SELECT 1 FROM public.user_roles AS ur
+    WHERE ur.user_id = p.user_id AND ur.role = 'dispatcher'
+  ) THEN (
     SELECT round(avg(dr.rating)::numeric, 2)::numeric(3,2)
     FROM public.dispatcher_reviews AS dr
     WHERE dr.dispatcher_id = p.user_id
   )
   ELSE NULL
-END
-FROM public.user_roles AS ur
-WHERE ur.user_id = p.user_id;
+END;
 
 CREATE OR REPLACE FUNCTION public.sync_worker_profile_rating()
 RETURNS trigger
