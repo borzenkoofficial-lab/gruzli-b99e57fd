@@ -130,6 +130,54 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [fetchRoleAndProfile]);
 
+  // Keep last_seen_at current so user cards never show a hard-coded online status.
+  useEffect(() => {
+    const userId = user?.id;
+    if (!userId || userId.startsWith("demo-")) return;
+
+    let active = true;
+    let hasLoggedFailure = false;
+
+    const touchPresence = async () => {
+      if (document.visibilityState === "hidden") return;
+
+      const lastSeenAt = new Date().toISOString();
+      const { error } = await supabase
+        .from("profiles")
+        .update({ last_seen_at: lastSeenAt })
+        .eq("user_id", userId);
+
+      if (!active) return;
+      if (error) {
+        if (!hasLoggedFailure) {
+          console.warn("[Gruzli Presence] failed to update last_seen_at:", error);
+          hasLoggedFailure = true;
+        }
+        return;
+      }
+
+      hasLoggedFailure = false;
+      setProfile((current) =>
+        current?.user_id === userId
+          ? { ...current, last_seen_at: lastSeenAt }
+          : current
+      );
+    };
+
+    void touchPresence();
+    const timer = window.setInterval(() => { void touchPresence(); }, 60_000);
+    const handleVisibilityChange = () => { if (document.visibilityState === "visible") void touchPresence(); };
+    window.addEventListener("focus", handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", handleVisibilityChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [user?.id]);
+
   useEffect(() => {
     if (!DEMO_ENABLED) return;
 
