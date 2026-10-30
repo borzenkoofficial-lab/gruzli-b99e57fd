@@ -23,7 +23,8 @@ const AdminPage = lazy(() => import("./pages/AdminPage"));
 const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
-const DEMO_ENABLED = import.meta.env.DEV && import.meta.env.VITE_GRUZLI_DEMO_MODE === "true";
+// Temporary standalone mode: the app uses the local demo adapter in every deployment.
+const DEMO_ENABLED = true;
 
 const queryClient = new QueryClient({
   defaultOptions: {
