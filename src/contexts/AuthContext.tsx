@@ -6,7 +6,8 @@ type AppRole = "client" | "worker" | "dispatcher" | "admin";
 type User = { id: string; email?: string; phone?: string | null; user_metadata: Record<string, any> };
 type Session = { user: User; access_token: string };
 
-const DEMO_ENABLED = import.meta.env.DEV && import.meta.env.VITE_GRUZLI_DEMO_MODE === "true";
+// Temporary standalone mode: local demo auth is enabled in every deployment.
+const DEMO_ENABLED = true;
 
 interface AuthContextType {
   user: User | null;
