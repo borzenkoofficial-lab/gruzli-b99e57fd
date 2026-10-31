@@ -59,9 +59,9 @@ CREATE TABLE IF NOT EXISTS job_responses (
   work_started_at timestamptz,
   worker_review_rating numeric(3,2),
   worker_review_text text,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  CONSTRAINT job_responses_worker_job_unique UNIQUE (job_id, worker_id)
+  created_at timestamptz NOT NULL DEFAULT now()
 );
+CREATE UNIQUE INDEX IF NOT EXISTS job_responses_active_worker_unique ON job_responses (job_id, worker_id) WHERE status IN ('pending','accepted');
 CREATE INDEX IF NOT EXISTS job_responses_job_created_idx ON job_responses (job_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS job_responses_worker_created_idx ON job_responses (worker_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS job_responses_status_idx ON job_responses (job_id, status);

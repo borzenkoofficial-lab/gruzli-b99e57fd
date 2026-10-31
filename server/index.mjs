@@ -339,6 +339,23 @@ app.post("/api/jobs", requireAuth, async (req, res) => {
   }
 });
 
+app.get("/api/jobs/:jobId", requireAuth, async (req, res) => {
+  const user = req.authUser;
+  try {
+    const result = await pool.query("SELECT j.*, dp.full_name AS dispatcher_name FROM jobs j LEFT JOIN profiles dp ON dp.user_id = j.dispatcher_id WHERE j.id = $1 LIMIT 1", [req.params.jobId]);
+    const job = result.rows[0];
+    if (!job) return sendError(res, 404, "JOB_NOT_FOUND", "Заявка не найдена.");
+    const allowed = user.role === "admin" || (user.role === "client" && job.client_id === user.id) ||
+      (user.role === "dispatcher" && job.dispatcher_id === user.id) ||
+      (user.role === "worker" && job.dispatcher_id && ["open", "active", "filled"].includes(job.status));
+    if (!allowed) return sendError(res, 403, "FORBIDDEN", "Нет доступа к этой заявке.");
+    return res.json({ job });
+  } catch (error) {
+    console.error("[jobs] Detail failed:", error.message);
+    return sendError(res, 500, "JOB_LOOKUP_FAILED", "Не удалось загрузить заявку.");
+  }
+});
+
 app.get("/api/jobs/:jobId/responses", requireAuth, async (req, res) => {
   const user = req.authUser;
   try {

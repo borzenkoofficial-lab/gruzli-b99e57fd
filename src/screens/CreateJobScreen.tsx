@@ -121,26 +121,29 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
       }
     }
 
-    const { data: createdJob, error } = await supabase.rpc("client_create_job", {
-      _title: title.trim(),
-      _description: description.trim(),
-      _hourly_rate: parseFloat(hourlyRate),
-      _start_time: startTime ? new Date(startTime).toISOString() : null,
-      _duration_hours: parseFloat(durationHours) || 4,
-      _address: address.trim(),
-      _metro: metro.trim(),
-      _workers_needed: parseInt(workersNeeded) || 2,
-      _urgent: urgent,
-      _quick_minimum: quickMinimum,
-      _requires_contract: requiresContract,
-    });
-
-    if (error || !createdJob) {
-      console.error("client_create_job failed", error);
-      toast.error(error?.message || "Не удалось создать заявку");
+    let createdJob: any = null;
+    try {
+      const response = await fetch("/api/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          title: title.trim(), description: description.trim(), hourlyRate: parseFloat(hourlyRate),
+          startTime: startTime ? new Date(startTime).toISOString() : null,
+          durationHours: parseFloat(durationHours) || 4, address: address.trim(), metro: metro.trim(),
+          workersNeeded: parseInt(workersNeeded) || 2, urgent, quickMinimum, requiresContract,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error?.message || "Не удалось создать заявку");
+      createdJob = payload.job;
+    } catch (error: any) {
+      console.error("POST /api/jobs failed", error);
+      toast.error(error.message || "Не удалось создать заявку");
       setLoading(false);
       return;
     }
+
     // Contract creation is intentionally deferred until a dispatcher is assigned.
     // job_contracts requires dispatcher_id, while a new client request has none yet.
     toast.success(isClient ? "Запрос отправлен диспетчерам" : "Заявка создана!");
