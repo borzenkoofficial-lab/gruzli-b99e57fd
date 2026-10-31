@@ -316,7 +316,21 @@ async function requireAuth(req, res, next) {
 
 app.post("/api/profile/presence", requireAuth, async (req, res) => {
   try {
-    await pool.query("UPDATE profiles SET last_seen_at = now(), updated_at = now() WHERE user_id = $1", [req.authUser.id]);
+    const updated = await pool.query(
+      "UPDATE profiles SET last_seen_at = now(), updated_at = now() WHERE user_id = $1 RETURNING last_seen_at",
+      [req.authUser.id],
+    );
+    const lastSeenAt = updated.rows[0]?.last_seen_at;
+    if (lastSeenAt) {
+      const peers = await pool.query(
+        "SELECT DISTINCT peer.user_id FROM conversation_participants mine " +
+        "JOIN conversation_participants peer ON peer.conversation_id = mine.conversation_id " +
+        "WHERE mine.user_id = $1 AND peer.user_id <> $1",
+        [req.authUser.id],
+      );
+      const event = { type: "presence:update", userId: req.authUser.id, lastSeenAt };
+      for (const peer of peers.rows) sendUserEvent(peer.user_id, event);
+    }
     return res.status(204).end();
   } catch (error) {
     console.error("[profile] Presence update failed:", error.message);
@@ -455,7 +469,7 @@ app.get("/api/conversations", requireAuth, async (req, res) => {
       "lm.created_at AS last_message_at, lm.sender_id AS last_sender_id, " +
       "COALESCE(unread.unread_count, 0)::int AS unread_count " +
       "FROM conversation_participants mine JOIN conversations c ON c.id = mine.conversation_id " +
-      "LEFT JOIN LATERAL (SELECT p.full_name, p.avatar_url, p.last_seen_at FROM conversation_participants cp " +
+      "LEFT JOIN LATERAL (SELECT cp.user_id, p.full_name, p.avatar_url, p.last_seen_at FROM conversation_participants cp " +
       "JOIN profiles p ON p.user_id = cp.user_id WHERE cp.conversation_id = c.id AND cp.user_id <> $1 ORDER BY cp.joined_at LIMIT 1) op ON true " +
       "LEFT JOIN LATERAL (SELECT m.text, m.message_type, m.created_at, m.sender_id FROM messages m " +
       "WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) lm ON true " +
@@ -466,7 +480,7 @@ app.get("/api/conversations", requireAuth, async (req, res) => {
     );
     const conversations = result.rows.map((row) => ({
       id: row.id, title: row.title, is_group: row.is_group, job_id: row.job_id,
-      otherName: row.other_name, otherAvatarUrl: row.other_avatar_url, otherLastSeen: row.other_last_seen,
+      otherUserId: row.user_id, otherName: row.other_name, otherAvatarUrl: row.other_avatar_url, otherLastSeen: row.other_last_seen,
       lastMessage: row.last_message_type === "voice" ? "🎤 Голосовое сообщение" :
         row.last_message_type === "image" ? "📷 Фото" : row.last_message_type === "video" ? "📹 Видео" :
         row.last_message_type === "sticker" ? (row.last_message_text || "Стикер") : (row.last_message_text || "Нет сообщений"),
