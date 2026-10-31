@@ -398,8 +398,12 @@ app.delete("/api/conversations/:conversationId", requireAuth, async (req, res) =
   try {
     const member = await requireConversationMember(req.params.conversationId, req.authUser.id);
     if (!member && req.authUser.role !== "admin") return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
+    const storedFiles = await pool.query("SELECT storage_key FROM conversation_files WHERE conversation_id = $1", [req.params.conversationId]);
     const deleted = await pool.query("DELETE FROM conversations WHERE id = $1 RETURNING id", [req.params.conversationId]);
     if (!deleted.rowCount) return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
+    await Promise.all(storedFiles.rows.map((file) => unlink(path.join(uploadDir, file.storage_key)).catch((error) => {
+      if (error.code !== "ENOENT") console.error("[storage] File cleanup failed:", error.message);
+    })));
     return res.status(204).end();
   } catch (error) {
     console.error("[chat] Conversation delete failed:", error.message);
