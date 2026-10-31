@@ -273,6 +273,225 @@ app.post("/api/auth/logout", async (req, res) => {
   return res.status(204).end();
 });
 
+
+async function requireAuth(req, res, next) {
+  if (!pool || !databaseReady) return sendError(res, 503, "DATABASE_UNAVAILABLE", "База данных временно недоступна.");
+  try {
+    const authUser = await loadSession(req);
+    if (!authUser) return sendError(res, 401, "UNAUTHENTICATED", "Требуется войти в аккаунт.");
+    req.authUser = authUser;
+    return next();
+  } catch (error) {
+    console.error("[auth] Protected request failed:", error.message);
+    return sendError(res, 500, "AUTH_CHECK_FAILED", "Не удалось проверить доступ.");
+  }
+}
+
+app.get("/api/jobs", requireAuth, async (req, res) => {
+  const user = req.authUser;
+  try {
+    const result = await pool.query(
+      "SELECT j.*, dp.full_name AS dispatcher_name FROM jobs j LEFT JOIN profiles dp ON dp.user_id = j.dispatcher_id " +
+      "WHERE ($2 = 'admin') OR ($2 = 'client' AND j.client_id = $1) " +
+      "OR ($2 = 'dispatcher' AND (j.dispatcher_id = $1 OR (j.dispatcher_id IS NULL AND j.status = 'open'))) " +
+      "OR ($2 = 'worker' AND j.dispatcher_id IS NOT NULL AND j.status IN ('active','open')) " +
+      "ORDER BY j.created_at DESC LIMIT 200",
+      [user.id, user.role],
+    );
+    return res.json({ jobs: result.rows });
+  } catch (error) {
+    console.error("[jobs] List failed:", error.message);
+    return sendError(res, 500, "JOBS_LIST_FAILED", "Не удалось загрузить заявки.");
+  }
+});
+
+app.post("/api/jobs", requireAuth, async (req, res) => {
+  const user = req.authUser;
+  if (user.role !== "client" && user.role !== "admin") return sendError(res, 403, "CLIENT_ROLE_REQUIRED", "Создавать заявки может только заказчик.");
+  const title = String(req.body?.title || "").trim();
+  const description = String(req.body?.description || "").trim() || null;
+  const hourlyRate = Number(req.body?.hourlyRate);
+  const durationHours = Number(req.body?.durationHours);
+  const workersNeeded = Number(req.body?.workersNeeded);
+  const startTime = req.body?.startTime || null;
+  const address = String(req.body?.address || "").trim() || null;
+  const metro = String(req.body?.metro || "").trim() || null;
+  if (title.length < 3 || title.length > 180 || !Number.isFinite(hourlyRate) || hourlyRate <= 0 ||
+      !Number.isFinite(durationHours) || durationHours <= 0 || !Number.isInteger(workersNeeded) || workersNeeded < 1 || workersNeeded > 100) {
+    return sendError(res, 400, "INVALID_JOB", "Проверьте название, ставку, длительность и количество исполнителей.");
+  }
+  if (startTime && Number.isNaN(Date.parse(startTime))) return sendError(res, 400, "INVALID_START_TIME", "Некорректная дата начала.");
+  try {
+    const result = await pool.query(
+      "INSERT INTO jobs (client_id, title, description, hourly_rate, start_time, duration_hours, address, metro, workers_needed, urgent, quick_minimum, requires_contract, status) " +
+      "VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'open') RETURNING *",
+      [user.id, title, description, hourlyRate, startTime, durationHours, address, metro, workersNeeded,
+        Boolean(req.body?.urgent), Boolean(req.body?.quickMinimum), Boolean(req.body?.requiresContract)],
+    );
+    await pool.query(
+      "INSERT INTO app_audit_log (actor_user_id, action, entity_type, entity_id, ip_address) VALUES ($1,'job.created','job',$2,$3)",
+      [user.id, result.rows[0].id, req.ip],
+    );
+    return res.status(201).json({ job: result.rows[0] });
+  } catch (error) {
+    console.error("[jobs] Create failed:", error.message);
+    return sendError(res, 500, "JOB_CREATE_FAILED", "Не удалось создать заявку.");
+  }
+});
+
+app.get("/api/jobs/:jobId/responses", requireAuth, async (req, res) => {
+  const user = req.authUser;
+  try {
+    const job = await pool.query("SELECT id, dispatcher_id, status FROM jobs WHERE id = $1", [req.params.jobId]);
+    if (!job.rowCount) return sendError(res, 404, "JOB_NOT_FOUND", "Заявка не найдена.");
+    if (user.role !== "admin" && (user.role !== "dispatcher" || job.rows[0].dispatcher_id !== user.id)) {
+      return sendError(res, 403, "FORBIDDEN", "Нет доступа к откликам этой заявки.");
+    }
+    const result = await pool.query(
+      "SELECT r.*, p.full_name, p.avatar_url, p.rating, p.completed_orders, p.is_premium, p.verified, p.skills " +
+      "FROM job_responses r LEFT JOIN profiles p ON p.user_id = r.worker_id WHERE r.job_id = $1 ORDER BY r.created_at DESC",
+      [req.params.jobId],
+    );
+    return res.json({ responses: result.rows, job: job.rows[0] });
+  } catch (error) {
+    console.error("[jobs] Responses list failed:", error.message);
+    return sendError(res, 500, "RESPONSES_LIST_FAILED", "Не удалось загрузить отклики.");
+  }
+});
+
+app.get("/api/jobs/:jobId/my-response", requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT id, status, worker_status FROM job_responses WHERE job_id = $1 AND worker_id = $2 LIMIT 1",
+      [req.params.jobId, req.authUser.id],
+    );
+    return res.json({ response: result.rows[0] || null });
+  } catch (error) {
+    console.error("[jobs] Own response lookup failed:", error.message);
+    return sendError(res, 500, "RESPONSE_LOOKUP_FAILED", "Не удалось проверить отклик.");
+  }
+});
+
+app.post("/api/jobs/:jobId/responses", requireAuth, async (req, res) => {
+  const user = req.authUser;
+  if (user.role !== "worker") return sendError(res, 403, "WORKER_ROLE_REQUIRED", "Откликаться на заявки может только исполнитель.");
+  const message = String(req.body?.message || "").trim().slice(0, 2000) || null;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const jobResult = await client.query("SELECT id, dispatcher_id, status FROM jobs WHERE id = $1 FOR UPDATE", [req.params.jobId]);
+    const job = jobResult.rows[0];
+    if (!job) {
+      await client.query("ROLLBACK");
+      return sendError(res, 404, "JOB_NOT_FOUND", "Заявка не найдена.");
+    }
+    if (!job.dispatcher_id || !["active", "open"].includes(job.status)) {
+      await client.query("ROLLBACK");
+      return sendError(res, 409, "JOB_NOT_AVAILABLE", "Заявка сейчас недоступна для отклика.");
+    }
+    const duplicate = await client.query(
+      "SELECT id FROM job_responses WHERE job_id = $1 AND worker_id = $2 AND status IN ('pending','accepted') LIMIT 1",
+      [job.id, user.id],
+    );
+    if (duplicate.rowCount) {
+      await client.query("ROLLBACK");
+      return sendError(res, 409, "RESPONSE_ALREADY_EXISTS", "Вы уже откликнулись на эту заявку.");
+    }
+    const result = await client.query(
+      "INSERT INTO job_responses (job_id, worker_id, message, status, worker_status) VALUES ($1,$2,$3,'pending','ready') RETURNING *",
+      [job.id, user.id, message],
+    );
+    await client.query("COMMIT");
+    return res.status(201).json({ response: result.rows[0] });
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    console.error("[jobs] Response create failed:", error.message);
+    return sendError(res, 500, "RESPONSE_CREATE_FAILED", "Не удалось отправить отклик.");
+  } finally {
+    client.release();
+  }
+});
+
+app.post("/api/responses/:responseId/accept", requireAuth, async (req, res) => {
+  const user = req.authUser;
+  if (user.role !== "dispatcher" && user.role !== "admin") return sendError(res, 403, "DISPATCHER_ROLE_REQUIRED", "Принимать отклики может только диспетчер.");
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const responseResult = await client.query(
+      "SELECT r.*, j.dispatcher_id, j.workers_needed, j.status AS job_status FROM job_responses r JOIN jobs j ON j.id = r.job_id WHERE r.id = $1 FOR UPDATE OF r, j",
+      [req.params.responseId],
+    );
+    const response = responseResult.rows[0];
+    if (!response || (user.role !== "admin" && response.dispatcher_id !== user.id)) {
+      await client.query("ROLLBACK");
+      return sendError(res, 404, "RESPONSE_NOT_FOUND", "Отклик не найден.");
+    }
+    if (response.status !== "pending" || !["open", "active", "filled"].includes(response.job_status)) {
+      await client.query("ROLLBACK");
+      return sendError(res, 409, "RESPONSE_NOT_PENDING", "Этот отклик уже нельзя принять.");
+    }
+    const acceptedCount = await client.query("SELECT count(*)::int AS count FROM job_responses WHERE job_id = $1 AND status = 'accepted'", [response.job_id]);
+    const needed = Math.max(1, Number(response.workers_needed || 1));
+    if (acceptedCount.rows[0].count >= needed) {
+      await client.query("ROLLBACK");
+      return sendError(res, 409, "WORKERS_LIMIT_REACHED", "Лимит грузчиков уже достигнут.");
+    }
+    await client.query("UPDATE job_responses SET status = 'accepted' WHERE id = $1", [response.id]);
+    const acceptedNow = acceptedCount.rows[0].count + 1;
+    const filled = acceptedNow >= needed;
+    let autoRejected = 0;
+    if (filled) {
+      await client.query("UPDATE jobs SET status = 'filled', updated_at = now() WHERE id = $1", [response.job_id]);
+      const rejected = await client.query("UPDATE job_responses SET status = 'rejected' WHERE job_id = $1 AND status = 'pending' AND id <> $2", [response.job_id, response.id]);
+      autoRejected = rejected.rowCount || 0;
+    } else {
+      await client.query("UPDATE jobs SET status = 'active', updated_at = now() WHERE id = $1 AND status = 'open'", [response.job_id]);
+    }
+    await client.query("COMMIT");
+    return res.json({ accepted_count: acceptedNow, workers_needed: needed, filled, auto_rejected: autoRejected });
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    console.error("[jobs] Accept response failed:", error.message);
+    return sendError(res, 500, "RESPONSE_ACCEPT_FAILED", "Не удалось принять отклик.");
+  } finally {
+    client.release();
+  }
+});
+
+app.post("/api/responses/:responseId/reject", requireAuth, async (req, res) => {
+  const user = req.authUser;
+  if (user.role !== "dispatcher" && user.role !== "admin") return sendError(res, 403, "DISPATCHER_ROLE_REQUIRED", "Отклонять отклики может только диспетчер.");
+  try {
+    const result = await pool.query(
+      "UPDATE job_responses r SET status = 'rejected' FROM jobs j WHERE r.id = $1 AND j.id = r.job_id AND r.status = 'pending' AND ($2 = 'admin' OR j.dispatcher_id = $3) RETURNING r.id",
+      [req.params.responseId, user.role, user.id],
+    );
+    if (!result.rowCount) return sendError(res, 409, "RESPONSE_NOT_REJECTABLE", "Этот отклик уже нельзя отклонить.");
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("[jobs] Reject response failed:", error.message);
+    return sendError(res, 500, "RESPONSE_REJECT_FAILED", "Не удалось отклонить отклик.");
+  }
+});
+
+app.post("/api/responses/:responseId/withdraw", requireAuth, async (req, res) => {
+  const user = req.authUser;
+  if (user.role !== "worker") return sendError(res, 403, "WORKER_ROLE_REQUIRED", "Только исполнитель может отозвать отклик.");
+  try {
+    const result = await pool.query(
+      "UPDATE job_responses SET status = 'withdrawn' WHERE id = $1 AND worker_id = $2 AND status = 'pending' RETURNING id",
+      [req.params.responseId, user.id],
+    );
+    if (!result.rowCount) return sendError(res, 409, "RESPONSE_NOT_WITHDRAWABLE", "Этот отклик уже нельзя отозвать.");
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("[jobs] Withdraw response failed:", error.message);
+    return sendError(res, 500, "RESPONSE_WITHDRAW_FAILED", "Не удалось отозвать отклик.");
+  }
+});
+
+
 app.use("/api", (_req, res) => sendError(res, 404, "API_ROUTE_NOT_FOUND", "API-маршрут не найден."));
 app.use(express.static(distDir, {
   index: false,
