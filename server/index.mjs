@@ -1,4 +1,6 @@
 import crypto from "node:crypto";
+import { createServer } from "node:http";
+import { WebSocketServer, WebSocket } from "ws";
 import { promisify } from "node:util";
 import path from "node:path";
 import { mkdir, writeFile, unlink } from "node:fs/promises";
@@ -12,6 +14,17 @@ import { migrateDatabase } from "./migrate.mjs";
 
 const scrypt = promisify(crypto.scrypt);
 const app = express();
+const realtime = new WebSocketServer({ noServer: true, maxPayload: 16384 });
+const userSockets = new Map();
+const socketConversations = new WeakMap();
+function sendSocket(socket, event) { if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(event)); }
+function sendUserEvent(userId, event) { for (const socket of userSockets.get(userId) || []) sendSocket(socket, event); }
+function sendConversationEvent(conversationId, event, exceptUserId = null) {
+  for (const [userId, sockets] of userSockets) {
+    if (userId === exceptUserId) continue;
+    for (const socket of sockets) if (socketConversations.get(socket)?.has(conversationId)) sendSocket(socket, event);
+  }
+}
 const PORT = Number(process.env.PORT || 3000);
 const SESSION_COOKIE = "gruzli_session";
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -617,7 +630,9 @@ app.post("/api/conversations/:conversationId/messages", requireAuth, async (req,
       [conversation.id, req.authUser.id, text, messageType, replyToId],
     );
     await pool.query("UPDATE conversation_participants SET last_read_at = now() WHERE conversation_id = $1 AND user_id = $2", [conversation.id, req.authUser.id]);
-    return res.status(201).json({ message: { ...result.rows[0], sender_name: req.authUser.full_name } });
+    const message = { ...result.rows[0], sender_name: req.authUser.full_name };
+    sendConversationEvent(conversation.id, { type: "message:new", conversationId: conversation.id, message }, req.authUser.id);
+    return res.status(201).json({ message });
   } catch (error) {
     console.error("[chat] Message send failed:", error.message);
     return sendError(res, 500, "MESSAGE_SEND_FAILED", "Не удалось отправить сообщение.");
