@@ -24,8 +24,8 @@ const chatUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 25 * 1024 * 1024, files: 1 },
   fileFilter: (_req, file, callback) => {
-    const allowed = /^(image\\/(jpeg|png|webp|gif)|video\\/(mp4|webm|quicktime)|audio\\/(webm|ogg|mpeg|wav|mp4|aac)|application\\/(pdf|msword|vnd\\.openxmlformats-officedocument\\.wordprocessingml\\.document|vnd\\.openxmlformats-officedocument\\.spreadsheetml\\.sheet))$/i;
-    callback(allowed.test(file.mimetype) ? null : new Error("UNSUPPORTED_FILE_TYPE"), allowed.test(file.mimetype));
+    const allowed = /^(image\/(jpeg|png|webp|gif)|video\/(mp4|webm|quicktime)|audio\/(webm|ogg|mpeg|wav|mp4|aac)|application\/(pdf|msword|vnd\.openxmlformats-officedocument\.wordprocessingml\.document|vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet))$/i;
+    callback(allowed.test(file.mimetype) ? null : new Error("UNSUPPORTED_FILE_TYPE"));
   },
 });
 let databaseReady = false;
