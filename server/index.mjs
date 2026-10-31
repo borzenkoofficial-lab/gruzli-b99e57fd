@@ -67,21 +67,23 @@ function cookieOptions() {
     maxAge: SESSION_TTL_MS,
   };
 }
-async function createSession(userId, res) {
+async function createSession(userId, db = pool) {
   const token = crypto.randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
-  await pool.query(
+  await db.query(
     "INSERT INTO user_sessions (user_id, token_hash, expires_at) VALUES ($1, $2, $3)",
     [userId, hashToken(token), expiresAt],
   );
-  res.cookie(SESSION_COOKIE, token, cookieOptions());
+  return token;
 }
 function readCookie(req, name) {
   const raw = req.headers.cookie || "";
   for (const part of raw.split(";")) {
     const index = part.indexOf("=");
     if (index < 0) continue;
-    if (part.slice(0, index).trim() === name) return decodeURIComponent(part.slice(index + 1).trim());
+    if (part.slice(0, index).trim() === name) {
+      try { return decodeURIComponent(part.slice(index + 1).trim()); } catch { return null; }
+    }
   }
   return null;
 }
@@ -152,12 +154,13 @@ app.post("/api/auth/register", authLimiter, async (req, res) => {
     );
     const user = inserted.rows[0];
     await client.query("INSERT INTO profiles (user_id, full_name, birth_date) VALUES ($1, $2, $3)", [user.id, fullName, birthDate]);
-    await client.query("COMMIT");
-    await createSession(user.id, res);
-    await pool.query(
+    const sessionToken = await createSession(user.id, client);
+    await client.query(
       "INSERT INTO app_audit_log (actor_user_id, action, entity_type, entity_id, ip_address) VALUES ($1, 'auth.register', 'user', $1::text, $2)",
       [user.id, req.ip],
     );
+    await client.query("COMMIT");
+    res.cookie(SESSION_COOKIE, sessionToken, cookieOptions());
     return res.status(201).json({
       user: { id: user.id, email: user.email, phone: user.phone, user_metadata: { role: user.role, full_name: fullName } },
       role: user.role,
@@ -186,12 +189,13 @@ app.post("/api/auth/login", authLimiter, async (req, res) => {
     );
     const row = result.rows[0];
     if (!row || !(await verifyPassword(password, row.password_hash))) return sendError(res, 401, "INVALID_CREDENTIALS", "Неверный email/телефон или пароль.");
-    await createSession(row.id, res);
+    const sessionToken = await createSession(row.id);
     await pool.query("UPDATE app_users SET last_login_at = now() WHERE id = $1", [row.id]);
     await pool.query(
       "INSERT INTO app_audit_log (actor_user_id, action, entity_type, entity_id, ip_address) VALUES ($1, 'auth.login', 'user', $1::text, $2)",
       [row.id, req.ip],
     );
+    res.cookie(SESSION_COOKIE, sessionToken, cookieOptions());
     return res.json({ user: publicUser(row), role: row.role, profile: publicProfile(row) });
   } catch (error) {
     console.error("[auth] Login failed:", error.message);
