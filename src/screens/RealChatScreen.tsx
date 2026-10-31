@@ -617,25 +617,28 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     if (!user) return;
     if (!window.confirm("Диалог будет удалён у всех участников. Продолжить?")) return;
     setShowMenu(false);
-    const { data: mediaUrls, error } = await supabase.rpc('delete_conversation_fully', { _conversation_id: conversationId });
-    if (error) { toast.error("Ошибка удаления"); return; }
-    if (mediaUrls?.length) {
-      const paths = (mediaUrls as string[]).map(u => {
-        try { const url = new URL(u); const parts = url.pathname.split('/object/public/chat-media/'); return parts[1] || parts[0]; } catch { return u; }
-      }).filter(Boolean);
-      if (paths.length) await supabase.storage.from('chat-media').remove(paths);
+    try {
+      const response = await fetch(`/api/conversations/${conversationId}`, { method: "DELETE", credentials: "same-origin" });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error?.message || "Ошибка удаления");
+      toast.success("Диалог полностью удалён");
+      onBack();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Ошибка удаления");
     }
-    toast.success("Диалог полностью удалён");
-    onBack();
   };
 
   const handleBlockUser = async () => {
     if (!user || !otherUserId) return;
     setShowMenu(false);
-    const { error } = await supabase.from("blocked_users").insert({ blocker_id: user.id, blocked_id: otherUserId });
-    if (error?.code === "23505") toast.info("Уже в чёрном списке");
-    else if (error) toast.error("Ошибка");
-    else toast.success(`${resolvedTitle} добавлен в чёрный список`);
+    try {
+      const response = await fetch(`/api/conversations/${conversationId}/block`, { method: "POST", credentials: "same-origin" });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error?.message || "Ошибка блокировки");
+      toast.success(`${resolvedTitle} добавлен в чёрный список`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Ошибка блокировки");
+    }
   };
 
   const handleMuteNotifications = () => { setShowMenu(false); toast.success("Уведомления отключены"); };
