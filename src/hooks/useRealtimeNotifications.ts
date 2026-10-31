@@ -182,8 +182,16 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
   useEffect(() => {
     if (!user) return;
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const socket = new WebSocket(`${protocol}//${window.location.host}/api/realtime`);
-    socket.onmessage = (event) => {
+    let disposed = false;
+    let retryTimer: number | undefined;
+    let retryAttempt = 0;
+    let activeSocket: WebSocket | null = null;
+    const connect = () => {
+      if (disposed) return;
+      const socket = new WebSocket(`${protocol}//${window.location.host}/api/realtime`);
+      activeSocket = socket;
+      socket.onopen = () => { retryAttempt = 0; };
+      socket.onmessage = (event) => {
       try {
         const payload = JSON.parse(String(event.data));
         if (payload.type === "job:created" && payload.job) {
@@ -216,8 +224,20 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
       } catch (error) {
         console.error("[realtime-notifications] Invalid event:", error);
       }
+      };
+      socket.onerror = () => console.warn("[realtime-notifications] WebSocket unavailable; screens should use API polling.");
+      socket.onclose = () => {
+        if (disposed) return;
+        const delay = Math.min(30_000, 1_000 * (2 ** Math.min(retryAttempt, 5)));
+        retryAttempt += 1;
+        retryTimer = window.setTimeout(connect, delay);
+      };
     };
-    socket.onerror = () => console.warn("[realtime-notifications] WebSocket unavailable; screens should use API polling.");
-    return () => socket.close();
+    connect();
+    return () => {
+      disposed = true;
+      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
+      activeSocket?.close();
+    };
   }, [user?.id, handleNewJob, handleNewMessage, handleResponseUpdate]);
 }
