@@ -170,7 +170,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const [isRecording, setIsRecording] = useState(false);
   const [replyTo, setReplyTo] = useState<ReplyPreview | null>(null);
   const [activeCall, setActiveCall] = useState<CallMode | null>(null);
-  const [callRole, setCallRole] = useState<"caller" | "callee">("caller");
   const realtimeRef = useRef<WebSocket | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -391,11 +390,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
           appendMessage(payload.message as Message);
           if (payload.message.sender_id !== user.id) markAsRead();
           return;
-        }
-        if (payload.type === "call:ring" && payload.conversationId === conversationId && payload.fromUserId === otherUserId) {
-          setResolvedTitle(payload.fromName || title);
-          setCallRole("callee");
-          setActiveCall(payload.mode === "video" ? "video" : "audio");
         }
       } catch (error) {
         console.error("[realtime] Invalid event:", error);
@@ -720,7 +714,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       return;
     }
     socket.send(JSON.stringify({ type: "call:ring", conversationId, toUserId: otherUserId, mode: callMode }));
-    setCallRole("caller");
     setActiveCall(callMode);
   };
 
@@ -810,7 +803,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
             selfUserId={user.id}
             peerName={resolvedTitle}
             mode={activeCall}
-            role={callRole}
+            role="caller"
             peerUserId={otherUserId}
             onClose={() => setActiveCall(null)}
           />
