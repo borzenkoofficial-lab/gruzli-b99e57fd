@@ -161,7 +161,7 @@ The following work is committed on `migration/amvera-native-backend`. It is not 
 - Presence ping uses the API. Legacy realtime subscriptions are disabled when Supabase credentials are absent.
 - Chat foundations now use PostgreSQL tables for conversations, participants, messages, read markers, blocked users, and private file metadata.
 - Authenticated chat APIs cover conversation listing/creation/detail, text messages, read markers, blocking, deletion, media upload, and media download. API authorization checks conversation membership on every read/write.
-- Chat list and text-message views use the Amvera API. An authenticated same-origin native WebSocket endpoint (`/api/realtime`) now supports per-conversation subscriptions, immediate message/media fanout, incoming call notifications, and validated WebRTC signaling relay. HTTP polling remains as a fallback and for reconciliation; list polling remains at 10 seconds and message polling at 4 seconds.
+- Chat list and text-message views use the Amvera API. An authenticated same-origin native WebSocket endpoint (`/api/realtime`) supports per-conversation subscriptions, immediate message/media fanout, app-wide incoming call notifications, and validated WebRTC signaling relay for ringing, accept/reject, offer/answer, ICE candidates, and hangup. HTTP polling remains as a fallback and for reconciliation; list polling remains at 10 seconds and message polling at 4 seconds.
 - Chat images, videos, voice notes, and supported documents are uploaded to the persistent `/data/uploads` mount configured for Amvera. Files are stored with generated identifiers and are served only after session and conversation-membership checks. The upload limit is 25 MB; supported MIME types are explicitly allowlisted.
 - Chat conversation deletion also removes associated file records and attempts to delete stored file bytes.
 - Missing Supabase credentials no longer throw during frontend module import. The temporary compatibility client uses a deliberately invalid endpoint; it is not a localStorage production backend and is not a completed Supabase removal.
@@ -169,13 +169,13 @@ The following work is committed on `migration/amvera-native-backend`. It is not 
 - Explicit local demo fixtures remain restricted to development/test mode; they are not used as production persistence.
 
 ### Verification
-- GitHub Actions run `41192127192` for commit `2fa73dcbc665be1e76d91afb53b2e3969962807d` passed: server syntax checks, ESLint, TypeScript, unit tests, Vite production build, Amvera Docker image build, and Chromium Playwright smoke tests.
+- GitHub Actions run `41192395024` for commit `a288030f3f89b696f1f49550bc8b12e4c26649cd` passed: server syntax checks, ESLint, TypeScript, unit tests, Vite production build, Amvera Docker image build, and Chromium Playwright smoke tests.
 - No Amvera PostgreSQL resource has been created and no paid infrastructure has been provisioned.
 - Public domain has not been switched. The migration PR remains draft.
 
 ### Not yet implemented
 - Dispatcher offer submission/selection and the complete assignment workflow.
-- Move presence, global incoming-call notifications (including while the user is outside the conversation screen), typing indicators, unread counters, and remaining cross-module realtime events to the native event service.
+- Move presence, typing indicators, unread counters, job/response events, and remaining cross-module realtime events to the native event service. Incoming calls now use the app-wide WebSocket listener.
 - Remove the remaining Supabase compatibility/demo paths and audit every frontend Supabase call before removing the SDK and environment variables.
 - Worker lifecycle updates, completion, earnings, and full order state machine.
 - Profile editing, companies, premium, kartoteka, contracts, documents, channels, admin, notification and integration APIs.
