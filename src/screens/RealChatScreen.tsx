@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
-import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, CheckCheck, Clock3, MoreVertical, Trash2, Ban, BellOff, Smile, Reply as ReplyIcon } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, FileText, Mic, MicOff, MapPin, Users, Wallet, CheckCheck, Clock3, MoreVertical, Trash2, Ban, BellOff, Smile, Reply as ReplyIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { playMessageSent } from "@/lib/sounds";
@@ -163,7 +162,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const [loading, setLoading] = useState(true);
   const [voiceActive, setVoiceActive] = useState(false);
   const [inVoiceRoom, setInVoiceRoom] = useState(false);
-  const [voiceRoomId, setVoiceRoomId] = useState<string | null>(null);
   const [peerConnected, setPeerConnected] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [otherUserId, setOtherUserId] = useState<string | null>(null);
@@ -172,6 +170,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const [isRecording, setIsRecording] = useState(false);
   const [replyTo, setReplyTo] = useState<ReplyPreview | null>(null);
   const [activeCall, setActiveCall] = useState<CallMode | null>(null);
+  const realtimeRef = useRef<WebSocket | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -221,34 +220,34 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
 
   useEffect(() => {
     if (!user || !conversationId || isDemo) return;
+    let active = true;
     const fetchOther = async () => {
-      const { data: parts } = await supabase
-        .from("conversation_participants").select("user_id")
-        .eq("conversation_id", conversationId).neq("user_id", user.id).limit(1);
-      const otherId = parts?.[0]?.user_id;
-      if (otherId) {
-        setOtherUserId(otherId);
-        const { data: profileRaw } = await supabase.from("profiles_public" as any).select("full_name, last_seen_at, avatar_url").eq("user_id", otherId).single();
-        const profile = profileRaw as any;
-        if (profile) {
-          setOtherLastSeen(profile.last_seen_at);
-          if (profile.full_name) setResolvedTitle(profile.full_name);
-          setOtherAvatarUrl(profile.avatar_url || null);
+      try {
+        const response = await fetch(`/api/conversations/${conversationId}`, { credentials: "same-origin" });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload?.error?.message || "Не удалось загрузить собеседника");
+        if (!active) return;
+        const other = payload.participants?.[0];
+        if (other) {
+          setOtherUserId(other.id);
+          setOtherLastSeen(other.last_seen_at || null);
+          if (other.full_name) setResolvedTitle(other.full_name);
+          setOtherAvatarUrl(other.avatar_url || null);
         }
+        if (payload.conversation?.job_id) {
+          const jobResponse = await fetch(`/api/jobs/${payload.conversation.job_id}`, { credentials: "same-origin" });
+          if (jobResponse.ok) {
+            const jobPayload = await jobResponse.json();
+            if (active && jobPayload.job) setLinkedJob(jobPayload.job);
+          }
+        }
+      } catch (error) {
+        console.error("[chat] Conversation detail request failed:", error);
       }
     };
     fetchOther();
-
-    const channel = supabase
-      .channel(`presence-${conversationId}`)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles" }, (payload) => {
-        const updated = payload.new as any;
-        if (updated.user_id === otherUserId) setOtherLastSeen(updated.last_seen_at);
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [user, conversationId, otherUserId]);
+    return () => { active = false; };
+  }, [user, conversationId, isDemo]);
 
   const presenceInfo = formatLastSeen(otherLastSeen);
 
@@ -343,70 +342,93 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       return;
     }
 
-    const [convRes, msgsRes] = await Promise.all([
-      supabase.from("conversations").select("job_id").eq("id", conversationId).single(),
-      supabase.from("messages").select("*").eq("conversation_id", conversationId).order("created_at", { ascending: true }),
-    ]);
-
-    if (convRes.data?.job_id) {
-      const { data: jobData } = await supabase.from("jobs").select("*").eq("id", convRes.data.job_id).single();
-      if (jobData) setLinkedJob(jobData);
-    }
-
-    if (msgsRes.data) {
-      setMessages(msgsRes.data as Message[]);
-      const senderIds = [...new Set(msgsRes.data.map((m) => m.sender_id))];
-      const unknownIds = senderIds.filter((id) => !senderNamesRef.current[id]);
-      if (unknownIds.length > 0) {
-        const { data: profilesRaw } = await supabase.from("profiles_public" as any).select("user_id, full_name").in("user_id", unknownIds);
-        const profiles = profilesRaw as any[] | null;
-        if (profiles) {
-          setSenderNames((prev) => {
-            const next = { ...prev };
-            profiles.forEach((p) => (next[p.user_id] = p.full_name));
-            return next;
-          });
-        }
-      }
+    try {
+      const response = await fetch(`/api/conversations/${conversationId}/messages`, { credentials: "same-origin" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.error?.message || "Не удалось загрузить сообщения");
+      const loadedMessages = Array.isArray(payload.messages) ? payload.messages as Message[] : [];
+      setMessages(loadedMessages);
+      setSenderNames((prev) => {
+        const next = { ...prev };
+        loadedMessages.forEach((message: Message & { sender_name?: string }) => {
+          if (message.sender_name) next[message.sender_id] = message.sender_name;
+        });
+        if (user?.id && user.user_metadata?.full_name) next[user.id] = String(user.user_metadata.full_name);
+        return next;
+      });
+    } catch (error) {
+      console.error("[chat] Message list request failed:", error);
+      toast.error(error instanceof Error ? error.message : "Ошибка загрузки сообщений");
     }
     setLoading(false);
     setTimeout(() => scrollToBottom(false), 50);
   }, [conversationId, isDemo, scrollToBottom, user?.id]);
 
   const markAsRead = useCallback(async () => {
-    if (!user || !conversationId) return;
-    await supabase.from("conversation_participants").update({ last_read_at: new Date().toISOString() })
-      .eq("conversation_id", conversationId).eq("user_id", user.id);
-    onMessagesRead?.();
-  }, [user, conversationId, onMessagesRead]);
+    if (!user || !conversationId || isDemo) return;
+    try {
+      await fetch(`/api/conversations/${conversationId}/read`, {
+        method: "POST",
+        credentials: "same-origin",
+      });
+      onMessagesRead?.();
+    } catch (error) {
+      console.error("[chat] Read receipt failed:", error);
+    }
+  }, [user, conversationId, onMessagesRead, isDemo]);
+
+  useEffect(() => {
+    if (!user || isDemo) return;
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const socket = new WebSocket(`${protocol}//${window.location.host}/api/realtime`);
+    realtimeRef.current = socket;
+    socket.onopen = () => socket.send(JSON.stringify({ type: "conversation:subscribe", conversationId }));
+    socket.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(String(event.data));
+        if (payload.type === "message:new" && payload.conversationId === conversationId && payload.message) {
+          appendMessage(payload.message as Message);
+          if (payload.message.sender_id !== user.id) markAsRead();
+          return;
+        }
+      } catch (error) {
+        console.error("[realtime] Invalid event:", error);
+      }
+    };
+    socket.onerror = () => console.warn("[realtime] WebSocket unavailable; polling remains active.");
+    socket.onclose = () => { if (realtimeRef.current === socket) realtimeRef.current = null; };
+    return () => {
+      socket.close();
+      if (realtimeRef.current === socket) realtimeRef.current = null;
+    };
+  }, [user?.id, isDemo, conversationId, otherUserId, title, appendMessage, markAsRead]);
 
   useEffect(() => {
     fetchMessages();
     markAsRead();
+    if (isDemo) return;
+    const interval = window.setInterval(async () => {
+      const wasNearBottom = isNearBottom();
+      try {
+        const response = await fetch(`/api/conversations/${conversationId}/messages`, { credentials: "same-origin" });
+        if (!response.ok) return;
+        const payload = await response.json();
+        const incoming = Array.isArray(payload.messages) ? payload.messages as Message[] : [];
+        setMessages((previous) => {
+          const known = new Set(previous.map((message) => message.id));
+          const additions = incoming.filter((message) => !known.has(message.id));
+          return additions.length ? [...previous, ...additions] : previous;
+        });
+        if (incoming.some((message) => message.sender_id !== user?.id)) markAsRead();
+        if (wasNearBottom) setTimeout(() => scrollToBottom(), 50);
+      } catch (error) {
+        console.error("[chat] Message polling failed:", error);
+      }
+    }, 4000);
+    return () => window.clearInterval(interval);
+  }, [conversationId, fetchMessages, markAsRead, user?.id, isNearBottom, scrollToBottom, isDemo]);
 
-    const channel = supabase
-      .channel(`messages:${conversationId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
-        async (payload) => {
-          const newMsg = payload.new as Message;
-          if (newMsg.sender_id === user?.id) return;
-          const wasNearBottom = isNearBottom();
-          appendMessage(newMsg);
-          if (!senderNamesRef.current[newMsg.sender_id]) {
-            const { data: profileRaw } = await supabase.from("profiles_public" as any).select("user_id, full_name").eq("user_id", newMsg.sender_id).single();
-            const profile = profileRaw as any;
-            if (profile) setSenderNames((prev) => ({ ...prev, [profile.user_id]: profile.full_name }));
-          }
-          if (newMsg.sender_id !== user?.id) markAsRead();
-          if (wasNearBottom) setTimeout(() => scrollToBottom(), 50);
-        }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [conversationId, fetchMessages, markAsRead, user?.id, isNearBottom, scrollToBottom, appendMessage]);
-
-  useEffect(() => { if (isNearBottom()) scrollToBottom(); }, [messages, scrollToBottom, isNearBottom]);
+    useEffect(() => { if (isNearBottom()) scrollToBottom(); }, [messages, scrollToBottom, isNearBottom]);
 
   useEffect(() => {
     return () => {
@@ -482,28 +504,20 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     setSending(true);
 
     try {
-      const { data: insertedMessage, error } = await supabase
-        .from("messages")
-        .insert({
-          conversation_id: conversationId,
-          sender_id: user.id,
-          text: msgText,
-          message_type: "text",
-          reply_to_id: replyId,
-        })
-        .select("*")
-        .single();
-
-      if (error || !insertedMessage) {
-        throw error || new Error("insert_failed");
-      }
+      const response = await fetch(`/api/conversations/${conversationId}/messages`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: msgText, replyToId: replyId, messageType: "text" }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.message) throw new Error(payload?.error?.message || "insert_failed");
+      const insertedMessage = payload.message;
 
       replaceOptimisticMessage(optimisticId, insertedMessage as Message);
       scrollToBottom(false);
 
-      supabase.functions.invoke("notify-email", {
-        body: { type: "new_message", conversation_id: conversationId, sender_id: user.id, text: msgText },
-      }).catch(() => {});
+
     } catch {
       replaceOptimisticMessage(optimisticId);
       setText(msgText);
@@ -520,21 +534,26 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const handleSendVoice = async (blob: Blob, duration: number) => {
     if (!user) return;
     setIsRecording(false);
-    
-    const path = `voice/${conversationId}/${Date.now()}_voice.webm`;
-    const { error: uploadError } = await supabase.storage.from("kartoteka-photos").upload(path, blob, { contentType: "audio/webm" });
-    if (uploadError) { toast.error("Ошибка загрузки"); return; }
-    const { data: urlData } = supabase.storage.from("kartoteka-photos").getPublicUrl(path);
-    
-    playMessageSent();
-
-    await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      sender_id: user.id,
-      text: `voice:${duration}`,
-      media_url: urlData.publicUrl,
-      message_type: "voice",
-    });
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", blob, `voice-${Date.now()}.webm`);
+      formData.append("duration", String(duration));
+      const response = await fetch(`/api/conversations/${conversationId}/files`, {
+        method: "POST",
+        credentials: "same-origin",
+        body: formData,
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.error?.message || "Ошибка загрузки голосового сообщения");
+      playMessageSent();
+      if (payload.message) setMessages((previous) => [...previous, payload.message as Message]);
+      scrollToBottom(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Не удалось отправить голосовое сообщение");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -549,23 +568,28 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-    if (file.size > 10 * 1024 * 1024) { toast.error("Макс 10МБ"); return; }
+    if (file.size > 25 * 1024 * 1024) { toast.error("Максимальный размер файла — 25 МБ"); return; }
 
     setUploading(true);
     setShowAttach(false);
-    const ext = file.name.split(".").pop();
-    const path = `${conversationId}/${Date.now()}.${ext}`;
-    const { error: uploadError } = await supabase.storage.from("chat-media").upload(path, file);
-    if (uploadError) { toast.error("Ошибка загрузки"); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
-    const isVideo = file.type.startsWith("video/");
-    const isImage = file.type.startsWith("image/");
-    const msgType = isVideo ? "video" : isImage ? "image" : "file";
-    await supabase.from("messages").insert({
-      conversation_id: conversationId, sender_id: user.id, text: file.name, media_url: urlData.publicUrl, message_type: msgType,
-    });
-    setUploading(false);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    try {
+      const formData = new FormData();
+      formData.append("file", file, file.name);
+      const response = await fetch(`/api/conversations/${conversationId}/files`, {
+        method: "POST",
+        credentials: "same-origin",
+        body: formData,
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.error?.message || "Ошибка загрузки файла");
+      if (payload.message) setMessages((previous) => [...previous, payload.message as Message]);
+      scrollToBottom(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Не удалось отправить файл");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const startVoiceRoom = async () => {
@@ -575,11 +599,13 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       localStreamRef.current = stream;
       setInVoiceRoom(true);
       setVoiceActive(true);
-      const { data: room } = await supabase.from("voice_rooms").insert({ conversation_id: conversationId, created_by: user.id }).select().single();
-      if (room) {
-        setVoiceRoomId(room.id);
-        await supabase.from("messages").insert({ conversation_id: conversationId, sender_id: user.id, text: "📞 Начал голосовой звонок", message_type: "voice_room" });
-      }
+      const response = await fetch(`/api/conversations/${conversationId}/messages`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: "📞 Начал голосовую комнату", messageType: "voice_room" }),
+      });
+      if (!response.ok) throw new Error("Не удалось создать голосовую комнату");
       toast.success("Голосовая комната создана");
     } catch { toast.error("Нет доступа к микрофону"); }
   };
@@ -592,7 +618,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       setInVoiceRoom(true);
       setVoiceActive(true);
       toast.success("Вы в голосовой комнате");
-      await supabase.from("messages").insert({ conversation_id: conversationId, sender_id: user.id, text: "📞 Присоединился к звонку", message_type: "system" });
+      await fetch(`/api/conversations/${conversationId}/messages`, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: "📞 Присоединился к звонку", messageType: "system" }) });
     } catch { toast.error("Нет доступа к микрофону"); }
   };
 
@@ -618,25 +644,28 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     if (!user) return;
     if (!window.confirm("Диалог будет удалён у всех участников. Продолжить?")) return;
     setShowMenu(false);
-    const { data: mediaUrls, error } = await supabase.rpc('delete_conversation_fully', { _conversation_id: conversationId });
-    if (error) { toast.error("Ошибка удаления"); return; }
-    if (mediaUrls?.length) {
-      const paths = (mediaUrls as string[]).map(u => {
-        try { const url = new URL(u); const parts = url.pathname.split('/object/public/chat-media/'); return parts[1] || parts[0]; } catch { return u; }
-      }).filter(Boolean);
-      if (paths.length) await supabase.storage.from('chat-media').remove(paths);
+    try {
+      const response = await fetch(`/api/conversations/${conversationId}`, { method: "DELETE", credentials: "same-origin" });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error?.message || "Ошибка удаления");
+      toast.success("Диалог полностью удалён");
+      onBack();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Ошибка удаления");
     }
-    toast.success("Диалог полностью удалён");
-    onBack();
   };
 
   const handleBlockUser = async () => {
     if (!user || !otherUserId) return;
     setShowMenu(false);
-    const { error } = await supabase.from("blocked_users").insert({ blocker_id: user.id, blocked_id: otherUserId });
-    if (error?.code === "23505") toast.info("Уже в чёрном списке");
-    else if (error) toast.error("Ошибка");
-    else toast.success(`${resolvedTitle} добавлен в чёрный список`);
+    try {
+      const response = await fetch(`/api/conversations/${conversationId}/block`, { method: "POST", credentials: "same-origin" });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error?.message || "Ошибка блокировки");
+      toast.success(`${resolvedTitle} добавлен в чёрный список`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Ошибка блокировки");
+    }
   };
 
   const handleMuteNotifications = () => { setShowMenu(false); toast.success("Уведомления отключены"); };
@@ -655,6 +684,14 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     if (msg.message_type === "video" && msg.media_url) {
       return <video src={msg.media_url} controls className="max-w-full rounded-xl max-h-60" />;
     }
+    if (msg.message_type === "file" && msg.media_url) {
+      return (
+        <a href={msg.media_url} className="flex items-center gap-2 rounded-xl bg-muted/60 px-3 py-2 text-sm underline-offset-2 hover:underline" target="_blank" rel="noreferrer">
+          <FileText size={18} className="shrink-0 text-primary" />
+          <span className="min-w-0 break-all">{msg.text || "Скачать файл"}</span>
+        </a>
+      );
+    }
     if (msg.message_type === "voice_room") {
       return (
         <div className="flex items-center gap-2">
@@ -666,30 +703,17 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     return <p className="text-[15px] text-foreground leading-relaxed whitespace-pre-wrap break-words">{msg.text}</p>;
   };
 
-  const startCall = async (callMode: CallMode) => {
+  const startCall = (callMode: CallMode) => {
     if (!user || !otherUserId) {
       toast.error("Не удалось определить собеседника");
       return;
     }
-    // Get caller's display name
-    const { data: selfProfile } = await supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("user_id", user.id)
-      .single();
-    const fromName = selfProfile?.full_name || "Пользователь";
-
-    // Notify the other user via their personal channel
-    const ch = supabase.channel(`user-calls:${otherUserId}`);
-    await new Promise<void>((resolve) => {
-      ch.subscribe((s) => { if (s === "SUBSCRIBED") resolve(); });
-    });
-    await ch.send({
-      type: "broadcast",
-      event: "ring",
-      payload: { conversationId, fromUserId: user.id, fromName, mode: callMode },
-    });
-    supabase.removeChannel(ch);
+    const socket = realtimeRef.current;
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      toast.error("Подключение к звонкам ещё устанавливается. Повторите попытку через секунду.");
+      return;
+    }
+    socket.send(JSON.stringify({ type: "call:ring", conversationId, toUserId: otherUserId, mode: callMode }));
     setActiveCall(callMode);
   };
 
@@ -698,7 +722,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   return (
     <div className="gruzli-chat-detail app-shell">
       <audio ref={remoteAudioRef} autoPlay />
-      <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
+      <input ref={fileInputRef} type="file" accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx" className="hidden" onChange={handleFileSelect} />
 
       {/* Header */}
       <div className="relative z-40 flex items-center gap-2 px-3 safe-top pb-2.5 border-b border-border bg-background">
@@ -780,6 +804,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
             peerName={resolvedTitle}
             mode={activeCall}
             role="caller"
+            peerUserId={otherUserId}
             onClose={() => setActiveCall(null)}
           />
         )}
@@ -891,6 +916,10 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
               <button onClick={() => { if (fileInputRef.current) { fileInputRef.current.accept = "video/*"; fileInputRef.current.click(); } }} className="flex flex-col items-center gap-2">
                 <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center"><Video size={20} className="text-primary" /></div>
                 <span className="text-[11px] text-muted-foreground">Видео</span>
+              </button>
+              <button onClick={() => { if (fileInputRef.current) { fileInputRef.current.accept = "application/pdf,.doc,.docx,.xls,.xlsx"; fileInputRef.current.click(); } }} className="flex flex-col items-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center"><FileText size={20} className="text-primary" /></div>
+                <span className="text-[11px] text-muted-foreground">Документ</span>
               </button>
             </div>
           </div>

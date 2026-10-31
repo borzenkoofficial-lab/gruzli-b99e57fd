@@ -1,5 +1,4 @@
 import { useEffect, useRef, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { getNotificationSettings } from "@/hooks/useNotificationSettings";
@@ -182,16 +181,66 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
 
   useEffect(() => {
     if (!user) return;
-
-    const channel = supabase
-      .channel("realtime-notifications")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "jobs" }, handleNewJob)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, handleNewMessage)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "job_responses" }, handleResponseUpdate)
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    let disposed = false;
+    let retryTimer: number | undefined;
+    let retryAttempt = 0;
+    let activeSocket: WebSocket | null = null;
+    const connect = () => {
+      if (disposed) return;
+      const socket = new WebSocket(`${protocol}//${window.location.host}/api/realtime`);
+      activeSocket = socket;
+      socket.onopen = () => { retryAttempt = 0; };
+      socket.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(String(event.data));
+        if (payload.type === "job:created" && payload.job) {
+          handleNewJob({ new: payload.job });
+        } else if (payload.type === "message:new" && payload.message) {
+          handleNewMessage({ new: { ...payload.message, conversation_id: payload.conversationId } });
+          window.dispatchEvent(new CustomEvent("gruzli:message", { detail: payload }));
+        } else if (payload.type === "presence:update" && payload.userId) {
+          window.dispatchEvent(new CustomEvent("gruzli:presence", { detail: payload }));
+        } else if (payload.type === "response:updated") {
+          handleResponseUpdate({
+            new: { worker_id: userIdRef.current, status: payload.status, worker_status: payload.workerStatus },
+            old: { status: "pending", worker_status: null },
+          });
+          if (payload.status === "rejected") {
+            toast("Отклик отклонён", { description: "Диспетчер выбрал другого исполнителя.", duration: 5000 });
+          }
+        } else if (payload.type === "response:created" && (roleRef.current === "dispatcher" || roleRef.current === "admin")) {
+          toast("Новый отклик на заявку", {
+            description: payload.response?.message || "Исполнитель откликнулся на ваш заказ.",
+            duration: 6000,
+          });
+          pushNotification({
+            type: "response",
+            title: "Новый отклик",
+            body: payload.response?.message || "Исполнитель откликнулся на заявку",
+          }, userIdRef.current);
+        } else if (payload.type === "response:withdrawn" && (roleRef.current === "dispatcher" || roleRef.current === "admin")) {
+          toast("Исполнитель отозвал отклик", { duration: 5000 });
+        } else if (payload.type === "job:updated") {
+          toast("Статус заявки изменён", { description: "Обновите карточку заявки для просмотра деталей.", duration: 4000 });
+        }
+      } catch (error) {
+        console.error("[realtime-notifications] Invalid event:", error);
+      }
+      };
+      socket.onerror = () => console.warn("[realtime-notifications] WebSocket unavailable; screens should use API polling.");
+      socket.onclose = () => {
+        if (disposed) return;
+        const delay = Math.min(30_000, 1_000 * (2 ** Math.min(retryAttempt, 5)));
+        retryAttempt += 1;
+        retryTimer = window.setTimeout(connect, delay);
+      };
     };
-  }, [user, handleNewJob, handleNewMessage, handleResponseUpdate]);
+    connect();
+    return () => {
+      disposed = true;
+      if (retryTimer !== undefined) window.clearTimeout(retryTimer);
+      activeSocket?.close();
+    };
+  }, [user?.id, handleNewJob, handleNewMessage, handleResponseUpdate]);
 }

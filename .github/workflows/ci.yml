@@ -23,10 +23,15 @@ jobs:
           cache: npm
 
       - run: npm ci
+      - run: node --check server/index.mjs
+      - run: node --check server/db.mjs
+      - run: node --check server/migrate.mjs
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - name: Build Amvera Docker image
+        run: docker build -t gruzli-amvera .
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium

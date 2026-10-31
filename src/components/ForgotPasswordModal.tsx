@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Loader2, KeyRound, Phone, Lock, CheckCircle2, Copy } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 interface ForgotPasswordModalProps {
@@ -20,16 +19,15 @@ export const ForgotPasswordModal = ({ open, onClose }: ForgotPasswordModalProps)
     e.preventDefault();
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("reset-password-with-code", {
-        body: {
-          identifier: identifier.trim(),
-          recovery_code: code.trim(),
-          new_password: newPassword,
-        },
+      const response = await fetch("/api/auth/recovery", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ identifier: identifier.trim(), recoveryCode: code.trim(), newPassword }),
       });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
-      setSuccess((data as any)?.new_recovery_code || null);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data?.error?.message || "Не удалось сбросить пароль");
+      setSuccess(data.newRecoveryCode || null);
       toast.success("Пароль изменён!");
     } catch (err: any) {
       toast.error(err.message || "Не удалось сбросить пароль");
@@ -169,9 +167,9 @@ export const ForgotPasswordModal = ({ open, onClose }: ForgotPasswordModalProps)
                     type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Минимум 6 символов"
+                    placeholder="Минимум 8 символов"
                     required
-                    minLength={6}
+                    minLength={8}
                     className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
                   />
                 </div>

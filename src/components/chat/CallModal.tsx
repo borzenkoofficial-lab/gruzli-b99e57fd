@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Phone, PhoneOff, Mic, MicOff, Video as VideoIcon, VideoOff } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export type CallMode = "audio" | "video";
@@ -10,6 +9,7 @@ export type CallRole = "caller" | "callee";
 interface CallModalProps {
   conversationId: string;
   selfUserId: string;
+  peerUserId: string;
   peerName: string;
   mode: CallMode;
   role: CallRole;
@@ -32,7 +32,7 @@ type Signal =
   | { kind: "answer"; from: string; sdp: RTCSessionDescriptionInit }
   | { kind: "ice"; from: string; candidate: RTCIceCandidateInit };
 
-const CallModal = ({ conversationId, selfUserId, peerName, mode, role, onClose }: CallModalProps) => {
+const CallModal = ({ conversationId, selfUserId, peerUserId, peerName, mode, role, onClose }: CallModalProps) => {
   const [status, setStatus] = useState<"ringing" | "connecting" | "connected" | "ended">(
     role === "caller" ? "ringing" : "connecting"
   );
@@ -45,11 +45,14 @@ const CallModal = ({ conversationId, selfUserId, peerName, mode, role, onClose }
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
-  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const channelRef = useRef<WebSocket | null>(null);
   const pendingIceRef = useRef<RTCIceCandidateInit[]>([]);
 
   const send = (signal: Signal) => {
-    channelRef.current?.send({ type: "broadcast", event: "signal", payload: signal });
+    const socket = channelRef.current;
+    if (socket?.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: "call:signal", conversationId, toUserId: peerUserId, signal }));
+    }
   };
 
   // Timer when connected
@@ -66,7 +69,7 @@ const CallModal = ({ conversationId, selfUserId, peerName, mode, role, onClose }
     pcRef.current?.close();
     pcRef.current = null;
     if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
+      channelRef.current.close();
       channelRef.current = null;
     }
   };
@@ -138,73 +141,70 @@ const CallModal = ({ conversationId, selfUserId, peerName, mode, role, onClose }
   };
 
   useEffect(() => {
-    const ch = supabase
-      .channel(`call:${conversationId}`, { config: { broadcast: { self: false } } })
-      .on("broadcast", { event: "signal" }, async ({ payload }) => {
-        const sig = payload as Signal;
-        if (sig.from === selfUserId) return;
-        const pc = pcRef.current;
-
-        if (sig.kind === "ringing" && role === "callee") {
-          // already ringing in UI
-          return;
-        }
-
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const socket = new WebSocket(`${protocol}//${window.location.host}/api/realtime`);
+    channelRef.current = socket;
+    socket.onopen = () => socket.send(JSON.stringify({ type: "conversation:subscribe", conversationId }));
+    socket.onmessage = async (event) => {
+      let payload: { type?: string; conversationId?: string; signal?: Signal };
+      try { payload = JSON.parse(String(event.data)); } catch { return; }
+      if (payload.type === "conversation:subscribed" && payload.conversationId === conversationId) {
+        if (role === "caller") await startAsCaller();
+        else await acceptIncoming();
+        return;
+      }
+      if (payload.type !== "call:signal" || payload.conversationId !== conversationId || !payload.signal) return;
+      const sig = payload.signal;
+      const pc = pcRef.current;
+      if (sig.kind === "ringing" && role === "callee") return;
+      try {
         if (sig.kind === "accept" && role === "caller" && pc) {
-          // Now create offer
           const offer = await pc.createOffer();
           await pc.setLocalDescription(offer);
           send({ kind: "offer", from: selfUserId, sdp: offer });
         }
-
         if (sig.kind === "offer" && pc) {
           await pc.setRemoteDescription(new RTCSessionDescription(sig.sdp));
-          for (const c of pendingIceRef.current) {
-            try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch { /* */ }
+          for (const candidate of pendingIceRef.current) {
+            try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch { /* stale ICE candidate */ }
           }
           pendingIceRef.current = [];
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
           send({ kind: "answer", from: selfUserId, sdp: answer });
         }
-
         if (sig.kind === "answer" && pc) {
           await pc.setRemoteDescription(new RTCSessionDescription(sig.sdp));
-          for (const c of pendingIceRef.current) {
-            try { await pc.addIceCandidate(new RTCIceCandidate(c)); } catch { /* */ }
+          for (const candidate of pendingIceRef.current) {
+            try { await pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch { /* stale ICE candidate */ }
           }
           pendingIceRef.current = [];
         }
-
         if (sig.kind === "ice") {
-          if (pc && pc.remoteDescription) {
-            try { await pc.addIceCandidate(new RTCIceCandidate(sig.candidate)); } catch { /* */ }
+          if (pc?.remoteDescription) {
+            try { await pc.addIceCandidate(new RTCIceCandidate(sig.candidate)); } catch { /* invalid ICE candidate */ }
           } else {
             pendingIceRef.current.push(sig.candidate);
           }
         }
-
         if (sig.kind === "reject" || sig.kind === "hangup") {
           toast.info(sig.kind === "reject" ? "Звонок отклонён" : "Звонок завершён");
           cleanup(false);
           setStatus("ended");
-          setTimeout(onClose, 200);
+          window.setTimeout(onClose, 200);
         }
-      })
-      .subscribe(async (state) => {
-        if (state !== "SUBSCRIBED") return;
-        if (role === "caller") {
-          await startAsCaller();
-        } else {
-          await acceptIncoming();
-        }
-      });
-
-    channelRef.current = ch;
+      } catch (error) {
+        console.error("[call] WebRTC signaling failed:", error);
+        toast.error("Не удалось установить соединение");
+        cleanup(false);
+        setStatus("ended");
+        window.setTimeout(onClose, 200);
+      }
+    };
+    socket.onerror = () => toast.error("Не удалось подключиться к серверу звонков");
     return () => cleanup(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
   const toggleMic = () => {
     const track = localStreamRef.current?.getAudioTracks()[0];
     if (track) { track.enabled = !track.enabled; setMicOn(track.enabled); }

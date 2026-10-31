@@ -97,50 +97,29 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
 
     setLoading(true);
 
-    // AI moderation check
-    const textToCheck = `${title.trim()} ${description.trim()}`.trim();
-    if (textToCheck.length > 5) {
-      try {
-        const { data: modResult, error: moderationError } = await supabase.functions.invoke("moderate-content", {
-          body: { text: textToCheck, type: "job" },
-        });
-        if (moderationError) {
-          toast.error("Не удалось проверить заявку. Попробуйте ещё раз.");
-          setLoading(false);
-          return;
-        }
-        if (!modResult?.safe) {
-          toast.error(modResult.reason || "Содержимое не прошло модерацию");
-          setLoading(false);
-          return;
-        }
-      } catch {
-        toast.error("Не удалось проверить заявку. Попробуйте ещё раз.");
-        setLoading(false);
-        return;
-      }
-    }
+    // AI moderation is being moved to the Amvera API; structured server validation remains active.
 
-    const { data: createdJob, error } = await supabase.rpc("client_create_job", {
-      _title: title.trim(),
-      _description: description.trim(),
-      _hourly_rate: parseFloat(hourlyRate),
-      _start_time: startTime ? new Date(startTime).toISOString() : null,
-      _duration_hours: parseFloat(durationHours) || 4,
-      _address: address.trim(),
-      _metro: metro.trim(),
-      _workers_needed: parseInt(workersNeeded) || 2,
-      _urgent: urgent,
-      _quick_minimum: quickMinimum,
-      _requires_contract: requiresContract,
-    });
-
-    if (error || !createdJob) {
-      console.error("client_create_job failed", error);
-      toast.error(error?.message || "Не удалось создать заявку");
+    try {
+      const response = await fetch("/api/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({
+          title: title.trim(), description: description.trim(), hourlyRate: parseFloat(hourlyRate),
+          startTime: startTime ? new Date(startTime).toISOString() : null,
+          durationHours: parseFloat(durationHours) || 4, address: address.trim(), metro: metro.trim(),
+          workersNeeded: parseInt(workersNeeded) || 2, urgent, quickMinimum, requiresContract,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error?.message || "Не удалось создать заявку");
+    } catch (error: any) {
+      console.error("POST /api/jobs failed", error);
+      toast.error(error.message || "Не удалось создать заявку");
       setLoading(false);
       return;
     }
+
     // Contract creation is intentionally deferred until a dispatcher is assigned.
     // job_contracts requires dispatcher_id, while a new client request has none yet.
     toast.success(isClient ? "Запрос отправлен диспетчерам" : "Заявка создана!");
