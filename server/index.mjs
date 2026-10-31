@@ -501,7 +501,7 @@ app.post("/api/conversations/:conversationId/files", requireAuth, uploadSingleCh
       "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif",
       "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov",
       "audio/webm": "webm", "audio/ogg": "ogg", "audio/mpeg": "mp3", "audio/wav": "wav",
-      "audio/mp4": "m4a", "audio/aac": "aac", "application/pdf": "pdf", "application/msword": "doc",
+      "audio/mp4": "m4a", "audio/aac": "aac", "application/pdf": "pdf", "application/msword": "doc", "application/vnd.ms-excel": "xls",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
     };
@@ -595,7 +595,7 @@ app.post("/api/conversations/:conversationId/messages", requireAuth, async (req,
   const text = String(req.body?.text || "").trim();
   const replyToId = req.body?.replyToId || null;
   const messageType = String(req.body?.messageType || "text");
-  if (!text || text.length > 10000 || !["text", "sticker", "system"].includes(messageType)) {
+  if (!text || text.length > 10000 || !["text", "sticker", "system", "voice_room"].includes(messageType)) {
     return sendError(res, 400, "INVALID_MESSAGE", "Сообщение пустое или имеет недопустимый формат.");
   }
   try {
