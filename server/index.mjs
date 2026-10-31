@@ -42,8 +42,8 @@ function generateRecoveryCode() {
 }
 function normalizeIdentifier(value) {
   const raw = String(value || "").trim();
-  if (/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(raw)) return normalizeEmail(raw);
-  const digits = raw.replace(/\\D/g, "");
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) return normalizeEmail(raw);
+  const digits = raw.replace(/\D/g, "");
   return digits ? digits + "@phone.gruzli.app" : "";
 }
 function hashToken(token) {
