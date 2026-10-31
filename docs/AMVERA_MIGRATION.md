@@ -1,0 +1,155 @@
+# GRUZLI — Amvera-native migration
+
+## Goal
+
+Remove Supabase as a runtime, build-time, data, authentication, realtime, storage, and deployment dependency. The production application must run on Amvera and use services owned by the GRUZLI project.
+
+This is a migration, not a visual rewrite. Preserve current UX, routes, role behavior, validation, business rules, and user-facing features unless a feature is explicitly redesigned in a separate task.
+
+## Repository audit (2026-10-31)
+
+- Frontend: React 18 + TypeScript + Vite.
+- Current deployment config: `static_web` with Bun; this only builds and publishes `dist`.
+- Runtime Supabase client: `src/integrations/supabase/client.ts`; it throws when production Supabase URL/key are absent.
+- Authentication context calls Supabase Auth, `get_user_role`, and `profiles`.
+- Main application imports Supabase-generated database types and uses Supabase queries/RPC.
+- Supabase project assets include 93 SQL migration files and 26 Edge Function entrypoints.
+- Existing demo client uses browser localStorage. It is suitable only for isolated UI/demo tests, not production or multi-user data.
+- The current Amvera build log proves only that the Vite static bundle builds and uploads. It does not prove that application runtime, auth, database, or realtime work.
+
+## Target architecture
+
+Use one Amvera Node.js application for the first production migration:
+- Express API and static Vite frontend served from the same origin.
+- Managed PostgreSQL on Amvera in the same region as the application.
+- Database access through a server-only PostgreSQL driver and a typed repository/service layer.
+- Server-managed sessions with opaque random session tokens, hashed at rest, delivered via HttpOnly, Secure, SameSite cookies. Passwords hashed with Argon2id. Never expose database credentials or signing secrets to Vite.
+- Socket.IO (or a documented native WebSocket implementation) for chat, presence, and live notifications, authenticated against the same server session.
+- File uploads stored in durable Amvera storage mounted at `/data` initially; isolate storage behind an adapter so it can move to object storage without frontend changes.
+- Background jobs for email, push, Telegram, document generation, and scheduled work; use a persistent queue/worker design and retries. Do not silently drop jobs on process restart.
+- Same-origin `/api/*` and realtime endpoints; avoid unnecessary CORS configuration.
+
+## Non-negotiable migration rules
+
+1. Do not delete or disable the existing Supabase project, its data, or its secrets until data export, import, reconciliation, and production acceptance are complete.
+2. Do not replace real multi-user backend behavior with localStorage/demo data.
+3. Do not leave a hidden Supabase fallback, SDK import, URL/key env variable, Edge Function URL, generated Supabase client, or deployment dependency.
+4. Do not translate RLS to permissive API handlers. Re-implement authorization on the server and test every role boundary.
+5. Do not expose service credentials, database URLs, password hashes, session tokens, private profile fields, or admin operations to the browser.
+6. Preserve existing user IDs where practical so relationships, contracts, chat messages, and audit history remain consistent.
+7. Every endpoint must validate input, authenticate where required, authorize the acting user, and return a stable error format.
+8. All production data writes must be transactional where multiple records or state transitions are involved.
+9. Every migration stage must pass typecheck, lint, unit tests, build, and browser smoke tests before deployment.
+10. No paid Amvera database or compute resource may be created without the owner's explicit approval.
+
+## Work plan and acceptance criteria
+
+### Phase 0 — Inventory and baseline
+- Enumerate every frontend Supabase import and every usage of `auth`, `from`, `rpc`, `storage`, `functions.invoke`, realtime channels, and Supabase environment variables.
+- Map each call to a replacement API/service and record its auth/role requirements.
+- Inventory all 93 SQL migrations, tables, indexes, triggers, RLS policies, grants, RPC functions, and all 26 Edge Functions.
+- Identify external integrations and required secrets (email, Telegram, push/VAPID, AI providers, PDF/document generation).
+- Export and document the source database schema and data before any destructive change.
+- Deliver a feature-parity matrix with owner, endpoint, data tables, authorization rules, tests, and migration status.
+
+### Phase 1 — Amvera application foundation
+- Convert the Amvera project from static-only publishing to a Node.js application that serves both the Vite build and API.
+- Add `/api/health` and `/api/health/db`; the latter must report database connectivity without leaking connection details.
+- Add structured logging, request IDs, secure headers, body-size limits, graceful shutdown, and process-level error handling.
+- Add a startup check that refuses to claim readiness when required production configuration is absent.
+- Verify SPA deep links and static asset caching.
+- Keep the currently deployed static version available until the Node app passes smoke tests.
+
+### Phase 2 — PostgreSQL schema and data migration
+- Translate Supabase schema and migration history into ordered, repeatable PostgreSQL migrations.
+- Replace Supabase-managed `auth.users` and role functions with application-owned users, credentials, sessions, roles, and profile tables.
+- Preserve UUIDs and foreign-key relationships where feasible.
+- Rebuild constraints, indexes, triggers, uniqueness rules, and transaction invariants.
+- Translate RLS policies and SECURITY DEFINER RPC behavior into explicit server-side authorization and transactional services.
+- Create export/import scripts with dry-run, counts, checksums, retryability, and reconciliation reports.
+- Test import against a disposable database before touching production data.
+
+### Phase 3 — Authentication and account lifecycle
+- Registration, login, logout, session refresh/revocation, password reset, email verification, account changes, OAuth consent compatibility if still used.
+- Roles: client, worker, dispatcher, admin.
+- Server-side profile/role loading and secure admin checks.
+- Rate limits, password policy, brute-force protection, CSRF protection for cookie-authenticated mutations.
+- Tests for anonymous access, role escalation, expired/revoked sessions, and cross-account access.
+
+### Phase 4 — Product APIs and realtime
+- Jobs, responses, dispatcher offers/claiming, lifecycle transitions, worker acceptance/completion, orders, profiles, kartoteka, companies, subscriptions/premium, contracts, signatures, documents, channels, likes/comments, reviews, settings, notifications, and admin workflows.
+- Realtime chat, typing/presence, read receipts, unread counts, incoming calls if the current feature is retained, live order events, and notification delivery.
+- Preserve existing state-machine invariants from SQL functions; do not implement them as loosely coupled client writes.
+- Add pagination, filtering, indexes, and query limits.
+
+### Phase 5 — Replace all Edge Functions
+Migrate all 26 current functions into server routes or background jobs. No function may be marked complete until behavior, authorization, secrets, retry policy, and tests are mapped:
+- admin-broadcast-telegram
+- admin-push-broadcast
+- admin-reset-password
+- auth-email-hook
+- dispatcher-analytics
+- generate-bot-jobs
+- generate-contract-pdf
+- generate-contract-preview
+- generate-document
+- handle-email-suppression
+- handle-email-unsubscribe
+- improve-job-description
+- mcp
+- moderate-content
+- notify-email
+- notify-telegram-job
+- notify-telegram-personal
+- preview-transactional-email
+- process-email-queue
+- reset-password-with-code
+- send-push
+- send-push4site
+- send-transactional-email
+- smart-search-jobs
+- telegram-poll
+- vapid-public-key
+
+### Phase 6 — Frontend cutover
+- Replace all Supabase client calls with typed same-origin API client and realtime client.
+- Remove generated Supabase database types and replace them with app-owned API/domain types.
+- Remove Supabase-specific auth listeners and use server session bootstrap.
+- Remove demo-mode production branches; demo fixtures may remain only in tests/story/demo tooling.
+- Ensure all app routes and role-specific navigation work without Supabase.
+- Remove `@supabase/supabase-js`, Supabase config, functions, generated types, migration assets, environment variables, and docs only after parity and data migration are verified.
+
+### Phase 7 — Production verification and cutover
+- Unit/integration/e2e coverage for all role-critical flows.
+- Browser checks on desktop and mobile, direct deep links, refresh, logout, expired session, network loss, reconnect, file uploads, chat, notifications.
+- Security checks: IDOR, role escalation, CSRF, XSS, rate limiting, upload validation, secrets exposure.
+- Database backup and restore drill.
+- Reconcile record counts and critical relationships against the source database.
+- Switch the public domain only after acceptance; retain rollback path.
+- Remove Supabase credentials and project only after owner approval and a successful observation period.
+
+## Required end-to-end acceptance scenarios
+
+1. Client registers/logs in, creates a request, edits it, and sees its lifecycle.
+2. Dispatcher sees eligible requests, claims one, assigns workers, receives responses, accepts/rejects, and completes the order.
+3. Worker registers/logs in, sees eligible work, responds, receives assignment, updates arrival/work status, and sees earnings/profile updates.
+4. Client, dispatcher, and worker can only access permitted records and conversations.
+5. Two users exchange text, image, and voice messages; read receipts and unread counters stay consistent after reload/reconnect.
+6. Notifications and Telegram/email/push jobs retry safely and do not duplicate side effects.
+7. Admin-only actions are inaccessible to all other roles.
+8. User profile, documents, contracts, and uploaded files survive redeploy/restart.
+9. All core flows work on the Amvera domain without any request to Supabase domains.
+10. A clean production build starts with only Amvera configuration and secrets; no `VITE_SUPABASE_*` variables exist.
+
+## Current status
+
+- [x] Migration branch created: `migration/amvera-native-backend`.
+- [x] Initial repository inventory: 93 SQL migrations and 26 Edge Function entrypoints.
+- [ ] Full frontend call-site inventory and feature-parity matrix.
+- [ ] Node.js/Express application foundation.
+- [ ] PostgreSQL schema and data migration.
+- [ ] Authentication/session implementation.
+- [ ] Product API and realtime implementation.
+- [ ] Edge Function replacement.
+- [ ] Frontend cutover.
+- [ ] Supabase removal and production acceptance.
