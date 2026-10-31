@@ -162,7 +162,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const [loading, setLoading] = useState(true);
   const [voiceActive, setVoiceActive] = useState(false);
   const [inVoiceRoom, setInVoiceRoom] = useState(false);
-  const [voiceRoomId, setVoiceRoomId] = useState<string | null>(null);
   const [peerConnected, setPeerConnected] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [otherUserId, setOtherUserId] = useState<string | null>(null);
@@ -606,11 +605,13 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       localStreamRef.current = stream;
       setInVoiceRoom(true);
       setVoiceActive(true);
-      const { data: room } = await supabase.from("voice_rooms").insert({ conversation_id: conversationId, created_by: user.id }).select().single();
-      if (room) {
-        setVoiceRoomId(room.id);
-        await fetch(`/api/conversations/${conversationId}/messages`, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: "📞 Начал голосовой звонок", messageType: "voice_room" }) });
-      }
+      const response = await fetch(`/api/conversations/${conversationId}/messages`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: "📞 Начал голосовую комнату", messageType: "voice_room" }),
+      });
+      if (!response.ok) throw new Error("Не удалось создать голосовую комнату");
       toast.success("Голосовая комната создана");
     } catch { toast.error("Нет доступа к микрофону"); }
   };
