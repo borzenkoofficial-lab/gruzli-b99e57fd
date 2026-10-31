@@ -1,5 +1,4 @@
 import { useEffect, useRef, useCallback } from "react";
-import { supabase, SUPABASE_CONFIGURED } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { getNotificationSettings } from "@/hooks/useNotificationSettings";
@@ -181,17 +180,44 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
   }, []);
 
   useEffect(() => {
-    if (!user || !SUPABASE_CONFIGURED) return;
-
-    const channel = supabase
-      .channel("realtime-notifications")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "jobs" }, handleNewJob)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, handleNewMessage)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "job_responses" }, handleResponseUpdate)
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
+    if (!user) return;
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const socket = new WebSocket(`${protocol}//${window.location.host}/api/realtime`);
+    socket.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(String(event.data));
+        if (payload.type === "job:created" && payload.job) {
+          handleNewJob({ new: payload.job });
+        } else if (payload.type === "message:new" && payload.message) {
+          handleNewMessage({ new: { ...payload.message, conversation_id: payload.conversationId } });
+        } else if (payload.type === "response:updated") {
+          handleResponseUpdate({
+            new: { worker_id: userIdRef.current, status: payload.status, worker_status: payload.workerStatus },
+            old: { status: "pending", worker_status: null },
+          });
+          if (payload.status === "rejected") {
+            toast("Отклик отклонён", { description: "Диспетчер выбрал другого исполнителя.", duration: 5000 });
+          }
+        } else if (payload.type === "response:created" && (roleRef.current === "dispatcher" || roleRef.current === "admin")) {
+          toast("Новый отклик на заявку", {
+            description: payload.response?.message || "Исполнитель откликнулся на ваш заказ.",
+            duration: 6000,
+          });
+          pushNotification({
+            type: "response",
+            title: "Новый отклик",
+            body: payload.response?.message || "Исполнитель откликнулся на заявку",
+          }, userIdRef.current);
+        } else if (payload.type === "response:withdrawn" && (roleRef.current === "dispatcher" || roleRef.current === "admin")) {
+          toast("Исполнитель отозвал отклик", { duration: 5000 });
+        } else if (payload.type === "job:updated") {
+          toast("Статус заявки изменён", { description: "Обновите карточку заявки для просмотра деталей.", duration: 4000 });
+        }
+      } catch (error) {
+        console.error("[realtime-notifications] Invalid event:", error);
+      }
     };
-  }, [user, handleNewJob, handleNewMessage, handleResponseUpdate]);
+    socket.onerror = () => console.warn("[realtime-notifications] WebSocket unavailable; screens should use API polling.");
+    return () => socket.close();
+  }, [user?.id, handleNewJob, handleNewMessage, handleResponseUpdate]);
 }
