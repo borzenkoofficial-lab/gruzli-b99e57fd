@@ -76,6 +76,13 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
       setRespondedJobs(responded);
     } catch (error) {
       console.error("[Gruzli Feed] API request failed:", error);
+      const demoMode = import.meta.env.DEV && import.meta.env.VITE_GRUZLI_DEMO_MODE === "true" && localStorage.getItem("gruzli_demo_worker") === "1";
+      if (demoMode) {
+        setJobs(DEMO_FEED_JOBS);
+        setDispatcherNames(DEMO_DISPATCHER_NAMES);
+        setWorkersFound(DEMO_RESPONSE_COUNTS);
+        setRespondedJobs(new Set());
+      }
     } finally {
       setLoading(false);
     }
