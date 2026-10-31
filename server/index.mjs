@@ -298,6 +298,134 @@ app.post("/api/profile/presence", requireAuth, async (req, res) => {
   }
 });
 
+
+async function requireConversationMember(conversationId, userId) {
+  const result = await pool.query(
+    "SELECT c.id, c.title, c.is_group, c.job_id, cp.last_read_at FROM conversations c " +
+    "JOIN conversation_participants cp ON cp.conversation_id = c.id " +
+    "WHERE c.id = $1 AND cp.user_id = $2 LIMIT 1",
+    [conversationId, userId],
+  );
+  return result.rows[0] || null;
+}
+
+app.get("/api/conversations", requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT c.id, c.title, c.is_group, c.job_id, c.created_at, " +
+      "CASE WHEN c.is_group THEN COALESCE(c.title, 'Группа') ELSE COALESCE(op.full_name, c.title, 'Чат') END AS other_name, " +
+      "CASE WHEN c.is_group THEN NULL ELSE op.avatar_url END AS other_avatar_url, " +
+      "op.last_seen_at AS other_last_seen, lm.text AS last_message_text, lm.message_type AS last_message_type, " +
+      "lm.created_at AS last_message_at, lm.sender_id AS last_sender_id, " +
+      "COALESCE(unread.unread_count, 0)::int AS unread_count " +
+      "FROM conversation_participants mine JOIN conversations c ON c.id = mine.conversation_id " +
+      "LEFT JOIN LATERAL (SELECT p.full_name, p.avatar_url, p.last_seen_at FROM conversation_participants cp " +
+      "JOIN profiles p ON p.user_id = cp.user_id WHERE cp.conversation_id = c.id AND cp.user_id <> $1 ORDER BY cp.joined_at LIMIT 1) op ON true " +
+      "LEFT JOIN LATERAL (SELECT m.text, m.message_type, m.created_at, m.sender_id FROM messages m " +
+      "WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) lm ON true " +
+      "LEFT JOIN LATERAL (SELECT count(*)::int AS unread_count FROM messages m WHERE m.conversation_id = c.id " +
+      "AND m.sender_id <> $1 AND (mine.last_read_at IS NULL OR m.created_at > mine.last_read_at)) unread ON true " +
+      "WHERE mine.user_id = $1 ORDER BY COALESCE(lm.created_at, c.created_at) DESC LIMIT 200",
+      [req.authUser.id],
+    );
+    const conversations = result.rows.map((row) => ({
+      id: row.id, title: row.title, is_group: row.is_group, job_id: row.job_id,
+      otherName: row.other_name, otherAvatarUrl: row.other_avatar_url, otherLastSeen: row.other_last_seen,
+      lastMessage: row.last_message_type === "voice" ? "🎤 Голосовое сообщение" :
+        row.last_message_type === "image" ? "📷 Фото" : row.last_message_type === "video" ? "📹 Видео" :
+        row.last_message_type === "sticker" ? (row.last_message_text || "Стикер") : (row.last_message_text || "Нет сообщений"),
+      lastTime: row.last_message_at ? new Date(row.last_message_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "",
+      lastTimestamp: row.last_message_at || row.created_at, unreadCount: row.unread_count,
+      isCommunity: false,
+    }));
+    return res.json({ conversations });
+  } catch (error) {
+    console.error("[chat] Conversation list failed:", error.message);
+    return sendError(res, 500, "CONVERSATIONS_LIST_FAILED", "Не удалось загрузить список диалогов.");
+  }
+});
+
+app.get("/api/conversations/:conversationId", requireAuth, async (req, res) => {
+  try {
+    const conversation = await requireConversationMember(req.params.conversationId, req.authUser.id);
+    if (!conversation) return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
+    const participants = await pool.query(
+      "SELECT u.id, p.full_name, p.avatar_url, p.last_seen_at FROM conversation_participants cp " +
+      "JOIN app_users u ON u.id = cp.user_id JOIN profiles p ON p.user_id = u.id " +
+      "WHERE cp.conversation_id = $1 AND cp.user_id <> $2 ORDER BY cp.joined_at",
+      [conversation.id, req.authUser.id],
+    );
+    return res.json({ conversation, participants: participants.rows });
+  } catch (error) {
+    console.error("[chat] Conversation detail failed:", error.message);
+    return sendError(res, 500, "CONVERSATION_LOOKUP_FAILED", "Не удалось загрузить диалог.");
+  }
+});
+
+app.get("/api/conversations/:conversationId/messages", requireAuth, async (req, res) => {
+  try {
+    const conversation = await requireConversationMember(req.params.conversationId, req.authUser.id);
+    if (!conversation) return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
+    const result = await pool.query(
+      "SELECT m.id, m.conversation_id, m.sender_id, m.text, m.media_url, m.message_type, m.reply_to_id, m.created_at, p.full_name AS sender_name " +
+      "FROM messages m JOIN profiles p ON p.user_id = m.sender_id WHERE m.conversation_id = $1 " +
+      "ORDER BY m.created_at DESC LIMIT 300",
+      [conversation.id],
+    );
+    return res.json({ messages: result.rows.reverse(), conversation });
+  } catch (error) {
+    console.error("[chat] Message list failed:", error.message);
+    return sendError(res, 500, "MESSAGES_LIST_FAILED", "Не удалось загрузить сообщения.");
+  }
+});
+
+app.post("/api/conversations/:conversationId/messages", requireAuth, async (req, res) => {
+  const text = String(req.body?.text || "").trim();
+  const replyToId = req.body?.replyToId || null;
+  const messageType = String(req.body?.messageType || "text");
+  if (!text || text.length > 10000 || !["text", "sticker", "system"].includes(messageType)) {
+    return sendError(res, 400, "INVALID_MESSAGE", "Сообщение пустое или имеет недопустимый формат.");
+  }
+  try {
+    const conversation = await requireConversationMember(req.params.conversationId, req.authUser.id);
+    if (!conversation) return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
+    if (replyToId) {
+      const reply = await pool.query("SELECT id FROM messages WHERE id = $1 AND conversation_id = $2", [replyToId, conversation.id]);
+      if (!reply.rowCount) return sendError(res, 400, "INVALID_REPLY_TARGET", "Сообщение для ответа не найдено.");
+    }
+    const blocked = await pool.query(
+      "SELECT 1 FROM blocked_users b JOIN conversation_participants cp ON cp.conversation_id = $1 AND cp.user_id = b.blocked_id " +
+      "WHERE b.blocker_id = $2 LIMIT 1",
+      [conversation.id, req.authUser.id],
+    );
+    if (blocked.rowCount) return sendError(res, 403, "USER_BLOCKED", "Нельзя отправить сообщение этому пользователю.");
+    const result = await pool.query(
+      "INSERT INTO messages (conversation_id, sender_id, text, message_type, reply_to_id) VALUES ($1,$2,$3,$4,$5) " +
+      "RETURNING id, conversation_id, sender_id, text, media_url, message_type, reply_to_id, created_at",
+      [conversation.id, req.authUser.id, text, messageType, replyToId],
+    );
+    await pool.query("UPDATE conversation_participants SET last_read_at = now() WHERE conversation_id = $1 AND user_id = $2", [conversation.id, req.authUser.id]);
+    return res.status(201).json({ message: { ...result.rows[0], sender_name: req.authUser.full_name } });
+  } catch (error) {
+    console.error("[chat] Message send failed:", error.message);
+    return sendError(res, 500, "MESSAGE_SEND_FAILED", "Не удалось отправить сообщение.");
+  }
+});
+
+app.post("/api/conversations/:conversationId/read", requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "UPDATE conversation_participants SET last_read_at = now() WHERE conversation_id = $1 AND user_id = $2 RETURNING conversation_id",
+      [req.params.conversationId, req.authUser.id],
+    );
+    if (!result.rowCount) return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
+    return res.status(204).end();
+  } catch (error) {
+    console.error("[chat] Read receipt update failed:", error.message);
+    return sendError(res, 500, "READ_RECEIPT_FAILED", "Не удалось отметить сообщения прочитанными.");
+  }
+});
+
 app.get("/api/jobs", requireAuth, async (req, res) => {
   const user = req.authUser;
   try {
