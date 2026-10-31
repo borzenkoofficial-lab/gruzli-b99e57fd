@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
-import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, CheckCheck, Clock3, MoreVertical, Trash2, Ban, BellOff, Smile, Reply as ReplyIcon } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, FileText, Mic, MicOff, MapPin, Users, Wallet, CheckCheck, Clock3, MoreVertical, Trash2, Ban, BellOff, Smile, Reply as ReplyIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -654,6 +654,14 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     if (msg.message_type === "video" && msg.media_url) {
       return <video src={msg.media_url} controls className="max-w-full rounded-xl max-h-60" />;
     }
+    if (msg.message_type === "file" && msg.media_url) {
+      return (
+        <a href={msg.media_url} className="flex items-center gap-2 rounded-xl bg-muted/60 px-3 py-2 text-sm underline-offset-2 hover:underline" target="_blank" rel="noreferrer">
+          <FileText size={18} className="shrink-0 text-primary" />
+          <span className="min-w-0 break-all">{msg.text || "Скачать файл"}</span>
+        </a>
+      );
+    }
     if (msg.message_type === "voice_room") {
       return (
         <div className="flex items-center gap-2">
@@ -697,7 +705,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   return (
     <div className="gruzli-chat-detail app-shell">
       <audio ref={remoteAudioRef} autoPlay />
-      <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
+      <input ref={fileInputRef} type="file" accept="image/*,video/*,audio/*,application/pdf,.doc,.docx,.xls,.xlsx" className="hidden" onChange={handleFileSelect} />
 
       {/* Header */}
       <div className="relative z-40 flex items-center gap-2 px-3 safe-top pb-2.5 border-b border-border bg-background">
@@ -890,6 +898,10 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
               <button onClick={() => { if (fileInputRef.current) { fileInputRef.current.accept = "video/*"; fileInputRef.current.click(); } }} className="flex flex-col items-center gap-2">
                 <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center"><Video size={20} className="text-primary" /></div>
                 <span className="text-[11px] text-muted-foreground">Видео</span>
+              </button>
+              <button onClick={() => { if (fileInputRef.current) { fileInputRef.current.accept = "application/pdf,.doc,.docx,.xls,.xlsx"; fileInputRef.current.click(); } }} className="flex flex-col items-center gap-2">
+                <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center"><FileText size={20} className="text-primary" /></div>
+                <span className="text-[11px] text-muted-foreground">Документ</span>
               </button>
             </div>
           </div>
