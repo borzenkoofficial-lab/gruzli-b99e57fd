@@ -35,12 +35,12 @@ Use one Amvera Node.js application for the first production migration:
 
 ## Non-negotiable migration rules
 
-1. Do not delete or disable the existing Supabase project, its data, or its secrets until data export, import, reconciliation, and production acceptance are complete.
+1. This is an owner-approved clean start: do not attempt to access, delete, or disable the inaccessible legacy Supabase project. No legacy user or business data is to be imported.
 2. Do not replace real multi-user backend behavior with localStorage/demo data.
 3. Do not leave a hidden Supabase fallback, SDK import, URL/key env variable, Edge Function URL, generated Supabase client, or deployment dependency.
 4. Do not translate RLS to permissive API handlers. Re-implement authorization on the server and test every role boundary.
 5. Do not expose service credentials, database URLs, password hashes, session tokens, private profile fields, or admin operations to the browser.
-6. Preserve existing user IDs where practical so relationships, contracts, chat messages, and audit history remain consistent.
+6. Generate new UUIDs for all clean-start records; preserve referential integrity inside the new database.
 7. Every endpoint must validate input, authenticate where required, authorize the acting user, and return a stable error format.
 8. All production data writes must be transactional where multiple records or state transitions are involved.
 9. Every migration stage must pass typecheck, lint, unit tests, build, and browser smoke tests before deployment.
@@ -145,15 +145,47 @@ Migrate all 26 current functions into server routes or background jobs. No funct
 9. All core flows work on the Amvera domain without any request to Supabase domains.
 10. A clean production build starts with only Amvera configuration and secrets; no `VITE_SUPABASE_*` variables exist.
 
+## Current implementation checkpoint (2026-10-31)
+
+The following work is committed on `migration/amvera-native-backend`. It is not yet a production-ready cutover.
+
+### Implemented
+- Amvera config changed from static-only publishing to a Docker/Node.js app; Docker builds Vite assets and starts Express.
+- Express serves the frontend and same-origin `/api/*`; added health and DB health endpoints, security headers, request size limits, structured error responses, and graceful shutdown.
+- PostgreSQL pool and ordered SQL migration runner added.
+- Migration 001 creates application users, profiles, cookie sessions, and audit log; migration 002 creates jobs/responses and related indexes/profile fields.
+- Registration, login, logout, session bootstrap, and recovery-code password reset use the Amvera API. Passwords and recovery codes use Node.js scrypt hashes; Argon2id remains a hardening task, not an implemented feature.
+- Session tokens are random opaque values; only SHA-256 hashes are stored; cookies are HttpOnly, SameSite=Lax, and Secure in production.
+- Role-scoped job listing, client job creation, worker response creation/withdrawal, dispatcher response listing/acceptance/rejection are implemented server-side.
+- Frontend auth, job creation, worker feed, job detail response lookup/withdrawal, and dispatcher response screens now call the Amvera API.
+- Presence ping uses the API. Legacy realtime subscriptions are disabled when Supabase credentials are absent.
+- Missing Supabase credentials no longer throw during frontend module import. The temporary compatibility client uses a deliberately invalid endpoint; it is not a localStorage production backend and is not a completed Supabase removal.
+- Vite dev server proxies `/api` to the local Express server.
+- Explicit local demo fixtures remain restricted to development/test mode; they are not used as production persistence.
+
+### Verification
+- Latest GitHub Actions run for commit `b98e4dfdf3a101f0551f2acd5d0d02a94edce443`: lint, typecheck, unit tests, Vite build, Docker image build, and Chromium Playwright smoke tests all passed.
+- No Amvera PostgreSQL resource has been created and no paid infrastructure has been provisioned.
+- Public domain has not been switched. The migration PR remains draft.
+
+### Not yet implemented
+- Dispatcher offer submission/selection and the complete assignment workflow.
+- Chat persistence, attachments, voice messages, read receipts, realtime transport, and incoming calls.
+- Worker lifecycle updates, completion, earnings, and full order state machine.
+- Profile editing, companies, premium, kartoteka, contracts, documents, channels, admin, notification and integration APIs.
+- All remaining Edge Function replacements and complete frontend Supabase call-site removal.
+- PostgreSQL-backed integration tests and production acceptance on an Amvera database.
+- Argon2id, explicit CSRF token strategy, email verification, and account security workflows.
+
 ## Current status
 
 - [x] Migration branch created: `migration/amvera-native-backend`.
 - [x] Initial repository inventory: 93 SQL migrations and 26 Edge Function entrypoints.
 - [ ] Full frontend call-site inventory and feature-parity matrix.
-- [ ] Node.js/Express application foundation.
-- [ ] PostgreSQL schema initialization for a clean database (no legacy data import).
-- [ ] Authentication/session implementation.
-- [ ] Product API and realtime implementation.
+- [x] Node.js/Express application foundation (initial implementation; database readiness still pending).
+- [ ] PostgreSQL schema initialization for a clean database (identity and jobs/responses migrations exist; full schema and DB integration tests pending).
+- [ ] Authentication/session implementation (initial flows implemented; security hardening and full account lifecycle pending).
+- [ ] Product API and realtime implementation (jobs/responses initial workflows implemented; most modules and realtime pending).
 - [ ] Edge Function replacement.
-- [ ] Frontend cutover.
-- [ ] Supabase removal and production acceptance.
+- [ ] Frontend cutover (auth and initial job workflows migrated; remaining Supabase call sites pending).
+- [ ] Supabase SDK/config removal and production acceptance.
