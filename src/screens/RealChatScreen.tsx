@@ -577,7 +577,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       const { data: room } = await supabase.from("voice_rooms").insert({ conversation_id: conversationId, created_by: user.id }).select().single();
       if (room) {
         setVoiceRoomId(room.id);
-        await supabase.from("messages").insert({ conversation_id: conversationId, sender_id: user.id, text: "📞 Начал голосовой звонок", message_type: "voice_room" });
+        await fetch(`/api/conversations/${conversationId}/messages`, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: "📞 Начал голосовой звонок", messageType: "voice_room" }) });
       }
       toast.success("Голосовая комната создана");
     } catch { toast.error("Нет доступа к микрофону"); }
@@ -591,7 +591,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       setInVoiceRoom(true);
       setVoiceActive(true);
       toast.success("Вы в голосовой комнате");
-      await supabase.from("messages").insert({ conversation_id: conversationId, sender_id: user.id, text: "📞 Присоединился к звонку", message_type: "system" });
+      await fetch(`/api/conversations/${conversationId}/messages`, { method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: "📞 Присоединился к звонку", messageType: "system" }) });
     } catch { toast.error("Нет доступа к микрофону"); }
   };
 
