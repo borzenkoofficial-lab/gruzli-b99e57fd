@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, useMotionValue, useTransform, animate, type PanInfo } from "framer-motion";
 import { Search, Megaphone, Trash2, Ban, MessageCircle } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -145,7 +145,6 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
   const { user } = useAuth();
   const isDemo = user?.id?.startsWith("demo-") === true;
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
-  const [communityId, setCommunityId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -159,7 +158,6 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
         { id: "demo-chat-worker", title: "Алексей Морозов", is_group: false, lastMessage: "Грузчики подтверждены, всё в силе.", lastTime: "14:32", lastTimestamp: new Date(now.getTime() - 4 * 60000).toISOString(), otherName: "Алексей Морозов", otherAvatarUrl: null, unreadCount: 1, otherLastSeen: now.toISOString() },
         { id: "demo-chat-gruzli", title: "Gruzli Official", is_group: true, lastMessage: "Добро пожаловать в Gruzli.", lastTime: "Вчера", lastTimestamp: new Date(now.getTime() - 86400000).toISOString(), otherName: "Gruzli Official", otherAvatarUrl: null, unreadCount: 0, otherLastSeen: null, isCommunity: true },
       ]);
-      setCommunityId("demo-community");
       setLoading(false);
       return;
     }
