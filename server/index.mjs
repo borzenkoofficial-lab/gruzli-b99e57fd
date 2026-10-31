@@ -155,7 +155,7 @@ app.post("/api/auth/register", authLimiter, async (req, res) => {
     await client.query("COMMIT");
     await createSession(user.id, res);
     await pool.query(
-      "INSERT INTO app_audit_log (actor_user_id, action, entity_type, entity_id, ip_address) VALUES ($1, 'auth.register', 'user', $1, $2)",
+      "INSERT INTO app_audit_log (actor_user_id, action, entity_type, entity_id, ip_address) VALUES ($1, 'auth.register', 'user', $1::text, $2)",
       [user.id, req.ip],
     );
     return res.status(201).json({
@@ -189,7 +189,7 @@ app.post("/api/auth/login", authLimiter, async (req, res) => {
     await createSession(row.id, res);
     await pool.query("UPDATE app_users SET last_login_at = now() WHERE id = $1", [row.id]);
     await pool.query(
-      "INSERT INTO app_audit_log (actor_user_id, action, entity_type, entity_id, ip_address) VALUES ($1, 'auth.login', 'user', $1, $2)",
+      "INSERT INTO app_audit_log (actor_user_id, action, entity_type, entity_id, ip_address) VALUES ($1, 'auth.login', 'user', $1::text, $2)",
       [row.id, req.ip],
     );
     return res.json({ user: publicUser(row), role: row.role, profile: publicProfile(row) });
