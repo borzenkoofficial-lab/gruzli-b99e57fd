@@ -8,7 +8,12 @@ interface RecoveryCodeBannerProps {
 }
 
 /** Displays the one-time recovery code returned by the registration API. */
-export const RecoveryCodeBanner = ({ code, onClose }: RecoveryCodeBannerProps) => (
+export const RecoveryCodeBanner = ({ code, onClose }: RecoveryCodeBannerProps) => {
+  const finish = () => {
+    window.dispatchEvent(new Event("gruzli-auth-changed"));
+    onClose();
+  };
+  return (
   <AnimatePresence>
     <motion.div
       initial={{ opacity: 0 }}
@@ -23,7 +28,7 @@ export const RecoveryCodeBanner = ({ code, onClose }: RecoveryCodeBannerProps) =
         exit={{ opacity: 0, scale: 0.9 }}
         className="relative w-full max-w-sm bg-card border border-border rounded-2xl p-5 z-10"
       >
-        <button onClick={onClose} className="absolute top-4 right-4 text-muted-foreground"><X size={18} /></button>
+        <button onClick={finish} className="absolute top-4 right-4 text-muted-foreground"><X size={18} /></button>
         <div className="flex flex-col items-center text-center mb-4">
           <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-3"><KeyRound size={26} className="text-primary" /></div>
           <h3 className="text-base font-bold text-foreground">Сохраните код восстановления</h3>
@@ -42,4 +47,5 @@ export const RecoveryCodeBanner = ({ code, onClose }: RecoveryCodeBannerProps) =
       </motion.div>
     </motion.div>
   </AnimatePresence>
-);
+  );
+};

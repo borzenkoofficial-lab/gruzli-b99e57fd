@@ -158,7 +158,6 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(payload?.error?.message || "Не удалось создать аккаунт");
         setShowRecoveryFor(payload.recoveryCode || null);
-        window.dispatchEvent(new Event("gruzli-auth-changed"));
         toast.success("Регистрация успешна!");
         setLoading(false);
         return;
