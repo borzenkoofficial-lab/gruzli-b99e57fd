@@ -363,8 +363,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     }
     setLoading(false);
     setTimeout(() => scrollToBottom(false), 50);
-  }, [conversationId, isDemo, scrollToBottom, user?.id]);    setLoading(false);
-    setTimeout(() => scrollToBottom(false), 50);
   }, [conversationId, isDemo, scrollToBottom, user?.id]);
 
   const markAsRead = useCallback(async () => {
