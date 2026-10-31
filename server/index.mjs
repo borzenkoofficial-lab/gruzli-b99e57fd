@@ -854,10 +854,12 @@ app.post("/api/responses/:responseId/reject", requireAuth, async (req, res) => {
   if (user.role !== "dispatcher" && user.role !== "admin") return sendError(res, 403, "DISPATCHER_ROLE_REQUIRED", "Отклонять отклики может только диспетчер.");
   try {
     const result = await pool.query(
-      "UPDATE job_responses r SET status = 'rejected' FROM jobs j WHERE r.id = $1 AND j.id = r.job_id AND r.status = 'pending' AND ($2 = 'admin' OR j.dispatcher_id = $3) RETURNING r.id",
+      "UPDATE job_responses r SET status = 'rejected' FROM jobs j WHERE r.id = $1 AND j.id = r.job_id AND r.status = 'pending' AND ($2 = 'admin' OR j.dispatcher_id = $3) RETURNING r.id, r.worker_id, r.job_id",
       [req.params.responseId, user.role, user.id],
     );
     if (!result.rowCount) return sendError(res, 409, "RESPONSE_NOT_REJECTABLE", "Этот отклик уже нельзя отклонить.");
+    const response = result.rows[0];
+    sendUserEvent(response.worker_id, { type: "response:updated", responseId: response.id, jobId: response.job_id, status: "rejected" });
     return res.json({ success: true });
   } catch (error) {
     console.error("[jobs] Reject response failed:", error.message);
@@ -870,10 +872,13 @@ app.post("/api/responses/:responseId/withdraw", requireAuth, async (req, res) =>
   if (user.role !== "worker") return sendError(res, 403, "WORKER_ROLE_REQUIRED", "Только исполнитель может отозвать отклик.");
   try {
     const result = await pool.query(
-      "UPDATE job_responses SET status = 'withdrawn' WHERE id = $1 AND worker_id = $2 AND status = 'pending' RETURNING id",
+      "UPDATE job_responses SET status = 'withdrawn' WHERE id = $1 AND worker_id = $2 AND status = 'pending' RETURNING id, job_id",
       [req.params.responseId, user.id],
     );
     if (!result.rowCount) return sendError(res, 409, "RESPONSE_NOT_WITHDRAWABLE", "Этот отклик уже нельзя отозвать.");
+    const response = result.rows[0];
+    const owner = await pool.query("SELECT dispatcher_id FROM jobs WHERE id = $1", [response.job_id]);
+    if (owner.rows[0]?.dispatcher_id) sendUserEvent(owner.rows[0].dispatcher_id, { type: "response:withdrawn", responseId: response.id, jobId: response.job_id });
     return res.json({ success: true });
   } catch (error) {
     console.error("[jobs] Withdraw response failed:", error.message);
