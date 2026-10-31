@@ -140,7 +140,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
       if (isEmail(input)) {
         email = input.trim().toLowerCase();
       } else {
-        const digits = input.replace(/\\D/g, "");
+        const digits = input.replace(/\D/g, "");
         if (digits.length < 10) throw new Error("Укажите корректный номер телефона или email");
         email = phoneToEmail(input);
         phoneValue = input;
