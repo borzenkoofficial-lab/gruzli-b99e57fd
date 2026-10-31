@@ -878,6 +878,7 @@ app.use((error, _req, res, _next) => {
 });
 
 async function start() {
+  await mkdir(uploadDir, { recursive: true, mode: 0o700 });
   if (pool) {
     try {
       await migrateDatabase();
