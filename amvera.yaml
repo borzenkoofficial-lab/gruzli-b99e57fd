@@ -1,0 +1,9 @@
+meta:
+  environment: static_web
+  toolchain:
+    name: bun
+    version: "1.2"
+build:
+  additionalCommands: null
+  artifacts:
+    "dist/*": /
