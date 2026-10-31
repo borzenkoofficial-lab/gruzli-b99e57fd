@@ -509,21 +509,26 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const handleSendVoice = async (blob: Blob, duration: number) => {
     if (!user) return;
     setIsRecording(false);
-    
-    const path = `voice/${conversationId}/${Date.now()}_voice.webm`;
-    const { error: uploadError } = await supabase.storage.from("kartoteka-photos").upload(path, blob, { contentType: "audio/webm" });
-    if (uploadError) { toast.error("Ошибка загрузки"); return; }
-    const { data: urlData } = supabase.storage.from("kartoteka-photos").getPublicUrl(path);
-    
-    playMessageSent();
-
-    await supabase.from("messages").insert({
-      conversation_id: conversationId,
-      sender_id: user.id,
-      text: `voice:${duration}`,
-      media_url: urlData.publicUrl,
-      message_type: "voice",
-    });
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", blob, `voice-${Date.now()}.webm`);
+      formData.append("duration", String(duration));
+      const response = await fetch(`/api/conversations/${conversationId}/files`, {
+        method: "POST",
+        credentials: "same-origin",
+        body: formData,
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.error?.message || "Ошибка загрузки голосового сообщения");
+      playMessageSent();
+      if (payload.message) setMessages((previous) => [...previous, payload.message as Message]);
+      scrollToBottom(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Не удалось отправить голосовое сообщение");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -538,23 +543,28 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-    if (file.size > 10 * 1024 * 1024) { toast.error("Макс 10МБ"); return; }
+    if (file.size > 25 * 1024 * 1024) { toast.error("Максимальный размер файла — 25 МБ"); return; }
 
     setUploading(true);
     setShowAttach(false);
-    const ext = file.name.split(".").pop();
-    const path = `${conversationId}/${Date.now()}.${ext}`;
-    const { error: uploadError } = await supabase.storage.from("chat-media").upload(path, file);
-    if (uploadError) { toast.error("Ошибка загрузки"); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from("chat-media").getPublicUrl(path);
-    const isVideo = file.type.startsWith("video/");
-    const isImage = file.type.startsWith("image/");
-    const msgType = isVideo ? "video" : isImage ? "image" : "file";
-    await supabase.from("messages").insert({
-      conversation_id: conversationId, sender_id: user.id, text: file.name, media_url: urlData.publicUrl, message_type: msgType,
-    });
-    setUploading(false);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    try {
+      const formData = new FormData();
+      formData.append("file", file, file.name);
+      const response = await fetch(`/api/conversations/${conversationId}/files`, {
+        method: "POST",
+        credentials: "same-origin",
+        body: formData,
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.error?.message || "Ошибка загрузки файла");
+      if (payload.message) setMessages((previous) => [...previous, payload.message as Message]);
+      scrollToBottom(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Не удалось отправить файл");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const startVoiceRoom = async () => {
