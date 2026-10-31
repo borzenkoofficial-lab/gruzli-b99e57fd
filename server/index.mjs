@@ -1,10 +1,12 @@
 import crypto from "node:crypto";
 import { promisify } from "node:util";
 import path from "node:path";
+import { mkdir, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import multer from "multer";
 import { pool } from "./db.mjs";
 import { migrateDatabase } from "./migrate.mjs";
 
@@ -16,6 +18,16 @@ const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const here = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(here, "..");
 const distDir = path.join(projectRoot, "dist");
+const dataDir = path.resolve(process.env.DATA_DIR || path.join(projectRoot, ".data"));
+const uploadDir = path.join(dataDir, "uploads");
+const chatUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, callback) => {
+    const allowed = /^(image\\/(jpeg|png|webp|gif)|video\\/(mp4|webm|quicktime)|audio\\/(webm|ogg|mpeg|wav|mp4|aac)|application\\/(pdf|msword|vnd\\.openxmlformats-officedocument\\.wordprocessingml\\.document|vnd\\.openxmlformats-officedocument\\.spreadsheetml\\.sheet))$/i;
+    callback(allowed.test(file.mimetype) ? null : new Error("UNSUPPORTED_FILE_TYPE"), allowed.test(file.mimetype));
+  },
+});
 let databaseReady = false;
 
 app.disable("x-powered-by");
