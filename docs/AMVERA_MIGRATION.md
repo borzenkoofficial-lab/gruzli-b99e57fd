@@ -161,7 +161,7 @@ The following work is committed on `migration/amvera-native-backend`. It is not 
 - Presence ping uses the API. Legacy realtime subscriptions are disabled when Supabase credentials are absent.
 - Chat foundations now use PostgreSQL tables for conversations, participants, messages, read markers, blocked users, and private file metadata.
 - Authenticated chat APIs cover conversation listing/creation/detail, text messages, read markers, blocking, deletion, media upload, and media download. API authorization checks conversation membership on every read/write.
-- Chat list and text-message views use the Amvera API. An authenticated same-origin native WebSocket endpoint (`/api/realtime`) supports per-conversation subscriptions, immediate message/media fanout, app-wide incoming call notifications, and validated WebRTC signaling relay for ringing, accept/reject, offer/answer, ICE candidates, and hangup. HTTP polling remains as a fallback and for reconciliation; list polling remains at 10 seconds and message polling at 4 seconds.
+- Chat list and text-message views use the Amvera API. An authenticated same-origin native WebSocket endpoint (`/api/realtime`) supports per-conversation subscriptions, immediate message/media fanout, app-wide incoming call notifications, and validated WebRTC signaling relay for ringing, accept/reject, offer/answer, ICE candidates, and hangup. The same event service now publishes new jobs to connected workers, new responses to the owning dispatcher, acceptance/rejection/withdrawal updates to workers or dispatchers, and job status changes after acceptance. HTTP polling remains as a fallback and for reconciliation; list polling remains at 10 seconds and message polling at 4 seconds.
 - Chat images, videos, voice notes, and supported documents are uploaded to the persistent `/data/uploads` mount configured for Amvera. Files are stored with generated identifiers and are served only after session and conversation-membership checks. The upload limit is 25 MB; supported MIME types are explicitly allowlisted.
 - Chat conversation deletion also removes associated file records and attempts to delete stored file bytes.
 - Missing Supabase credentials no longer throw during frontend module import. The temporary compatibility client uses a deliberately invalid endpoint; it is not a localStorage production backend and is not a completed Supabase removal.
@@ -169,13 +169,14 @@ The following work is committed on `migration/amvera-native-backend`. It is not 
 - Explicit local demo fixtures remain restricted to development/test mode; they are not used as production persistence.
 
 ### Verification
-- GitHub Actions run `41192395024` for commit `a288030f3f89b696f1f49550bc8b12e4c26649cd` passed: server syntax checks, ESLint, TypeScript, unit tests, Vite production build, Amvera Docker image build, and Chromium Playwright smoke tests.
+- GitHub Actions run `41192795874` for commit `4a12d52a054fb22fb3564a23df7a709b1837a4f5` passed: server syntax checks, ESLint, TypeScript, unit tests, Vite production build, Amvera Docker image build, and Chromium Playwright smoke tests.
+- This CI validates build and existing smoke coverage; it does not replace live PostgreSQL/Amvera multi-user tests for WebSocket authorization, delivery, reconnect, or WebRTC.
 - No Amvera PostgreSQL resource has been created and no paid infrastructure has been provisioned.
 - Public domain has not been switched. The migration PR remains draft.
 
 ### Not yet implemented
 - Dispatcher offer submission/selection and the complete assignment workflow.
-- Move presence, typing indicators, unread counters, job/response events, and remaining cross-module realtime events to the native event service. Incoming calls now use the app-wide WebSocket listener.
+- Move presence propagation, typing indicators, unread counters, worker-status transitions, and remaining cross-module realtime events to the native event service. Job/response lifecycle events and app-wide incoming calls now use the native WebSocket listener.
 - Remove the remaining Supabase compatibility/demo paths and audit every frontend Supabase call before removing the SDK and environment variables.
 - Worker lifecycle updates, completion, earnings, and full order state machine.
 - Profile editing, companies, premium, kartoteka, contracts, documents, channels, admin, notification and integration APIs.
@@ -191,7 +192,7 @@ The following work is committed on `migration/amvera-native-backend`. It is not 
 - [x] Node.js/Express application foundation (initial implementation; database readiness still pending).
 - [ ] PostgreSQL schema initialization for a clean database (identity and jobs/responses migrations exist; full schema and DB integration tests pending).
 - [ ] Authentication/session implementation (initial flows implemented; security hardening and full account lifecycle pending).
-- [ ] Product API and realtime implementation (jobs/responses initial workflows implemented; most modules and realtime pending).
+- [ ] Product API and realtime implementation (chat, calls, job creation, response lifecycle notifications are partially implemented; presence propagation, typing, worker-status events, other modules, and live Amvera verification remain).
 - [ ] Edge Function replacement.
 - [ ] Frontend cutover (auth and initial job workflows migrated; remaining Supabase call sites pending).
 - [ ] Supabase SDK/config removal and production acceptance.
