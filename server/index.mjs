@@ -309,6 +309,99 @@ async function requireConversationMember(conversationId, userId) {
   return result.rows[0] || null;
 }
 
+
+app.post("/api/conversations", requireAuth, async (req, res) => {
+  const requestedIds = Array.isArray(req.body?.participantIds) ? req.body.participantIds : [];
+  const participantIds = [...new Set([req.authUser.id, ...requestedIds.map((id) => String(id))])];
+  const title = String(req.body?.title || "").trim().slice(0, 120) || null;
+  const isGroup = Boolean(req.body?.isGroup) || participantIds.length > 2;
+  if (participantIds.length < 2 || participantIds.length > 30) {
+    return sendError(res, 400, "INVALID_PARTICIPANTS", "В диалоге должно быть от 2 до 30 участников.");
+  }
+  if (!isGroup && participantIds.length !== 2) return sendError(res, 400, "INVALID_DIRECT_CHAT", "Личный диалог может содержать только двух участников.");
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const users = await client.query(
+      "SELECT id FROM app_users WHERE id = ANY($1::uuid[]) AND is_active = true",
+      [participantIds],
+    );
+    if (users.rowCount !== participantIds.length) {
+      await client.query("ROLLBACK");
+      return sendError(res, 400, "INVALID_PARTICIPANT", "Один из участников не найден или заблокирован.");
+    }
+    const blocked = await client.query(
+      "SELECT 1 FROM blocked_users WHERE (blocker_id = $1 AND blocked_id = $2) OR (blocker_id = $2 AND blocked_id = $1) LIMIT 1",
+      [participantIds[0], participantIds[1]],
+    );
+    if (blocked.rowCount) {
+      await client.query("ROLLBACK");
+      return sendError(res, 403, "CHAT_BLOCKED", "Нельзя создать диалог: один из участников добавил другого в чёрный список.");
+    }
+    if (!isGroup) {
+      const existing = await client.query(
+        "SELECT c.id FROM conversations c JOIN conversation_participants a ON a.conversation_id = c.id AND a.user_id = $1 " +
+        "JOIN conversation_participants b ON b.conversation_id = c.id AND b.user_id = $2 " +
+        "WHERE c.is_group = false AND (SELECT count(*) FROM conversation_participants x WHERE x.conversation_id = c.id) = 2 LIMIT 1",
+        participantIds,
+      );
+      if (existing.rowCount) {
+        await client.query("COMMIT");
+        return res.json({ conversationId: existing.rows[0].id, existing: true });
+      }
+    }
+    const created = await client.query(
+      "INSERT INTO conversations (title, is_group, created_by) VALUES ($1,$2,$3) RETURNING id",
+      [title, isGroup, req.authUser.id],
+    );
+    await client.query(
+      "INSERT INTO conversation_participants (conversation_id, user_id) SELECT $1, unnest($2::uuid[])",
+      [created.rows[0].id, participantIds],
+    );
+    await client.query("COMMIT");
+    return res.status(201).json({ conversationId: created.rows[0].id, existing: false });
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    console.error("[chat] Conversation create failed:", error.message);
+    return sendError(res, 500, "CONVERSATION_CREATE_FAILED", "Не удалось создать диалог.");
+  } finally {
+    client.release();
+  }
+});
+
+app.delete("/api/conversations/:conversationId", requireAuth, async (req, res) => {
+  try {
+    const member = await requireConversationMember(req.params.conversationId, req.authUser.id);
+    if (!member && req.authUser.role !== "admin") return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
+    const deleted = await pool.query("DELETE FROM conversations WHERE id = $1 RETURNING id", [req.params.conversationId]);
+    if (!deleted.rowCount) return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
+    return res.status(204).end();
+  } catch (error) {
+    console.error("[chat] Conversation delete failed:", error.message);
+    return sendError(res, 500, "CONVERSATION_DELETE_FAILED", "Не удалось удалить диалог.");
+  }
+});
+
+app.post("/api/conversations/:conversationId/block", requireAuth, async (req, res) => {
+  try {
+    const member = await requireConversationMember(req.params.conversationId, req.authUser.id);
+    if (!member) return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
+    const other = await pool.query(
+      "SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id <> $2 ORDER BY joined_at LIMIT 1",
+      [req.params.conversationId, req.authUser.id],
+    );
+    if (!other.rowCount) return sendError(res, 400, "NO_BLOCK_TARGET", "В этом диалоге нет другого участника.");
+    await pool.query(
+      "INSERT INTO blocked_users (blocker_id, blocked_id) VALUES ($1,$2) ON CONFLICT DO NOTHING",
+      [req.authUser.id, other.rows[0].user_id],
+    );
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("[chat] Block user failed:", error.message);
+    return sendError(res, 500, "BLOCK_USER_FAILED", "Не удалось добавить пользователя в чёрный список.");
+  }
+});
+
 app.get("/api/conversations", requireAuth, async (req, res) => {
   try {
     const result = await pool.query(
