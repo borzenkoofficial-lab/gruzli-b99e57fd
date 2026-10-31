@@ -958,6 +958,25 @@ async function start() {
           return sendSocket(ws, { type: "conversation:subscribed", conversationId });
         } catch { return sendSocket(ws, { type: "error", code: "SUBSCRIBE_FAILED" }); }
       }
+      if (payload.type === "call:signal") {
+        const conversationId = String(payload.conversationId || "");
+        const targetUserId = String(payload.toUserId || "");
+        const signal = payload.signal;
+        if (!signal || typeof signal !== "object" || !["ringing", "accept", "reject", "hangup", "offer", "answer", "ice"].includes(signal.kind)) {
+          return sendSocket(ws, { type: "error", code: "INVALID_CALL_SIGNAL" });
+        }
+        try {
+          const membership = await pool.query(
+            "SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id IN ($2,$3)",
+            [conversationId, ws.userId, targetUserId],
+          );
+          if (membership.rowCount !== 2 || !socketConversations.get(ws)?.has(conversationId)) {
+            return sendSocket(ws, { type: "error", code: "CALL_NOT_ALLOWED" });
+          }
+          sendUserEvent(targetUserId, { type: "call:signal", conversationId, fromUserId: ws.userId, signal });
+        } catch { sendSocket(ws, { type: "error", code: "CALL_SIGNAL_FAILED" }); }
+        return;
+      }
       if (payload.type === "call:ring") {
         const conversationId = String(payload.conversationId || "");
         const targetUserId = String(payload.toUserId || "");
