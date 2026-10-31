@@ -43,7 +43,7 @@ export const RecoveryCodeBanner = ({ code, onClose }: RecoveryCodeBannerProps) =
           ) : <div className="text-center text-xs text-muted-foreground py-2">Код не получен. Обратитесь в поддержку.</div>}
         </div>
         <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-3 mb-4"><p className="text-[11px] text-destructive leading-relaxed">⚠️ Запишите код в надёжное место. После закрытия повторно посмотреть его будет нельзя.</p></div>
-        <button onClick={onClose} disabled={!code} className="w-full py-3 rounded-xl bg-foreground text-background text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50"><CheckCircle2 size={16} />Я сохранил код</button>
+        <button onClick={finish} disabled={!code} className="w-full py-3 rounded-xl bg-foreground text-background text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50"><CheckCircle2 size={16} />Я сохранил код</button>
       </motion.div>
     </motion.div>
   </AnimatePresence>
