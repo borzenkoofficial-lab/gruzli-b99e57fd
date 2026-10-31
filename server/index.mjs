@@ -546,7 +546,9 @@ app.post("/api/conversations/:conversationId/files", requireAuth, uploadSingleCh
       );
       await client.query("UPDATE conversation_participants SET last_read_at = now() WHERE conversation_id = $1 AND user_id = $2", [conversation.id, req.authUser.id]);
       await client.query("COMMIT");
-      return res.status(201).json({ message: { ...inserted.rows[0], sender_name: req.authUser.full_name }, file: { id: fileId, name: path.basename(file.originalname), size: file.size, mimeType: file.mimetype } });
+      const message = { ...inserted.rows[0], sender_name: req.authUser.full_name };
+      sendConversationEvent(conversation.id, { type: "message:new", conversationId: conversation.id, message }, req.authUser.id);
+      return res.status(201).json({ message, file: { id: fileId, name: path.basename(file.originalname), size: file.size, mimeType: file.mimetype } });
     } catch (error) {
       await client.query("ROLLBACK").catch(() => {});
       await unlink(diskPath).catch(() => {});
