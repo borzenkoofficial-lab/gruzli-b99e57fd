@@ -130,6 +130,7 @@ interface ConversationItem {
   lastTimestamp: string;
   otherName: string;
   otherAvatarUrl: string | null;
+  otherUserId?: string | null;
   unreadCount: number;
   otherLastSeen: string | null;
   isCommunity?: boolean;
