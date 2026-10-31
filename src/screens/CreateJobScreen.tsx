@@ -97,31 +97,8 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
 
     setLoading(true);
 
-    // AI moderation check
-    const textToCheck = `${title.trim()} ${description.trim()}`.trim();
-    if (textToCheck.length > 5) {
-      try {
-        const { data: modResult, error: moderationError } = await supabase.functions.invoke("moderate-content", {
-          body: { text: textToCheck, type: "job" },
-        });
-        if (moderationError) {
-          toast.error("Не удалось проверить заявку. Попробуйте ещё раз.");
-          setLoading(false);
-          return;
-        }
-        if (!modResult?.safe) {
-          toast.error(modResult.reason || "Содержимое не прошло модерацию");
-          setLoading(false);
-          return;
-        }
-      } catch {
-        toast.error("Не удалось проверить заявку. Попробуйте ещё раз.");
-        setLoading(false);
-        return;
-      }
-    }
+    // AI moderation is being moved to the Amvera API; structured server validation remains active.
 
-    let createdJob: any = null;
     try {
       const response = await fetch("/api/jobs", {
         method: "POST",
@@ -136,7 +113,6 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(payload?.error?.message || "Не удалось создать заявку");
-      createdJob = payload.job;
     } catch (error: any) {
       console.error("POST /api/jobs failed", error);
       toast.error(error.message || "Не удалось создать заявку");

@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
 /**
@@ -21,11 +20,10 @@ export const usePresence = () => {
       if (now - lastPingRef.current < 15_000) return;
       lastPingRef.current = now;
 
-      supabase
-        .from("profiles")
-        .update({ last_seen_at: new Date().toISOString() })
-        .eq("user_id", user.id)
-        .then(() => {});
+      void fetch("/api/profile/presence", {
+        method: "POST",
+        credentials: "same-origin",
+      }).catch(() => {});
     };
 
     // Immediate ping

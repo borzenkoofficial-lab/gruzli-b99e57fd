@@ -287,6 +287,17 @@ async function requireAuth(req, res, next) {
   }
 }
 
+
+app.post("/api/profile/presence", requireAuth, async (req, res) => {
+  try {
+    await pool.query("UPDATE profiles SET last_seen_at = now(), updated_at = now() WHERE user_id = $1", [req.authUser.id]);
+    return res.status(204).end();
+  } catch (error) {
+    console.error("[profile] Presence update failed:", error.message);
+    return sendError(res, 500, "PRESENCE_UPDATE_FAILED", "Не удалось обновить статус присутствия.");
+  }
+});
+
 app.get("/api/jobs", requireAuth, async (req, res) => {
   const user = req.authUser;
   try {

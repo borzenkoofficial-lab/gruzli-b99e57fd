@@ -92,7 +92,6 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
       return;
     }
     const result = payload;
-    const accepted = responses.find((r) => r.id === responseId);
 
     // Push notifications now handled by push4site (server-side via webhooks)
 

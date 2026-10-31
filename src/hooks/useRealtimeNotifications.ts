@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, SUPABASE_CONFIGURED } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { getNotificationSettings } from "@/hooks/useNotificationSettings";
@@ -181,7 +181,7 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !SUPABASE_CONFIGURED) return;
 
     const channel = supabase
       .channel("realtime-notifications")
