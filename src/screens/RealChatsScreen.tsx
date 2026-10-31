@@ -255,26 +255,28 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
               onDelete={async () => {
                 if (!user) return;
                 if (!window.confirm("Диалог будет удалён у всех участников. Продолжить?")) return;
-                const { data: mediaUrls, error } = await supabase.rpc('delete_conversation_fully', { _conversation_id: conv.id });
-                if (error) { toast.error("Ошибка удаления"); return; }
-                if (mediaUrls?.length) {
-                  const paths = (mediaUrls as string[]).map(u => {
-                    try { const url = new URL(u); const parts = url.pathname.split('/object/public/chat-media/'); return parts[1] || parts[0]; } catch { return u; }
-                  }).filter(Boolean);
-                  if (paths.length) await supabase.storage.from('chat-media').remove(paths);
+                try {
+                  const response = await fetch(`/api/conversations/${conv.id}`, { method: "DELETE", credentials: "same-origin" });
+                  if (!response.ok) {
+                    const payload = await response.json().catch(() => ({}));
+                    throw new Error(payload?.error?.message || "Ошибка удаления");
+                  }
+                  setConversations((prev) => prev.filter((item) => item.id !== conv.id));
+                  toast.success("Диалог полностью удалён");
+                } catch (error) {
+                  toast.error(error instanceof Error ? error.message : "Ошибка удаления");
                 }
-                setConversations((prev) => prev.filter((c) => c.id !== conv.id));
-                toast.success("Диалог полностью удалён");
               }}
               onBlock={async () => {
                 if (!user) return;
-                const { data: participants } = await supabase.from("conversation_participants").select("user_id").eq("conversation_id", conv.id).neq("user_id", user.id).limit(1);
-                const otherId = participants?.[0]?.user_id;
-                if (!otherId) return;
-                const { error } = await supabase.from("blocked_users").insert({ blocker_id: user.id, blocked_id: otherId });
-                if (error?.code === "23505") { toast.info("Уже в чёрном списке"); }
-                else if (error) { toast.error("Ошибка"); }
-                else { toast.success(`${conv.otherName} добавлен в чёрный список`); }
+                try {
+                  const response = await fetch(`/api/conversations/${conv.id}/block`, { method: "POST", credentials: "same-origin" });
+                  const payload = await response.json().catch(() => ({}));
+                  if (!response.ok) throw new Error(payload?.error?.message || "Ошибка блокировки");
+                  toast.success(`${conv.otherName} добавлен в чёрный список`);
+                } catch (error) {
+                  toast.error(error instanceof Error ? error.message : "Ошибка блокировки");
+                }
               }}
             />
           ))}
