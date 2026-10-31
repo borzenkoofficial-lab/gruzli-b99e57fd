@@ -972,7 +972,7 @@ async function start() {
             "SELECT user_id FROM conversation_participants WHERE conversation_id = $1 AND user_id IN ($2,$3)",
             [conversationId, ws.userId, targetUserId],
           );
-          if (membership.rowCount !== 2 || !socketConversations.get(ws)?.has(conversationId)) {
+          if (membership.rowCount !== 2) {
             return sendSocket(ws, { type: "error", code: "CALL_NOT_ALLOWED" });
           }
           sendUserEvent(targetUserId, { type: "call:signal", conversationId, fromUserId: ws.userId, signal });
