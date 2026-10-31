@@ -159,18 +159,24 @@ The following work is committed on `migration/amvera-native-backend`. It is not 
 - Role-scoped job listing, client job creation, worker response creation/withdrawal, dispatcher response listing/acceptance/rejection are implemented server-side.
 - Frontend auth, job creation, worker feed, job detail response lookup/withdrawal, and dispatcher response screens now call the Amvera API.
 - Presence ping uses the API. Legacy realtime subscriptions are disabled when Supabase credentials are absent.
+- Chat foundations now use PostgreSQL tables for conversations, participants, messages, read markers, blocked users, and private file metadata.
+- Authenticated chat APIs cover conversation listing/creation/detail, text messages, read markers, blocking, deletion, media upload, and media download. API authorization checks conversation membership on every read/write.
+- Chat list and text-message views use the Amvera API; the UI refreshes by polling (10 seconds for the list and 4 seconds for messages). WebSocket realtime transport is not yet implemented.
+- Chat images, videos, voice notes, and supported documents are uploaded to the persistent `/data/uploads` mount configured for Amvera. Files are stored with generated identifiers and are served only after session and conversation-membership checks. The upload limit is 25 MB; supported MIME types are explicitly allowlisted.
+- Chat conversation deletion also removes associated file records and attempts to delete stored file bytes.
 - Missing Supabase credentials no longer throw during frontend module import. The temporary compatibility client uses a deliberately invalid endpoint; it is not a localStorage production backend and is not a completed Supabase removal.
 - Vite dev server proxies `/api` to the local Express server.
 - Explicit local demo fixtures remain restricted to development/test mode; they are not used as production persistence.
 
 ### Verification
-- Latest GitHub Actions run for commit `b98e4dfdf3a101f0551f2acd5d0d02a94edce443`: lint, typecheck, unit tests, Vite build, Docker image build, and Chromium Playwright smoke tests all passed.
+- Latest confirmed successful GitHub Actions run before the private chat-storage work: commit `1ef0dcc9853ca0c2fe4f4838d0d3317466f4716b` passed lint, typecheck, unit tests, Vite build, Docker image build, and Chromium Playwright smoke tests.
+- Private chat-storage changes are newer than that verified commit; their CI result is pending and must pass before calling this checkpoint validated.
 - No Amvera PostgreSQL resource has been created and no paid infrastructure has been provisioned.
 - Public domain has not been switched. The migration PR remains draft.
 
 ### Not yet implemented
 - Dispatcher offer submission/selection and the complete assignment workflow.
-- Chat persistence, attachments, voice messages, read receipts, realtime transport, and incoming calls.
+- Chat realtime transport, incoming-call signaling, and complete removal of remaining Supabase calls in chat (voice-room signaling/profile lookup and any other legacy paths).
 - Worker lifecycle updates, completion, earnings, and full order state machine.
 - Profile editing, companies, premium, kartoteka, contracts, documents, channels, admin, notification and integration APIs.
 - All remaining Edge Function replacements and complete frontend Supabase call-site removal.
