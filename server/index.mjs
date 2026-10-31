@@ -18,6 +18,7 @@ const realtime = new WebSocketServer({ noServer: true, maxPayload: 16384 });
 const userSockets = new Map();
 const socketConversations = new WeakMap();
 function sendSocket(socket, event) { if (socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(event)); }
+function sendRoleEvent(role, event) { for (const sockets of userSockets.values()) for (const socket of sockets) if (socket.userRole === role || socket.userRole === "admin") sendSocket(socket, event); }
 function sendUserEvent(userId, event) { for (const socket of userSockets.get(userId) || []) sendSocket(socket, event); }
 function sendConversationEvent(conversationId, event, exceptUserId = null) {
   for (const [userId, sockets] of userSockets) {
@@ -700,6 +701,7 @@ app.post("/api/jobs", requireAuth, async (req, res) => {
       "INSERT INTO app_audit_log (actor_user_id, action, entity_type, entity_id, ip_address) VALUES ($1,'job.created','job',$2,$3)",
       [user.id, result.rows[0].id, req.ip],
     );
+    sendRoleEvent("worker", { type: "job:created", job: result.rows[0] });
     return res.status(201).json({ job: result.rows[0] });
   } catch (error) {
     console.error("[jobs] Create failed:", error.message);
@@ -787,6 +789,7 @@ app.post("/api/jobs/:jobId/responses", requireAuth, async (req, res) => {
       [job.id, user.id, message],
     );
     await client.query("COMMIT");
+    sendUserEvent(job.dispatcher_id, { type: "response:created", response: result.rows[0], jobId: job.id });
     return res.status(201).json({ response: result.rows[0] });
   } catch (error) {
     await client.query("ROLLBACK").catch(() => {});
@@ -834,6 +837,8 @@ app.post("/api/responses/:responseId/accept", requireAuth, async (req, res) => {
       await client.query("UPDATE jobs SET status = 'active', updated_at = now() WHERE id = $1 AND status = 'open'", [response.job_id]);
     }
     await client.query("COMMIT");
+    sendUserEvent(response.worker_id, { type: "response:updated", responseId: response.id, jobId: response.job_id, status: "accepted", workerStatus: response.worker_status || "ready" });
+    sendUserEvent(response.dispatcher_id, { type: "job:updated", jobId: response.job_id, status: filled ? "filled" : "active" });
     return res.json({ accepted_count: acceptedNow, workers_needed: needed, filled, auto_rejected: autoRejected });
   } catch (error) {
     await client.query("ROLLBACK").catch(() => {});
@@ -933,6 +938,7 @@ async function start() {
       }
       realtime.handleUpgrade(request, socket, head, (ws) => {
         ws.userId = authUser.id;
+        ws.userRole = authUser.role;
         ws.profileName = authUser.full_name || "Пользователь";
         socketConversations.set(ws, new Set());
         if (!userSockets.has(ws.userId)) userSockets.set(ws.userId, new Set());
