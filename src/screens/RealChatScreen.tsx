@@ -221,34 +221,34 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
 
   useEffect(() => {
     if (!user || !conversationId || isDemo) return;
+    let active = true;
     const fetchOther = async () => {
-      const { data: parts } = await supabase
-        .from("conversation_participants").select("user_id")
-        .eq("conversation_id", conversationId).neq("user_id", user.id).limit(1);
-      const otherId = parts?.[0]?.user_id;
-      if (otherId) {
-        setOtherUserId(otherId);
-        const { data: profileRaw } = await supabase.from("profiles_public" as any).select("full_name, last_seen_at, avatar_url").eq("user_id", otherId).single();
-        const profile = profileRaw as any;
-        if (profile) {
-          setOtherLastSeen(profile.last_seen_at);
-          if (profile.full_name) setResolvedTitle(profile.full_name);
-          setOtherAvatarUrl(profile.avatar_url || null);
+      try {
+        const response = await fetch(`/api/conversations/${conversationId}`, { credentials: "same-origin" });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload?.error?.message || "Не удалось загрузить собеседника");
+        if (!active) return;
+        const other = payload.participants?.[0];
+        if (other) {
+          setOtherUserId(other.id);
+          setOtherLastSeen(other.last_seen_at || null);
+          if (other.full_name) setResolvedTitle(other.full_name);
+          setOtherAvatarUrl(other.avatar_url || null);
         }
+        if (payload.conversation?.job_id) {
+          const jobResponse = await fetch(`/api/jobs/${payload.conversation.job_id}`, { credentials: "same-origin" });
+          if (jobResponse.ok) {
+            const jobPayload = await jobResponse.json();
+            if (active && jobPayload.job) setLinkedJob(jobPayload.job);
+          }
+        }
+      } catch (error) {
+        console.error("[chat] Conversation detail request failed:", error);
       }
     };
     fetchOther();
-
-    const channel = supabase
-      .channel(`presence-${conversationId}`)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles" }, (payload) => {
-        const updated = payload.new as any;
-        if (updated.user_id === otherUserId) setOtherLastSeen(updated.last_seen_at);
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [user, conversationId, otherUserId]);
+    return () => { active = false; };
+  }, [user, conversationId, isDemo]);
 
   const presenceInfo = formatLastSeen(otherLastSeen);
 
@@ -343,70 +343,69 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       return;
     }
 
-    const [convRes, msgsRes] = await Promise.all([
-      supabase.from("conversations").select("job_id").eq("id", conversationId).single(),
-      supabase.from("messages").select("*").eq("conversation_id", conversationId).order("created_at", { ascending: true }),
-    ]);
-
-    if (convRes.data?.job_id) {
-      const { data: jobData } = await supabase.from("jobs").select("*").eq("id", convRes.data.job_id).single();
-      if (jobData) setLinkedJob(jobData);
-    }
-
-    if (msgsRes.data) {
-      setMessages(msgsRes.data as Message[]);
-      const senderIds = [...new Set(msgsRes.data.map((m) => m.sender_id))];
-      const unknownIds = senderIds.filter((id) => !senderNamesRef.current[id]);
-      if (unknownIds.length > 0) {
-        const { data: profilesRaw } = await supabase.from("profiles_public" as any).select("user_id, full_name").in("user_id", unknownIds);
-        const profiles = profilesRaw as any[] | null;
-        if (profiles) {
-          setSenderNames((prev) => {
-            const next = { ...prev };
-            profiles.forEach((p) => (next[p.user_id] = p.full_name));
-            return next;
-          });
-        }
-      }
+    try {
+      const response = await fetch(`/api/conversations/${conversationId}/messages`, { credentials: "same-origin" });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.error?.message || "Не удалось загрузить сообщения");
+      const loadedMessages = Array.isArray(payload.messages) ? payload.messages as Message[] : [];
+      setMessages(loadedMessages);
+      setSenderNames((prev) => {
+        const next = { ...prev };
+        loadedMessages.forEach((message: Message & { sender_name?: string }) => {
+          if (message.sender_name) next[message.sender_id] = message.sender_name;
+        });
+        if (user?.id && user.user_metadata?.full_name) next[user.id] = String(user.user_metadata.full_name);
+        return next;
+      });
+    } catch (error) {
+      console.error("[chat] Message list request failed:", error);
+      toast.error(error instanceof Error ? error.message : "Ошибка загрузки сообщений");
     }
     setLoading(false);
+    setTimeout(() => scrollToBottom(false), 50);
+  }, [conversationId, isDemo, scrollToBottom, user?.id]);    setLoading(false);
     setTimeout(() => scrollToBottom(false), 50);
   }, [conversationId, isDemo, scrollToBottom, user?.id]);
 
   const markAsRead = useCallback(async () => {
-    if (!user || !conversationId) return;
-    await supabase.from("conversation_participants").update({ last_read_at: new Date().toISOString() })
-      .eq("conversation_id", conversationId).eq("user_id", user.id);
-    onMessagesRead?.();
-  }, [user, conversationId, onMessagesRead]);
+    if (!user || !conversationId || isDemo) return;
+    try {
+      await fetch(`/api/conversations/${conversationId}/read`, {
+        method: "POST",
+        credentials: "same-origin",
+      });
+      onMessagesRead?.();
+    } catch (error) {
+      console.error("[chat] Read receipt failed:", error);
+    }
+  }, [user, conversationId, onMessagesRead, isDemo]);
 
   useEffect(() => {
     fetchMessages();
     markAsRead();
+    if (isDemo) return;
+    const interval = window.setInterval(async () => {
+      const wasNearBottom = isNearBottom();
+      try {
+        const response = await fetch(`/api/conversations/${conversationId}/messages`, { credentials: "same-origin" });
+        if (!response.ok) return;
+        const payload = await response.json();
+        const incoming = Array.isArray(payload.messages) ? payload.messages as Message[] : [];
+        setMessages((previous) => {
+          const known = new Set(previous.map((message) => message.id));
+          const additions = incoming.filter((message) => !known.has(message.id));
+          return additions.length ? [...previous, ...additions] : previous;
+        });
+        if (incoming.some((message) => message.sender_id !== user?.id)) markAsRead();
+        if (wasNearBottom) setTimeout(() => scrollToBottom(), 50);
+      } catch (error) {
+        console.error("[chat] Message polling failed:", error);
+      }
+    }, 4000);
+    return () => window.clearInterval(interval);
+  }, [conversationId, fetchMessages, markAsRead, user?.id, isNearBottom, scrollToBottom, isDemo]);
 
-    const channel = supabase
-      .channel(`messages:${conversationId}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
-        async (payload) => {
-          const newMsg = payload.new as Message;
-          if (newMsg.sender_id === user?.id) return;
-          const wasNearBottom = isNearBottom();
-          appendMessage(newMsg);
-          if (!senderNamesRef.current[newMsg.sender_id]) {
-            const { data: profileRaw } = await supabase.from("profiles_public" as any).select("user_id, full_name").eq("user_id", newMsg.sender_id).single();
-            const profile = profileRaw as any;
-            if (profile) setSenderNames((prev) => ({ ...prev, [profile.user_id]: profile.full_name }));
-          }
-          if (newMsg.sender_id !== user?.id) markAsRead();
-          if (wasNearBottom) setTimeout(() => scrollToBottom(), 50);
-        }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, [conversationId, fetchMessages, markAsRead, user?.id, isNearBottom, scrollToBottom, appendMessage]);
-
-  useEffect(() => { if (isNearBottom()) scrollToBottom(); }, [messages, scrollToBottom, isNearBottom]);
+    useEffect(() => { if (isNearBottom()) scrollToBottom(); }, [messages, scrollToBottom, isNearBottom]);
 
   useEffect(() => {
     return () => {
@@ -482,28 +481,20 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     setSending(true);
 
     try {
-      const { data: insertedMessage, error } = await supabase
-        .from("messages")
-        .insert({
-          conversation_id: conversationId,
-          sender_id: user.id,
-          text: msgText,
-          message_type: "text",
-          reply_to_id: replyId,
-        })
-        .select("*")
-        .single();
-
-      if (error || !insertedMessage) {
-        throw error || new Error("insert_failed");
-      }
+      const response = await fetch(`/api/conversations/${conversationId}/messages`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: msgText, replyToId: replyId, messageType: "text" }),
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.message) throw new Error(payload?.error?.message || "insert_failed");
+      const insertedMessage = payload.message;
 
       replaceOptimisticMessage(optimisticId, insertedMessage as Message);
       scrollToBottom(false);
 
-      supabase.functions.invoke("notify-email", {
-        body: { type: "new_message", conversation_id: conversationId, sender_id: user.id, text: msgText },
-      }).catch(() => {});
+
     } catch {
       replaceOptimisticMessage(optimisticId);
       setText(msgText);
