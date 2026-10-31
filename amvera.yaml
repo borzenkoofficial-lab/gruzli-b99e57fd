@@ -1,9 +1,8 @@
 meta:
-  environment: static_web
-  toolchain:
-    name: bun
-    version: "1.2"
+  environment: docker
+  toolchain: docker
 build:
-  additionalCommands: null
-  artifacts:
-    "dist/*": /
+  dockerfile: Dockerfile
+run:
+  containerPort: 3000
+  persistenceMount: /data
