@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { promisify } from "node:util";
 import path from "node:path";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, writeFile, unlink } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import helmet from "helmet";
@@ -311,6 +311,16 @@ app.post("/api/profile/presence", requireAuth, async (req, res) => {
 });
 
 
+
+function uploadSingleChatFile(req, res, next) {
+  chatUpload.single("file")(req, res, (error) => {
+    if (!error) return next();
+    if (error.code === "LIMIT_FILE_SIZE") return sendError(res, 413, "FILE_TOO_LARGE", "Файл превышает лимит 25 МБ.");
+    if (error.message === "UNSUPPORTED_FILE_TYPE") return sendError(res, 415, "UNSUPPORTED_FILE_TYPE", "Этот формат файла нельзя отправить в чат.");
+    return sendError(res, 400, "INVALID_UPLOAD", "Не удалось принять файл.");
+  });
+}
+
 async function requireConversationMember(conversationId, userId) {
   const result = await pool.query(
     "SELECT c.id, c.title, c.is_group, c.job_id, cp.last_read_at FROM conversations c " +
@@ -467,6 +477,96 @@ app.get("/api/conversations/:conversationId", requireAuth, async (req, res) => {
   } catch (error) {
     console.error("[chat] Conversation detail failed:", error.message);
     return sendError(res, 500, "CONVERSATION_LOOKUP_FAILED", "Не удалось загрузить диалог.");
+  }
+});
+
+
+app.post("/api/conversations/:conversationId/files", requireAuth, uploadSingleChatFile, async (req, res) => {
+  const file = req.file;
+  if (!file) return sendError(res, 400, "FILE_REQUIRED", "Выберите файл для отправки.");
+  try {
+    const conversation = await requireConversationMember(req.params.conversationId, req.authUser.id);
+    if (!conversation) return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
+    const blocked = await pool.query(
+      "SELECT 1 FROM blocked_users b JOIN conversation_participants cp ON cp.conversation_id = $1 AND cp.user_id = b.blocked_id WHERE b.blocker_id = $2 LIMIT 1",
+      [conversation.id, req.authUser.id],
+    );
+    if (blocked.rowCount) return sendError(res, 403, "USER_BLOCKED", "Нельзя отправить файл этому пользователю.");
+
+    const extensionByMime = {
+      "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif",
+      "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov",
+      "audio/webm": "webm", "audio/ogg": "ogg", "audio/mpeg": "mp3", "audio/wav": "wav",
+      "audio/mp4": "m4a", "audio/aac": "aac", "application/pdf": "pdf", "application/msword": "doc",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
+    };
+    const extension = extensionByMime[file.mimetype];
+    if (!extension) return sendError(res, 415, "UNSUPPORTED_FILE_TYPE", "Этот формат файла нельзя отправить в чат.");
+
+    await mkdir(uploadDir, { recursive: true });
+    const fileId = crypto.randomUUID();
+    const storageKey = fileId + "." + extension;
+    const diskPath = path.join(uploadDir, storageKey);
+    await writeFile(diskPath, file.buffer, { flag: "wx", mode: 0o600 });
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        "INSERT INTO conversation_files (id, conversation_id, uploaded_by, storage_key, original_name, mime_type, byte_size) VALUES ($1,$2,$3,$4,$5,$6,$7)",
+        [fileId, conversation.id, req.authUser.id, storageKey, path.basename(file.originalname).slice(0, 240), file.mimetype, file.size],
+      );
+      const messageType = file.mimetype.startsWith("image/") ? "image" :
+        file.mimetype.startsWith("video/") ? "video" :
+        file.mimetype.startsWith("audio/") ? "voice" : "file";
+      const messageText = messageType === "voice"
+        ? "voice:" + Math.max(0, Math.min(3600, Number(req.body?.duration) || 0))
+        : path.basename(file.originalname).slice(0, 240);
+      const inserted = await client.query(
+        "INSERT INTO messages (conversation_id, sender_id, text, media_url, message_type) VALUES ($1,$2,$3,$4,$5) RETURNING id, conversation_id, sender_id, text, media_url, message_type, reply_to_id, created_at",
+        [conversation.id, req.authUser.id, messageText, "/api/files/" + fileId, messageType],
+      );
+      await client.query("UPDATE conversation_participants SET last_read_at = now() WHERE conversation_id = $1 AND user_id = $2", [conversation.id, req.authUser.id]);
+      await client.query("COMMIT");
+      return res.status(201).json({ message: { ...inserted.rows[0], sender_name: req.authUser.full_name }, file: { id: fileId, name: path.basename(file.originalname), size: file.size, mimeType: file.mimetype } });
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      await unlink(diskPath).catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error("[storage] Chat upload failed:", error.message);
+    return sendError(res, 500, "FILE_UPLOAD_FAILED", "Не удалось сохранить файл.");
+  }
+});
+
+app.get("/api/files/:fileId", requireAuth, async (req, res) => {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(req.params.fileId)) {
+    return sendError(res, 404, "FILE_NOT_FOUND", "Файл не найден.");
+  }
+  try {
+    const result = await pool.query(
+      "SELECT f.storage_key, f.original_name, f.mime_type FROM conversation_files f " +
+      "JOIN conversation_participants cp ON cp.conversation_id = f.conversation_id AND cp.user_id = $2 " +
+      "WHERE f.id = $1 LIMIT 1",
+      [req.params.fileId, req.authUser.id],
+    );
+    if (!result.rowCount) return sendError(res, 404, "FILE_NOT_FOUND", "Файл не найден.");
+    const file = result.rows[0];
+    res.setHeader("Content-Type", file.mime_type);
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Cache-Control", "private, no-store");
+    const disposition = file.mime_type.startsWith("image/") || file.mime_type.startsWith("video/") || file.mime_type.startsWith("audio/") ? "inline" : "attachment";
+    res.setHeader("Content-Disposition", disposition + "; filename*=UTF-8''" + encodeURIComponent(file.original_name));
+    return res.sendFile(path.join(uploadDir, file.storage_key), (error) => {
+      if (error && !res.headersSent) sendError(res, 404, "FILE_NOT_FOUND", "Файл не найден в хранилище.");
+    });
+  } catch (error) {
+    console.error("[storage] Chat download failed:", error.message);
+    return sendError(res, 500, "FILE_DOWNLOAD_FAILED", "Не удалось получить файл.");
   }
 });
 
