@@ -179,7 +179,20 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
     fetchConversations();
     if (isDemo) return;
     const interval = window.setInterval(fetchConversations, 10000);
-    return () => window.clearInterval(interval);
+    const handlePresence = (event: Event) => {
+      const detail = (event as CustomEvent<{ userId: string; lastSeenAt: string }>).detail;
+      if (!detail?.userId || !detail.lastSeenAt) return;
+      setConversations((current) => current.map((conversation) =>
+        conversation.otherUserId === detail.userId
+          ? { ...conversation, otherLastSeen: detail.lastSeenAt }
+          : conversation
+      ));
+    };
+    window.addEventListener("gruzli:presence", handlePresence);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("gruzli:presence", handlePresence);
+    };
   }, [fetchConversations, isDemo]);
 
   const filtered = conversations.filter((c) =>
