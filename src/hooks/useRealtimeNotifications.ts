@@ -198,6 +198,9 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
           handleNewJob({ new: payload.job });
         } else if (payload.type === "message:new" && payload.message) {
           handleNewMessage({ new: { ...payload.message, conversation_id: payload.conversationId } });
+          window.dispatchEvent(new CustomEvent("gruzli:message", { detail: payload }));
+        } else if (payload.type === "presence:update" && payload.userId) {
+          window.dispatchEvent(new CustomEvent("gruzli:presence", { detail: payload }));
         } else if (payload.type === "response:updated") {
           handleResponseUpdate({
             new: { worker_id: userIdRef.current, status: payload.status, worker_status: payload.workerStatus },
