@@ -37,6 +37,15 @@ function sendError(res, status, code, message) {
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
+function generateRecoveryCode() {
+  return crypto.randomBytes(5).toString("hex").toUpperCase();
+}
+function normalizeIdentifier(value) {
+  const raw = String(value || "").trim();
+  if (/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(raw)) return normalizeEmail(raw);
+  const digits = raw.replace(/\\D/g, "");
+  return digits ? digits + "@phone.gruzli.app" : "";
+}
 function hashToken(token) {
   return crypto.createHash("sha256").update(token).digest("hex");
 }
@@ -147,10 +156,12 @@ app.post("/api/auth/register", authLimiter, async (req, res) => {
   const client = await pool.connect();
   try {
     const passwordHash = await hashPassword(password);
+    const recoveryCode = generateRecoveryCode();
+    const recoveryCodeHash = await hashPassword(recoveryCode);
     await client.query("BEGIN");
     const inserted = await client.query(
-      "INSERT INTO app_users (email, phone, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id, email, phone, role",
-      [email, phone, passwordHash, role],
+      "INSERT INTO app_users (email, phone, password_hash, recovery_code_hash, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, phone, role",
+      [email, phone, passwordHash, recoveryCodeHash, role],
     );
     const user = inserted.rows[0];
     await client.query("INSERT INTO profiles (user_id, full_name, birth_date) VALUES ($1, $2, $3)", [user.id, fullName, birthDate]);
@@ -165,6 +176,7 @@ app.post("/api/auth/register", authLimiter, async (req, res) => {
       user: { id: user.id, email: user.email, phone: user.phone, user_metadata: { role: user.role, full_name: fullName } },
       role: user.role,
       profile: { user_id: user.id, full_name: fullName, phone: user.phone, role: user.role, birth_date: birthDate },
+      recoveryCode,
     });
   } catch (error) {
     await client.query("ROLLBACK").catch(() => {});
@@ -200,6 +212,41 @@ app.post("/api/auth/login", authLimiter, async (req, res) => {
   } catch (error) {
     console.error("[auth] Login failed:", error.message);
     return sendError(res, 500, "LOGIN_FAILED", "Не удалось выполнить вход. Попробуйте позже.");
+  }
+});
+
+
+app.post("/api/auth/recovery", authLimiter, async (req, res) => {
+  if (!pool || !databaseReady) return sendError(res, 503, "DATABASE_UNAVAILABLE", "Восстановление пароля временно недоступно.");
+  const identifier = normalizeIdentifier(req.body?.identifier);
+  const recoveryCode = String(req.body?.recoveryCode || "").trim().toUpperCase();
+  const newPassword = String(req.body?.newPassword || "");
+  if (!identifier || !/^[A-F0-9]{10}$/.test(recoveryCode) || newPassword.length < 8 || newPassword.length > 128) {
+    return sendError(res, 400, "INVALID_RECOVERY_DATA", "Проверьте телефон/email, код восстановления и пароль (не менее 8 символов).");
+  }
+  try {
+    const result = await pool.query(
+      "SELECT id, recovery_code_hash FROM app_users WHERE (email = $1 OR phone = $2) AND is_active = true LIMIT 1",
+      [identifier, String(req.body?.identifier || "").trim() || null],
+    );
+    const row = result.rows[0];
+    if (!row?.recovery_code_hash || !(await verifyPassword(recoveryCode, row.recovery_code_hash))) {
+      return sendError(res, 400, "INVALID_RECOVERY_CODE", "Неверный телефон/email или код восстановления.");
+    }
+    const nextCode = generateRecoveryCode();
+    const [passwordHash, recoveryCodeHash] = await Promise.all([
+      hashPassword(newPassword),
+      hashPassword(nextCode),
+    ]);
+    await pool.query(
+      "UPDATE app_users SET password_hash = $1, recovery_code_hash = $2, updated_at = now() WHERE id = $3",
+      [passwordHash, recoveryCodeHash, row.id],
+    );
+    await pool.query("DELETE FROM user_sessions WHERE user_id = $1", [row.id]);
+    return res.json({ success: true, newRecoveryCode: nextCode });
+  } catch (error) {
+    console.error("[auth] Password recovery failed:", error.message);
+    return sendError(res, 500, "RECOVERY_FAILED", "Не удалось восстановить пароль. Попробуйте позже.");
   }
 });
 

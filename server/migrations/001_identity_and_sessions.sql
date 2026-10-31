@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS app_users (
   email text NOT NULL,
   phone text,
   password_hash text NOT NULL,
+  recovery_code_hash text,
   role text NOT NULL CHECK (role IN ('client', 'worker', 'dispatcher', 'admin')),
   is_active boolean NOT NULL DEFAULT true,
   email_verified_at timestamptz,

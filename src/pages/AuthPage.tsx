@@ -1,6 +1,5 @@
 import { useState, forwardRef, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
 import { User, Users, Building2, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Phone, Lock, ShieldCheck, Fingerprint, X, Calendar, Sparkles, Wallet, ChevronRight } from "lucide-react";
 import { LegalCheckboxes } from "@/components/LegalDocuments";
 import { ForgotPasswordModal } from "@/components/ForgotPasswordModal";
@@ -132,86 +131,51 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const input = phone.trim();
+      if (!input) throw new Error("Укажите email или номер телефона");
 
-      if (!input) {
-        toast.error("Укажите email или номер телефона");
+      let email: string;
+      let phoneValue: string | null = null;
+      if (isEmail(input)) {
+        email = input.trim().toLowerCase();
+      } else {
+        const digits = input.replace(/\\D/g, "");
+        if (digits.length < 10) throw new Error("Укажите корректный номер телефона или email");
+        email = phoneToEmail(input);
+        phoneValue = input;
+      }
+
+      if (mode === "register") {
+        if (!allLegalAccepted) throw new Error("Примите все юридические документы");
+        if (fullName.trim().length < 2) throw new Error("Укажите ФИО");
+        const response = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ email, phone: phoneValue, password, fullName: fullName.trim(), role, birthDate: birthDate || null }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload?.error?.message || "Не удалось создать аккаунт");
+        setShowRecoveryFor(payload.recoveryCode || null);
+        window.dispatchEvent(new Event("gruzli-auth-changed"));
+        toast.success("Регистрация успешна!");
         setLoading(false);
         return;
       }
 
-      // Determine auth email: if input looks like email use directly, otherwise convert phone
-      let email: string;
-      if (isEmail(input)) {
-        email = input;
-      } else {
-        const cleanPhone = input.replace(/\D/g, "");
-        if (!cleanPhone || cleanPhone.length < 10) {
-          toast.error("Укажите корректный номер телефона или email");
-          setLoading(false);
-          return;
-        }
-        email = phoneToEmail(input);
-      }
-
-      if (mode === "register") {
-        if (!allLegalAccepted) {
-          toast.error("Примите все юридические документы");
-          setLoading(false);
-          return;
-        }
-        if (!fullName.trim()) {
-          toast.error("Укажите ФИО");
-          setLoading(false);
-          return;
-        }
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { full_name: fullName, role, phone: isEmail(input) ? "" : input },
-          },
-        });
-        if (error) throw error;
-
-        // Detect fake signup (user already exists) — Supabase returns user with empty identities
-        if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
-          toast.error("Аккаунт с таким номером или email уже существует. Войдите.");
-          setLoading(false);
-          return;
-        }
-
-        if (data.user) {
-          await supabase
-            .from("profiles")
-            .update({
-              phone: isEmail(input) ? "" : input,
-              ...(birthDate ? { birth_date: birthDate } : {}),
-            })
-            .eq("user_id", data.user.id);
-
-          // Show recovery code banner before entering the app.
-          // The user is signed in, so RLS allows reading their own recovery_code.
-          setShowRecoveryFor(data.user.id);
-          setLoading(false);
-          return;
-        }
-
-        toast.success("Регистрация успешна!");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast.success("Добро пожаловать!");
-      }
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ email, password }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error?.message || "Неверный email/телефон или пароль");
+      window.dispatchEvent(new Event("gruzli-auth-changed"));
+      toast.success("Добро пожаловать!");
     } catch (err: any) {
-      const msg = err.message || "Ошибка авторизации";
-      if (msg.includes("Invalid login")) {
-        toast.error("Неверный email/телефон или пароль");
-      } else {
-        toast.error(msg);
-      }
+      toast.error(err.message || "Ошибка авторизации");
     } finally {
       setLoading(false);
     }
@@ -616,7 +580,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
         <SecurityModal open={securityOpen} onClose={() => setSecurityOpen(false)} />
         <ForgotPasswordModal open={forgotOpen} onClose={() => setForgotOpen(false)} />
         {showRecoveryFor && (
-          <RecoveryCodeBanner userId={showRecoveryFor} onClose={() => setShowRecoveryFor(null)} />
+          <RecoveryCodeBanner code={showRecoveryFor} onClose={() => setShowRecoveryFor(null)} />
         )}
       </form>
     </div>
