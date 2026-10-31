@@ -359,7 +359,7 @@ app.get("/api/jobs/:jobId", requireAuth, async (req, res) => {
 app.get("/api/jobs/:jobId/responses", requireAuth, async (req, res) => {
   const user = req.authUser;
   try {
-    const job = await pool.query("SELECT id, dispatcher_id, status FROM jobs WHERE id = $1", [req.params.jobId]);
+    const job = await pool.query("SELECT * FROM jobs WHERE id = $1", [req.params.jobId]);
     if (!job.rowCount) return sendError(res, 404, "JOB_NOT_FOUND", "Заявка не найдена.");
     if (user.role !== "admin" && (user.role !== "dispatcher" || job.rows[0].dispatcher_id !== user.id)) {
       return sendError(res, 403, "FORBIDDEN", "Нет доступа к откликам этой заявки.");

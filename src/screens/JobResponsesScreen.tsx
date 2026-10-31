@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, Check, X, MessageCircle, Star, User, MapPin, Clock, Navigation, AlertTriangle, CheckCircle2, Crown, Search, Lock, Sparkles, Users, Phone } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 
@@ -39,60 +39,59 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
   const fetchResponses = async () => {
-    const { data } = await supabase
-      .from("job_responses")
-      .select("*")
-      .eq("job_id", job.id)
-      .order("created_at", { ascending: false });
-
-    if (data) {
-      const workerIds = [...new Set(data.map((r) => r.worker_id))];
-      const { data: profiles } = workerIds.length > 0
-        ? await supabase.from("profiles_public" as any).select("*").in("user_id", workerIds)
-        : { data: [] };
-      const pmap: Record<string, any> = {};
-      ((profiles as any[]) || []).forEach((p) => { pmap[p.user_id] = p; });
-      setResponses(data.map((r) => ({ ...r, profile: pmap[r.worker_id] || null })) as ResponseWithProfile[]);
+    try {
+      const response = await fetch("/api/jobs/" + job.id + "/responses", { credentials: "same-origin" });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error?.message || "Не удалось загрузить отклики");
+      const rows = payload.responses || [];
+      setResponses(rows.map((row: any) => ({
+        ...row,
+        profile: {
+          user_id: row.worker_id,
+          full_name: row.full_name,
+          avatar_url: row.avatar_url,
+          rating: row.rating,
+          completed_orders: row.completed_orders,
+          is_premium: row.is_premium,
+          verified: row.verified,
+          skills: row.skills,
+        },
+      })) as ResponseWithProfile[]);
+      if (payload.job) setJob((current) => ({ ...current, ...payload.job }));
+    } catch (error) {
+      console.error("[Gruzli Responses] API request failed:", error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const refreshJob = async () => {
-    const { data } = await supabase.from("jobs").select("*").eq("id", job.id).single();
-    if (data) setJob(data);
+    try {
+      const response = await fetch("/api/jobs/" + job.id, { credentials: "same-origin" });
+      const payload = await response.json().catch(() => ({}));
+      if (response.ok && payload.job) setJob(payload.job);
+    } catch (error) {
+      console.error("[Gruzli Responses] Job refresh failed:", error);
+    }
   };
 
   useEffect(() => {
-    fetchResponses();
-
-    const channel = supabase
-      .channel(`job-responses-${job.id}`)
-      .on("postgres_changes",
-        { event: "*", schema: "public", table: "job_responses", filter: `job_id=eq.${job.id}` },
-        () => { fetchResponses(); }
-      )
-      .on("postgres_changes",
-        { event: "UPDATE", schema: "public", table: "jobs", filter: `id=eq.${job.id}` },
-        (p) => { setJob(p.new as any); }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
+    void fetchResponses();
+    const interval = window.setInterval(() => { void fetchResponses(); }, 8000);
+    return () => window.clearInterval(interval);
   }, [job.id]);
+
 
   const acceptResponse = async (responseId: string) => {
     setAcceptingId(responseId);
-    const { data, error } = await supabase.rpc("accept_job_response", { _response_id: responseId });
+    const response = await fetch("/api/responses/" + responseId + "/accept", { method: "POST", credentials: "same-origin" });
+    const payload = await response.json().catch(() => ({}));
     setAcceptingId(null);
-    if (error) {
-      if (error.code === "P0002") {
-        toast.error("Лимит грузчиков уже достигнут");
-      } else {
-        toast.error("Не удалось принять отклик: " + error.message);
-      }
+    if (!response.ok) {
+      toast.error(payload?.error?.message || "Не удалось принять отклик");
       return;
     }
-    const result = data as any;
+    const result = payload;
     const accepted = responses.find((r) => r.id === responseId);
 
     // Push notifications now handled by push4site (server-side via webhooks)
@@ -110,10 +109,9 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
   };
 
   const rejectResponse = async (responseId: string) => {
-    const { error } = await supabase.rpc("dispatcher_reject_job_response", {
-      _response_id: responseId,
-    });
-    if (error) { toast.error(error.code === "P0001" ? "Этот отклик уже нельзя отклонить" : "Не удалось отклонить"); return; }
+    const response = await fetch("/api/responses/" + responseId + "/reject", { method: "POST", credentials: "same-origin" });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) { toast.error(payload?.error?.message || "Не удалось отклонить"); return; }
     setResponses((prev) => prev.map((x) => (x.id === responseId ? { ...x, status: "rejected" } : x)));
     toast.success("Отклик отклонён");
 

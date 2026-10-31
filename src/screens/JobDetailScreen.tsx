@@ -6,7 +6,6 @@ import {
   CalendarDays, Navigation, CircleDollarSign
 } from "lucide-react";
 import { useRespondToJob } from "@/hooks/useRespondToJob";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -31,30 +30,25 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
   const [safetyDismissed, setSafetyDismissed] = useState(() => localStorage.getItem("job_safety_tip_dismissed") === "1");
   const [reportOpen, setReportOpen] = useState(false);
   const [withdrawing, setWithdrawing] = useState(false);
-  const [dispatcherName, setDispatcherName] = useState("Диспетчер");
+  const [dispatcherName, setDispatcherName] = useState((job as any).dispatcher_name || "Диспетчер");
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!job.dispatcher_id) return;
-      const { data } = await supabase.from("profiles_public" as any).select("full_name").eq("user_id", job.dispatcher_id).single();
-      if (!cancelled && data) setDispatcherName((data as any).full_name || "Диспетчер");
-    })();
-    return () => { cancelled = true; };
-  }, [job.dispatcher_id]);
-
-  useEffect(() => {
-    if (!user) return;
-    let cancelled = false;
-    (async () => {
-      const { data } = await supabase.from("job_responses").select("id, status").eq("job_id", job.id).eq("worker_id", user.id).maybeSingle();
-      if (!cancelled && data) {
-        setResponseId(data.id);
-        setResponseStatus(data.status);
+      try {
+        const response = await fetch("/api/jobs/" + job.id + "/my-response", { credentials: "same-origin" });
+        const payload = await response.json().catch(() => ({}));
+        if (!cancelled && response.ok && payload.response) {
+          setResponseId(payload.response.id);
+          setResponseStatus(payload.response.status);
+        }
+      } catch (error) {
+        console.error("[Gruzli Job] Response lookup failed:", error);
       }
     })();
     return () => { cancelled = true; };
   }, [user, job.id]);
+
 
   const totalPay = job.hourly_rate * (Number(job.duration_hours) || 4);
   const hasPending = responseStatus === "pending";
@@ -73,8 +67,9 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
     setResponding(true);
     const success = await respondAndOpenChat(job);
     if (success) {
-      const { data } = await supabase.from("job_responses").select("id, status").eq("job_id", job.id).eq("worker_id", user!.id).maybeSingle();
-      if (data) { setResponseId(data.id); setResponseStatus(data.status); }
+      const response = await fetch("/api/jobs/" + job.id + "/my-response", { credentials: "same-origin" });
+      const payload = await response.json().catch(() => ({}));
+      if (response.ok && payload.response) { setResponseId(payload.response.id); setResponseStatus(payload.response.status); }
     }
     setResponding(false);
   };
@@ -86,10 +81,11 @@ const JobDetailScreen = ({ job, onBack, onOpenChat, onOpenProfile }: JobDetailSc
       return;
     }
     setWithdrawing(true);
-    const { error } = await supabase.rpc("worker_withdraw_response", { _response_id: responseId });
+    const response = await fetch("/api/responses/" + responseId + "/withdraw", { method: "POST", credentials: "same-origin" });
+    const payload = await response.json().catch(() => ({}));
     setWithdrawing(false);
-    if (error) {
-      toast.error(error.code === "P0001" ? "Этот отклик уже нельзя отозвать" : "Не удалось отозвать отклик");
+    if (!response.ok) {
+      toast.error(payload?.error?.message || "Не удалось отозвать отклик");
       return;
     }
     setResponseId(null);

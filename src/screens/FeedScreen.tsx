@@ -55,74 +55,30 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
 
 
   const fetchJobs = async () => {
-    // Keep the already-rendered feed visible during pull-to-refresh/realtime refresh.
-    // The initial loading skeleton is driven by the initial useState(true) only.
-    const { data, error } = await supabase
-      .from("jobs")
-      .select("*")
-      .eq("status", "active")
-      .order("created_at", { ascending: false });
-
-    // On transient network errors preserve the current feed instead of flashing empty.
-    if (error) {
+    try {
+      const response = await fetch("/api/jobs", { credentials: "same-origin" });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(payload?.error?.message || "Не удалось загрузить заявки");
+      const demoMode = localStorage.getItem("gruzli_demo_worker") === "1";
+      const feedJobs = payload.jobs || [];
+      setJobs(feedJobs.length > 0 ? feedJobs : (demoMode ? DEMO_FEED_JOBS : []));
+      const names: Record<string, string> = {};
+      const counts: Record<string, number> = {};
+      const responded = new Set<string>();
+      feedJobs.forEach((job: any) => {
+        if (job.dispatcher_id && job.dispatcher_name) names[job.dispatcher_id] = job.dispatcher_name;
+        counts[job.id] = Number(job.response_count || 0);
+        if (job.my_response_status) responded.add(job.id);
+      });
+      if (demoMode) Object.assign(names, DEMO_DISPATCHER_NAMES);
+      setDispatcherNames(names);
+      setWorkersFound({ ...counts, ...(demoMode ? DEMO_RESPONSE_COUNTS : {}) });
+      setRespondedJobs(responded);
+    } catch (error) {
+      console.error("[Gruzli Feed] API request failed:", error);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const demoMode = localStorage.getItem("gruzli_demo_worker") === "1";
-    const feedJobs = data && data.length > 0 ? data : (demoMode ? DEMO_FEED_JOBS : []);
-    setJobs(feedJobs);
-    if (feedJobs.length === 0) {
-      setDispatcherNames({});
-      setWorkersFound({});
-    }
-    if (feedJobs.length > 0) {
-      const dispatcherIds = [...new Set(feedJobs.map((j) => j.dispatcher_id).filter((id): id is string => Boolean(id)))];
-      if (dispatcherIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles_public" as any)
-          .select("user_id, full_name")
-          .in("user_id", dispatcherIds);
-        if (profiles) {
-          const map: Record<string, string> = {};
-          (profiles as any[]).forEach((p) => { map[p.user_id] = p.full_name; });
-          if (demoMode) {
-            Object.assign(map, DEMO_DISPATCHER_NAMES);
-          }
-          setDispatcherNames(map);
-        }
-      }
-
-      // Live staffing: how many workers have already responded to each order.
-      const jobIds = feedJobs.map((j) => j.id);
-      if (jobIds.length > 0) {
-        const { data: liveResponses } = await supabase
-          .from("job_responses")
-          .select("job_id")
-          .in("job_id", jobIds);
-
-        const counts: Record<string, number> = {};
-        (liveResponses || []).forEach((r) => {
-          counts[r.job_id] = (counts[r.job_id] || 0) + 1;
-        });
-
-        if (demoMode) {
-          Object.assign(counts, DEMO_RESPONSE_COUNTS);
-        }
-        setWorkersFound(counts);
-      }
-    }
-
-    if (user) {
-      const { data: responses } = await supabase
-        .from("job_responses")
-        .select("job_id")
-        .eq("worker_id", user.id);
-      if (responses) {
-        setRespondedJobs(new Set(responses.map((r) => r.job_id)));
-      }
-    }
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -132,55 +88,16 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
   }, [onRefreshRef]);
 
   useEffect(() => {
-    fetchJobs();
-
-    const handleNewJob = () => fetchJobs();
+    void fetchJobs();
+    const handleNewJob = () => { void fetchJobs(); };
     window.addEventListener("navigate-to-feed", handleNewJob);
-
-    const channel = supabase
-      .channel('feed-job-updates')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'jobs' },
-        (payload) => {
-          const newJob = payload.new as Tables<"jobs">;
-          setJobs((prev) => {
-            if (prev.some(j => j.id === newJob.id)) return prev;
-            return [newJob, ...prev];
-          });
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'job_responses' },
-        (payload) => {
-          const response = payload.new as { job_id?: string };
-          if (!response.job_id) return;
-          setWorkersFound((prev) => ({
-            ...prev,
-            [response.job_id]: (prev[response.job_id] || 0) + 1,
-          }));
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'job_responses' },
-        (payload) => {
-          const response = payload.old as { job_id?: string };
-          if (!response.job_id) return;
-          setWorkersFound((prev) => ({
-            ...prev,
-            [response.job_id]: Math.max(0, (prev[response.job_id] || 0) - 1),
-          }));
-        }
-      )
-      .subscribe();
-
+    const interval = window.setInterval(() => { void fetchJobs(); }, 15000);
     return () => {
       window.removeEventListener("navigate-to-feed", handleNewJob);
-      supabase.removeChannel(channel);
+      window.clearInterval(interval);
     };
   }, [user]);
+
 
   const handleSmartSearch = async () => {
     if (!searchQuery.trim()) {
