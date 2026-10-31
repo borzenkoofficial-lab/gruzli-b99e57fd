@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
 import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, FileText, Mic, MicOff, MapPin, Users, Wallet, CheckCheck, Clock3, MoreVertical, Trash2, Ban, BellOff, Smile, Reply as ReplyIcon } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { playMessageSent } from "@/lib/sounds";
@@ -172,6 +171,8 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const [isRecording, setIsRecording] = useState(false);
   const [replyTo, setReplyTo] = useState<ReplyPreview | null>(null);
   const [activeCall, setActiveCall] = useState<CallMode | null>(null);
+  const [callRole, setCallRole] = useState<"caller" | "callee">("caller");
+  const realtimeRef = useRef<WebSocket | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -377,6 +378,37 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       console.error("[chat] Read receipt failed:", error);
     }
   }, [user, conversationId, onMessagesRead, isDemo]);
+
+  useEffect(() => {
+    if (!user || isDemo) return;
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const socket = new WebSocket(`${protocol}//${window.location.host}/api/realtime`);
+    realtimeRef.current = socket;
+    socket.onopen = () => socket.send(JSON.stringify({ type: "conversation:subscribe", conversationId }));
+    socket.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(String(event.data));
+        if (payload.type === "message:new" && payload.conversationId === conversationId && payload.message) {
+          appendMessage(payload.message as Message);
+          if (payload.message.sender_id !== user.id) markAsRead();
+          return;
+        }
+        if (payload.type === "call:ring" && payload.conversationId === conversationId && payload.fromUserId === otherUserId) {
+          setResolvedTitle(payload.fromName || title);
+          setCallRole("callee");
+          setActiveCall(payload.mode === "video" ? "video" : "audio");
+        }
+      } catch (error) {
+        console.error("[realtime] Invalid event:", error);
+      }
+    };
+    socket.onerror = () => console.warn("[realtime] WebSocket unavailable; polling remains active.");
+    socket.onclose = () => { if (realtimeRef.current === socket) realtimeRef.current = null; };
+    return () => {
+      socket.close();
+      if (realtimeRef.current === socket) realtimeRef.current = null;
+    };
+  }, [user?.id, isDemo, conversationId, otherUserId, title, appendMessage, markAsRead]);
 
   useEffect(() => {
     fetchMessages();
@@ -676,30 +708,18 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     return <p className="text-[15px] text-foreground leading-relaxed whitespace-pre-wrap break-words">{msg.text}</p>;
   };
 
-  const startCall = async (callMode: CallMode) => {
+  const startCall = (callMode: CallMode) => {
     if (!user || !otherUserId) {
       toast.error("Не удалось определить собеседника");
       return;
     }
-    // Get caller's display name
-    const { data: selfProfile } = await supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("user_id", user.id)
-      .single();
-    const fromName = selfProfile?.full_name || "Пользователь";
-
-    // Notify the other user via their personal channel
-    const ch = supabase.channel(`user-calls:${otherUserId}`);
-    await new Promise<void>((resolve) => {
-      ch.subscribe((s) => { if (s === "SUBSCRIBED") resolve(); });
-    });
-    await ch.send({
-      type: "broadcast",
-      event: "ring",
-      payload: { conversationId, fromUserId: user.id, fromName, mode: callMode },
-    });
-    supabase.removeChannel(ch);
+    const socket = realtimeRef.current;
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+      toast.error("Подключение к звонкам ещё устанавливается. Повторите попытку через секунду.");
+      return;
+    }
+    socket.send(JSON.stringify({ type: "call:ring", conversationId, toUserId: otherUserId, mode: callMode }));
+    setCallRole("caller");
     setActiveCall(callMode);
   };
 
@@ -789,7 +809,8 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
             selfUserId={user.id}
             peerName={resolvedTitle}
             mode={activeCall}
-            role="caller"
+            role={callRole}
+            peerUserId={otherUserId}
             onClose={() => setActiveCall(null)}
           />
         )}
