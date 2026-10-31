@@ -908,7 +908,84 @@ async function start() {
     console.warn("[db] DATABASE_URL/PGHOST is not configured. API starts in limited mode.");
   }
 
-  const server = app.listen(PORT, "0.0.0.0", () => {
+  const server = createServer(app);
+  server.on("upgrade", async (request, socket, head) => {
+    try {
+      const origin = request.headers.origin;
+      const host = request.headers.host;
+      if (!origin || !host || new URL(origin).host !== host || (process.env.NODE_ENV === "production" && !origin.startsWith("https://"))) {
+        socket.write("HTTP/1.1 403 Forbidden\r\n\r\n");
+        socket.destroy();
+        return;
+      }
+      if (new URL(request.url || "/", "http://localhost").pathname !== "/api/realtime") {
+        socket.write("HTTP/1.1 404 Not Found\r\n\r\n");
+        socket.destroy();
+        return;
+      }
+      const authUser = await loadSession(request);
+      if (!authUser || !databaseReady) {
+        socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
+        socket.destroy();
+        return;
+      }
+      realtime.handleUpgrade(request, socket, head, (ws) => {
+        ws.userId = authUser.id;
+        ws.profileName = authUser.full_name || "Пользователь";
+        socketConversations.set(ws, new Set());
+        if (!userSockets.has(ws.userId)) userSockets.set(ws.userId, new Set());
+        userSockets.get(ws.userId).add(ws);
+        sendSocket(ws, { type: "realtime:ready", userId: ws.userId });
+        realtime.emit("connection", ws, request);
+      });
+    } catch {
+      socket.write("HTTP/1.1 400 Bad Request\r\n\r\n");
+      socket.destroy();
+    }
+  });
+  realtime.on("connection", (ws) => {
+    ws.on("message", async (raw) => {
+      let payload;
+      try { payload = JSON.parse(raw.toString()); } catch { return sendSocket(ws, { type: "error", code: "INVALID_JSON" }); }
+      if (!payload || typeof payload !== "object") return;
+      if (payload.type === "conversation:subscribe") {
+        const conversationId = String(payload.conversationId || "");
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(conversationId)) return;
+        try {
+          const member = await requireConversationMember(conversationId, ws.userId);
+          if (!member) return sendSocket(ws, { type: "error", code: "FORBIDDEN_CONVERSATION" });
+          socketConversations.get(ws)?.add(conversationId);
+          return sendSocket(ws, { type: "conversation:subscribed", conversationId });
+        } catch { return sendSocket(ws, { type: "error", code: "SUBSCRIBE_FAILED" }); }
+      }
+      if (payload.type === "call:ring") {
+        const conversationId = String(payload.conversationId || "");
+        const targetUserId = String(payload.toUserId || "");
+        const mode = payload.mode === "video" ? "video" : "audio";
+        try {
+          const membership = await pool.query(
+            "SELECT cp.user_id, p.full_name FROM conversation_participants cp JOIN profiles p ON p.user_id = cp.user_id WHERE cp.conversation_id = $1 AND cp.user_id IN ($2,$3)",
+            [conversationId, ws.userId, targetUserId],
+          );
+          if (membership.rowCount !== 2 || !socketConversations.get(ws)?.has(conversationId)) {
+            return sendSocket(ws, { type: "error", code: "CALL_NOT_ALLOWED" });
+          }
+          const recipient = membership.rows.find((row) => row.user_id === targetUserId);
+          const caller = membership.rows.find((row) => row.user_id === ws.userId);
+          if (!recipient || !caller) return;
+          sendUserEvent(targetUserId, { type: "call:ring", conversationId, fromUserId: ws.userId, fromName: caller.full_name || ws.profileName, mode });
+          sendSocket(ws, { type: "call:ring:sent", conversationId });
+        } catch { sendSocket(ws, { type: "error", code: "CALL_SIGNAL_FAILED" }); }
+      }
+    });
+    ws.on("close", () => {
+      const sockets = userSockets.get(ws.userId);
+      sockets?.delete(ws);
+      if (sockets?.size === 0) userSockets.delete(ws.userId);
+      socketConversations.delete(ws);
+    });
+  });
+  server.listen(PORT, "0.0.0.0", () => {
     console.info("[http] GRUZLI listening on 0.0.0.0:" + PORT);
   });
   const shutdown = async (signal) => {
