@@ -318,6 +318,9 @@ app.post("/api/conversations", requireAuth, async (req, res) => {
   if (participantIds.length < 2 || participantIds.length > 30) {
     return sendError(res, 400, "INVALID_PARTICIPANTS", "В диалоге должно быть от 2 до 30 участников.");
   }
+  if (participantIds.some((id) => !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))) {
+    return sendError(res, 400, "INVALID_PARTICIPANT_ID", "Некорректный идентификатор участника.");
+  }
   if (!isGroup && participantIds.length !== 2) return sendError(res, 400, "INVALID_DIRECT_CHAT", "Личный диалог может содержать только двух участников.");
   const client = await pool.connect();
   try {
