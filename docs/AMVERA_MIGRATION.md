@@ -4,6 +4,10 @@
 
 Remove Supabase as a runtime, build-time, data, authentication, realtime, storage, and deployment dependency. The production application must run on Amvera and use services owned by the GRUZLI project.
 
+## Migration mode: clean start (owner-approved)
+
+The owner has confirmed there is no access to the old Supabase project and no legacy data needs to be preserved. Do not block the migration on exporting or importing the old Supabase database. Create a new empty production database on Amvera and initialize it from reviewed, application-owned SQL migrations. Existing users will register again; historical profiles, jobs, responses, chats, files, and other records will not be migrated. Preserve product behavior and feature requirements, not legacy data. Do not attempt to access, delete, or disable the old Supabase project.
+
 This is a migration, not a visual rewrite. Preserve current UX, routes, role behavior, validation, business rules, and user-facing features unless a feature is explicitly redesigned in a separate task.
 
 ## Repository audit (2026-10-31)
@@ -49,7 +53,7 @@ Use one Amvera Node.js application for the first production migration:
 - Map each call to a replacement API/service and record its auth/role requirements.
 - Inventory all 93 SQL migrations, tables, indexes, triggers, RLS policies, grants, RPC functions, and all 26 Edge Functions.
 - Identify external integrations and required secrets (email, Telegram, push/VAPID, AI providers, PDF/document generation).
-- Export and document the source database schema and data before any destructive change.
+- Reconstruct the required schema and business invariants from the repository's SQL history; no legacy data export/import is required or authorized.
 - Deliver a feature-parity matrix with owner, endpoint, data tables, authorization rules, tests, and migration status.
 
 ### Phase 1 — Amvera application foundation
@@ -63,11 +67,11 @@ Use one Amvera Node.js application for the first production migration:
 ### Phase 2 — PostgreSQL schema and data migration
 - Translate Supabase schema and migration history into ordered, repeatable PostgreSQL migrations.
 - Replace Supabase-managed `auth.users` and role functions with application-owned users, credentials, sessions, roles, and profile tables.
-- Preserve UUIDs and foreign-key relationships where feasible.
+- Generate new UUIDs for all new records and preserve foreign-key relationships and business invariants.
 - Rebuild constraints, indexes, triggers, uniqueness rules, and transaction invariants.
 - Translate RLS policies and SECURITY DEFINER RPC behavior into explicit server-side authorization and transactional services.
-- Create export/import scripts with dry-run, counts, checksums, retryability, and reconciliation reports.
-- Test import against a disposable database before touching production data.
+- Create repeatable schema initialization and seed scripts for a clean database.
+- Test initialization against a disposable empty database, including rollback and rerun behavior.
 
 ### Phase 3 — Authentication and account lifecycle
 - Registration, login, logout, session refresh/revocation, password reset, email verification, account changes, OAuth consent compatibility if still used.
@@ -124,9 +128,9 @@ Migrate all 26 current functions into server routes or background jobs. No funct
 - Browser checks on desktop and mobile, direct deep links, refresh, logout, expired session, network loss, reconnect, file uploads, chat, notifications.
 - Security checks: IDOR, role escalation, CSRF, XSS, rate limiting, upload validation, secrets exposure.
 - Database backup and restore drill.
-- Reconcile record counts and critical relationships against the source database.
+- Verify clean schema initialization, constraints, indexes, seed data, and critical user flows on the new database.
 - Switch the public domain only after acceptance; retain rollback path.
-- Remove Supabase credentials and project only after owner approval and a successful observation period.
+- Remove all Supabase references and credentials from the GRUZLI codebase and Amvera configuration after the replacement passes acceptance. The inaccessible legacy Supabase project is outside this migration; do not claim it was deleted.
 
 ## Required end-to-end acceptance scenarios
 
@@ -147,7 +151,7 @@ Migrate all 26 current functions into server routes or background jobs. No funct
 - [x] Initial repository inventory: 93 SQL migrations and 26 Edge Function entrypoints.
 - [ ] Full frontend call-site inventory and feature-parity matrix.
 - [ ] Node.js/Express application foundation.
-- [ ] PostgreSQL schema and data migration.
+- [ ] PostgreSQL schema initialization for a clean database (no legacy data import).
 - [ ] Authentication/session implementation.
 - [ ] Product API and realtime implementation.
 - [ ] Edge Function replacement.
