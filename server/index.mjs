@@ -988,7 +988,7 @@ async function start() {
             "SELECT cp.user_id, p.full_name FROM conversation_participants cp JOIN profiles p ON p.user_id = cp.user_id WHERE cp.conversation_id = $1 AND cp.user_id IN ($2,$3)",
             [conversationId, ws.userId, targetUserId],
           );
-          if (membership.rowCount !== 2 || !socketConversations.get(ws)?.has(conversationId)) {
+          if (membership.rowCount !== 2) {
             return sendSocket(ws, { type: "error", code: "CALL_NOT_ALLOWED" });
           }
           const recipient = membership.rows.find((row) => row.user_id === targetUserId);
