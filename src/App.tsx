@@ -13,6 +13,8 @@ import NewJobAlert from "@/components/NewJobAlert";
 import AppRatingModal from "@/components/AppRatingModal";
 import OnboardingTour from "@/components/OnboardingTour";
 import IncomingCallListener from "@/components/chat/IncomingCallListener";
+import ConfigMissingScreen from "@/components/ConfigMissingScreen";
+import { isSupabaseConfigured, isDemoMode } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
 import Index from "./pages/Index";
@@ -23,7 +25,7 @@ const AdminPage = lazy(() => import("./pages/AdminPage"));
 const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
-const DEMO_ENABLED = import.meta.env.DEV && import.meta.env.VITE_GRUZLI_DEMO_MODE === "true";
+const DEMO_ENABLED = isDemoMode;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -70,12 +72,29 @@ const AppRoutes = () => {
     }
   }, [user]);
 
+  // Production misconfiguration: no Supabase keys and not in local demo mode.
+  if (!isSupabaseConfigured && !DEMO_ENABLED && !isConsentRoute) {
+    return <ConfigMissingScreen />;
+  }
+
   if (!(DEMO_ENABLED && demoWorkerMode) && (loading || (!splashDone && !isConsentRoute))) {
     return <SplashScreen onFinished={handleSplashFinished} />;
   }
 
   if (!user && !isConsentRoute && !(DEMO_ENABLED && demoWorkerMode)) {
-    return <AuthPage onDemoLogin={DEMO_ENABLED ? () => { localStorage.setItem("gruzli_demo_worker", "1"); setDemoWorkerMode(true); window.dispatchEvent(new Event("gruzli-demo-change")); } : undefined} />;
+    return (
+      <AuthPage
+        onDemoLogin={
+          DEMO_ENABLED
+            ? () => {
+                localStorage.setItem("gruzli_demo_worker", "1");
+                setDemoWorkerMode(true);
+                window.dispatchEvent(new Event("gruzli-demo-change"));
+              }
+            : undefined
+        }
+      />
+    );
   }
 
   return (
@@ -83,7 +102,13 @@ const AppRoutes = () => {
       {showOnboarding && (
         <OnboardingTour onComplete={() => setShowOnboarding(false)} />
       )}
-      <Suspense fallback={<div className="flex items-center justify-center h-screen"><div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" /></div>}>
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center h-screen">
+            <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          </div>
+        }
+      >
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Navigate to="/" replace />} />
