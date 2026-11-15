@@ -52,4 +52,10 @@ export default function ConfigMissingScreen() {
         </div>
 
         <p className="mt-4 text-center text-[11px] text-muted-foreground">
-          Локально можно включить демо:{
+          Локально можно включить демо:{" "}
+          <code className="rounded bg-muted px-1 py-0.5">VITE_GRUZLI_DEMO_MODE=true</code>
+        </p>
+      </div>
+    </div>
+  );
+}
