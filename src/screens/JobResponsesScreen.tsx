@@ -4,8 +4,9 @@ import { ArrowLeft, Check, X, MessageCircle, Star, User, MapPin, Clock, Navigati
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
+import { getWorkerMatchScore } from "@/lib/workerMatchScore";
 
-type SortKey = "newest" | "rating" | "experience" | "premium";
+type SortKey = "match" | "newest" | "rating" | "experience" | "premium";
 
 interface JobResponsesScreenProps {
   job: Tables<"jobs">;
@@ -35,7 +36,7 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
   const [responses, setResponses] = useState<ResponseWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState<SortKey>("rating");
+  const [sortBy, setSortBy] = useState<SortKey>("match");
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
   const fetchResponses = async () => {
@@ -128,9 +129,8 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
     const candidates = [...responses]
       .filter((r) => r.status === "pending")
       .sort((a, b) => {
-        const aScore = (a.profile?.is_premium ? 100 : 0) + Number(a.profile?.rating || 0) * 10 + (a.profile?.completed_orders || 0) / 10;
-        const bScore = (b.profile?.is_premium ? 100 : 0) + Number(b.profile?.rating || 0) * 10 + (b.profile?.completed_orders || 0) / 10;
-        return bScore - aScore;
+        const scoreDiff = getWorkerMatchScore(b.profile, job) - getWorkerMatchScore(a.profile, job);
+        return scoreDiff || new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       })
       .slice(0, slotsLeft);
 
@@ -157,6 +157,9 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
     const sorted = [...pending];
     sorted.sort((a, b) => {
       switch (sortBy) {
+        case "match":
+          return getWorkerMatchScore(b.profile, job) - getWorkerMatchScore(a.profile, job)
+            || new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         case "rating":
           return Number(b.profile?.rating || 0) - Number(a.profile?.rating || 0);
         case "experience":
@@ -168,7 +171,7 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
       }
     });
     return sorted;
-  }, [filteredResponses, sortBy]);
+  }, [filteredResponses, sortBy, job]);
 
   // Separate accepted and rejected
   const accepted = responses.filter((r) => r.status === "accepted");
@@ -180,6 +183,7 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
   const progressPct = Math.min(100, Math.round((accepted.length / limit) * 100));
 
   const sortChips: { key: SortKey; label: string }[] = [
+    { key: "match", label: "Подходящие" },
     { key: "rating", label: "По рейтингу" },
     { key: "experience", label: "По опыту" },
     { key: "premium", label: "Premium" },
