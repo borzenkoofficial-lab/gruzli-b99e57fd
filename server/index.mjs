@@ -628,31 +628,52 @@ app.post("/api/conversations/:conversationId/messages", requireAuth, async (req,
   if (!text || text.length > 10000 || !["text", "sticker", "system", "voice_room"].includes(messageType)) {
     return sendError(res, 400, "INVALID_MESSAGE", "Сообщение пустое или имеет недопустимый формат.");
   }
+  const client = await pool.connect();
+  let conversationId = null;
   try {
-    const conversation = await requireConversationMember(req.params.conversationId, req.authUser.id);
-    if (!conversation) return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
-    if (replyToId) {
-      const reply = await pool.query("SELECT id FROM messages WHERE id = $1 AND conversation_id = $2", [replyToId, conversation.id]);
-      if (!reply.rowCount) return sendError(res, 400, "INVALID_REPLY_TARGET", "Сообщение для ответа не найдено.");
+    await client.query("BEGIN");
+    const membership = await client.query(
+      "SELECT c.id FROM conversations c JOIN conversation_participants cp ON cp.conversation_id = c.id " +
+      "WHERE c.id = $1 AND cp.user_id = $2 FOR UPDATE OF c, cp",
+      [req.params.conversationId, req.authUser.id],
+    );
+    if (!membership.rowCount) {
+      await client.query("ROLLBACK");
+      return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
     }
-    const blocked = await pool.query(
+    conversationId = membership.rows[0].id;
+    if (replyToId) {
+      const reply = await client.query("SELECT id FROM messages WHERE id = $1 AND conversation_id = $2", [replyToId, conversationId]);
+      if (!reply.rowCount) {
+        await client.query("ROLLBACK");
+        return sendError(res, 400, "INVALID_REPLY_TARGET", "Сообщение для ответа не найдено.");
+      }
+    }
+    const blocked = await client.query(
       "SELECT 1 FROM blocked_users b JOIN conversation_participants cp ON cp.conversation_id = $1 AND cp.user_id = b.blocked_id " +
       "WHERE b.blocker_id = $2 LIMIT 1",
-      [conversation.id, req.authUser.id],
+      [conversationId, req.authUser.id],
     );
-    if (blocked.rowCount) return sendError(res, 403, "USER_BLOCKED", "Нельзя отправить сообщение этому пользователю.");
-    const result = await pool.query(
+    if (blocked.rowCount) {
+      await client.query("ROLLBACK");
+      return sendError(res, 403, "USER_BLOCKED", "Нельзя отправить сообщение этому пользователю.");
+    }
+    const result = await client.query(
       "INSERT INTO messages (conversation_id, sender_id, text, message_type, reply_to_id) VALUES ($1,$2,$3,$4,$5) " +
       "RETURNING id, conversation_id, sender_id, text, media_url, message_type, reply_to_id, created_at",
-      [conversation.id, req.authUser.id, text, messageType, replyToId],
+      [conversationId, req.authUser.id, text, messageType, replyToId],
     );
-    await pool.query("UPDATE conversation_participants SET last_read_at = now() WHERE conversation_id = $1 AND user_id = $2", [conversation.id, req.authUser.id]);
+    await client.query("UPDATE conversation_participants SET last_read_at = now() WHERE conversation_id = $1 AND user_id = $2", [conversationId, req.authUser.id]);
+    await client.query("COMMIT");
     const message = { ...result.rows[0], sender_name: req.authUser.full_name };
-    sendConversationEvent(conversation.id, { type: "message:new", conversationId: conversation.id, message }, req.authUser.id);
+    sendConversationEvent(conversationId, { type: "message:new", conversationId, message }, req.authUser.id);
     return res.status(201).json({ message });
   } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
     console.error("[chat] Message send failed:", error.message);
     return sendError(res, 500, "MESSAGE_SEND_FAILED", "Не удалось отправить сообщение.");
+  } finally {
+    client.release();
   }
 });
 
@@ -725,6 +746,142 @@ app.post("/api/jobs", requireAuth, async (req, res) => {
     await client.query("ROLLBACK").catch(() => {});
     console.error("[jobs] Create failed:", error.message);
     return sendError(res, 500, "JOB_CREATE_FAILED", "Не удалось создать заявку.");
+  } finally {
+    client.release();
+  }
+});
+
+app.get("/api/jobs/:jobId/offers", requireAuth, async (req, res) => {
+  const user = req.authUser;
+  try {
+    const job = await pool.query("SELECT id, client_id, dispatcher_id FROM jobs WHERE id = $1 LIMIT 1", [req.params.jobId]);
+    if (!job.rowCount) return sendError(res, 404, "JOB_NOT_FOUND", "Заявка не найдена.");
+    const row = job.rows[0];
+    const allowed = user.role === "admin" ||
+      (user.role === "client" && row.client_id === user.id) ||
+      (user.role === "dispatcher" && !row.dispatcher_id);
+    if (!allowed) return sendError(res, 403, "FORBIDDEN", "Нет доступа к предложениям по этой заявке.");
+    const result = await pool.query(
+      "SELECT o.id, o.job_id, o.dispatcher_id, o.proposed_hourly_rate, o.proposed_workers, o.message, o.status, o.created_at, o.updated_at, " +
+      "p.full_name AS dispatcher_name, p.avatar_url AS dispatcher_avatar, p.rating AS dispatcher_rating, p.completed_orders AS dispatcher_completed_orders " +
+      "FROM dispatcher_offers o JOIN profiles p ON p.user_id = o.dispatcher_id WHERE o.job_id = $1 " +
+      "AND ($2 = 'admin' OR ($2 = 'client' AND $3 = $4) OR ($2 = 'dispatcher' AND o.dispatcher_id = $3)) ORDER BY o.created_at DESC",
+      [req.params.jobId, user.role, user.id, row.client_id],
+    );
+    return res.json({ offers: result.rows });
+  } catch (error) {
+    console.error("[dispatcher-offers] List failed:", error.message);
+    return sendError(res, 500, "DISPATCHER_OFFERS_LIST_FAILED", "Не удалось загрузить предложения диспетчеров.");
+  }
+});
+
+app.post("/api/jobs/:jobId/offers", requireAuth, async (req, res) => {
+  const user = req.authUser;
+  if (user.role !== "dispatcher") return sendError(res, 403, "DISPATCHER_ROLE_REQUIRED", "Предложить сопровождение заявки может только диспетчер.");
+  const rate = Number(req.body?.proposedHourlyRate);
+  const workers = Number(req.body?.proposedWorkers);
+  const message = String(req.body?.message || "").trim().slice(0, 1000) || null;
+  if (!Number.isFinite(rate) || rate <= 0 || !Number.isInteger(workers) || workers < 1 || workers > 100) {
+    return sendError(res, 400, "INVALID_DISPATCHER_OFFER", "Укажите положительную ставку и количество исполнителей от 1 до 100.");
+  }
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const jobResult = await client.query("SELECT id, client_id, dispatcher_id, status FROM jobs WHERE id = $1 FOR UPDATE", [req.params.jobId]);
+    const job = jobResult.rows[0];
+    if (!job) {
+      await client.query("ROLLBACK");
+      return sendError(res, 404, "JOB_NOT_FOUND", "Заявка не найдена.");
+    }
+    if (!job.client_id || job.dispatcher_id || job.status !== "open") {
+      await client.query("ROLLBACK");
+      return sendError(res, 409, "JOB_NOT_AVAILABLE_FOR_OFFERS", "Заявка уже назначена или больше не принимает предложения.");
+    }
+    const result = await client.query(
+      "INSERT INTO dispatcher_offers (job_id, dispatcher_id, proposed_hourly_rate, proposed_workers, message) " +
+      "VALUES ($1,$2,$3,$4,$5) ON CONFLICT (job_id, dispatcher_id) DO UPDATE SET " +
+      "proposed_hourly_rate = EXCLUDED.proposed_hourly_rate, proposed_workers = EXCLUDED.proposed_workers, " +
+      "message = EXCLUDED.message, status = 'pending', updated_at = now() RETURNING *",
+      [job.id, user.id, rate, workers, message],
+    );
+    const offer = result.rows[0];
+    await client.query(
+      "INSERT INTO app_audit_log (actor_user_id, action, entity_type, entity_id, ip_address, metadata) VALUES ($1,'dispatcher.offer_submitted','dispatcher_offer',$2,$3,$4::jsonb)",
+      [user.id, offer.id, req.ip, JSON.stringify({ jobId: job.id, proposedHourlyRate: rate, proposedWorkers: workers })],
+    );
+    await client.query("COMMIT");
+    sendUserEvent(job.client_id, { type: "dispatcher:offer_created", offer });
+    return res.status(201).json({ offer });
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    console.error("[dispatcher-offers] Submit failed:", error.message);
+    return sendError(res, error.code === "23505" ? 409 : 500,
+      error.code === "23505" ? "OFFER_CONFLICT" : "DISPATCHER_OFFER_CREATE_FAILED",
+      error.code === "23505" ? "Предложение уже существует." : "Не удалось отправить предложение диспетчера.");
+  } finally {
+    client.release();
+  }
+});
+
+app.post("/api/dispatcher-offers/:offerId/select", requireAuth, async (req, res) => {
+  const user = req.authUser;
+  if (user.role !== "client") return sendError(res, 403, "CLIENT_ROLE_REQUIRED", "Выбрать диспетчера может только заказчик.");
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const jobLock = await client.query(
+      "SELECT j.id FROM jobs j JOIN dispatcher_offers o ON o.job_id = j.id WHERE o.id = $1 FOR UPDATE OF j",
+      [req.params.offerId],
+    );
+    if (!jobLock.rowCount) {
+      await client.query("ROLLBACK");
+      return sendError(res, 404, "OFFER_NOT_FOUND", "Предложение диспетчера не найдено.");
+    }
+    const offerResult = await client.query(
+      "SELECT o.*, j.client_id, j.dispatcher_id, j.status AS job_status FROM dispatcher_offers o JOIN jobs j ON j.id = o.job_id WHERE o.id = $1 FOR UPDATE OF o",
+      [req.params.offerId],
+    );
+    const offer = offerResult.rows[0];
+    if (!offer || offer.client_id !== user.id) {
+      await client.query("ROLLBACK");
+      return sendError(res, 404, "OFFER_NOT_FOUND", "Предложение диспетчера не найдено.");
+    }
+    if (offer.status !== "pending" || offer.dispatcher_id || offer.job_status !== "open") {
+      await client.query("ROLLBACK");
+      return sendError(res, 409, "OFFER_NO_LONGER_AVAILABLE", "Это предложение уже нельзя выбрать.");
+    }
+    const updatedJob = await client.query(
+      "UPDATE jobs SET dispatcher_id = $1, hourly_rate = $2, workers_needed = $3, status = 'active', updated_at = now() " +
+      "WHERE id = $4 AND client_id = $5 AND dispatcher_id IS NULL AND status = 'open' RETURNING *",
+      [offer.dispatcher_id, offer.proposed_hourly_rate, offer.proposed_workers, offer.job_id, user.id],
+    );
+    if (!updatedJob.rowCount) {
+      await client.query("ROLLBACK");
+      return sendError(res, 409, "JOB_ALREADY_ASSIGNED", "Заявка уже назначена другому диспетчеру.");
+    }
+    const changedOffers = await client.query(
+      "UPDATE dispatcher_offers SET status = CASE WHEN id = $2 THEN 'accepted' ELSE 'rejected' END, updated_at = now() " +
+      "WHERE job_id = $1 AND status = 'pending' RETURNING id, dispatcher_id, status",
+      [offer.job_id, offer.id],
+    );
+    await client.query(
+      "INSERT INTO app_audit_log (actor_user_id, action, entity_type, entity_id, ip_address, metadata) VALUES ($1,'client.dispatcher_selected','job',$2,$3,$4::jsonb)",
+      [user.id, offer.job_id, req.ip, JSON.stringify({ offerId: offer.id, dispatcherId: offer.dispatcher_id })],
+    );
+    await client.query("COMMIT");
+    for (const changed of changedOffers.rows) {
+      sendUserEvent(changed.dispatcher_id, {
+        type: changed.status === "accepted" ? "dispatcher:offer_accepted" : "dispatcher:offer_rejected",
+        offerId: changed.id,
+        jobId: offer.job_id,
+      });
+    }
+    sendRoleEvent("worker", { type: "job:updated", job: updatedJob.rows[0] });
+    return res.json({ job: updatedJob.rows[0], selectedOfferId: offer.id });
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    console.error("[dispatcher-offers] Selection failed:", error.message);
+    return sendError(res, 500, "DISPATCHER_OFFER_SELECT_FAILED", "Не удалось выбрать диспетчера.");
   } finally {
     client.release();
   }
