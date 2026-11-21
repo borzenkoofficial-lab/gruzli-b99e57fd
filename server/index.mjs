@@ -12,6 +12,7 @@ import multer from "multer";
 import { pool } from "./db.mjs";
 import { migrateDatabase } from "./migrate.mjs";
 import { calculateWorkerEarnings, isWorkerStatusTransitionAllowed, normalizeWorkedHours } from "./domain/workerLifecycle.mjs";
+import { submitWorkerResponse, WorkerResponseError } from "./domain/submitWorkerResponse.mjs";
 
 const scrypt = promisify(crypto.scrypt);
 const app = express();
@@ -941,41 +942,45 @@ app.get("/api/jobs/:jobId/my-response", requireAuth, async (req, res) => {
 app.post("/api/jobs/:jobId/responses", requireAuth, async (req, res) => {
   const user = req.authUser;
   if (user.role !== "worker") return sendError(res, 403, "WORKER_ROLE_REQUIRED", "Откликаться на заявки может только исполнитель.");
-  const message = String(req.body?.message || "").trim().slice(0, 2000) || null;
-  const client = await pool.connect();
+
   try {
-    await client.query("BEGIN");
-    const jobResult = await client.query("SELECT id, dispatcher_id, status FROM jobs WHERE id = $1 FOR UPDATE", [req.params.jobId]);
-    const job = jobResult.rows[0];
-    if (!job) {
-      await client.query("ROLLBACK");
-      return sendError(res, 404, "JOB_NOT_FOUND", "Заявка не найдена.");
+    const result = await submitWorkerResponse({
+      db: pool,
+      jobId: req.params.jobId,
+      workerId: user.id,
+      message: String(req.body?.message || "").trim().slice(0, 2000),
+    });
+
+    if (!result.existing) {
+      sendUserEvent(result.dispatcherId, {
+        type: "response:created",
+        response: result.response,
+        jobId: req.params.jobId,
+      });
+      if (result.message) {
+        sendConversationEvent(result.conversationId, {
+          type: "message:new",
+          conversationId: result.conversationId,
+          message: result.message,
+        }, user.id);
+      }
     }
-    if (!job.dispatcher_id || !["active", "open"].includes(job.status)) {
-      await client.query("ROLLBACK");
-      return sendError(res, 409, "JOB_NOT_AVAILABLE", "Заявка сейчас недоступна для отклика.");
+
+    return res.status(result.existing ? 200 : 201).json({
+      response: result.response,
+      conversationId: result.conversationId,
+      existing: result.existing,
+      weeklyCompletedJobs: result.weeklyCompletedJobs,
+    });
+  } catch (error) {
+    if (error instanceof WorkerResponseError) {
+      return sendError(res, error.status, error.code, error.message);
     }
-    const duplicate = await client.query(
-      "SELECT id FROM job_responses WHERE job_id = $1 AND worker_id = $2 AND status IN ('pending','accepted') LIMIT 1",
-      [job.id, user.id],
-    );
-    if (duplicate.rowCount) {
-      await client.query("ROLLBACK");
+    if (error.code === "23505") {
       return sendError(res, 409, "RESPONSE_ALREADY_EXISTS", "Вы уже откликнулись на эту заявку.");
     }
-    const result = await client.query(
-      "INSERT INTO job_responses (job_id, worker_id, message, status, worker_status) VALUES ($1,$2,$3,'pending','ready') RETURNING *",
-      [job.id, user.id, message],
-    );
-    await client.query("COMMIT");
-    sendUserEvent(job.dispatcher_id, { type: "response:created", response: result.rows[0], jobId: job.id });
-    return res.status(201).json({ response: result.rows[0] });
-  } catch (error) {
-    await client.query("ROLLBACK").catch(() => {});
-    console.error("[jobs] Response create failed:", error.message);
+    console.error("[jobs] Response workflow failed:", error.message);
     return sendError(res, 500, "RESPONSE_CREATE_FAILED", "Не удалось отправить отклик.");
-  } finally {
-    client.release();
   }
 });
 
