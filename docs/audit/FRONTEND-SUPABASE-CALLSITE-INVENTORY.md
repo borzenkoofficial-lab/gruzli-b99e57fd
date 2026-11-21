@@ -63,3 +63,25 @@ Typed client coverage in `src/lib/apiClient.ts` currently focuses on dispatcher 
 - No old Supabase users, jobs, messages, media or other records are to be imported (clean start).
 - No public DNS/domain or production traffic cutover is part of this inventory.
 - This document does not claim Amvera production readiness or live deployment verification.
+
+
+## Worker response workflow implementation
+
+Implemented on the migration branch in `server/domain/submitWorkerResponse.mjs` and wired to `POST /api/jobs/:jobId/responses`.
+
+Transaction sequence:
+1. Lock the job row and verify that it is still open/active and assigned to a dispatcher.
+2. Acquire a worker-scoped PostgreSQL advisory lock; read the current-week completed-job count and enforce the three-job free-tier limit unless the profile is Premium.
+3. Create or reuse the worker's active response.
+4. Acquire a stable participant-pair advisory lock, check mutual block state, and find or create the direct conversation.
+5. For a new response only, insert the initial chat message and update the worker's read marker.
+6. Write the response audit event and commit.
+7. After commit, emit the dispatcher response event and the chat message event.
+
+A repeated active response returns HTTP 200 with the existing response and conversation ID; it does not duplicate the first message. A new response returns HTTP 201. Errors use stable codes such as `WEEKLY_LIMIT_REACHED`, `JOB_NOT_AVAILABLE`, and `CHAT_BLOCKED`.
+
+The generic direct-conversation creation endpoint now uses the same normalized pair advisory lock, preventing it from racing this workflow and creating a second direct chat through the Amvera API.
+
+The weekly limit is checked at response submission time against completed assignments in the current PostgreSQL week (Monday-based `date_trunc('week', now())`). This preserves the legacy pre-application gate; it does not cancel or block work already accepted before the worker reaches the limit.
+
+The integration suite requires `DATABASE_URL`; without it, these PostgreSQL-specific tests are reported as skipped. CI must run them against its PostgreSQL service.
