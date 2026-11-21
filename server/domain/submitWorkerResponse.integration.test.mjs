@@ -54,7 +54,13 @@ async function withFixture(run) {
   try {
     await run({ workerId, dispatcherId, clientId });
   } finally {
-    await pool.query("DELETE FROM app_users WHERE id = ANY($1::uuid[])", [[workerId, dispatcherId, clientId]]);
+    const userIds = [workerId, dispatcherId, clientId];
+    await pool.query(
+      "DELETE FROM conversations c WHERE EXISTS (" +
+      "SELECT 1 FROM conversation_participants cp WHERE cp.conversation_id = c.id AND cp.user_id = ANY($1::uuid[]))",
+      [userIds],
+    );
+    await pool.query("DELETE FROM app_users WHERE id = ANY($1::uuid[])", [userIds]);
   }
 }
 
