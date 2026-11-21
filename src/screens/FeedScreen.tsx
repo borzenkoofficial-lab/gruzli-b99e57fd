@@ -5,6 +5,7 @@ import {
   Search, X, Sparkles, Loader2, TrendingUp, Check, ArrowLeft, Hourglass, SlidersHorizontal,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { removeFeedJob, upsertActiveFeedJob } from "@/lib/jobFeedState";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRespondToJob } from "@/hooks/useRespondToJob";
 import { toast } from "sonner";
@@ -146,12 +147,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
           const newJob = payload.new as Tables<"jobs">;
           // Keep realtime inserts consistent with the initial active-jobs query.
           if (newJob.status !== "active") return;
-          setJobs((prev) => {
-            if (prev.some((job) => job.id === newJob.id)) return prev;
-            return [newJob, ...prev].sort(
-              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-            );
-          });
+          setJobs((prev) => upsertActiveFeedJob(prev, newJob));
         }
       )
       .on(
@@ -159,18 +155,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
         { event: 'UPDATE', schema: 'public', table: 'jobs' },
         (payload) => {
           const updatedJob = payload.new as Tables<"jobs">;
-          setJobs((prev) => {
-            if (updatedJob.status !== "active") {
-              return prev.filter((job) => job.id !== updatedJob.id);
-            }
-            const exists = prev.some((job) => job.id === updatedJob.id);
-            const next = exists
-              ? prev.map((job) => job.id === updatedJob.id ? updatedJob : job)
-              : [updatedJob, ...prev];
-            return next.sort(
-              (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-            );
-          });
+          setJobs((prev) => upsertActiveFeedJob(prev, updatedJob));
           if (updatedJob.status !== "active") {
             setWorkersFound((prev) => {
               const next = { ...prev };
@@ -186,7 +171,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
         (payload) => {
           const deletedJob = payload.old as Partial<Tables<"jobs">>;
           if (!deletedJob.id) return;
-          setJobs((prev) => prev.filter((job) => job.id !== deletedJob.id));
+          setJobs((prev) => removeFeedJob(prev, deletedJob.id!));
           setWorkersFound((prev) => {
             const next = { ...prev };
             delete next[deletedJob.id!];
