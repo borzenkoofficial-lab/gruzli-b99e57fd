@@ -406,7 +406,7 @@ app.post("/api/profile/presence", requireAuth, async (req, res) => {
         "WHERE mine.user_id = $1 AND peer.user_id <> $1",
         [req.authUser.id],
       );
-      const event = { type: "presence:update", userId: req.authUser.id, lastSeenAt };
+      const event = { type: "presence:update", userId: req.authUser.id, lastSeenAt, isOnline: true };
       for (const peer of peers.rows) sendUserEvent(peer.user_id, event);
     }
     return res.status(204).end();
@@ -585,7 +585,7 @@ app.get("/api/conversations/:conversationId", requireAuth, async (req, res) => {
     const conversation = await requireConversationMember(req.params.conversationId, req.authUser.id);
     if (!conversation) return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
     const participants = await pool.query(
-      "SELECT u.id, p.full_name, p.avatar_url, p.last_seen_at FROM conversation_participants cp " +
+      "SELECT u.id, p.full_name, p.avatar_url, p.last_seen_at, (p.last_seen_at >= now() - interval '2 minutes') AS is_online FROM conversation_participants cp " +
       "JOIN app_users u ON u.id = cp.user_id JOIN profiles p ON p.user_id = u.id " +
       "WHERE cp.conversation_id = $1 AND cp.user_id <> $2 ORDER BY cp.joined_at",
       [conversation.id, req.authUser.id],
