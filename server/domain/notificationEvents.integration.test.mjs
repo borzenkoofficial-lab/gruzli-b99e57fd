@@ -28,9 +28,16 @@ test("committed notifications are delivered through the PostgreSQL event listene
     );
     await fixture.query("COMMIT");
 
+    let expectedNotificationId = null;
     let resolveEvent;
     const eventPromise = new Promise((resolve) => { resolveEvent = resolve; });
-    stopListener = await startNotificationListener(pool, resolveEvent);
+    stopListener = await startNotificationListener(pool, (event) => {
+      // The shared PostgreSQL listener can receive events from other tests.
+      // Wait for this fixture's exact recipient + notification pair.
+      if (event.recipientId === recipientId && event.notification?.id === expectedNotificationId) {
+        resolveEvent(event);
+      }
+    });
 
     const notification = await createNotification(pool, {
       recipientId,
@@ -38,6 +45,7 @@ test("committed notifications are delivered through the PostgreSQL event listene
       title: "Realtime test",
       body: "Notification event",
     });
+    expectedNotificationId = notification.id;
     const event = await Promise.race([
       eventPromise,
       new Promise((_, reject) => {
