@@ -377,6 +377,13 @@ app.post("/api/conversations", requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    if (!isGroup) {
+      const pairKey = participantIds.slice().sort().join(":");
+      await client.query(
+        "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+        ["direct-chat:" + pairKey],
+      );
+    }
     const users = await client.query(
       "SELECT id FROM app_users WHERE id = ANY($1::uuid[]) AND is_active = true",
       [participantIds],
