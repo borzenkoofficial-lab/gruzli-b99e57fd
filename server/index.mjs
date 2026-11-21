@@ -35,8 +35,8 @@ async function publishPresence(userId, isOnline) {
   if (!pool || !databaseReady) return;
   try {
     const result = await pool.query(
-      "UPDATE profiles SET last_seen_at = now(), updated_at = now() WHERE user_id = $1 RETURNING last_seen_at",
-      [userId],
+      "UPDATE profiles SET is_online = $2, last_seen_at = now(), updated_at = now() WHERE user_id = $1 RETURNING last_seen_at",
+      [userId, isOnline],
     );
     if (!result.rowCount) return;
     const peers = await pool.query(
@@ -395,7 +395,7 @@ app.patch("/api/notifications/:notificationId/read", requireAuth, async (req, re
 app.post("/api/profile/presence", requireAuth, async (req, res) => {
   try {
     const updated = await pool.query(
-      "UPDATE profiles SET last_seen_at = now(), updated_at = now() WHERE user_id = $1 RETURNING last_seen_at",
+      "UPDATE profiles SET is_online = true, last_seen_at = now(), updated_at = now() WHERE user_id = $1 RETURNING last_seen_at",
       [req.authUser.id],
     );
     const lastSeenAt = updated.rows[0]?.last_seen_at;
@@ -550,11 +550,11 @@ app.get("/api/conversations", requireAuth, async (req, res) => {
       "SELECT c.id, c.title, c.is_group, c.job_id, c.created_at, " +
       "CASE WHEN c.is_group THEN COALESCE(c.title, 'Группа') ELSE COALESCE(op.full_name, c.title, 'Чат') END AS other_name, " +
       "CASE WHEN c.is_group THEN NULL ELSE op.avatar_url END AS other_avatar_url, " +
-      "op.user_id AS other_user_id, op.last_seen_at AS other_last_seen, (op.last_seen_at >= now() - interval '2 minutes') AS other_is_online, lm.text AS last_message_text, lm.message_type AS last_message_type, " +
+      "op.user_id AS other_user_id, op.last_seen_at AS other_last_seen, (op.is_online AND op.last_seen_at >= now() - interval '2 minutes') AS other_is_online, lm.text AS last_message_text, lm.message_type AS last_message_type, " +
       "lm.created_at AS last_message_at, lm.sender_id AS last_sender_id, " +
       "COALESCE(unread.unread_count, 0)::int AS unread_count " +
       "FROM conversation_participants mine JOIN conversations c ON c.id = mine.conversation_id " +
-      "LEFT JOIN LATERAL (SELECT cp.user_id, p.full_name, p.avatar_url, p.last_seen_at FROM conversation_participants cp " +
+      "LEFT JOIN LATERAL (SELECT cp.user_id, p.full_name, p.avatar_url, p.last_seen_at, p.is_online FROM conversation_participants cp " +
       "JOIN profiles p ON p.user_id = cp.user_id WHERE cp.conversation_id = c.id AND cp.user_id <> $1 ORDER BY cp.joined_at LIMIT 1) op ON true " +
       "LEFT JOIN LATERAL (SELECT m.text, m.message_type, m.created_at, m.sender_id FROM messages m " +
       "WHERE m.conversation_id = c.id ORDER BY m.created_at DESC LIMIT 1) lm ON true " +
@@ -585,7 +585,7 @@ app.get("/api/conversations/:conversationId", requireAuth, async (req, res) => {
     const conversation = await requireConversationMember(req.params.conversationId, req.authUser.id);
     if (!conversation) return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
     const participants = await pool.query(
-      "SELECT u.id, p.full_name, p.avatar_url, p.last_seen_at, (p.last_seen_at >= now() - interval '2 minutes') AS is_online FROM conversation_participants cp " +
+      "SELECT u.id, p.full_name, p.avatar_url, p.last_seen_at, (p.is_online AND p.last_seen_at >= now() - interval '2 minutes') AS is_online FROM conversation_participants cp " +
       "JOIN app_users u ON u.id = cp.user_id JOIN profiles p ON p.user_id = u.id " +
       "WHERE cp.conversation_id = $1 AND cp.user_id <> $2 ORDER BY cp.joined_at",
       [conversation.id, req.authUser.id],
@@ -1586,6 +1586,9 @@ async function start() {
     try {
       await migrateDatabase();
       await pool.query("SELECT 1");
+      // A process restart invalidates all in-memory WebSocket sessions.
+      // Clear persisted online flags so stale sessions never appear online.
+      await pool.query("UPDATE profiles SET is_online = false, updated_at = now() WHERE is_online = true");
       databaseReady = true;
       console.info("[db] PostgreSQL connected and schema is ready.");
       try {
