@@ -9,6 +9,7 @@ import {
   Download, Trophy, Eye, Pencil, Trash2, Plus, Minus, Lock, Unlock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getCompletionDate } from "@/lib/dispatcherStats";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -53,7 +54,7 @@ interface ActiveJob {
 interface CompletedJobStat {
   jobId: string;
   title: string;
-  createdAt: string;
+  completedAt: string;
   workersCount: number;
   totalExpense: number;
   dispatcherIncome: number;
@@ -326,7 +327,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
       .select("*")
       .eq("dispatcher_id", user.id)
       .eq("status", "completed")
-      .order("created_at", { ascending: false })
+      .order("updated_at", { ascending: false })
       .limit(50);
 
     if (completedJobsError) {
@@ -357,7 +358,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
         return {
           jobId: job.id,
           title: job.title,
-          createdAt: job.created_at,
+          completedAt: getCompletionDate(job),
           workersCount: jobResps.length,
           totalExpense,
           dispatcherIncome: (job as any).dispatcher_income || 0,
@@ -395,7 +396,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   const weeklyStats = useMemo(() => {
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
-    const weekJobs = completedStats.filter((s) => new Date(s.createdAt) >= weekAgo);
+    const weekJobs = completedStats.filter((s) => new Date(s.completedAt) >= weekAgo);
     const totalIncome = weekJobs.reduce((s, j) => s + j.dispatcherIncome, 0);
     const totalExpense = weekJobs.reduce((s, j) => s + j.totalExpense, 0);
     const profit = totalIncome - totalExpense;
@@ -405,7 +406,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
   const monthlyStats = useMemo(() => {
     const monthAgo = new Date();
     monthAgo.setDate(monthAgo.getDate() - 30);
-    const monthJobs = completedStats.filter((s) => new Date(s.createdAt) >= monthAgo);
+    const monthJobs = completedStats.filter((s) => new Date(s.completedAt) >= monthAgo);
     const totalIncome = monthJobs.reduce((s, j) => s + j.dispatcherIncome, 0);
     const totalExpense = monthJobs.reduce((s, j) => s + j.totalExpense, 0);
     const profit = totalIncome - totalExpense;
@@ -418,7 +419,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     const dayEnd = dayStart + 86400000;
     return completedStats
       .filter((s) => {
-        const t = new Date(s.createdAt).getTime();
+        const t = new Date(s.completedAt).getTime();
         return t >= dayStart && t < dayEnd;
       })
       .reduce((sum, j) => sum + (j.dispatcherIncome - j.totalExpense), 0);
@@ -432,7 +433,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     const rows = [
       ["Дата", "Заявка", "Грузчиков", "Доход (₽)", "Расход (₽)", "Прибыль (₽)"],
       ...completedStats.map((s) => [
-        new Date(s.createdAt).toLocaleDateString("ru-RU"),
+        new Date(s.completedAt).toLocaleDateString("ru-RU"),
         `"${s.title.replace(/"/g, '""')}"`,
         String(s.workersCount),
         String(s.dispatcherIncome),
@@ -463,7 +464,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
       const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
       const dayEnd = new Date(dayStart.getTime() + 86400000);
       const dayJobs = completedStats.filter((s) => {
-        const t = new Date(s.createdAt).getTime();
+        const t = new Date(s.completedAt).getTime();
         return t >= dayStart.getTime() && t < dayEnd.getTime();
       });
       days.push({
@@ -1290,7 +1291,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                         <div className="flex-1 min-w-0">
                           <h3 className="text-sm font-bold text-foreground truncate">{s.title}</h3>
                           <p className="text-[11px] text-muted-foreground mt-0.5">
-                            {new Date(s.createdAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })} · {s.workersCount} чел.
+                            {new Date(s.completedAt).toLocaleDateString("ru-RU", { day: "numeric", month: "long" })} · {s.workersCount} чел.
                           </p>
                         </div>
                         <span className={`text-sm font-extrabold shrink-0 ${profit >= 0 ? "text-green-500" : "text-destructive"}`}>
