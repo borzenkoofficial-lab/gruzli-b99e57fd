@@ -202,7 +202,7 @@ button,input,textarea,select{font-family:inherit;}
   background:#f4f4f5!important;
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   body{background:hsl(var(--background));}
   .app-shell{max-width:100%;background:hsl(var(--background));}
   .app-scroll .rounded-2xl{border-radius:18px;}
@@ -220,7 +220,7 @@ button,input,textarea,select{font-family:inherit;}
 }
 .bg-popover{background:#fff!important;}
 
-@media(max-width:767px){
+@media (max-width:767px){
   .app-shell{
     background:#f6f6f7!important;
     color:#17181b;
@@ -365,7 +365,7 @@ button,input,textarea,select{font-family:inherit;}
   border-radius:20px;
   background:rgba(255,255,255,.72);
 }
-@media(max-width:767px){
+@media (max-width:767px){
   .gruzli-mobile-section{padding-left:16px;padding-right:16px;}
   .gruzli-mobile-card{border-radius:20px;}
 }
@@ -421,7 +421,7 @@ button,input,textarea,select{font-family:inherit;}
 .gradient-cyan,.gradient-primary
 .text-gradient-cyan,.text-gradient-primary
 
-@media(max-width:430px){
+@media (max-width:430px){
   .app-scroll{padding-bottom:calc(var(--bottom-nav-height) + env(safe-area-inset-bottom,0px) + 30px);}
   .app-scroll .px-5{padding-left:16px!important;padding-right:16px!important;}
 }
@@ -439,7 +439,7 @@ button,input,textarea,select{font-family:inherit;}
 .gruzli-mobile-feed .bg-card{box-shadow:var(--gruzli-shadow);}
 .gruzli-mobile-feed button{transition:transform .18s ease,box-shadow .18s ease,background .18s ease;}
 .gruzli-mobile-feed button:active{transform:scale(.985);}
-@media(min-width:768px){
+@media (min-width:768px){
   .gruzli-mobile-feed{max-width:430px;margin:0 auto;}
 }
 
@@ -458,7 +458,7 @@ button,input,textarea,select{font-family:inherit;}
   min-height:100dvh;
   overflow-x:hidden;
 }
-@media(min-width:768px){
+@media (min-width:768px){
   body{background:#ececee!important;}
   #root{min-height:100dvh;}
   .app-shell{
@@ -618,7 +618,7 @@ button{ -webkit-tap-highlight-color:transparent; }
 }
 .app-scroll .text-muted-foreground{color:var(--gruzli-muted)!important;}
 
-@media(max-width:767px){
+@media (max-width:767px){
   .app-scroll{
     padding-top:8px;
     padding-bottom:calc(var(--bottom-nav-height) + env(safe-area-inset-bottom,0px) + 26px);
@@ -640,10 +640,10 @@ button{ -webkit-tap-highlight-color:transparent; }
   }
 }
 
-@media(min-width:1200px){
+@media (min-width:1200px){
   .desktop-main-inner{padding-left:52px;padding-right:52px;}
 }
-@media(max-width:767px){
+@media (max-width:767px){
   .desktop-main-inner{padding:18px 18px 60px;}
 }
 
@@ -754,14 +754,14 @@ button{ -webkit-tap-highlight-color:transparent; }
   pointer-events:none;
   z-index:-1;
 }
-@media(prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce){
   .gruzli-preview-frame,.gruzli-editorial-reveal,.app-scroll > div > div,.desktop-main-inner > div,.desktop-sidebar,.desktop-topbar,.desktop-detail{
     animation:none!important;
   }
   .app-scroll .bg-card{transition:none!important;}
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   .gruzli-mobile-feed input,
   .gruzli-mobile-feed [role="searchbox"],
   .app-scroll input[placeholder*="Поиск"],
@@ -833,7 +833,7 @@ button{ -webkit-tap-highlight-color:transparent; }
   }
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   .gruzli-feed-search{
     position:sticky;
     top:0;
@@ -879,7 +879,7 @@ button{ -webkit-tap-highlight-color:transparent; }
   50%{opacity:.96;}
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   .app-scroll{
     position:relative;
     isolation:isolate;
@@ -1027,13 +1027,13 @@ button{ -webkit-tap-highlight-color:transparent; }
   }
 }
 
-@media(prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce){
   .app-scroll:before,.app-scroll:after,.bottom-nav-pill:before{
     animation:none!important;
   }
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   .gruzli-chats-screen,
   .gruzli-orders-screen,
   .gruzli-kartoteka-screen{
@@ -1062,7 +1062,7 @@ button{ -webkit-tap-highlight-color:transparent; }
   }
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   .gruzli-chats-screen .border-b,
   .gruzli-orders-screen .border-b,
   .gruzli-kartoteka-screen .border-b{
@@ -1118,7 +1118,7 @@ button{ -webkit-tap-highlight-color:transparent; }
   pointer-events:auto;
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   .gruzli-job-card{
     border-radius:22px!important;
   }
@@ -1132,7 +1132,7 @@ button{ -webkit-tap-highlight-color:transparent; }
   }
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   .gruzli-profile-screen{
     padding-bottom:94px;
   }
@@ -1142,12 +1142,12 @@ button{ -webkit-tap-highlight-color:transparent; }
   .gruzli-profile-screen > .px-5 > .grid > *{
     min-height:94px;
   }
-  .gruzli-profile-screen .rounded-[26px]{
+  .gruzli-profile-screen .rounded-\[26px\]{
     isolation:isolate;
   }
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   .gruzli-job-detail{
     position:relative;
     isolation:isolate;
@@ -1165,7 +1165,7 @@ button{ -webkit-tap-highlight-color:transparent; }
   }
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   .gruzli-chat-detail{
     background:
       radial-gradient(420px 220px at 15% 4%,rgba(255,255,255,.92),transparent 72%),
@@ -1189,7 +1189,7 @@ button{ -webkit-tap-highlight-color:transparent; }
   }
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   .gruzli-kartoteka-screen,
   .gruzli-profile-screen{
     padding-bottom:94px;
@@ -1212,7 +1212,7 @@ button{ -webkit-tap-highlight-color:transparent; }
   }
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   .gruzli-mobile-feed,
   .gruzli-orders-screen{
     padding-bottom:94px;
@@ -1252,7 +1252,7 @@ button{ -webkit-tap-highlight-color:transparent; }
   }
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   .gruzli-auth-shell{
     background:
       radial-gradient(460px 260px at 50% -40px,rgba(255,255,255,.98),transparent 72%),
@@ -1356,14 +1356,14 @@ body{overflow-x:hidden;}
 .gruzli-auth-shell{
   background:radial-gradient(520px 260px at 50% -60px,rgba(255,255,255,.98),transparent 72%),linear-gradient(180deg,#f8f8f9,#f0f0f2)!important;
 }
-@media(min-width:768px){
+@media (min-width:768px){
   body{background:#e9e9eb!important;}
   .app-shell{width:430px!important;max-width:430px!important;margin:0 auto;box-shadow:0 28px 100px rgba(20,24,32,.13);}
 }
-@media(max-width:767px){
+@media (max-width:767px){
   .app-scroll{padding-bottom:calc(92px + env(safe-area-inset-bottom,0px));}
 }
-@media(prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce){
   .app-shell:before,.app-shell:after{animation:none!important;}
   *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;}
 }
@@ -1687,7 +1687,7 @@ body,
 .gruzli-mobile-feed > *:nth-child(5){animation-delay:.10s}
 .gruzli-mobile-feed > *:nth-child(6){animation-delay:.125s}
 
-@media(prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce){
   .app-shell::before,.app-shell::after,
   .desktop-shell::before,.desktop-shell::after,
   .gruzli-feed-live i,
@@ -1696,12 +1696,12 @@ body,
   }
 }
 
-@media(max-width:390px){
+@media (max-width:390px){
   .gruzli-feed-title{font-size:40px!important;}
   .gruzli-feed-hero{padding-left:16px!important;padding-right:16px!important;}
 }
 
-@media(min-width:768px){
+@media (min-width:768px){
   .desktop-main-inner > div{
     position:relative;
   }
@@ -1877,7 +1877,7 @@ body,
 .gruzli-editorial-stagger > *:nth-child(5){animation-delay:.16s}
 .gruzli-editorial-stagger > *:nth-child(6){animation-delay:.20s}
 
-@media(min-width:768px){
+@media (min-width:768px){
   .desktop-main-inner{
     animation:gd-card-enter .45s var(--gd-ease) both;
   }
@@ -2121,7 +2121,7 @@ body,
   transform:scale(.987)!important;
 }
 
-@media(max-width:390px){
+@media (max-width:390px){
   .gruzli-mobile-feed .gruzli-job-card{
     padding:18px 15px 14px!important;
     border-radius:23px!important;
@@ -2311,7 +2311,7 @@ body,
   overflow:hidden;
 }
 
-@media(max-width:390px){
+@media (max-width:390px){
   .gruzli-mobile-feed .gruzli-order-scene{
     padding:13px 11px 10px;
   }
@@ -2418,7 +2418,7 @@ body,
 .gruzli-mobile-feed .gruzli-order-accent{
   pointer-events:none!important;
 }
-@media(max-width:480px){
+@media (max-width:480px){
   .gruzli-mobile-feed .gruzli-feed-hero{
     padding-top:18px!important;
     padding-bottom:14px!important;
@@ -2453,7 +2453,7 @@ body,
 .gruzli-mobile-feed .gruzli-order-scene-bottom{
   flex-wrap:wrap!important;
 }
-@media(max-width:390px){
+@media (max-width:390px){
   .gruzli-mobile-feed .gruzli-feed-hero{
     padding-top:16px!important;
   }
@@ -2487,7 +2487,7 @@ body,
     overflow:hidden!important;
   }
 }
-@media(max-width:340px){
+@media (max-width:340px){
   .gruzli-mobile-feed .gruzli-order-heading{
     align-items:flex-start!important;
   }
@@ -2833,7 +2833,7 @@ body,
     inset 0 1px 0 #fff!important;
 }
 
-@media(max-width:390px){
+@media (max-width:390px){
   .gruzli-mobile-feed .gruzli-feed-title{font-size:40px!important;}
   .gruzli-mobile-feed .gruzli-feed-mark{width:48px!important;height:48px!important;border-radius:15px!important;}
   .gruzli-mobile-feed .gruzli-feed-earnings{min-height:64px!important;}
@@ -3068,7 +3068,7 @@ body,
   letter-spacing:.08em;
 }
 
-@media(max-width:390px){
+@media (max-width:390px){
   .gruzli-worker-live-card{padding:14px!important}
   .gruzli-worker-live-main{margin-top:20px!important}
   .gruzli-worker-live-number{font-size:31px!important}
@@ -3097,7 +3097,7 @@ body,
 .gruzli-worker-dossier-actions{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:14px}.gruzli-worker-dossier-actions button{min-height:39px;border-radius:13px;font-size:10px;font-weight:800}
 .gruzli-worker-dossier-primary{display:flex;align-items:center;justify-content:center;gap:7px;border:0;background:#f2bd16;color:#17181b}
 .gruzli-worker-dossier-secondary{display:flex;align-items:center;justify-content:center;gap:6px;min-width:62px;padding:0 13px;border:1px solid rgba(255,255,255,.13);background:rgba(255,255,255,.05);color:rgba(255,255,255,.78)}
-@media(max-width:390px){.gruzli-worker-dossier{padding:13px;border-radius:22px}.gruzli-worker-dossier-avatar{width:52px;height:52px;flex-basis:52px}.gruzli-worker-dossier-identity h3{font-size:16px}.gruzli-worker-dossier-rating>div{padding:0 6px}.gruzli-worker-dossier-rating strong{font-size:10px}}
+@media (max-width:390px){.gruzli-worker-dossier{padding:13px;border-radius:22px}.gruzli-worker-dossier-avatar{width:52px;height:52px;flex-basis:52px}.gruzli-worker-dossier-identity h3{font-size:16px}.gruzli-worker-dossier-rating>div{padding:0 6px}.gruzli-worker-dossier-rating strong{font-size:10px}}
 
 .gruzli-worker-id-mockup{
   position:relative;
@@ -3207,7 +3207,7 @@ body,
   width:5px;height:5px;border-radius:50%;
   background:#f2bd16;box-shadow:0 0 0 4px rgba(242,189,22,.12);
 }
-@media(max-width:390px){
+@media (max-width:390px){
   .gruzli-worker-id-mockup{min-height:180px;padding:13px;border-radius:22px}
   .gruzli-worker-id-body{gap:10px;padding:15px 0 13px}
   .gruzli-worker-id-info strong{font-size:17px}
@@ -3261,7 +3261,7 @@ body,
 .gruzli-work-history-main span{display:block;margin-top:3px;color:#999b9f;font-size:7px}
 .gruzli-work-history-row>b{font-size:10px;font-weight:850;white-space:nowrap;color:#17181b}
 .gruzli-work-history-empty{padding:18px;border:1px dashed rgba(17,18,20,.13);border-radius:20px;color:#8f9195;font-size:10px;line-height:1.45;background:rgba(255,255,255,.5)}
-@media(max-width:390px){
+@media (max-width:390px){
   .gruzli-worker-id-hero{min-height:202px;padding:14px;border-radius:24px}
   .gruzli-worker-dashboard-grid>div{padding:0 7px}
   .gruzli-worker-dashboard-grid>div:first-child{padding-left:12px}
@@ -3279,7 +3279,7 @@ body,
 .gruzli-card-swipe-hint span{display:inline-flex;align-items:center;gap:3px}
 .gruzli-card-swipe-hint i{width:2px;height:2px;border-radius:50%;background:#c4c5c6}
 .gruzli-job-card:hover .gruzli-card-swipe-hint{opacity:1;color:#74767a}
-@media(max-width:390px){.gruzli-card-swipe-hint{margin-top:-2px;margin-bottom:7px;font-size:6px}}
+@media (max-width:390px){.gruzli-card-swipe-hint{margin-top:-2px;margin-bottom:7px;font-size:6px}}
 
 .gruzli-profile-screen{
   position:relative;
@@ -3541,14 +3541,14 @@ body,
   0%,55%{transform:translateX(-130%)}
   72%,100%{transform:translateX(130%)}
 }
-@media(max-width:390px){
+@media (max-width:390px){
   .gruzli-profile-title h1{font-size:22px}
   .gruzli-worker-id-info strong{font-size:18px}
   .gruzli-worker-id-meta{gap:7px}
   .gruzli-worker-dashboard-grid>div{padding:0 6px}
   .gruzli-worker-calendar-days{padding-left:12px;padding-right:12px}
 }
-@media(prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce){
   .gruzli-worker-id-hero::after{animation:none}
   .gruzli-worker-dashboard,
   .gruzli-earnings-mockup,
@@ -3712,7 +3712,7 @@ body,
   background:#f2bd16!important;
   box-shadow:0 0 0 4px rgba(242,189,22,.11);
 }
-@media(max-width:390px){
+@media (max-width:390px){
   .gruzli-worker-id-hero{min-height:215px;padding:15px 14px 13px}
   .gruzli-worker-id-body{grid-template-columns:72px minmax(0,1fr);gap:13px}
   .gruzli-worker-id-photo-wrap img,
@@ -3818,13 +3818,13 @@ body,
   background:rgba(255,255,255,.88)!important;
   box-shadow:0 10px 26px rgba(17,18,20,.055),inset 0 1px 0 #fff;
 }
-@media(max-width:390px){
+@media (max-width:390px){
   .gruzli-profile-screen{--profile-gap:14px}
   .gruzli-wallet-section-head>b{display:none}
   .gruzli-worker-dashboard-grid>div{min-height:52px}
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   .gruzli-document-screen{
     position:relative;
     isolation:isolate;
@@ -4079,11 +4079,11 @@ body,
     border-bottom:0!important;
     padding-bottom:0!important;
   }
-  .gruzli-chats-screen .relative.overflow-hidden .text-[16px]{
+  .gruzli-chats-screen .relative.overflow-hidden .text-\[16px\]{
     font-size:14px!important;
     letter-spacing:-.015em;
   }
-  .gruzli-chats-screen .relative.overflow-hidden .text-[14px]{
+  .gruzli-chats-screen .relative.overflow-hidden .text-\[14px\]{
     font-size:12px!important;
   }
 
@@ -4145,7 +4145,7 @@ body,
   .gruzli-chat-detail .bubble-other p{
     font-size:14px!important;
   }
-  .gruzli-chat-detail > .px-3.pt-2.5{
+  .gruzli-chat-detail > .px-3.pt-2\.5{
     background:rgba(255,255,255,.78)!important;
     border-top:1px solid rgba(215,216,219,.75)!important;
     box-shadow:0 -12px 30px rgba(25,27,32,.045);
@@ -4168,7 +4168,7 @@ body,
   }
 }
 
-@media(min-width:768px){
+@media (min-width:768px){
   .gruzli-document-screen,
   .gruzli-chats-screen,
   .gruzli-chat-detail{
@@ -4198,7 +4198,7 @@ body,
   }
 }
 
-@media(prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce){
   .gruzli-document-screen *,
   .gruzli-chats-screen *,
   .gruzli-chat-detail *{
@@ -4362,7 +4362,7 @@ body,
   letter-spacing:.13em;
 }
 .gruzli-settings-footer b{color:#2a2b2f;font-size:10px}
-@media(min-width:768px){
+@media (min-width:768px){
   .gruzli-settings-screen{max-width:820px;margin:0 auto}
   .gruzli-settings-hero{padding-left:28px;padding-right:28px}
   .gruzli-settings-group{margin-left:28px;margin-right:28px}
@@ -4371,7 +4371,7 @@ body,
     transform:translateX(2px);
   }
 }
-@media(prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce){
   .gruzli-settings-group>button{transition:none}
 }
 
@@ -4536,12 +4536,12 @@ body,
 .gruzli-settings-subpage [class*="verification"]{
   border-radius:24px;
 }
-@media(min-width:768px){
+@media (min-width:768px){
   .gruzli-settings-subpage{max-width:820px;margin:0 auto}
   .gruzli-settings-page-head{padding-left:28px;padding-right:28px}
   .gruzli-settings-subpage .px-5{padding-left:28px!important;padding-right:28px!important}
 }
-@media(prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce){
   .gruzli-settings-subpage *{scroll-behavior:auto!important}
 }
 
@@ -4566,7 +4566,7 @@ body,
   border-color:rgba(242,189,22,.65)!important;
   box-shadow:0 0 0 3px rgba(242,189,22,.11)!important;
 }
-@media(max-width:420px){
+@media (max-width:420px){
   .gruzli-settings-profile-work{padding:15px}
 }
 
@@ -4627,7 +4627,7 @@ body,
 .gruzli-settings-subpage button:active{
   transform:scale(.985);
 }
-@media(min-width:768px){
+@media (min-width:768px){
   .gruzli-settings-section-intro{padding-top:8px}
   .gruzli-settings-section-intro h2{font-size:34px}
 }
@@ -4780,7 +4780,7 @@ button.bg-foreground:active{
   to{opacity:1;transform:translateY(0)}
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   [role="dialog"]{
     width:calc(100vw - 20px)!important;
     max-height:min(88svh,760px);
@@ -5160,7 +5160,7 @@ button.bg-foreground:active{
   opacity:.55;
 }
 
-@media(max-width:390px){
+@media (max-width:390px){
   .gruzli-order-index{font-size:46px!important}
   .gruzli-order-scene-main{grid-template-columns:minmax(0,1fr) minmax(96px,.7fr);gap:10px}
   .gruzli-order-scene-bottom{gap:7px}
@@ -5168,7 +5168,7 @@ button.bg-foreground:active{
   .gruzli-order-dispatcher > span:nth-child(2){max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
 
-@media(prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce){
   .gruzli-job-card{transition:none}
   .gruzli-job-card:hover{transform:none}
 }
@@ -5308,7 +5308,7 @@ button.bg-foreground:active{
   100%{background-position:0 0,0 0,24px 0,0 0,0 0}
 }
 
-@media(prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce){
   .gruzli-mobile-feed:after,
   .gruzli-feed-hero:before,
   .gruzli-job-card:before{
@@ -5357,7 +5357,7 @@ button.bg-foreground:active{
   }
 }
 
-@media(prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce){
   .gruzli-card-follow-light{
     display:none;
   }
@@ -5506,7 +5506,7 @@ button.bg-foreground:active{
   box-shadow:0 0 0 2px rgba(255,255,255,.92),0 4px 14px rgba(20,22,26,.09);
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   [role="dialog"]{
     border-radius:24px!important;
     box-shadow:0 -10px 60px rgba(20,22,26,.16)!important;
@@ -5516,7 +5516,7 @@ button.bg-foreground:active{
   }
 }
 
-@media(min-width:768px){
+@media (min-width:768px){
   .desktop-main{
     background:
       radial-gradient(760px 380px at 74% 0%,rgba(255,255,255,.96),transparent 70%),
@@ -5556,14 +5556,14 @@ button.bg-foreground:active{
   from{opacity:0;transform:translateY(8px);}
   to{opacity:1;transform:translateY(0);}
 }
-@media(prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce){
   .desktop-main-inner > *{animation:none!important;}
   .app-scroll button,
   .app-scroll input,
   .app-scroll textarea{transition:none!important;}
 }
 
-@media(max-width:430px){
+@media (max-width:430px){
   .app-scroll main,
   .app-scroll section{
     scroll-margin-top:18px;
@@ -5589,7 +5589,7 @@ button.bg-foreground:active{
     transition-duration:.01ms!important;
   }
 }
-@media(max-width:767px){
+@media (max-width:767px){
   .bottom-nav-wrapper{
     padding-bottom:max(9px,env(safe-area-inset-bottom,0px));
     padding-left:max(12px,env(safe-area-inset-left,0px));
@@ -5609,7 +5609,7 @@ button.bg-foreground:active{
   }
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   .bottom-nav-wrapper{
     position:absolute!important;
     left:0!important;
@@ -5670,7 +5670,7 @@ button.bg-foreground:active{
 .gruzli-splash.is-hidden{opacity:0;pointer-events:none;}
 .gruzli-splash-progress{animation:gruzli-splash-progress .8s linear infinite;will-change:transform;}
 @keyframes gruzli-splash-progress{from{transform:translateX(-100%)}to{transform:translateX(200%)}}
-@media(prefers-reduced-motion:reduce){.gruzli-splash{transition:none}.gruzli-splash-progress{animation:none}}
+@media (prefers-reduced-motion:reduce){.gruzli-splash{transition:none}.gruzli-splash-progress{animation:none}}
 
 .gruzli-mobile-feed{
   background:
@@ -5760,7 +5760,7 @@ button.bg-foreground:active{
   margin-top:14px!important;
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   .gruzli-card-swipe-hint{
     display:none!important;
   }
@@ -5788,7 +5788,7 @@ button.bg-foreground:active{
   }
 }
 
-@media(max-width:390px){
+@media (max-width:390px){
   .gruzli-job-card{
     padding:15px!important;
   }
@@ -5812,14 +5812,14 @@ button.bg-foreground:active{
   }
 }
 
-@media(prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce){
   .gruzli-mobile-feed:after,
   .gruzli-feed-hero:before{
     animation:none!important;
   }
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   .mobile-screen-scroll .gruzli-settings-screen > .flex-1.overflow-y-auto,
   .mobile-screen-scroll .gruzli-settings-subpage > .flex-1.overflow-y-auto{
     flex:none!important;
@@ -6165,7 +6165,7 @@ button.bg-foreground:active{
 }
 
 /* Dialogs and sheets: one consistent radius + shadow. */
-@media(max-width:767px){
+@media (max-width:767px){
   [role="dialog"]{
     border:1px solid var(--gruzli-line)!important;
     box-shadow:0 16px 50px rgba(18,20,25,.18)!important;
@@ -6173,7 +6173,7 @@ button.bg-foreground:active{
 }
 
 /* Mobile bottom navigation: opaque enough for legibility, still light and compact. */
-@media(max-width:767px){
+@media (max-width:767px){
   .bottom-nav-pill{
     background:rgba(255,255,255,.96)!important;
     background-image:none!important;
@@ -6191,7 +6191,7 @@ button.bg-foreground:active{
 }
 
 /* Desktop workspace: remove gradients/glows and keep a quiet enterprise shell. */
-@media(min-width:768px){
+@media (min-width:768px){
   .desktop-shell{
     background:#f4f4f5!important;
   }
@@ -6235,7 +6235,7 @@ button.bg-foreground:active{
   background:var(--gruzli-canvas)!important;
 }
 
-@media(prefers-reduced-motion:reduce){
+@media (prefers-reduced-motion:reduce){
   .gruzli-job-card:hover{
     transform:none!important;
   }
@@ -6334,7 +6334,7 @@ button.bg-foreground:active{
   box-shadow:0 2px 10px rgba(18,20,25,.028);
 }
 
-@media(min-width:768px){
+@media (min-width:768px){
   .gruzli-dispatcher-cabinet{
     background:transparent!important;
     padding-bottom:28px!important;
@@ -6352,7 +6352,7 @@ button.bg-foreground:active{
   }
 }
 
-@media(max-width:390px){
+@media (max-width:390px){
   .gruzli-dispatcher-actions{
     gap:5px!important;
   }
@@ -6401,7 +6401,7 @@ button.bg-foreground:active{
   background:#fbf5e9!important;
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   .gruzli-dispatcher-cabinet .gruzli-dispatcher-hero{
     box-shadow:0 3px 14px rgba(18,20,25,.04)!important;
   }
@@ -6500,7 +6500,7 @@ button.bg-foreground:active{
   background:#fff7d6!important;
 }
 
-@media(max-width:767px){
+@media (max-width:767px){
   .gruzli-dispatcher-cabinet .gruzli-dispatcher-cabinet-scroll{
     padding-bottom:calc(28px + env(safe-area-inset-bottom))!important;
   }
