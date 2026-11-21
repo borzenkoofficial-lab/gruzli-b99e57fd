@@ -1017,7 +1017,7 @@ app.post("/api/responses/:responseId/worker-status", requireAuth, async (req, re
       await client.query("ROLLBACK");
       return sendError(res, 404, "RESPONSE_NOT_FOUND", "Отклик не найден.");
     }
-    if (response.status !== "accepted" || response.job_status === "completed") {
+    if (response.status !== "accepted" || !["active", "filled", "finishing"].includes(response.job_status)) {
       await client.query("ROLLBACK");
       return sendError(res, 409, "RESPONSE_NOT_ACTIVE", "Этот заказ больше нельзя обновить.");
     }
@@ -1142,6 +1142,74 @@ app.post("/api/responses/:responseId/accept", requireAuth, async (req, res) => {
     await client.query("ROLLBACK").catch(() => {});
     console.error("[jobs] Accept response failed:", error.message);
     return sendError(res, 500, "RESPONSE_ACCEPT_FAILED", "Не удалось принять отклик.");
+  } finally {
+    client.release();
+  }
+});
+
+app.post("/api/responses/:responseId/cancel-assignment", requireAuth, async (req, res) => {
+  const user = req.authUser;
+  if (user.role !== "dispatcher" && user.role !== "admin") return sendError(res, 403, "DISPATCHER_ROLE_REQUIRED", "Снять исполнителя с заказа может только диспетчер.");
+  const client = await pool.connect();
+  let workerId = null;
+  let jobId = null;
+  let clientId = null;
+  let jobStatus = null;
+  try {
+    await client.query("BEGIN");
+    const jobLock = await client.query(
+      "SELECT j.id FROM jobs j JOIN job_responses r ON r.job_id = j.id WHERE r.id = $1 FOR UPDATE OF j",
+      [req.params.responseId],
+    );
+    if (!jobLock.rowCount) {
+      await client.query("ROLLBACK");
+      return sendError(res, 404, "RESPONSE_NOT_FOUND", "Отклик не найден.");
+    }
+    const result = await client.query(
+      "SELECT r.id, r.job_id, r.worker_id, r.status AS response_status, r.work_started_at, j.dispatcher_id, j.client_id, j.status AS job_status " +
+      "FROM job_responses r JOIN jobs j ON j.id = r.job_id WHERE r.id = $1 FOR UPDATE OF r",
+      [req.params.responseId],
+    );
+    const response = result.rows[0];
+    if (!response || (user.role !== "admin" && response.dispatcher_id !== user.id)) {
+      await client.query("ROLLBACK");
+      return sendError(res, 404, "RESPONSE_NOT_FOUND", "Отклик не найден.");
+    }
+    if (response.response_status !== "accepted" || response.work_started_at ||
+        !["active", "filled"].includes(response.job_status)) {
+      await client.query("ROLLBACK");
+      return sendError(res, 409, "ASSIGNMENT_NOT_CANCELLABLE", "Назначение нельзя отменить после начала работы или перевода заказа в завершение.");
+    }
+    workerId = response.worker_id;
+    jobId = response.job_id;
+    clientId = response.client_id;
+    const updated = await client.query(
+      "UPDATE job_responses SET status = 'rejected', worker_status = 'cancelled' WHERE id = $1 " +
+      "RETURNING id, job_id, worker_id, status, worker_status",
+      [response.id],
+    );
+    const acceptedCount = await client.query(
+      "SELECT count(*)::int AS count FROM job_responses WHERE job_id = $1 AND status = 'accepted'",
+      [jobId],
+    );
+    jobStatus = response.job_status === "filled" && acceptedCount.rows[0].count < 1 ? "active" : response.job_status;
+    if (response.job_status === "filled") {
+      await client.query("UPDATE jobs SET status = 'active', updated_at = now() WHERE id = $1", [jobId]);
+      jobStatus = "active";
+    }
+    await client.query(
+      "INSERT INTO app_audit_log (actor_user_id, action, entity_type, entity_id, ip_address) VALUES ($1,'dispatcher.assignment_cancelled','job_response',$2,$3)",
+      [user.id, response.id, req.ip],
+    );
+    await client.query("COMMIT");
+    sendUserEvent(workerId, { type: "response:cancelled", response: updated.rows[0], reason: "dispatcher_cancelled_before_start" });
+    if (clientId) sendUserEvent(clientId, { type: "job:updated", jobId, status: jobStatus });
+    sendRoleEvent("worker", { type: "job:updated", jobId, status: jobStatus });
+    return res.json({ response: updated.rows[0], jobStatus });
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    console.error("[responses] Assignment cancellation failed:", error.message);
+    return sendError(res, 500, "ASSIGNMENT_CANCEL_FAILED", "Не удалось снять исполнителя с заказа.");
   } finally {
     client.release();
   }
