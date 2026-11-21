@@ -1051,3 +1051,5 @@ start().catch((error) => {
   console.error("[http] Fatal startup error:", error.message);
   process.exit(1);
 });
+
+// CI validates migration branches against the Amvera backend workflow.
