@@ -107,27 +107,43 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
 
   const fetchMyJobs = async () => {
     if (!user) return;
-    const { data: jobsData } = await supabase
+    const { data: jobsData, error: jobsError } = await supabase
       .from("jobs")
       .select("*")
       .eq("dispatcher_id", user.id)
       .order("created_at", { ascending: false });
 
-    const { data: requestData } = await supabase
+    if (jobsError) {
+      console.error("Failed to load dispatcher jobs", jobsError);
+      toast.error("Не удалось загрузить ваши заявки диспетчера.");
+      return;
+    }
+
+    const { data: requestData, error: requestError } = await supabase
       .from("jobs")
       .select("*")
       .is("dispatcher_id", null)
       .eq("status", "open")
       .order("created_at", { ascending: false })
       .limit(20);
-    setOpenRequests(requestData || []);
+    if (requestError) {
+      console.error("Failed to load open dispatcher requests", requestError);
+      toast.error("Не удалось обновить список свободных заявок.");
+    } else {
+      setOpenRequests(requestData || []);
+    }
 
     if (jobsData && jobsData.length > 0) {
       const jobIds = jobsData.map(j => j.id);
-      const { data: responses } = await supabase
+      const { data: responses, error: responsesError } = await supabase
         .from("job_responses")
         .select("job_id")
         .in("job_id", jobIds);
+      if (responsesError) {
+        console.error("Failed to load dispatcher response counts", responsesError);
+        toast.error("Не удалось обновить количество откликов.");
+        return;
+      }
       const countMap: Record<string, number> = {};
       responses?.forEach(r => { countMap[r.job_id] = (countMap[r.job_id] || 0) + 1; });
       setMyJobs(jobsData.map(job => ({ ...job, response_count: countMap[job.id] || 0 })));
@@ -238,27 +254,46 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     if (!user) return;
 
     // Fetch active/finishing/filled jobs (with accepted workers)
-    const { data: jobs } = await supabase
+    const { data: jobs, error: jobsError } = await supabase
       .from("jobs")
       .select("*")
       .eq("dispatcher_id", user.id)
       .in("status", ["active", "finishing", "filled"])
       .order("created_at", { ascending: false });
 
+    if (jobsError) {
+      console.error("Failed to load active dispatcher jobs", jobsError);
+      toast.error("Не удалось обновить активные заказы.");
+      setLoading(false);
+      return;
+    }
+
     if (!jobs || jobs.length === 0) {
       setActiveJobs([]);
     } else {
       const jobIds = jobs.map((j) => j.id);
-      const { data: responses } = await supabase
+      const { data: responses, error: responsesError } = await supabase
         .from("job_responses")
         .select("*")
         .in("job_id", jobIds)
         .eq("status", "accepted");
 
+      if (responsesError) {
+        console.error("Failed to load accepted worker responses", responsesError);
+        toast.error("Не удалось загрузить исполнителей по заказам.");
+        setLoading(false);
+        return;
+      }
+
       const workerIds = [...new Set((responses || []).map((r) => r.worker_id))];
-      const { data: profiles } = workerIds.length > 0
+      const { data: profiles, error: profilesError } = workerIds.length > 0
         ? await supabase.from("profiles_public" as any).select("*").in("user_id", workerIds)
-        : { data: [] };
+        : { data: [], error: null };
+
+      if (profilesError) {
+        console.error("Failed to load worker profiles", profilesError);
+        toast.error("Заказы загружены, но данные некоторых исполнителей недоступны.");
+      }
 
       const profileMap: Record<string, Tables<"profiles">> = {};
       (profiles || []).forEach((p) => { profileMap[p.user_id] = p; });
@@ -286,7 +321,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     }
 
     // Fetch completed jobs stats
-    const { data: completedJobs } = await supabase
+    const { data: completedJobs, error: completedJobsError } = await supabase
       .from("jobs")
       .select("*")
       .eq("dispatcher_id", user.id)
@@ -294,13 +329,27 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
       .order("created_at", { ascending: false })
       .limit(50);
 
+    if (completedJobsError) {
+      console.error("Failed to load completed dispatcher jobs", completedJobsError);
+      toast.error("Не удалось обновить историю завершённых заказов.");
+      setLoading(false);
+      return;
+    }
+
     if (completedJobs && completedJobs.length > 0) {
       const cJobIds = completedJobs.map((j) => j.id);
-      const { data: cResponses } = await supabase
+      const { data: cResponses, error: cResponsesError } = await supabase
         .from("job_responses")
         .select("*")
         .in("job_id", cJobIds)
         .eq("status", "accepted");
+
+      if (cResponsesError) {
+        console.error("Failed to load completed order expenses", cResponsesError);
+        toast.error("Не удалось загрузить финансовую статистику по завершённым заказам.");
+        setLoading(false);
+        return;
+      }
 
       const stats: CompletedJobStat[] = completedJobs.map((job) => {
         const jobResps = (cResponses || []).filter((r) => r.job_id === job.id);
@@ -315,6 +364,8 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
         };
       });
       setCompletedStats(stats);
+    } else {
+      setCompletedStats([]);
     }
 
     setLoading(false);
