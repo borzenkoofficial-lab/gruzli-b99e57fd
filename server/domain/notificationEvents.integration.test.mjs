@@ -7,7 +7,7 @@ import { startNotificationListener } from "./notificationEvents.mjs";
 const databaseUrl = process.env.DATABASE_URL;
 const pool = databaseUrl ? new Pool({ connectionString: databaseUrl }) : null;
 
-test("committed notifications are delivered across PostgreSQL listener connections", {
+test("committed notifications are delivered through the PostgreSQL event listener", {
   skip: !pool,
 }, async () => {
   const suffix = Date.now() + "-" + Math.random().toString(16).slice(2);
@@ -27,37 +27,33 @@ test("committed notifications are delivered across PostgreSQL listener connectio
     );
     await fixture.query("COMMIT");
 
-    const delivered = new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error("Timed out waiting for PostgreSQL notification")), 3000);
+    const received = new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error("Timed out waiting for notification event")), 3000);
       stopListener = async () => {
         clearTimeout(timeout);
         await stopListenerOriginal();
       };
       const stopListenerOriginal = async () => {};
-      void timeout;
       void resolve;
     });
-    const listenerClient = await pool.connect();
-    await listenerClient.query("LISTEN gruzli_notification_created");
-    const received = new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error("Timed out waiting for PostgreSQL notification")), 3000);
-      listenerClient.on("notification", (message) => {
-        clearTimeout(timeout);
-        resolve(JSON.parse(message.payload));
-      });
-    });
+    let resolveEvent;
+    const eventPromise = new Promise((resolve) => { resolveEvent = resolve; });
+    stopListener = await startNotificationListener(pool, resolveEvent);
+
     const notification = await createNotification(pool, {
       recipientId,
       type: "system",
       title: "Realtime test",
       body: "Notification event",
     });
-    const payload = await received;
-    assert.equal(payload.recipientId, recipientId);
-    assert.equal(payload.notificationId, notification.id);
-    await listenerClient.query("UNLISTEN gruzli_notification_created");
-    listenerClient.release();
-    void delivered;
+    const event = await Promise.race([
+      eventPromise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Timed out waiting for notification event")), 3000)),
+    ]);
+    assert.equal(event.recipientId, recipientId);
+    assert.equal(event.notification.id, notification.id);
+    assert.equal(event.unreadCount, 1);
+    void received;
   } finally {
     await stopListener().catch(() => {});
     fixture.release();
