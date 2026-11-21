@@ -755,13 +755,13 @@ app.post("/api/conversations/:conversationId/messages", requireAuth, async (req,
       "RETURNING id, conversation_id, sender_id, text, media_url, message_type, reply_to_id, created_at",
       [conversationId, req.authUser.id, text, messageType, replyToId],
     );
-    await client.query(
-      "INSERT INTO message_receipts (message_id, recipient_id) SELECT $1, user_id FROM conversation_participants WHERE conversation_id = $2 AND user_id <> $3 ON CONFLICT DO NOTHING",
+    const receiptRows = await client.query(
+      "INSERT INTO message_receipts (message_id, recipient_id) SELECT $1, user_id FROM conversation_participants WHERE conversation_id = $2 AND user_id <> $3 ON CONFLICT DO NOTHING RETURNING recipient_id",
       [result.rows[0].id, conversationId, req.authUser.id],
     );
     await client.query("UPDATE conversation_participants SET last_read_at = now() WHERE conversation_id = $1 AND user_id = $2", [conversationId, req.authUser.id]);
     await client.query("COMMIT");
-    const message = { ...result.rows[0], sender_name: req.authUser.full_name };
+    const message = { ...result.rows[0], sender_name: req.authUser.full_name, receipt_total: receiptRows.rowCount, receipt_delivered: 0, receipt_read: 0 };
     sendConversationEvent(conversationId, { type: "message:new", conversationId, message }, req.authUser.id);
     return res.status(201).json({ message });
   } catch (error) {
