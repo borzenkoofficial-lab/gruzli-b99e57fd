@@ -14,6 +14,9 @@ function fail(code, status, message) {
 }
 
 export async function submitWorkerResponse({ db, jobId, workerId, message }) {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(jobId))) {
+    fail("INVALID_JOB_ID", 400, "Некорректный идентификатор заявки.");
+  }
   const client = await db.connect();
   let transactionOpen = false;
 
@@ -69,9 +72,10 @@ export async function submitWorkerResponse({ db, jobId, workerId, message }) {
       [job.id, workerId],
     );
     const isNewResponse = duplicateResult.rowCount === 0;
-    const responseMessage = String(message || (
+    const suppliedMessage = typeof message === "string" ? message.trim() : "";
+    const responseMessage = (suppliedMessage || (
       "Здравствуйте! Откликнулся на заказ «" + job.title + "». Готов обсудить детали и условия."
-    )).trim().slice(0, 2000);
+    )).slice(0, 2000);
 
     let response;
     if (isNewResponse) {
