@@ -60,6 +60,7 @@ async function withFixture(run) {
       "SELECT 1 FROM conversation_participants cp WHERE cp.conversation_id = c.id AND cp.user_id = ANY($1::uuid[]))",
       [userIds],
     );
+    await pool.query("DELETE FROM jobs WHERE client_id = $1", [clientId]);
     await pool.query("DELETE FROM app_users WHERE id = ANY($1::uuid[])", [userIds]);
   }
 }
