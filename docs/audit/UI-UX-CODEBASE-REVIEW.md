@@ -14,11 +14,11 @@
 ### CSS
 Файл `src/gruzli-editorial.css`:
 - 180 559 символов, 6 508 строк;
-- 1 317 CSS selector rules, 928 уникальных selector strings;
+- 1 295 обычных CSS rule blocks (без keyframe steps), 925 уникальных selector headers;
 - 1 212 использований `!important`;
 - 91 media query;
-- 40 selector strings повторяются в нескольких местах.
-- Наиболее часто повторяются: `.gruzli-job-card` (11 правил), `.bottom-nav-pill` (10), `.app-scroll` (9), `.desktop-main-inner` (8), `.app-shell` (8), `.bottom-nav-wrapper` (8), `:root` (4).
+- 204 selector headers повторяются в нескольких местах.
+- Наиболее часто повторяются: `.gruzli-job-card` (11 правил), `.bottom-nav-pill` (10), `.app-scroll` (9), `.app-shell` (9), `.desktop-main-inner` (8), `.bottom-nav-wrapper` (8), `.gruzli-mobile-feed` (8), `:root` (5).
 
 Это подтверждает высокую плотность переопределений. Сами по себе повторные правила не всегда ошибка, но вместе с большим количеством `!important` повышают риск каскадных регрессий и усложняют предсказуемое развитие интерфейса.
 
