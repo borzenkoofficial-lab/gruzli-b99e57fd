@@ -565,6 +565,8 @@ const Index = () => {
                       onOpenPremium={() => setShowPremium(true)}
                       onOpenCabinet={() => { setShowCabinet(false); handleNavigate("feed"); }}
                       onOpenCompany={() => setShowCompany(true)}
+                      onOpenChats={() => handleNavigate("chats")}
+                      onOpenDispatcherCabinet={() => setShowCabinet(true)}
                     />
                   )}
                 </div>
@@ -613,6 +615,8 @@ const Index = () => {
             onOpenPremium={() => setShowPremium(true)}
             onOpenCabinet={() => { setShowCabinet(false); handleNavigate("feed"); }}
             onOpenCompany={() => setShowCompany(true)}
+            onOpenChats={() => handleNavigate("chats")}
+            onOpenDispatcherCabinet={() => setShowCabinet(true)}
           />
         )}
       </Suspense>

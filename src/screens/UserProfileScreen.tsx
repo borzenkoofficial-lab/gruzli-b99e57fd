@@ -44,6 +44,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
   const [postedJobsCount, setPostedJobsCount] = useState(0);
   const [idCopied, setIdCopied] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   // Review form state
   const [showReviewForm, setShowReviewForm] = useState(false);
@@ -95,13 +96,22 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
       // Parallelize the two independent base queries — was sequential, costing ~2x latency.
       const [profileRes, roleRes] = await Promise.all([
         supabase.from("profiles_public" as any).select("*").eq("user_id", userId).single(),
-        supabase.from("user_roles").select("role").eq("user_id", userId).single(),
+        supabase.rpc("get_user_role", { _user_id: userId }),
       ]);
 
       if (cancelled) return;
 
+      if (profileRes.error && profileRes.error.code !== "PGRST116") {
+        console.error("[Gruzli PublicProfile] profile query failed:", profileRes.error);
+        setLoadError(true);
+      }
+      if (roleRes.error) {
+        console.error("[Gruzli PublicProfile] role query failed:", roleRes.error);
+        setLoadError(true);
+      }
+
       setProfile(profileRes.data);
-      const detectedRole = roleRes.data?.role || null;
+      const detectedRole = roleRes.data || null;
       setUserRole(detectedRole);
 
       // Show the screen as soon as base data is in — reviews & jobs count
@@ -182,23 +192,32 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
           </button>
           <h2 className="text-base font-bold text-foreground">Профиль</h2>
         </div>
-        <div className="text-center py-12 text-muted-foreground text-sm">Профиль не найден</div>
+        <div className="text-center py-12 text-muted-foreground text-sm">{loadError ? "Не удалось загрузить профиль. Попробуйте ещё раз." : "Профиль не найден"}</div>
       </div>
     );
   }
 
   const isDispatcher = userRole === "dispatcher";
+  const isClient = userRole === "client";
   const isAdminAccount = userRole === "admin";
 
   // Stats for rating bar
   const positiveCount = reviews.filter(r => r.rating >= 4).length;
   const neutralCount = reviews.filter(r => r.rating === 3).length;
   const negativeCount = reviews.filter(r => r.rating <= 2).length;
-  const isWorker = !isDispatcher && !isAdminAccount;
+  const isWorker = userRole === "worker";
   const completedOrders = Number(profile.completed_orders || 0);
-  const workerRating = Number(profile.rating || avgRating || 5);
+  const workerRating = profile.rating == null
+    ? (isDispatcher && reviews.length > 0 ? avgRating : null)
+    : Number(profile.rating);
+  const workerRatingLabel = workerRating == null ? "—" : workerRating.toFixed(1);
   const workerSkills = Array.isArray(profile.skills) ? profile.skills : [];
-  const workerStatus = profile.is_available === false ? "Сейчас занят" : "Готов к работе";
+  const lastSeenMs = profile.last_seen_at ? Date.parse(profile.last_seen_at) : Number.NaN;
+  const lastSeenAge = Date.now() - lastSeenMs;
+  const workerStatus =
+    Number.isFinite(lastSeenMs) && lastSeenAge >= 0 && lastSeenAge <= 2 * 60 * 1000
+      ? "Сейчас в сети"
+      : profile.last_seen_at ? "Не в сети" : "Статус не указан";
 
   return (
     <div className="min-h-full bg-background animate-fade-in pb-[calc(var(--bottom-nav-height,80px)+env(safe-area-inset-bottom,0px)+32px)]">
@@ -234,7 +253,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
             <div className="flex items-center gap-1 mt-1">
               <Shield size={12} className="text-primary" />
               <span className="text-xs text-primary font-semibold">
-                {isAdminAccount ? "Администрация" : isDispatcher ? "Диспетчер" : "Грузчик"}
+                {isAdminAccount ? "Администрация" : isDispatcher ? "Диспетчер" : isWorker ? "Грузчик" : isClient ? "Заказчик" : "Участник Gruzli"}
               </span>
               {profile.verified && (
                 <span className="ml-1 px-2 py-0.5 rounded-full bg-primary/10 text-[10px] text-primary font-bold">✓ Верифицирован</span>
@@ -276,7 +295,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
             <div className="gruzli-worker-dossier-rating">
               <div>
                 <span>РЕЙТИНГ</span>
-                <strong>{workerRating.toFixed(1)} <Star size={14} /></strong>
+                <strong>{workerRatingLabel} <Star size={14} /></strong>
               </div>
               <div>
                 <span>ЗАКАЗЫ</span>
@@ -339,13 +358,13 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
             <div className="flex items-center gap-1">
               <Star size={16} className="text-primary fill-primary" />
               <span className="text-lg font-extrabold text-foreground">
-                {isDispatcher ? (avgRating || profile.rating || "5.0") : (profile.rating || "5.0")}
+                {isDispatcher && reviews.length > 0 ? avgRating.toFixed(1) : profile.rating == null ? "—" : Number(profile.rating).toFixed(1)}
               </span>
             </div>
           </div>
-          {!isDispatcher && (
+          {isWorker && (
             <p className="text-[11px] text-muted-foreground">
-              {profile.completed_orders || 0} выполненных заказов
+              {completedOrders} выполненных заказов
             </p>
           )}
           {isDispatcher && (
@@ -383,7 +402,7 @@ const UserProfileScreen = ({ userId, onBack, onChat }: UserProfileScreenProps) =
       </div>
 
       {/* Skills for worker */}
-      {!isDispatcher && profile.skills?.length > 0 && (
+      {isWorker && profile.skills?.length > 0 && (
         <div className="mx-5 mb-4">
           <h3 className="text-sm font-bold text-foreground mb-2">Навыки</h3>
           <div className="flex flex-wrap gap-2">

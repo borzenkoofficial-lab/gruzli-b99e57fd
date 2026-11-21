@@ -917,7 +917,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
                                         </div>
                                         <div className="flex items-center gap-2 mt-0.5">
                                           <Star size={10} className="text-primary fill-primary" />
-                                          <span className="text-[11px] text-muted-foreground">{w.profile?.rating || "5.0"} · {w.profile?.completed_orders || 0} заказов</span>
+                                          <span className="text-[11px] text-muted-foreground">{w.profile?.rating == null ? "—" : Number(w.profile.rating).toFixed(1)} · {w.profile?.completed_orders || 0} заказов</span>
                                         </div>
                                       </button>
 

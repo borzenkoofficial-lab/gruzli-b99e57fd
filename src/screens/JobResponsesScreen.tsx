@@ -304,7 +304,7 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <Star size={12} className="text-primary fill-primary" />
-                            <span className="text-xs text-foreground">{r.profile?.rating || "5.00"}</span>
+                            <span className="text-xs text-foreground">{r.profile?.rating == null ? "—" : Number(r.profile.rating).toFixed(1)}</span>
                             <span className="text-xs text-muted-foreground">· {r.profile?.completed_orders || 0} зак.</span>
                           </div>
                         </div>
@@ -381,7 +381,7 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
                             <Star size={12} className="text-primary fill-primary" />
-                            <span className="text-xs text-foreground">{r.profile?.rating || "5.00"}</span>
+                            <span className="text-xs text-foreground">{r.profile?.rating == null ? "—" : Number(r.profile.rating).toFixed(1)}</span>
                             <span className="text-xs text-muted-foreground">· {r.profile?.completed_orders || 0} заказов</span>
                           </div>
                         </div>

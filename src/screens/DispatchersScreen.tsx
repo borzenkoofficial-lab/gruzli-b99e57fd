@@ -1,8 +1,16 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Star, MessageCircle, Menu, Zap, Users, Send, User } from "lucide-react";
+import { Search, Star, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
+type DispatcherDirectoryProfile = {
+  user_id: string;
+  full_name: string;
+  avatar_url: string | null;
+  rating: number | null;
+  completed_orders: number | null;
+  last_seen_at: string | null;
+  isOnline: boolean;
+};
 
 interface DispatchersScreenProps {
   onChatWithDispatcher: (d: { id: string; name: string; avatar: string }) => void;
@@ -10,30 +18,51 @@ interface DispatchersScreenProps {
 
 const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => {
   const [search, setSearch] = useState("");
-  const [dispatchers, setDispatchers] = useState<(Tables<"profiles"> & { isOnline: boolean })[]>([]);
+  const [dispatchers, setDispatchers] = useState<DispatcherDirectoryProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchDispatchers = async () => {
-      // Get all users with dispatcher role
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("user_id")
-        .eq("role", "dispatcher");
+      setLoadError(false);
+      try {
+        // This scoped RPC returns only public-safe dispatcher profile fields.
+        // Reading user_roles directly is denied by the table's owner-only RLS.
+        const { data: profiles, error } = await supabase.rpc("get_dispatcher_directory");
 
-      if (roles && roles.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles_public" as any)
-          .select("*")
-          .in("user_id", roles.map((r) => r.user_id));
+        if (error) throw error;
+        if (cancelled) return;
 
-        if (profiles) {
-          setDispatchers((profiles as any[]).map((p) => ({ ...p, isOnline: true })));
-        }
+        const now = Date.now();
+        setDispatchers((profiles || []).map((profile) => {
+          const lastSeen = profile.last_seen_at ? Date.parse(profile.last_seen_at) : Number.NaN;
+          const age = now - lastSeen;
+          return {
+            ...profile,
+            full_name: String(profile.full_name || "").trim() || "Имя не указано",
+            isOnline: Number.isFinite(lastSeen) && age >= 0 && age <= 2 * 60 * 1000,
+          };
+        }));
+      } catch (error) {
+        if (cancelled) return;
+        console.error("[Gruzli Dispatchers] failed to load list:", error);
+        setLoadError(true);
+        setDispatchers([]);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setLoading(false);
     };
-    fetchDispatchers();
+
+    void fetchDispatchers();
+    const refreshTimer = window.setInterval(() => {
+      if (document.visibilityState === "visible") void fetchDispatchers();
+    }, 60_000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(refreshTimer);
+    };
   }, []);
 
   const filtered = dispatchers.filter((d) =>
@@ -67,13 +96,13 @@ const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => 
         <div className="text-center py-12 text-muted-foreground text-sm">Загрузка...</div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground text-sm">
-          {dispatchers.length === 0 ? "Нет зарегистрированных диспетчеров" : "Ничего не найдено"}
+          {loadError ? "Не удалось загрузить список диспетчеров. Попробуйте позже." : dispatchers.length === 0 ? "Нет зарегистрированных диспетчеров" : "Ничего не найдено"}
         </div>
       ) : (
         <div className="px-5 space-y-3">
           {filtered.map((d, i) => (
             <motion.div
-              key={d.id}
+              key={d.user_id}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
@@ -88,13 +117,17 @@ const DispatchersScreen = ({ onChatWithDispatcher }: DispatchersScreenProps) => 
                       {getInitials(d.full_name)}
                     </div>
                   )}
-                  <div className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-online border-2 border-card" />
+                  <div
+                    className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-card ${d.isOnline ? "bg-online" : "bg-muted-foreground"}`}
+                    title={d.isOnline ? "В сети" : "Нет недавней активности"}
+                    aria-label={d.isOnline ? "В сети" : "Нет недавней активности"}
+                  />
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-bold text-foreground">{d.full_name}</h3>
                   <div className="flex items-center gap-1 mt-0.5">
                     <Star size={12} className="text-primary fill-primary" />
-                    <span className="text-xs font-semibold text-foreground">{d.rating || "5.00"}</span>
+                    <span className="text-xs font-semibold text-foreground">{d.rating == null ? "—" : Number(d.rating).toFixed(1)}</span>
                     <span className="text-[11px] text-muted-foreground ml-2">{d.completed_orders || 0} заказов</span>
                   </div>
                 </div>
