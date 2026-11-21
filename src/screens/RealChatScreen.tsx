@@ -367,6 +367,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       if (!response.ok) throw new Error(payload?.error?.message || "Не удалось загрузить сообщения");
       const loadedMessages = Array.isArray(payload.messages) ? payload.messages as Message[] : [];
       setMessages(loadedMessages);
+      void markDelivered(loadedMessages.filter((message) => message.sender_id !== user?.id).map((message) => message.id));
       setSenderNames((prev) => {
         const next = { ...prev };
         loadedMessages.forEach((message: Message & { sender_name?: string }) => {
@@ -381,10 +382,24 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     }
     setLoading(false);
     setTimeout(() => scrollToBottom(false), 50);
-  }, [conversationId, isDemo, scrollToBottom, user?.id]);
+  }, [conversationId, isDemo, markDelivered, scrollToBottom, user?.id]);
+
+  const markDelivered = useCallback(async (messageIds: string[]) => {
+    if (!user || !conversationId || isDemo || messageIds.length === 0) return;
+    try {
+      await fetch(`/api/conversations/${conversationId}/delivered`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messageIds }),
+      });
+    } catch (error) {
+      console.error("[chat] Delivery receipt failed:", error);
+    }
+  }, [user, conversationId, isDemo]);
 
   const markAsRead = useCallback(async () => {
-    if (!user || !conversationId || isDemo) return;
+    if (!user || !conversationId || isDemo || document.visibilityState !== "visible") return;
     try {
       await fetch(`/api/conversations/${conversationId}/read`, {
         method: "POST",
@@ -407,7 +422,10 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
         const payload = JSON.parse(String(event.data));
         if (payload.type === "message:new" && payload.conversationId === conversationId && payload.message) {
           appendMessage(payload.message as Message);
-          if (payload.message.sender_id !== user.id) markAsRead();
+          if (payload.message.sender_id !== user.id) {
+            void markDelivered([payload.message.id]);
+            if (document.visibilityState === "visible") markAsRead();
+          }
           return;
         }
       } catch (error) {
@@ -420,7 +438,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       socket.close();
       if (realtimeRef.current === socket) realtimeRef.current = null;
     };
-  }, [user?.id, isDemo, conversationId, otherUserId, title, appendMessage, markAsRead]);
+  }, [user?.id, isDemo, conversationId, otherUserId, title, appendMessage, markAsRead, markDelivered]);
 
   useEffect(() => {
     const handleReceipt = (event: Event) => {
@@ -443,6 +461,14 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   }, [conversationId, user?.id]);
 
   useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") markAsRead();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [markAsRead]);
+
+  useEffect(() => {
     fetchMessages();
     markAsRead();
     if (isDemo) return;
@@ -458,7 +484,11 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
           const additions = incoming.filter((message) => !known.has(message.id));
           return additions.length ? [...previous, ...additions] : previous;
         });
-        if (incoming.some((message) => message.sender_id !== user?.id)) markAsRead();
+        const incomingFromOthers = incoming.filter((message) => message.sender_id !== user?.id);
+        if (incomingFromOthers.length) {
+          void markDelivered(incomingFromOthers.map((message) => message.id));
+          if (document.visibilityState === "visible") markAsRead();
+        }
         if (wasNearBottom) setTimeout(() => scrollToBottom(), 50);
       } catch (error) {
         console.error("[chat] Message polling failed:", error);
