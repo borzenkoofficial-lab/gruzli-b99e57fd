@@ -27,15 +27,6 @@ test("committed notifications are delivered through the PostgreSQL event listene
     );
     await fixture.query("COMMIT");
 
-    const received = new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error("Timed out waiting for notification event")), 3000);
-      stopListener = async () => {
-        clearTimeout(timeout);
-        await stopListenerOriginal();
-      };
-      const stopListenerOriginal = async () => {};
-      void resolve;
-    });
     let resolveEvent;
     const eventPromise = new Promise((resolve) => { resolveEvent = resolve; });
     stopListener = await startNotificationListener(pool, resolveEvent);
@@ -53,7 +44,6 @@ test("committed notifications are delivered through the PostgreSQL event listene
     assert.equal(event.recipientId, recipientId);
     assert.equal(event.notification.id, notification.id);
     assert.equal(event.unreadCount, 1);
-    void received;
   } finally {
     await stopListener().catch(() => {});
     fixture.release();
