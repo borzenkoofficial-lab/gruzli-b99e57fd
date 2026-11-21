@@ -144,6 +144,16 @@ export async function updateWorkerResponseStatus(
   );
 }
 
+export async function cancelWorkerAssignment(responseId: string): Promise<{
+  response: { id: string; job_id: string; worker_id: string; status: string; worker_status: string };
+  jobStatus: string;
+}> {
+  return request(
+    `/api/responses/${encodeURIComponent(responseId)}/cancel-assignment`,
+    { method: "POST", body: JSON.stringify({}) },
+  );
+}
+
 export async function finishDispatcherJob(jobId: string): Promise<{ jobId: string; status: "finishing"; workersNotCompleted: number }> {
   return request(
     `/api/jobs/${encodeURIComponent(jobId)}/finish`,
