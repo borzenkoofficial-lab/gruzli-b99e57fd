@@ -30,6 +30,27 @@ function sendConversationEvent(conversationId, event, exceptUserId = null) {
     for (const socket of sockets) if (socketConversations.get(socket)?.has(conversationId)) sendSocket(socket, event);
   }
 }
+
+async function publishPresence(userId, isOnline) {
+  if (!pool || !databaseReady) return;
+  try {
+    const result = await pool.query(
+      "UPDATE profiles SET last_seen_at = now(), updated_at = now() WHERE user_id = $1 RETURNING last_seen_at",
+      [userId],
+    );
+    if (!result.rowCount) return;
+    const peers = await pool.query(
+      "SELECT DISTINCT peer.user_id FROM conversation_participants mine " +
+      "JOIN conversation_participants peer ON peer.conversation_id = mine.conversation_id " +
+      "WHERE mine.user_id = $1 AND peer.user_id <> $1",
+      [userId],
+    );
+    const event = { type: "presence:update", userId, lastSeenAt: result.rows[0].last_seen_at, isOnline };
+    for (const peer of peers.rows) sendUserEvent(peer.user_id, event);
+  } catch (error) {
+    console.error("[presence] Realtime update failed:", error.message);
+  }
+}
 const PORT = Number(process.env.PORT || 3000);
 const SESSION_COOKIE = "gruzli_session";
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -529,7 +550,7 @@ app.get("/api/conversations", requireAuth, async (req, res) => {
       "SELECT c.id, c.title, c.is_group, c.job_id, c.created_at, " +
       "CASE WHEN c.is_group THEN COALESCE(c.title, 'Группа') ELSE COALESCE(op.full_name, c.title, 'Чат') END AS other_name, " +
       "CASE WHEN c.is_group THEN NULL ELSE op.avatar_url END AS other_avatar_url, " +
-      "op.last_seen_at AS other_last_seen, lm.text AS last_message_text, lm.message_type AS last_message_type, " +
+      "op.user_id AS other_user_id, op.last_seen_at AS other_last_seen, (op.last_seen_at >= now() - interval '2 minutes') AS other_is_online, lm.text AS last_message_text, lm.message_type AS last_message_type, " +
       "lm.created_at AS last_message_at, lm.sender_id AS last_sender_id, " +
       "COALESCE(unread.unread_count, 0)::int AS unread_count " +
       "FROM conversation_participants mine JOIN conversations c ON c.id = mine.conversation_id " +
@@ -544,7 +565,7 @@ app.get("/api/conversations", requireAuth, async (req, res) => {
     );
     const conversations = result.rows.map((row) => ({
       id: row.id, title: row.title, is_group: row.is_group, job_id: row.job_id,
-      otherUserId: row.user_id, otherName: row.other_name, otherAvatarUrl: row.other_avatar_url, otherLastSeen: row.other_last_seen,
+      otherUserId: row.other_user_id, otherName: row.other_name, otherAvatarUrl: row.other_avatar_url, otherLastSeen: row.other_last_seen, otherIsOnline: Boolean(row.other_is_online),
       lastMessage: row.last_message_type === "voice" ? "🎤 Голосовое сообщение" :
         row.last_message_type === "image" ? "📷 Фото" : row.last_message_type === "video" ? "📹 Видео" :
         row.last_message_type === "sticker" ? (row.last_message_text || "Стикер") : (row.last_message_text || "Нет сообщений"),
@@ -1608,8 +1629,10 @@ async function start() {
         ws.userRole = authUser.role;
         ws.profileName = authUser.full_name || "Пользователь";
         socketConversations.set(ws, new Set());
-        if (!userSockets.has(ws.userId)) userSockets.set(ws.userId, new Set());
+        const isFirstConnection = !userSockets.has(ws.userId);
+        if (isFirstConnection) userSockets.set(ws.userId, new Set());
         userSockets.get(ws.userId).add(ws);
+        if (isFirstConnection) void publishPresence(ws.userId, true);
         sendSocket(ws, { type: "realtime:ready", userId: ws.userId });
         realtime.emit("connection", ws, request);
       });
@@ -1675,7 +1698,10 @@ async function start() {
     ws.on("close", () => {
       const sockets = userSockets.get(ws.userId);
       sockets?.delete(ws);
-      if (sockets?.size === 0) userSockets.delete(ws.userId);
+      if (sockets?.size === 0) {
+        userSockets.delete(ws.userId);
+        void publishPresence(ws.userId, false);
+      }
       socketConversations.delete(ws);
     });
   });
