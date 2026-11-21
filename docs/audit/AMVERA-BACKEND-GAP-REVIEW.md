@@ -1,0 +1,121 @@
+# GRUZLI — проверка готовности Amvera backend
+
+Дата проверки: 2026-11-21  
+Проверяемая ветка: `migration/amvera-native-backend`  
+База сравнения: `main`  
+Статус: **не готова к слиянию и публичному deployment**
+
+## Вывод
+
+PR #14 — полезный каркас нового backend, но пока не полноценная замена текущему приложению. В ветке есть Node.js/Express API, PostgreSQL migrations, cookie sessions, WebSocket и базовый чат/заказы. Однако текущие экраны приложения всё ещё используют Supabase напрямую, а критические бизнес-функции GRUZLI не перенесены.
+
+Слияние этой ветки сейчас приведёт к разрыву существующих сценариев. Успешный CI в PR #14 подтверждает только прохождение текущих автоматических проверок на ограниченном наборе кода, но не функциональную полноту миграции.
+
+## 1. Frontend не переключён на новый API
+
+В migration branch остаются:
+- `@supabase/supabase-js` в `package.json`;
+- `src/integrations/supabase/client.ts` и Supabase-generated types;
+- прямые вызовы `supabase.from()`, `supabase.rpc()`, `supabase.functions.invoke()`, `supabase.storage` и `supabase.channel()` в экранах и hooks.
+
+В README PR #14 прямо указано, что frontend всё ещё содержит legacy Supabase call sites. Серверный API сам по себе не заменяет эти вызовы. До завершения миграции data layer нельзя считать Amvera-версию готовой к запуску пользователей.
+
+## 2. Реализованные HTTP-маршруты
+
+В `server/index.mjs` на момент проверки присутствуют:
+- health и DB health;
+- auth register/login/recovery/me/logout;
+- profile presence;
+- conversations: create/list/detail/delete/block;
+- messages: list/send/read;
+- file upload/download;
+- jobs: list/create/detail;
+- responses: list, own response, create, accept, reject, withdraw.
+
+Старая регистрация/авторизация не является предметом текущего функционального аудита; перечисление этих маршрутов приведено только для фиксации состава migration branch.
+
+## 3. Критические отсутствующие бизнес-сценарии
+
+### Заказчик ↔ диспетчер
+- Нет `dispatcher_offers` в новой схеме и нет маршрутов для отправки предложения диспетчера (`dispatcher_submit_offer`) и выбора предложения заказчиком (`client_select_dispatcher_offer`).
+- Текущий процесс назначения диспетчера не перенесён. Простого создания заказа со статусом `open` недостаточно для сохранения dispatcher-first процесса.
+
+### Жизненный цикл исполнителя
+- Нет endpoint для `worker_update_response_status`: подтверждение, выезд, опоздание, прибытие, завершение.
+- Нет серверного завершения заказа диспетчером (`dispatcher_finish_job`, `dispatcher_complete_job`).
+- В текущей схеме API при создании отклика не сохраняется `agreed_hourly_rate`, хотя поле есть в PostgreSQL. Если добавить расчёт заработка без этого snapshot, доход может считаться по нулевой ставке или по изменившейся ставке заказа.
+- Не реализовано серверное применение недельного лимита исполнителя/Premium.
+- Повторный отклик при конфликте уникального индекса сейчас попадёт в общий catch и может вернуть 500 вместо стабильного конфликта 409.
+
+### Финансы и тарифы
+- В новой схеме нет журнала финансовых операций/ledger и таблиц платежей/списаний/начислений.
+- Нет API для покупки Premium и тарифа компании (`purchase_premium`, `purchase_company`).
+- Нет серверного расчёта дохода исполнителя и финансового закрытия заказа.
+- Поле `profiles.balance` само по себе не является безопасной финансовой моделью: без неизменяемого журнала проводок нельзя надёжно проверять баланс, повторные списания и возвраты.
+
+### Профили и репутация
+- Нет полноценных API чтения/обновления профиля, навыков, доступности и аватара; есть только обновление presence.
+- Нет API оценки исполнителя диспетчером (`dispatcher_review_worker`) и связанных отзывов/пересчёта рейтинга.
+
+### Чаты и коммуникации
+- Базовые сообщения, read receipts, блокировка, presence, загрузка файлов и WebSocket signalling частично реализованы.
+- Нет полноценной модели `voice_rooms`, хотя текущий клиент создаёт её напрямую.
+- Текущий frontend удаляет сообщения/файлы через `delete_conversation_fully` и Supabase Storage; нового совместимого API-контракта на стороне UI пока нет.
+- Push, email и Telegram-уведомления не перенесены как полноценная очередь/worker-система. WebSocket-события не заменяют push для закрытого приложения.
+
+### Документы, модерация, администрирование
+- Нет генерации договоров/PDF и контрактного workflow.
+- Нет эквивалента модерации контента и улучшения описания заказа.
+- Нет smart search, dispatcher analytics, admin users/jobs/chats/fraud reports/broadcasts.
+- Нет полноценного переноса Edge Functions и фоновых задач.
+
+## 4. Схема PostgreSQL пока покрывает только ядро
+
+Новые миграции создают:
+- пользователей/профили/сессии/audit log;
+- jobs и job_responses;
+- conversations, participants, messages, blocked_users;
+- conversation_files.
+
+Но для сохранения текущего продукта также нужны как минимум предметные модели:
+- dispatcher_offers и история назначения;
+- финансовый ledger, payment intents/transactions, тарифные подписки и история списаний;
+- рейтинги/отзывы;
+- contracts и generated documents;
+- notifications и delivery attempts;
+- push subscriptions;
+- voice rooms/call sessions;
+- job templates, SOS replacement, fraud reports и moderation events;
+- audit trail для чувствительных бизнес-операций.
+
+Это не требование скопировать старые таблицы один к одному. Схему нужно спроектировать заново под доменные инварианты, но перечисленные сценарии должны иметь устойчивое хранение и серверные операции.
+
+## 5. Важные замечания по реализации API
+
+1. `POST /api/jobs/:jobId/responses` не фиксирует agreed rate snapshot и не проверяет Premium/weekly limit на сервере.
+2. Ошибка уникального индекса при параллельном повторном отклике не нормализована в 409.
+3. `POST /api/responses/:responseId/accept` обновляет статус отклика, но не фиксирует agreed rate; бизнес-операция пока не эквивалентна текущему RPC.
+4. `POST /api/jobs` делает базовую проверку формы, но не запускает moderation workflow и не инициирует предложение диспетчера.
+5. В текущей реализации file upload проверяет MIME по заголовку клиента; перед production нужен content-signature/type validation и лимиты по типам/размерам.
+6. Парольная схема в README/плане и фактическом коде должна быть согласована: документация migration plan говорит Argon2id, а `server/index.mjs` использует scrypt. Это нужно решить и задокументировать до production, но не смешивать с текущим аудитом старой авторизации.
+
+## 6. Порядок дальнейшей миграции
+
+1. Зафиксировать доменную модель и конечные автоматы: job, dispatcher offer, response, worker status, settlement.
+2. Спроектировать серверные сервисы и PostgreSQL транзакции для назначения диспетчера, отклика, принятия, завершения и финансового расчёта.
+3. Ввести API для всех текущих бизнес-операций и контракты ответов.
+4. Перевести frontend на один typed API client; удалить прямые Supabase зависимости только после замены всех call sites.
+5. Перенести chat/realtime/storage и обеспечить авторизованные WebSocket subscriptions.
+6. Перенести уведомления, документы, модерацию, аналитику и admin operations.
+7. Добавить unit + integration tests для доменных сервисов и API, включая параллельные транзакции и повторные запросы.
+8. Добавить Playwright сценарии для трёх ролей и end-to-end проверки на тестовом Amvera окружении.
+
+## Критерий допуска PR #14 к merge
+
+- Нет Supabase SDK, env variables, generated types, RPC/Storage/Realtime/Edge Function call sites в runtime/build.
+- Все существующие продуктовые сценарии имеют соответствующие API и PostgreSQL-модели.
+- Финансовые операции атомарны, идемпотентны и имеют ledger.
+- Все три роли проходят end-to-end сценарии.
+- Есть интеграционные тесты для конкурентного принятия откликов, завершения заказов и финансовых операций.
+- Проверены upload/download permissions и WebSocket authorization.
+- CI зелёный, а тестовый deployment проверен вручную.
