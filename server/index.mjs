@@ -656,13 +656,13 @@ app.post("/api/conversations/:conversationId/files", requireAuth, uploadSingleCh
         "INSERT INTO messages (conversation_id, sender_id, text, media_url, message_type) VALUES ($1,$2,$3,$4,$5) RETURNING id, conversation_id, sender_id, text, media_url, message_type, reply_to_id, created_at",
         [conversation.id, req.authUser.id, messageText, "/api/files/" + fileId, messageType],
       );
-      await client.query(
-        "INSERT INTO message_receipts (message_id, recipient_id) SELECT $1, user_id FROM conversation_participants WHERE conversation_id = $2 AND user_id <> $3 ON CONFLICT DO NOTHING",
+      const receiptRows = await client.query(
+        "INSERT INTO message_receipts (message_id, recipient_id) SELECT $1, user_id FROM conversation_participants WHERE conversation_id = $2 AND user_id <> $3 ON CONFLICT DO NOTHING RETURNING recipient_id",
         [inserted.rows[0].id, conversation.id, req.authUser.id],
       );
       await client.query("UPDATE conversation_participants SET last_read_at = now() WHERE conversation_id = $1 AND user_id = $2", [conversation.id, req.authUser.id]);
       await client.query("COMMIT");
-      const message = { ...inserted.rows[0], sender_name: req.authUser.full_name };
+      const message = { ...inserted.rows[0], sender_name: req.authUser.full_name, receipt_total: receiptRows.rowCount, receipt_delivered: 0, receipt_read: 0 };
       sendConversationEvent(conversation.id, { type: "message:new", conversationId: conversation.id, message }, req.authUser.id);
       return res.status(201).json({ message, file: { id: fileId, name: path.basename(file.originalname), size: file.size, mimeType: file.mimetype } });
     } catch (error) {
