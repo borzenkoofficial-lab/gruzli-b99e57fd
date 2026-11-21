@@ -9,6 +9,7 @@ import {
   Download, Trophy, Eye, Pencil, Trash2, Plus, Minus, Lock, Unlock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getCompletionDate } from "@/lib/dispatcherStats";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -301,7 +302,7 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
         return {
           jobId: job.id,
           title: job.title,
-          completedAt: job.updated_at || job.created_at,
+          completedAt: getCompletionDate(job),
           workersCount: jobResps.length,
           totalExpense,
           dispatcherIncome: (job as any).dispatcher_income || 0,
