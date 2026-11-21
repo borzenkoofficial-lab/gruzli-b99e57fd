@@ -185,56 +185,8 @@ const OrdersScreen = () => {
     setLoading(false);
   };
 
-  // Also fetch recent completed jobs
-  useEffect(() => {
-    if (!user) return;
-    const fetchCompleted = async () => {
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-
-      const { data: responses } = await supabase
-        .from("job_responses")
-        .select("*")
-        .eq("worker_id", user.id)
-        .eq("worker_status", "completed")
-        .gte("created_at", weekAgo.toISOString())
-        .order("created_at", { ascending: false })
-        .limit(10);
-
-      if (!responses || responses.length === 0) return;
-
-      const jobIds = responses.map((r) => r.job_id);
-      const { data: jobsData } = await supabase.from("jobs").select("*").in("id", jobIds);
-      if (!jobsData) return;
-
-      const dispatcherIds = [...new Set(jobsData.map((j) => j.dispatcher_id))];
-      const { data: profiles } = await supabase.from("profiles_public" as any).select("user_id, full_name").in("user_id", dispatcherIds);
-      const nameMap: Record<string, string> = {};
-      (profiles as any[])?.forEach((p) => { nameMap[p.user_id] = p.full_name; });
-
-      const mapped: AcceptedJob[] = jobsData.map((j) => {
-        const resp = responses.find((r) => r.job_id === j.id)!;
-        return {
-          responseId: resp.id,
-          jobId: j.id,
-          title: j.title,
-          address: j.address,
-          startTime: j.start_time,
-          hourlyRate: j.hourly_rate,
-          durationHours: Number(j.duration_hours) || 1,
-          dispatcherName: nameMap[j.dispatcher_id] || "Диспетчер",
-          workerStatus: resp.worker_status,
-          workStartedAt: (resp as any).work_started_at,
-          workFinishedAt: (resp as any).work_finished_at,
-          hoursWorked: (resp as any).hours_worked ? Number((resp as any).hours_worked) : null,
-          earned: (resp as any).earned,
-        };
-      });
-
-      setCompletedJobs(mapped);
-    };
-    fetchCompleted();
-  }, [user, role]);
+  // Completed responses are already included by fetchAcceptedJobs and split by worker_status.
+  // A second, date-limited query here used created_at and could overwrite the full history.
 
   useEffect(() => {
     fetchAcceptedJobs();
