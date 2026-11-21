@@ -95,7 +95,7 @@ test("worker response creates response, direct chat and first message atomically
   });
 });
 
-test("free worker weekly limit is enforced atomically across concurrent job submissions", {
+test("free worker weekly limit blocks new submissions after three completed jobs", {
   skip: !pool,
 }, async () => {
   await withFixture(async ({ workerId, dispatcherId, clientId }) => {
