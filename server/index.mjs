@@ -14,6 +14,7 @@ import { migrateDatabase } from "./migrate.mjs";
 import { calculateWorkerEarnings, isWorkerStatusTransitionAllowed, normalizeWorkedHours } from "./domain/workerLifecycle.mjs";
 import { submitWorkerResponse, WorkerResponseError } from "./domain/submitWorkerResponse.mjs";
 import { listNotifications, getUnreadNotificationCount, markNotificationRead, markAllNotificationsRead } from "./domain/notifications.mjs";
+import { startNotificationListener } from "./domain/notificationEvents.mjs";
 
 const scrypt = promisify(crypto.scrypt);
 const app = express();
@@ -46,6 +47,7 @@ const chatUpload = multer({
   },
 });
 let databaseReady = false;
+let stopNotificationListener = async () => {};
 
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
@@ -360,7 +362,9 @@ app.patch("/api/notifications/:notificationId/read", requireAuth, async (req, re
   try {
     const notification = await markNotificationRead(pool, req.authUser.id, req.params.notificationId);
     if (!notification) return sendError(res, 404, "NOTIFICATION_NOT_FOUND", "Уведомление не найдено.");
-    return res.json({ notification });
+    const unreadCount = await getUnreadNotificationCount(pool, req.authUser.id);
+    sendUserEvent(req.authUser.id, { type: "notifications:read", notificationId: notification.id, unreadCount });
+    return res.json({ notification, unreadCount });
   } catch (error) {
     console.error("[notifications] Read failed:", error.message);
     return sendError(res, 500, "NOTIFICATION_READ_FAILED", "Не удалось отметить уведомление прочитанным.");
@@ -1563,6 +1567,13 @@ async function start() {
       await pool.query("SELECT 1");
       databaseReady = true;
       console.info("[db] PostgreSQL connected and schema is ready.");
+      try {
+        stopNotificationListener = await startNotificationListener(pool, ({ recipientId, notification, unreadCount }) => {
+          sendUserEvent(recipientId, { type: "notifications:new", notification, unreadCount });
+        });
+      } catch (error) {
+        console.error("[notifications] Realtime listener unavailable:", error.message);
+      }
     } catch (error) {
       databaseReady = false;
       console.error("[db] Startup database check failed:", error.message);
@@ -1674,6 +1685,7 @@ async function start() {
   const shutdown = async (signal) => {
     console.info("[http] " + signal + " received; shutting down.");
     server.close(async () => {
+      await stopNotificationListener().catch(() => {});
       await pool?.end();
       process.exit(0);
     });
