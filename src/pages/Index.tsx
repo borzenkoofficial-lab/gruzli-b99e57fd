@@ -46,7 +46,6 @@ import PullToRefresh from "@/components/PullToRefresh";
 const warmPrimaryScreens = (role: string | null) => {
   // Preload only the screens that can actually appear in the current role.
   // This keeps the first interaction fast without downloading the whole app.
-  void import("@/screens/FeedScreen");
   void import("@/screens/RealChatsScreen");
   void import("@/screens/ProfileScreen");
 
