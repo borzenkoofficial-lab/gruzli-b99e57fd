@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   ApiError,
+  cancelWorkerAssignment,
   completeDispatcherJob,
   finishDispatcherJob,
   getJobDispatcherOffers,
@@ -169,4 +170,16 @@ describe("Amvera API client — worker and dispatcher lifecycle", () => {
       }),
     );
   });
+  it("cancels an assigned worker only through the dispatcher endpoint", async () => {
+    const result = { response: { id: "response-9", status: "rejected", worker_status: "cancelled" }, jobStatus: "active" };
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => result });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(cancelWorkerAssignment("response-9")).resolves.toEqual(result);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/responses/response-9/cancel-assignment",
+      expect.objectContaining({ method: "POST" }),
+    );
+  });
+
 });
