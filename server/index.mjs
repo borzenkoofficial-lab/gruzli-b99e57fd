@@ -820,8 +820,19 @@ app.post("/api/responses/:responseId/accept", requireAuth, async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+    // Serialize all staffing decisions on the job row first. Locking response+job
+    // in one joined query can deadlock when two dispatchers accept different responses
+    // and the winning transaction auto-rejects the other transaction's locked response.
+    const jobLock = await client.query(
+      "SELECT j.id FROM jobs j JOIN job_responses r ON r.job_id = j.id WHERE r.id = $1 FOR UPDATE OF j",
+      [req.params.responseId],
+    );
+    if (!jobLock.rowCount) {
+      await client.query("ROLLBACK");
+      return sendError(res, 404, "RESPONSE_NOT_FOUND", "Отклик не найден.");
+    }
     const responseResult = await client.query(
-      "SELECT r.*, j.dispatcher_id, j.workers_needed, j.hourly_rate, j.status AS job_status FROM job_responses r JOIN jobs j ON j.id = r.job_id WHERE r.id = $1 FOR UPDATE OF r, j",
+      "SELECT r.*, j.dispatcher_id, j.workers_needed, j.hourly_rate, j.status AS job_status FROM job_responses r JOIN jobs j ON j.id = r.job_id WHERE r.id = $1 FOR UPDATE OF r",
       [req.params.responseId],
     );
     const response = responseResult.rows[0];
