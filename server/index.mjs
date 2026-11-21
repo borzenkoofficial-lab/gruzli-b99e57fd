@@ -1073,3 +1073,5 @@ start().catch((error) => {
   console.error("[http] Fatal startup error:", error.message);
   process.exit(1);
 });
+
+// PostgreSQL migration CI: schema application is part of the validation pipeline.
