@@ -144,7 +144,17 @@ export async function submitWorkerResponse({ db, jobId, workerId, message }) {
         "RETURNING id, conversation_id, sender_id, text, media_url, message_type, reply_to_id, created_at",
         [conversationId, workerId, responseMessage],
       );
-      chatMessage = { ...insertedMessage.rows[0], sender_name: profile.full_name };
+      const receiptRows = await client.query(
+        "INSERT INTO message_receipts (message_id, recipient_id) SELECT $1, user_id FROM conversation_participants WHERE conversation_id = $2 AND user_id <> $3 ON CONFLICT DO NOTHING RETURNING recipient_id",
+        [insertedMessage.rows[0].id, conversationId, workerId],
+      );
+      chatMessage = {
+        ...insertedMessage.rows[0],
+        sender_name: profile.full_name,
+        receipt_total: receiptRows.rowCount,
+        receipt_delivered: 0,
+        receipt_read: 0,
+      };
       await client.query(
         "UPDATE conversation_participants SET last_read_at = now() " +
         "WHERE conversation_id = $1 AND user_id = $2",
