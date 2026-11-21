@@ -11,6 +11,7 @@ import rateLimit from "express-rate-limit";
 import multer from "multer";
 import { pool } from "./db.mjs";
 import { migrateDatabase } from "./migrate.mjs";
+import { calculateWorkerEarnings, isWorkerStatusTransitionAllowed, normalizeWorkedHours } from "./domain/workerLifecycle.mjs";
 
 const scrypt = promisify(crypto.scrypt);
 const app = express();
@@ -978,6 +979,97 @@ app.post("/api/jobs/:jobId/responses", requireAuth, async (req, res) => {
   }
 });
 
+app.post("/api/responses/:responseId/worker-status", requireAuth, async (req, res) => {
+  const user = req.authUser;
+  if (user.role !== "worker") return sendError(res, 403, "WORKER_ROLE_REQUIRED", "Менять статус работы может только исполнитель.");
+  const nextStatus = String(req.body?.nextStatus || "");
+  if (!["confirmed", "en_route", "late", "arrived", "completed"].includes(nextStatus)) {
+    return sendError(res, 400, "INVALID_WORKER_STATUS", "Недопустимый статус исполнителя.");
+  }
+  let hoursWorked = null;
+  if (nextStatus === "completed") {
+    try {
+      hoursWorked = normalizeWorkedHours(req.body?.hoursWorked);
+    } catch {
+      return sendError(res, 400, "INVALID_WORKED_HOURS", "Укажите фактически отработанное время от 0,5 до 72 часов.");
+    }
+  }
+
+  const client = await pool.connect();
+  let dispatcherId = null;
+  let response;
+  try {
+    await client.query("BEGIN");
+    const jobLock = await client.query(
+      "SELECT j.id FROM jobs j JOIN job_responses r ON r.job_id = j.id WHERE r.id = $1 FOR UPDATE OF j",
+      [req.params.responseId],
+    );
+    if (!jobLock.rowCount) {
+      await client.query("ROLLBACK");
+      return sendError(res, 404, "RESPONSE_NOT_FOUND", "Отклик не найден.");
+    }
+    const result = await client.query(
+      "SELECT r.*, j.dispatcher_id, j.status AS job_status FROM job_responses r JOIN jobs j ON j.id = r.job_id WHERE r.id = $1 FOR UPDATE OF r",
+      [req.params.responseId],
+    );
+    response = result.rows[0];
+    if (!response || response.worker_id !== user.id) {
+      await client.query("ROLLBACK");
+      return sendError(res, 404, "RESPONSE_NOT_FOUND", "Отклик не найден.");
+    }
+    if (response.status !== "accepted" || response.job_status === "completed") {
+      await client.query("ROLLBACK");
+      return sendError(res, 409, "RESPONSE_NOT_ACTIVE", "Этот заказ больше нельзя обновить.");
+    }
+    if (!isWorkerStatusTransitionAllowed(response.worker_status, nextStatus)) {
+      await client.query("ROLLBACK");
+      return sendError(res, 409, "INVALID_STATUS_TRANSITION", "Сначала выполните предыдущий шаг.");
+    }
+    dispatcherId = response.dispatcher_id;
+
+    let updated;
+    if (nextStatus === "arrived") {
+      updated = await client.query(
+        "UPDATE job_responses SET worker_status = 'arrived', work_started_at = COALESCE(work_started_at, now()) WHERE id = $1 " +
+        "RETURNING id, job_id, worker_id, worker_status, work_started_at, work_finished_at, hours_worked, earned",
+        [response.id],
+      );
+    } else if (nextStatus === "completed") {
+      if (!response.work_started_at) {
+        await client.query("ROLLBACK");
+        return sendError(res, 409, "WORK_NOT_STARTED", "Нельзя завершить заказ до прибытия на объект.");
+      }
+      if (!Number(response.agreed_hourly_rate) || Number(response.agreed_hourly_rate) <= 0) {
+        await client.query("ROLLBACK");
+        return sendError(res, 409, "AGREED_RATE_MISSING", "Для заказа не зафиксирована согласованная ставка.");
+      }
+      const earned = calculateWorkerEarnings(hoursWorked, response.agreed_hourly_rate);
+      updated = await client.query(
+        "UPDATE job_responses SET worker_status = 'completed', work_finished_at = now(), hours_worked = $2, earned = $3 " +
+        "WHERE id = $1 RETURNING id, job_id, worker_id, worker_status, work_started_at, work_finished_at, hours_worked, earned",
+        [response.id, hoursWorked, earned],
+      );
+    } else {
+      updated = await client.query(
+        "UPDATE job_responses SET worker_status = $2 WHERE id = $1 " +
+        "RETURNING id, job_id, worker_id, worker_status, work_started_at, work_finished_at, hours_worked, earned",
+        [response.id, nextStatus],
+      );
+    }
+    await client.query("COMMIT");
+    const saved = updated.rows[0];
+    sendUserEvent(user.id, { type: "response:updated", response: saved });
+    if (dispatcherId) sendUserEvent(dispatcherId, { type: "response:updated", response: saved });
+    return res.json({ response: saved });
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    console.error("[responses] Worker status update failed:", error.message);
+    return sendError(res, 500, "WORKER_STATUS_UPDATE_FAILED", "Не удалось обновить статус исполнителя.");
+  } finally {
+    client.release();
+  }
+});
+
 app.post("/api/responses/:responseId/accept", requireAuth, async (req, res) => {
   const user = req.authUser;
   if (user.role !== "dispatcher" && user.role !== "admin") return sendError(res, 403, "DISPATCHER_ROLE_REQUIRED", "Принимать отклики может только диспетчер.");
@@ -1050,6 +1142,221 @@ app.post("/api/responses/:responseId/accept", requireAuth, async (req, res) => {
     await client.query("ROLLBACK").catch(() => {});
     console.error("[jobs] Accept response failed:", error.message);
     return sendError(res, 500, "RESPONSE_ACCEPT_FAILED", "Не удалось принять отклик.");
+  } finally {
+    client.release();
+  }
+});
+
+app.post("/api/jobs/:jobId/finish", requireAuth, async (req, res) => {
+  const user = req.authUser;
+  if (user.role !== "dispatcher" && user.role !== "admin") return sendError(res, 403, "DISPATCHER_ROLE_REQUIRED", "Завершить этап заказа может только диспетчер.");
+  const client = await pool.connect();
+  let workerEvents = [];
+  let clientId = null;
+  try {
+    await client.query("BEGIN");
+    const jobResult = await client.query("SELECT id, dispatcher_id, client_id, status FROM jobs WHERE id = $1 FOR UPDATE", [req.params.jobId]);
+    const job = jobResult.rows[0];
+    if (!job || (user.role !== "admin" && job.dispatcher_id !== user.id)) {
+      await client.query("ROLLBACK");
+      return sendError(res, 404, "JOB_NOT_FOUND", "Заказ не найден.");
+    }
+    clientId = job.client_id;
+    if (job.status === "finishing") {
+      const pending = await client.query(
+        "SELECT count(*)::int AS count FROM job_responses WHERE job_id = $1 AND status = 'accepted' AND worker_status <> 'completed'",
+        [job.id],
+      );
+      await client.query("COMMIT");
+      return res.json({ jobId: job.id, status: "finishing", workersNotCompleted: pending.rows[0].count });
+    }
+    if (!["active", "filled"].includes(job.status)) {
+      await client.query("ROLLBACK");
+      return sendError(res, 409, "JOB_NOT_FINISHABLE", "Заказ нельзя перевести в завершение из текущего статуса.");
+    }
+    const responses = await client.query(
+      "SELECT id, worker_id, worker_status, work_started_at FROM job_responses WHERE job_id = $1 AND status = 'accepted' FOR UPDATE",
+      [job.id],
+    );
+    if (!responses.rowCount) {
+      await client.query("ROLLBACK");
+      return sendError(res, 409, "NO_ASSIGNED_WORKERS", "В заказе нет принятых исполнителей.");
+    }
+    if (responses.rows.some((row) => !row.work_started_at)) {
+      await client.query("ROLLBACK");
+      return sendError(res, 409, "WORKERS_NOT_ARRIVED", "Нельзя завершить заказ: не все назначенные исполнители приступили к работе.");
+    }
+    const updated = await client.query(
+      "UPDATE job_responses SET worker_status = 'finishing' WHERE job_id = $1 AND status = 'accepted' AND worker_status <> 'completed' " +
+      "RETURNING id, worker_id",
+      [job.id],
+    );
+    workerEvents = updated.rows;
+    await client.query("UPDATE jobs SET status = 'finishing', updated_at = now() WHERE id = $1", [job.id]);
+    await client.query(
+      "INSERT INTO app_audit_log (actor_user_id, action, entity_type, entity_id, ip_address) VALUES ($1,'dispatcher.job_finishing','job',$2,$3)",
+      [user.id, job.id, req.ip],
+    );
+    await client.query("COMMIT");
+    for (const worker of workerEvents) {
+      sendUserEvent(worker.worker_id, { type: "response:updated", responseId: worker.id, jobId: job.id, workerStatus: "finishing" });
+    }
+    if (clientId) sendUserEvent(clientId, { type: "job:updated", jobId: job.id, status: "finishing" });
+    sendUserEvent(job.dispatcher_id, { type: "job:updated", jobId: job.id, status: "finishing" });
+    return res.json({ jobId: job.id, status: "finishing", workersNotCompleted: workerEvents.length });
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    console.error("[jobs] Finish stage failed:", error.message);
+    return sendError(res, 500, "JOB_FINISH_FAILED", "Не удалось перевести заказ в завершение.");
+  } finally {
+    client.release();
+  }
+});
+
+app.post("/api/jobs/:jobId/complete", requireAuth, async (req, res) => {
+  const user = req.authUser;
+  if (user.role !== "dispatcher" && user.role !== "admin") return sendError(res, 403, "DISPATCHER_ROLE_REQUIRED", "Закрыть заказ может только диспетчер.");
+  const expensePerWorker = Number(req.body?.expensePerWorker ?? 0);
+  const dispatcherIncome = Number(req.body?.dispatcherIncome);
+  if (!Number.isFinite(expensePerWorker) || expensePerWorker < 0 || !Number.isFinite(dispatcherIncome) || dispatcherIncome < 0) {
+    return sendError(res, 400, "INVALID_SETTLEMENT_AMOUNT", "Проверьте сумму расходов и дохода.");
+  }
+  const client = await pool.connect();
+  let workers = [];
+  let clientId = null;
+  try {
+    await client.query("BEGIN");
+    const jobResult = await client.query("SELECT id, dispatcher_id, client_id, status FROM jobs WHERE id = $1 FOR UPDATE", [req.params.jobId]);
+    const job = jobResult.rows[0];
+    if (!job || (user.role !== "admin" && job.dispatcher_id !== user.id)) {
+      await client.query("ROLLBACK");
+      return sendError(res, 404, "JOB_NOT_FOUND", "Заказ не найден.");
+    }
+    clientId = job.client_id;
+    if (job.status !== "finishing") {
+      await client.query("ROLLBACK");
+      return sendError(res, 409, "JOB_NOT_FINISHING", "Сначала переведите заказ в этап завершения.");
+    }
+    const responseResult = await client.query(
+      "SELECT id, worker_id, worker_status, hours_worked, earned, agreed_hourly_rate, dispatcher_review_rating, earnings_settled_at " +
+      "FROM job_responses WHERE job_id = $1 AND status = 'accepted' FOR UPDATE",
+      [job.id],
+    );
+    workers = responseResult.rows;
+    if (!workers.length) {
+      await client.query("ROLLBACK");
+      return sendError(res, 409, "NO_ASSIGNED_WORKERS", "В заказе нет принятых исполнителей.");
+    }
+    if (workers.some((worker) => worker.worker_status !== "completed" || !Number(worker.hours_worked) || worker.earned == null)) {
+      await client.query("ROLLBACK");
+      return sendError(res, 409, "WORKERS_NOT_COMPLETED", "Не все исполнители завершили работу и указали фактические часы.");
+    }
+    if (workers.some((worker) => worker.dispatcher_review_rating == null)) {
+      await client.query("ROLLBACK");
+      return sendError(res, 409, "WORKERS_NOT_REVIEWED", "Сначала оставьте отзывы всем исполнителям.");
+    }
+    if (workers.some((worker) => worker.earnings_settled_at)) {
+      await client.query("ROLLBACK");
+      return sendError(res, 409, "SETTLEMENT_ALREADY_EXISTS", "Финансовое закрытие по этому заказу уже выполнялось.");
+    }
+
+    const ledger = await client.query(
+      "WITH inserted AS (" +
+      " INSERT INTO financial_ledger (user_id, job_id, response_id, entry_type, amount, metadata) " +
+      " SELECT r.worker_id, r.job_id, r.id, 'worker_earning', r.earned, " +
+      " jsonb_build_object('hoursWorked', r.hours_worked, 'agreedHourlyRate', r.agreed_hourly_rate) " +
+      " FROM job_responses r WHERE r.job_id = $1 AND r.status = 'accepted' " +
+      " ON CONFLICT DO NOTHING RETURNING user_id, amount" +
+      "), totals AS (" +
+      " SELECT user_id, sum(amount) AS amount, count(*)::int AS orders FROM inserted GROUP BY user_id" +
+      ") " +
+      "UPDATE profiles p SET total_earned = p.total_earned + totals.amount, completed_orders = p.completed_orders + totals.orders " +
+      "FROM totals WHERE p.user_id = totals.user_id RETURNING p.user_id",
+      [job.id],
+    );
+    const workerPayoutTotal = workers.reduce((sum, worker) => sum + Number(worker.earned || 0), 0);
+    if (dispatcherIncome > 0) {
+      await client.query(
+        "INSERT INTO financial_ledger (user_id, job_id, entry_type, amount, metadata) VALUES ($1,$2,'dispatcher_income',$3,$4::jsonb)",
+        [job.dispatcher_id, job.id, dispatcherIncome, JSON.stringify({ workerPayoutTotal })],
+      );
+    }
+    await client.query("UPDATE job_responses SET earnings_settled_at = now() WHERE job_id = $1 AND status = 'accepted'", [job.id]);
+    await client.query(
+      "UPDATE jobs SET status = 'completed', expense_per_worker = $2, dispatcher_income = $3, updated_at = now() WHERE id = $1",
+      [job.id, expensePerWorker, dispatcherIncome],
+    );
+    await client.query(
+      "INSERT INTO app_audit_log (actor_user_id, action, entity_type, entity_id, ip_address, metadata) VALUES ($1,'dispatcher.job_settled','job',$2,$3,$4::jsonb)",
+      [user.id, job.id, req.ip, JSON.stringify({ workerPayoutTotal, dispatcherIncome, expensePerWorker, workersSettled: ledger.rowCount })],
+    );
+    await client.query("COMMIT");
+    for (const worker of workers) {
+      sendUserEvent(worker.worker_id, { type: "response:settled", jobId: job.id, responseId: worker.id, earned: Number(worker.earned) });
+    }
+    if (clientId) sendUserEvent(clientId, { type: "job:updated", jobId: job.id, status: "completed" });
+    sendUserEvent(job.dispatcher_id, { type: "job:updated", jobId: job.id, status: "completed" });
+    return res.json({ jobId: job.id, status: "completed", workerPayoutTotal, dispatcherIncome, workersSettled: ledger.rowCount });
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    console.error("[jobs] Financial settlement failed:", error.message);
+    return sendError(res, 500, "JOB_SETTLEMENT_FAILED", "Не удалось выполнить финансовое закрытие заказа.");
+  } finally {
+    client.release();
+  }
+});
+
+app.post("/api/responses/:responseId/review", requireAuth, async (req, res) => {
+  const user = req.authUser;
+  if (user.role !== "dispatcher" && user.role !== "admin") return sendError(res, 403, "DISPATCHER_ROLE_REQUIRED", "Оценивать исполнителя может только диспетчер.");
+  const rating = Number(req.body?.rating);
+  const reviewText = String(req.body?.text || "").trim().slice(0, 2000) || null;
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) return sendError(res, 400, "INVALID_RATING", "Оценка должна быть от 1 до 5.");
+  const client = await pool.connect();
+  let workerId = null;
+  try {
+    await client.query("BEGIN");
+    const jobLock = await client.query(
+      "SELECT j.id FROM jobs j JOIN job_responses r ON r.job_id = j.id WHERE r.id = $1 FOR UPDATE OF j",
+      [req.params.responseId],
+    );
+    if (!jobLock.rowCount) {
+      await client.query("ROLLBACK");
+      return sendError(res, 404, "RESPONSE_NOT_FOUND", "Отклик не найден.");
+    }
+    const result = await client.query(
+      "SELECT r.id, r.job_id, r.worker_id, r.worker_status, j.dispatcher_id FROM job_responses r JOIN jobs j ON j.id = r.job_id WHERE r.id = $1 FOR UPDATE OF r",
+      [req.params.responseId],
+    );
+    const response = result.rows[0];
+    if (!response || (user.role !== "admin" && response.dispatcher_id !== user.id)) {
+      await client.query("ROLLBACK");
+      return sendError(res, 404, "RESPONSE_NOT_FOUND", "Отклик не найден.");
+    }
+    if (response.worker_status !== "completed") {
+      await client.query("ROLLBACK");
+      return sendError(res, 409, "WORKER_NOT_COMPLETED", "Оценить можно только завершившего работу исполнителя.");
+    }
+    workerId = response.worker_id;
+    await client.query(
+      "UPDATE job_responses SET dispatcher_review_rating = $2, dispatcher_review_text = $3 WHERE id = $1",
+      [response.id, rating, reviewText],
+    );
+    await client.query(
+      "UPDATE profiles SET rating = COALESCE((SELECT round(avg(dispatcher_review_rating)::numeric, 2) FROM job_responses WHERE worker_id = $1 AND dispatcher_review_rating IS NOT NULL), 0) WHERE user_id = $1",
+      [workerId],
+    );
+    await client.query(
+      "INSERT INTO app_audit_log (actor_user_id, action, entity_type, entity_id, ip_address, metadata) VALUES ($1,'dispatcher.worker_reviewed','job_response',$2,$3,$4::jsonb)",
+      [user.id, response.id, req.ip, JSON.stringify({ rating })],
+    );
+    await client.query("COMMIT");
+    sendUserEvent(workerId, { type: "response:reviewed", responseId: response.id, jobId: response.job_id, rating });
+    return res.json({ responseId: response.id, rating });
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    console.error("[responses] Worker review failed:", error.message);
+    return sendError(res, 500, "WORKER_REVIEW_FAILED", "Не удалось сохранить отзыв.");
   } finally {
     client.release();
   }
