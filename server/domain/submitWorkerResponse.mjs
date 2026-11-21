@@ -1,3 +1,5 @@
+import { createNotification } from "./notifications.mjs";
+
 export const FREE_WEEKLY_COMPLETED_JOB_LIMIT = 3;
 
 export class WorkerResponseError extends Error {
@@ -150,7 +152,19 @@ export async function submitWorkerResponse({ db, jobId, workerId, message }) {
       );
     }
 
+    let notification = null;
     if (isNewResponse) {
+      notification = await createNotification(client, {
+        recipientId: job.dispatcher_id,
+        actorUserId: workerId,
+        type: "response",
+        title: "Новый отклик",
+        body: responseMessage,
+        entityType: "job_response",
+        entityId: response.id,
+        metadata: { jobId: job.id, conversationId },
+        dedupeKey: "response-created:" + response.id,
+      });
       await client.query(
         "INSERT INTO app_audit_log (actor_user_id, action, entity_type, entity_id, metadata) " +
         "VALUES ($1,'worker.response_submitted','job_response',$2,$3::jsonb)",
@@ -166,6 +180,7 @@ export async function submitWorkerResponse({ db, jobId, workerId, message }) {
       conversationId,
       dispatcherId: job.dispatcher_id,
       message: chatMessage,
+      notification,
       existing: !isNewResponse,
       weeklyCompletedJobs,
     };
