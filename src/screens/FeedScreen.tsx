@@ -5,6 +5,7 @@ import {
   Search, X, Sparkles, Loader2, TrendingUp, Check, ArrowLeft, Hourglass, SlidersHorizontal,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { removeFeedJob, upsertActiveFeedJob } from "@/lib/jobFeedState";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRespondToJob } from "@/hooks/useRespondToJob";
 import { toast } from "sonner";
@@ -144,9 +145,37 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
         { event: 'INSERT', schema: 'public', table: 'jobs' },
         (payload) => {
           const newJob = payload.new as Tables<"jobs">;
-          setJobs((prev) => {
-            if (prev.some(j => j.id === newJob.id)) return prev;
-            return [newJob, ...prev];
+          // Keep realtime inserts consistent with the initial active-jobs query.
+          if (newJob.status !== "active") return;
+          setJobs((prev) => upsertActiveFeedJob(prev, newJob));
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'jobs' },
+        (payload) => {
+          const updatedJob = payload.new as Tables<"jobs">;
+          setJobs((prev) => upsertActiveFeedJob(prev, updatedJob));
+          if (updatedJob.status !== "active") {
+            setWorkersFound((prev) => {
+              const next = { ...prev };
+              delete next[updatedJob.id];
+              return next;
+            });
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'jobs' },
+        (payload) => {
+          const deletedJob = payload.old as Partial<Tables<"jobs">>;
+          if (!deletedJob.id) return;
+          setJobs((prev) => removeFeedJob(prev, deletedJob.id!));
+          setWorkersFound((prev) => {
+            const next = { ...prev };
+            delete next[deletedJob.id!];
+            return next;
           });
         }
       )
