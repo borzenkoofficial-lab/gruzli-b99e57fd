@@ -21,6 +21,7 @@ The new API uses its own cookie session and `requireAuth`. The current frontend 
 Routes currently present in `server/index.mjs`:
 - Identity/session foundation: `/api/auth/*` (not authorized for frontend cutover in this phase).
 - Profile presence: `POST /api/profile/presence`.
+- Persistent notifications: `GET /api/notifications`, `GET /api/notifications/unread-count`, `PATCH /api/notifications/:notificationId/read`, `PATCH /api/notifications/read-all`.
 - Conversations/messages/files: `/api/conversations`, `/api/conversations/:id`, `/api/conversations/:id/messages`, `/api/conversations/:id/files`, `/api/conversations/:id/read`, `/api/files/:fileId`, plus `/api/realtime`.
 - Jobs: `GET/POST /api/jobs`, `GET /api/jobs/:jobId`.
 - Responses: `GET /api/jobs/:jobId/responses`, `GET /api/jobs/:jobId/my-response`, `POST /api/jobs/:jobId/responses`, `POST /api/responses/:responseId/{accept,reject,withdraw,worker-status,cancel-assignment,review}`.
@@ -45,7 +46,7 @@ Typed client coverage in `src/lib/apiClient.ts` currently focuses on dispatcher 
 | Contracts / documents | `ContractScreen.tsx`, `DispatcherContractsModal.tsx`: contract/job/response/signature queries, party-profile RPC, PDF/preview Edge Functions, storage signed URLs, chat notifications. | Chat file storage is implemented; no contract API surface found. | Contract lifecycle, signatures, PDF generation and private document delivery need dedicated routes/storage policy. |
 | Kartoteka | `KartotekaScreen.tsx`: CRUD and photo storage. | No corresponding API routes found. | Dedicated CRUD and private file API required. |
 | Monetization | `CompanyScreen.tsx`: `purchase_company`; `PremiumScreen.tsx`: `purchase_premium`. | No purchase/billing routes found. | Do not port as raw RPC equivalents; define payment/ledger and entitlement rules first. |
-| Notifications / unread | `useUnreadCounts.ts`: unread RPC/query and Supabase realtime. `useRealtimeNotifications.ts` already uses WebSocket. `NotificationsScreen.tsx` has no direct Supabase calls in the inspected file. | WebSocket transport exists; presence route exists. | Add notification persistence/list/read and unread-count API; remove old realtime channel only with parity tests. |
+| Notifications / unread | `useUnreadCounts.ts`: unread RPC/query and Supabase realtime. `useRealtimeNotifications.ts` already uses WebSocket. `NotificationsScreen.tsx` stores a per-user history in browser `localStorage`. | PostgreSQL notification storage, authenticated list/unread/read/read-all APIs, and `notification:new` WebSocket event after commit. Worker response notifications are inserted in the same transaction as the response/chat/audit records. | Frontend remains on its legacy localStorage/Supabase paths until the separately approved session adapter exists. Do not treat server API coverage as frontend cutover; remove old realtime only with parity tests. |
 | Settings / push / misc components | `SettingsScreen.tsx`: support-user lookup, profile/avatar/block-list operations; Auth calls are excluded. `EnablePushButton.tsx`: VAPID Edge Function and push subscription insert (auth lookup is excluded). `AnnouncementModal.tsx`: settings query/realtime. `AppRatingModal.tsx`: rating insert. | No matching routes found for these features. | Add settings, push, announcements and app-rating contracts separately. |
 
 ## Recommended migration sequence
@@ -85,3 +86,14 @@ The generic direct-conversation creation endpoint now uses the same normalized p
 The weekly limit is checked at response submission time against completed assignments in the current PostgreSQL week (Monday-based `date_trunc('week', now())`). This preserves the legacy pre-application gate; it does not cancel or block work already accepted before the worker reaches the limit.
 
 The integration suite requires `DATABASE_URL`; without it, these PostgreSQL-specific tests are reported as skipped. CI must run them against its PostgreSQL service.
+
+## Persistent notification backend
+
+Implemented on this migration branch:
+- `server/migrations/007_notifications.sql` creates recipient-scoped notification storage with read timestamps, optional actor/entity references, JSON metadata, deduplication keys and unread/list indexes.
+- `server/domain/notifications.mjs` provides recipient-scoped list/count/read operations and idempotent creation.
+- Authenticated API: list with bounded limit/offset, unread count, mark one read and mark all read. A notification belonging to another user is indistinguishable from a missing notification (404).
+- The worker-response workflow inserts the dispatcher's notification inside the same PostgreSQL transaction as the response, direct conversation, initial message and audit event. The realtime notification event is emitted only after COMMIT.
+- Integration tests cover persistence, recipient isolation, deduplication, read state and transaction rollback.
+
+The frontend is deliberately not switched to these routes in this phase. Its active identity still comes from Supabase Auth, while these routes require the Amvera cookie session. The legacy `localStorage` notification list and Supabase unread-count path remain until a separately approved session adapter and UI parity migration are available. Existing browser-stored notifications are not imported into the clean-start database.
