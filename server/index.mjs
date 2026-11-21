@@ -704,22 +704,29 @@ app.post("/api/jobs", requireAuth, async (req, res) => {
     return sendError(res, 400, "INVALID_JOB", "Проверьте название, ставку, длительность и количество исполнителей.");
   }
   if (startTime && Number.isNaN(Date.parse(startTime))) return sendError(res, 400, "INVALID_START_TIME", "Некорректная дата начала.");
+  const client = await pool.connect();
   try {
-    const result = await pool.query(
+    await client.query("BEGIN");
+    const result = await client.query(
       "INSERT INTO jobs (client_id, title, description, hourly_rate, start_time, duration_hours, address, metro, workers_needed, urgent, quick_minimum, requires_contract, status) " +
       "VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'open') RETURNING *",
       [user.id, title, description, hourlyRate, startTime, durationHours, address, metro, workersNeeded,
         Boolean(req.body?.urgent), Boolean(req.body?.quickMinimum), Boolean(req.body?.requiresContract)],
     );
-    await pool.query(
+    await client.query(
       "INSERT INTO app_audit_log (actor_user_id, action, entity_type, entity_id, ip_address) VALUES ($1,'job.created','job',$2,$3)",
       [user.id, result.rows[0].id, req.ip],
     );
+    await client.query("COMMIT");
+    // Publish only committed state. A failed audit insert must never leave an untracked job.
     sendRoleEvent("worker", { type: "job:created", job: result.rows[0] });
     return res.status(201).json({ job: result.rows[0] });
   } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
     console.error("[jobs] Create failed:", error.message);
     return sendError(res, 500, "JOB_CREATE_FAILED", "Не удалось создать заявку.");
+  } finally {
+    client.release();
   }
 });
 
