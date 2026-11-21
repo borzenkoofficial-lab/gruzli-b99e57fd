@@ -1166,7 +1166,7 @@ app.post("/api/responses/:responseId/cancel-assignment", requireAuth, async (req
       return sendError(res, 404, "RESPONSE_NOT_FOUND", "Отклик не найден.");
     }
     const result = await client.query(
-      "SELECT r.id, r.job_id, r.worker_id, r.status AS response_status, r.work_started_at, j.dispatcher_id, j.client_id, j.status AS job_status " +
+      "SELECT r.id, r.job_id, r.worker_id, r.status AS response_status, r.work_started_at, j.dispatcher_id, j.client_id, j.workers_needed, j.status AS job_status " +
       "FROM job_responses r JOIN jobs j ON j.id = r.job_id WHERE r.id = $1 FOR UPDATE OF r",
       [req.params.responseId],
     );
@@ -1192,8 +1192,8 @@ app.post("/api/responses/:responseId/cancel-assignment", requireAuth, async (req
       "SELECT count(*)::int AS count FROM job_responses WHERE job_id = $1 AND status = 'accepted'",
       [jobId],
     );
-    jobStatus = response.job_status === "filled" && acceptedCount.rows[0].count < 1 ? "active" : response.job_status;
-    if (response.job_status === "filled") {
+    jobStatus = response.job_status;
+    if (response.job_status === "filled" && acceptedCount.rows[0].count < Number(response.workers_needed || 1)) {
       await client.query("UPDATE jobs SET status = 'active', updated_at = now() WHERE id = $1", [jobId]);
       jobStatus = "active";
     }
