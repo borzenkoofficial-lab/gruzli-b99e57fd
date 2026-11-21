@@ -79,6 +79,10 @@ test("worker response creates response, direct chat and first message atomically
     assert.ok(first.conversationId);
     assert.equal(first.message.text, message);
     assert.equal(first.message.sender_id, workerId);
+    assert.equal(first.notification.recipient_id, dispatcherId);
+    assert.equal(first.notification.actor_user_id, workerId);
+    assert.equal(first.notification.type, "response");
+    assert.equal(first.notification.entity_id, first.response.id);
 
     const counts = await pool.query(
       "SELECT (SELECT count(*)::int FROM job_responses WHERE job_id = $1 AND worker_id = $2) AS responses, " +
@@ -93,6 +97,13 @@ test("worker response creates response, direct chat and first message atomically
     assert.equal(duplicate.response.id, first.response.id);
     assert.equal(duplicate.conversationId, first.conversationId);
     assert.equal(duplicate.message, null);
+    assert.equal(duplicate.notification, null);
+
+    const notificationCount = await pool.query(
+      "SELECT count(*)::int AS count FROM notifications WHERE recipient_id = $1 AND dedupe_key = $2",
+      [dispatcherId, "response-created:" + first.response.id],
+    );
+    assert.equal(notificationCount.rows[0].count, 1);
 
     const messageCount = await pool.query(
       "SELECT count(*)::int AS count FROM messages WHERE conversation_id = $1",
