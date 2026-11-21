@@ -166,6 +166,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
   const [showMenu, setShowMenu] = useState(false);
   const [otherUserId, setOtherUserId] = useState<string | null>(null);
   const [otherLastSeen, setOtherLastSeen] = useState<string | null>(null);
+  const [otherIsOnline, setOtherIsOnline] = useState<boolean | undefined>(undefined);
   const [showEmoji, setShowEmoji] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [replyTo, setReplyTo] = useState<ReplyPreview | null>(null);
@@ -231,6 +232,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
         if (other) {
           setOtherUserId(other.id);
           setOtherLastSeen(other.last_seen_at || null);
+          setOtherIsOnline(Boolean(other.is_online));
           if (other.full_name) setResolvedTitle(other.full_name);
           setOtherAvatarUrl(other.avatar_url || null);
         }
@@ -249,7 +251,18 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     return () => { active = false; };
   }, [user, conversationId, isDemo]);
 
-  const presenceInfo = formatLastSeen(otherLastSeen);
+  useEffect(() => {
+    const handlePresence = (event: Event) => {
+      const detail = (event as CustomEvent<{ userId: string; lastSeenAt: string; isOnline?: boolean }>).detail;
+      if (!detail || detail.userId !== otherUserId) return;
+      setOtherLastSeen(detail.lastSeenAt);
+      setOtherIsOnline(detail.isOnline ?? formatLastSeen(detail.lastSeenAt).isOnline);
+    };
+    window.addEventListener("gruzli:presence", handlePresence);
+    return () => window.removeEventListener("gruzli:presence", handlePresence);
+  }, [otherUserId]);
+
+  const presenceInfo = formatLastSeen(otherLastSeen, otherIsOnline);
 
   // Build the reply lookup once per message update instead of scanning the full history
   // for every bubble during render (avoids quadratic work in long conversations).
