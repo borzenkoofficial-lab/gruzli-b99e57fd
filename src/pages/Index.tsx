@@ -39,26 +39,6 @@ const DispatcherCommunityScreen = lazy(() => import("@/screens/DispatcherCommuni
 const ContractScreen = lazy(() => import("@/screens/ContractScreen"));
 import PullToRefresh from "@/components/PullToRefresh";
 
-/**
- * Warm the primary app surfaces after first paint.
- * This keeps navigation instant without loading the whole application up front.
- */
-const warmPrimaryScreens = (role: string | null) => {
-  // Preload only the screens that can actually appear in the current role.
-  // This keeps the first interaction fast without downloading the whole app.
-  void import("@/screens/FeedScreen");
-  void import("@/screens/RealChatsScreen");
-  void import("@/screens/ProfileScreen");
-
-  if (role === "worker") {
-    void import("@/screens/OrdersScreen");
-    void import("@/screens/KartotekaScreen");
-  } else if (role === "dispatcher") {
-    void import("@/screens/KartotekaScreen");
-  } else if (role === "client") {
-    void import("@/screens/OrdersScreen");
-  }
-};
 
 const Index = () => {
   const { role, user } = useAuth();
@@ -104,16 +84,6 @@ const Index = () => {
     return () => { cancelled = true; };
   }, []);
   const [tab, setTab] = useState("feed");
-
-  useEffect(() => {
-    const run = () => warmPrimaryScreens(role);
-    if ("requestIdleCallback" in window) {
-      const id = (window as any).requestIdleCallback(run, { timeout: 1200 });
-      return () => (window as any).cancelIdleCallback?.(id);
-    }
-    const id = window.setTimeout(run, 700);
-    return () => window.clearTimeout(id);
-  }, [role]);
 
   useEffect(() => {
     const handler = () => setTab("feed");

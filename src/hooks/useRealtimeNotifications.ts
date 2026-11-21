@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { getNotificationSettings } from "@/hooks/useNotificationSettings";
-import { pushNotification } from "@/screens/NotificationsScreen";
+import { pushNotification } from "@/lib/notifications";
 import { playNewJob, playMessageReceived, playStatusUpdate, playSuccess } from "@/lib/sounds";
 import type { Tables } from "@/integrations/supabase/types";
 import { getActiveConversationId } from "@/lib/chatPresence";
