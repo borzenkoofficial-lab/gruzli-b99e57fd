@@ -203,6 +203,8 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
           window.dispatchEvent(new CustomEvent("gruzli:message", { detail: payload }));
         } else if (payload.type === "presence:update" && payload.userId) {
           window.dispatchEvent(new CustomEvent("gruzli:presence", { detail: payload }));
+        } else if (payload.type === "message:receipt" && payload.conversationId && Array.isArray(payload.messageIds)) {
+          window.dispatchEvent(new CustomEvent("gruzli:message-receipt", { detail: payload }));
         } else if (payload.type === "response:updated") {
           handleResponseUpdate({
             new: { worker_id: userIdRef.current, status: payload.status, worker_status: payload.workerStatus },
