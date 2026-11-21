@@ -50,7 +50,7 @@ export const usePresence = () => {
 /**
  * Format last_seen_at into a human-readable status string.
  */
-export const formatLastSeen = (lastSeenAt: string | null): { text: string; isOnline: boolean } => {
+export const formatLastSeen = (lastSeenAt: string | null, onlineOverride?: boolean): { text: string; isOnline: boolean } => {
   if (!lastSeenAt) return { text: "не в сети", isOnline: false };
 
   const now = Date.now();
@@ -58,7 +58,8 @@ export const formatLastSeen = (lastSeenAt: string | null): { text: string; isOnl
   const diffMs = now - seen;
   const diffMin = Math.floor(diffMs / 60000);
 
-  if (diffMin < 2) return { text: "онлайн", isOnline: true };
+  if (onlineOverride === true || (onlineOverride === undefined && diffMin < 2)) return { text: "онлайн", isOnline: true };
+  if (diffMin < 2) return { text: "был(а) только что", isOnline: false };
   if (diffMin < 60) return { text: `был(а) ${diffMin} мин. назад`, isOnline: false };
 
   const diffHours = Math.floor(diffMin / 60);
