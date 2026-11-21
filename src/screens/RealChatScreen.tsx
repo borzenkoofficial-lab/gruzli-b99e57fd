@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
-import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, FileText, Mic, MicOff, MapPin, Users, Wallet, CheckCheck, Clock3, MoreVertical, Trash2, Ban, BellOff, Smile, Reply as ReplyIcon } from "lucide-react";
+import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, FileText, Mic, MicOff, MapPin, Users, Wallet, Check, CheckCheck, Clock3, MoreVertical, Trash2, Ban, BellOff, Smile, Reply as ReplyIcon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { playMessageSent } from "@/lib/sounds";
@@ -24,6 +24,9 @@ interface Message {
   reply_to_id?: string | null;
   _optimistic?: boolean;
   _status?: "sending" | "failed";
+  receipt_total?: number;
+  receipt_delivered?: number;
+  receipt_read?: number;
 }
 
 interface ReplyPreview {
@@ -37,7 +40,10 @@ const DeliveryStatusIcon = ({ msg }: { msg: Message }) => {
     return <Clock3 size={12} className="text-muted-foreground animate-pulse" />;
   }
 
-  return <CheckCheck size={12} className="text-primary" />;
+  const delivered = (msg.receipt_delivered ?? 0) > 0;
+  const fullyRead = (msg.receipt_total ?? 0) > 0 && (msg.receipt_read ?? 0) >= (msg.receipt_total ?? 0);
+  if (!delivered) return <Check size={12} className="text-muted-foreground" />;
+  return <CheckCheck size={12} className={fullyRead ? "text-primary" : "text-muted-foreground"} />;
 };
 
 interface RealChatScreenProps {
@@ -415,6 +421,26 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       if (realtimeRef.current === socket) realtimeRef.current = null;
     };
   }, [user?.id, isDemo, conversationId, otherUserId, title, appendMessage, markAsRead]);
+
+  useEffect(() => {
+    const handleReceipt = (event: Event) => {
+      const detail = (event as CustomEvent<{ conversationId: string; receipts?: Array<{ messageId: string; total: number; delivered: number; read: number }> }>).detail;
+      if (detail?.conversationId !== conversationId || !Array.isArray(detail.receipts)) return;
+      const receiptByMessage = new Map(detail.receipts.map((receipt) => [receipt.messageId, receipt]));
+      setMessages((current) => current.map((message) => {
+        const receipt = receiptByMessage.get(message.id);
+        if (!receipt || message.sender_id !== user?.id) return message;
+        return {
+          ...message,
+          receipt_total: receipt.total,
+          receipt_delivered: receipt.delivered,
+          receipt_read: receipt.read,
+        };
+      }));
+    };
+    window.addEventListener("gruzli:message-receipt", handleReceipt);
+    return () => window.removeEventListener("gruzli:message-receipt", handleReceipt);
+  }, [conversationId, user?.id]);
 
   useEffect(() => {
     fetchMessages();
