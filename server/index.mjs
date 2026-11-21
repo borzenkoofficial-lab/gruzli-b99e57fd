@@ -628,31 +628,54 @@ app.post("/api/conversations/:conversationId/messages", requireAuth, async (req,
   if (!text || text.length > 10000 || !["text", "sticker", "system", "voice_room"].includes(messageType)) {
     return sendError(res, 400, "INVALID_MESSAGE", "Сообщение пустое или имеет недопустимый формат.");
   }
+  const client = await pool.connect();
+  let conversationId = null;
   try {
-    const conversation = await requireConversationMember(req.params.conversationId, req.authUser.id);
-    if (!conversation) return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
-    if (replyToId) {
-      const reply = await pool.query("SELECT id FROM messages WHERE id = $1 AND conversation_id = $2", [replyToId, conversation.id]);
-      if (!reply.rowCount) return sendError(res, 400, "INVALID_REPLY_TARGET", "Сообщение для ответа не найдено.");
+    await client.query("BEGIN");
+    // Lock the conversation and participant row so membership cannot disappear
+    // between authorization and message persistence.
+    const membership = await client.query(
+      "SELECT c.id FROM conversations c JOIN conversation_participants cp ON cp.conversation_id = c.id " +
+      "WHERE c.id = $1 AND cp.user_id = $2 FOR UPDATE OF c, cp",
+      [req.params.conversationId, req.authUser.id],
+    );
+    if (!membership.rowCount) {
+      await client.query("ROLLBACK");
+      return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
     }
-    const blocked = await pool.query(
+    conversationId = membership.rows[0].id;
+    if (replyToId) {
+      const reply = await client.query("SELECT id FROM messages WHERE id = $1 AND conversation_id = $2", [replyToId, conversationId]);
+      if (!reply.rowCount) {
+        await client.query("ROLLBACK");
+        return sendError(res, 400, "INVALID_REPLY_TARGET", "Сообщение для ответа не найдено.");
+      }
+    }
+    const blocked = await client.query(
       "SELECT 1 FROM blocked_users b JOIN conversation_participants cp ON cp.conversation_id = $1 AND cp.user_id = b.blocked_id " +
       "WHERE b.blocker_id = $2 LIMIT 1",
-      [conversation.id, req.authUser.id],
+      [conversationId, req.authUser.id],
     );
-    if (blocked.rowCount) return sendError(res, 403, "USER_BLOCKED", "Нельзя отправить сообщение этому пользователю.");
-    const result = await pool.query(
+    if (blocked.rowCount) {
+      await client.query("ROLLBACK");
+      return sendError(res, 403, "USER_BLOCKED", "Нельзя отправить сообщение этому пользователю.");
+    }
+    const result = await client.query(
       "INSERT INTO messages (conversation_id, sender_id, text, message_type, reply_to_id) VALUES ($1,$2,$3,$4,$5) " +
       "RETURNING id, conversation_id, sender_id, text, media_url, message_type, reply_to_id, created_at",
-      [conversation.id, req.authUser.id, text, messageType, replyToId],
+      [conversationId, req.authUser.id, text, messageType, replyToId],
     );
-    await pool.query("UPDATE conversation_participants SET last_read_at = now() WHERE conversation_id = $1 AND user_id = $2", [conversation.id, req.authUser.id]);
+    await client.query("UPDATE conversation_participants SET last_read_at = now() WHERE conversation_id = $1 AND user_id = $2", [conversationId, req.authUser.id]);
+    await client.query("COMMIT");
     const message = { ...result.rows[0], sender_name: req.authUser.full_name };
-    sendConversationEvent(conversation.id, { type: "message:new", conversationId: conversation.id, message }, req.authUser.id);
+    sendConversationEvent(conversationId, { type: "message:new", conversationId, message }, req.authUser.id);
     return res.status(201).json({ message });
   } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
     console.error("[chat] Message send failed:", error.message);
     return sendError(res, 500, "MESSAGE_SEND_FAILED", "Не удалось отправить сообщение.");
+  } finally {
+    client.release();
   }
 });
 
