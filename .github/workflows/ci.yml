@@ -2,9 +2,9 @@ name: Gruzli CI
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "migration/**"]
   pull_request:
-    branches: ["main"]
+    branches: ["main", "migration/**"]
 
 concurrency:
   group: gruzli-ci-${{ github.event.pull_request.number || github.ref }}
@@ -13,7 +13,23 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/gruzli_test
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gruzli_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d gruzli_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
@@ -23,6 +39,8 @@ jobs:
           cache: npm
 
       - run: npm ci
+      - name: Apply PostgreSQL migrations
+        run: npm run db:migrate
       - run: node --check server/index.mjs
       - run: node --check server/db.mjs
       - run: node --check server/migrate.mjs
