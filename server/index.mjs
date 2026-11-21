@@ -31,6 +31,18 @@ function sendConversationEvent(conversationId, event, exceptUserId = null) {
   }
 }
 
+async function getMessageReceiptSummaries(messageIds) {
+  if (!messageIds.length) return [];
+  const result = await pool.query(
+    "SELECT message_id AS \"messageId\", count(*)::int AS total, " +
+    "count(*) FILTER (WHERE delivered_at IS NOT NULL)::int AS delivered, " +
+    "count(*) FILTER (WHERE read_at IS NOT NULL)::int AS read " +
+    "FROM message_receipts WHERE message_id = ANY($1::uuid[]) GROUP BY message_id",
+    [messageIds],
+  );
+  return result.rows;
+}
+
 async function publishPresence(userId, isOnline) {
   if (!pool || !databaseReady) return;
   try {
@@ -795,7 +807,8 @@ app.post("/api/conversations/:conversationId/delivered", requireAuth, async (req
       bySender.get(row.sender_id).push(row.id);
     }
     for (const [senderId, ids] of bySender) {
-      sendUserEvent(senderId, { type: "message:receipt", conversationId: conversation.id, recipientId: req.authUser.id, messageIds: ids, delivered: true });
+      const receipts = await getMessageReceiptSummaries(ids);
+      sendUserEvent(senderId, { type: "message:receipt", conversationId: conversation.id, recipientId: req.authUser.id, messageIds: ids, receipts, delivered: true });
     }
     return res.json({ deliveredCount: delivered.rowCount });
   } catch (error) {
@@ -829,7 +842,8 @@ app.post("/api/conversations/:conversationId/read", requireAuth, async (req, res
       bySender.get(row.sender_id).push(row.id);
     }
     for (const [senderId, ids] of bySender) {
-      sendUserEvent(senderId, { type: "message:receipt", conversationId: req.params.conversationId, recipientId: req.authUser.id, messageIds: ids, delivered: true, read: true });
+      const receipts = await getMessageReceiptSummaries(ids);
+      sendUserEvent(senderId, { type: "message:receipt", conversationId: req.params.conversationId, recipientId: req.authUser.id, messageIds: ids, receipts, delivered: true, read: true });
     }
     return res.status(204).end();
   } catch (error) {
