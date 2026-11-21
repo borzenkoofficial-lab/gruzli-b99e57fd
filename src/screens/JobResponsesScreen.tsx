@@ -39,27 +39,42 @@ const JobResponsesScreen = ({ job: initialJob, onBack, onChatWithWorker }: JobRe
   const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
   const fetchResponses = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("job_responses")
       .select("*")
       .eq("job_id", job.id)
       .order("created_at", { ascending: false });
 
-    if (data) {
-      const workerIds = [...new Set(data.map((r) => r.worker_id))];
-      const { data: profiles } = workerIds.length > 0
-        ? await supabase.from("profiles_public" as any).select("*").in("user_id", workerIds)
-        : { data: [] };
-      const pmap: Record<string, any> = {};
-      ((profiles as any[]) || []).forEach((p) => { pmap[p.user_id] = p; });
-      setResponses(data.map((r) => ({ ...r, profile: pmap[r.worker_id] || null })) as ResponseWithProfile[]);
+    if (error) {
+      console.error("Failed to load job responses", error);
+      toast.error("Не удалось загрузить отклики. Проверьте соединение и попробуйте ещё раз.");
+      setLoading(false);
+      return;
     }
+
+    const responseRows = data || [];
+    const workerIds = [...new Set(responseRows.map((r) => r.worker_id))];
+    const { data: profiles, error: profilesError } = workerIds.length > 0
+      ? await supabase.from("profiles_public" as any).select("*").in("user_id", workerIds)
+      : { data: [], error: null };
+    if (profilesError) {
+      console.error("Failed to load worker profiles for responses", profilesError);
+      toast.error("Отклики загружены, но данные некоторых исполнителей недоступны.");
+    }
+    const pmap: Record<string, any> = {};
+    ((profiles as any[]) || []).forEach((p) => { pmap[p.user_id] = p; });
+    setResponses(responseRows.map((r) => ({ ...r, profile: pmap[r.worker_id] || null })) as ResponseWithProfile[]);
     setLoading(false);
   };
 
   const refreshJob = async () => {
-    const { data } = await supabase.from("jobs").select("*").eq("id", job.id).single();
-    if (data) setJob(data);
+    const { data, error } = await supabase.from("jobs").select("*").eq("id", job.id).single();
+    if (error || !data) {
+      console.error("Failed to refresh job details for responses", error);
+      toast.error("Не удалось обновить состояние заявки.");
+      return;
+    }
+    setJob(data);
   };
 
   useEffect(() => {
