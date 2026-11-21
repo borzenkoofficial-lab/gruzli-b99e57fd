@@ -821,7 +821,7 @@ app.post("/api/responses/:responseId/accept", requireAuth, async (req, res) => {
   try {
     await client.query("BEGIN");
     const responseResult = await client.query(
-      "SELECT r.*, j.dispatcher_id, j.workers_needed, j.status AS job_status FROM job_responses r JOIN jobs j ON j.id = r.job_id WHERE r.id = $1 FOR UPDATE OF r, j",
+      "SELECT r.*, j.dispatcher_id, j.workers_needed, j.hourly_rate, j.status AS job_status FROM job_responses r JOIN jobs j ON j.id = r.job_id WHERE r.id = $1 FOR UPDATE OF r, j",
       [req.params.responseId],
     );
     const response = responseResult.rows[0];
@@ -829,7 +829,7 @@ app.post("/api/responses/:responseId/accept", requireAuth, async (req, res) => {
       await client.query("ROLLBACK");
       return sendError(res, 404, "RESPONSE_NOT_FOUND", "Отклик не найден.");
     }
-    if (response.status !== "pending" || !["open", "active", "filled"].includes(response.job_status)) {
+    if (response.status !== "pending" || !["open", "active"].includes(response.job_status)) {
       await client.query("ROLLBACK");
       return sendError(res, 409, "RESPONSE_NOT_PENDING", "Этот отклик уже нельзя принять.");
     }
@@ -839,14 +839,31 @@ app.post("/api/responses/:responseId/accept", requireAuth, async (req, res) => {
       await client.query("ROLLBACK");
       return sendError(res, 409, "WORKERS_LIMIT_REACHED", "Лимит грузчиков уже достигнут.");
     }
-    await client.query("UPDATE job_responses SET status = 'accepted' WHERE id = $1", [response.id]);
+    // Freeze the job's current rate at the exact moment the dispatcher accepts the worker.
+    // Later edits to the job rate must not rewrite an already agreed worker rate.
+    await client.query(
+      "UPDATE job_responses SET status = 'accepted', agreed_hourly_rate = COALESCE(agreed_hourly_rate, $2), worker_status = COALESCE(worker_status, 'ready') WHERE id = $1",
+      [response.id, response.hourly_rate],
+    );
     const acceptedNow = acceptedCount.rows[0].count + 1;
     const filled = acceptedNow >= needed;
     let autoRejected = 0;
     if (filled) {
       await client.query("UPDATE jobs SET status = 'filled', updated_at = now() WHERE id = $1", [response.job_id]);
-      const rejected = await client.query("UPDATE job_responses SET status = 'rejected' WHERE job_id = $1 AND status = 'pending' AND id <> $2", [response.job_id, response.id]);
+      const rejected = await client.query(
+        "UPDATE job_responses SET status = 'rejected' WHERE job_id = $1 AND status = 'pending' AND id <> $2 RETURNING id, worker_id",
+        [response.job_id, response.id],
+      );
       autoRejected = rejected.rowCount || 0;
+      for (const rejectedResponse of rejected.rows) {
+        sendUserEvent(rejectedResponse.worker_id, {
+          type: "response:updated",
+          responseId: rejectedResponse.id,
+          jobId: response.job_id,
+          status: "rejected",
+          reason: "workers_limit_reached",
+        });
+      }
     } else {
       await client.query("UPDATE jobs SET status = 'active', updated_at = now() WHERE id = $1 AND status = 'open'", [response.job_id]);
     }
