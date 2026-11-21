@@ -38,7 +38,6 @@ const OrdersScreen = () => {
 
   const fetchAcceptedJobs = async () => {
     setLoading(true);
-    setLoading(true);
 
     if (role === "client") {
       const { data: clientJobs, error: clientJobsError } = await supabase
@@ -105,26 +104,38 @@ const OrdersScreen = () => {
       return;
     }
 
-    const { data: responses } = await supabase
+    const { data: responses, error: responsesError } = await supabase
       .from("job_responses")
       .select("*")
       .eq("worker_id", user.id)
       .in("status", ["accepted"]);
 
-    if (!responses || responses.length === 0) {
+    if (responsesError) {
+      console.error("Failed to load worker order responses", responsesError);
+      toast.error("Не удалось загрузить ваши заказы. Проверьте соединение и попробуйте ещё раз.");
       setJobs([]);
       setLoading(false);
       return;
     }
 
+    if (!responses || responses.length === 0) {
+      setJobs([]);
+      setCompletedJobs([]);
+      setLoading(false);
+      return;
+    }
+
     const jobIds = responses.map((r) => r.job_id);
-    const { data: jobsData } = await supabase
+    const { data: jobsData, error: jobsError } = await supabase
       .from("jobs")
       .select("*")
       .in("id", jobIds);
 
-    if (!jobsData) {
+    if (jobsError || !jobsData) {
+      console.error("Failed to load jobs for worker responses", jobsError);
+      toast.error("Не удалось загрузить данные заказов. Попробуйте обновить экран.");
       setJobs([]);
+      setCompletedJobs([]);
       setLoading(false);
       return;
     }
