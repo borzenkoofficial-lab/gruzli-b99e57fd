@@ -18,6 +18,13 @@
 - 1 212 использований `!important`;
 - 91 media query;
 - 204 selector headers повторяются в нескольких местах.
+
+Build cleanup от 2026-11-21:
+- Удалены два orphan selector headers, из-за которых CSS parser считал последующий `@media` неожиданным токеном.
+- Экранированы квадратные скобки и десятичная точка в utility selectors.
+- Все `@media(` приведены к корректному синтаксису `@media (`.
+- Последний main build: **0 CSS syntax warnings** и **0 duplicate dynamic-import chunk warnings** после выноса notification storage helpers из screen и удаления повторных preloads.
+- Осталось не блокирующее предупреждение: `caniuse-lite` / Browserslist data устарели примерно на 17 месяцев; обновление browser dataset запланировано отдельно.
 - Наиболее часто повторяются: `.gruzli-job-card` (11 правил), `.bottom-nav-pill` (10), `.app-scroll` (9), `.app-shell` (9), `.desktop-main-inner` (8), `.bottom-nav-wrapper` (8), `.gruzli-mobile-feed` (8), `:root` (5).
 
 Это подтверждает высокую плотность переопределений. Сами по себе повторные правила не всегда ошибка, но вместе с большим количеством `!important` повышают риск каскадных регрессий и усложняют предсказуемое развитие интерфейса.
