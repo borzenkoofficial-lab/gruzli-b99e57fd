@@ -324,6 +324,20 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
 
   useEffect(() => { adjustTextarea(); }, [text, adjustTextarea]);
 
+  const markDelivered = useCallback(async (messageIds: string[]) => {
+    if (!user || !conversationId || isDemo || messageIds.length === 0) return;
+    try {
+      await fetch(`/api/conversations/${conversationId}/delivered`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messageIds }),
+      });
+    } catch (error) {
+      console.error("[chat] Delivery receipt failed:", error);
+    }
+  }, [user, conversationId, isDemo]);
+
   const fetchMessages = useCallback(async () => {
     if (isDemo) {
       const now = new Date();
@@ -383,20 +397,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     setLoading(false);
     setTimeout(() => scrollToBottom(false), 50);
   }, [conversationId, isDemo, markDelivered, scrollToBottom, user?.id]);
-
-  const markDelivered = useCallback(async (messageIds: string[]) => {
-    if (!user || !conversationId || isDemo || messageIds.length === 0) return;
-    try {
-      await fetch(`/api/conversations/${conversationId}/delivered`, {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messageIds }),
-      });
-    } catch (error) {
-      console.error("[chat] Delivery receipt failed:", error);
-    }
-  }, [user, conversationId, isDemo]);
 
   const markAsRead = useCallback(async () => {
     if (!user || !conversationId || isDemo || document.visibilityState !== "visible") return;
