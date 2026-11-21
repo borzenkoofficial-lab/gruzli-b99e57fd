@@ -118,9 +118,14 @@ export async function submitWorkerResponse({ db, jobId, workerId, message }) {
 
     let conversationId = existingConversation.rows[0]?.id;
     if (!conversationId) {
+      const dispatcherProfile = await client.query(
+        "SELECT full_name FROM profiles WHERE user_id = $1",
+        [job.dispatcher_id],
+      );
+      const conversationTitle = dispatcherProfile.rows[0]?.full_name || job.title;
       const created = await client.query(
         "INSERT INTO conversations (title, is_group, job_id, created_by) VALUES ($1,false,$2,$3) RETURNING id",
-        [job.title, job.id, workerId],
+        [conversationTitle, job.id, workerId],
       );
       conversationId = created.rows[0].id;
       await client.query(
