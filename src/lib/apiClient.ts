@@ -101,3 +101,73 @@ export async function selectDispatcherOffer(offerId: string): Promise<SelectDisp
     { method: "POST", body: JSON.stringify({}) },
   );
 }
+
+export type WorkerStatus = "confirmed" | "en_route" | "late" | "arrived" | "completed";
+
+export interface WorkerResponseStatusResult {
+  response: {
+    id: string;
+    job_id: string;
+    worker_id: string;
+    worker_status: WorkerStatus;
+    work_started_at: string | null;
+    work_finished_at: string | null;
+    hours_worked: number | string | null;
+    earned: number | string | null;
+  };
+}
+
+export interface DispatcherJobCompletionInput {
+  expensePerWorker?: number;
+  dispatcherIncome: number;
+}
+
+export interface DispatcherJobCompletionResult {
+  jobId: string;
+  status: "completed";
+  workerPayoutTotal: number;
+  dispatcherIncome: number;
+  workersSettled: number;
+}
+
+export async function updateWorkerResponseStatus(
+  responseId: string,
+  nextStatus: WorkerStatus,
+  hoursWorked?: number,
+): Promise<WorkerResponseStatusResult> {
+  return request<WorkerResponseStatusResult>(
+    `/api/responses/${encodeURIComponent(responseId)}/worker-status`,
+    {
+      method: "POST",
+      body: JSON.stringify({ nextStatus, ...(hoursWorked === undefined ? {} : { hoursWorked }) }),
+    },
+  );
+}
+
+export async function finishDispatcherJob(jobId: string): Promise<{ jobId: string; status: "finishing"; workersNotCompleted: number }> {
+  return request(
+    `/api/jobs/${encodeURIComponent(jobId)}/finish`,
+    { method: "POST", body: JSON.stringify({}) },
+  );
+}
+
+export async function completeDispatcherJob(
+  jobId: string,
+  input: DispatcherJobCompletionInput,
+): Promise<DispatcherJobCompletionResult> {
+  return request<DispatcherJobCompletionResult>(
+    `/api/jobs/${encodeURIComponent(jobId)}/complete`,
+    { method: "POST", body: JSON.stringify(input) },
+  );
+}
+
+export async function reviewWorkerResponse(
+  responseId: string,
+  rating: number,
+  text?: string,
+): Promise<{ responseId: string; rating: number }> {
+  return request(
+    `/api/responses/${encodeURIComponent(responseId)}/review`,
+    { method: "POST", body: JSON.stringify({ rating, ...(text ? { text } : {}) }) },
+  );
+}
