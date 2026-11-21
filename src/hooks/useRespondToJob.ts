@@ -46,7 +46,7 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
         _job_id: job.id,
         _message: responseMessage,
       });
-      const isNewResponse = !respError;
+      const isNewResponse = !respError && !!createdResponse;
 
       if (respError) {
         if (respError.code === "23505") {
@@ -58,6 +58,12 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
           toast.error("Не удалось отправить отклик. " + (respError.message || "Попробуйте ещё раз."));
           return false;
         }
+      }
+
+      if (!respError && !createdResponse) {
+        console.error("Worker response RPC returned no response and no error");
+        toast.error("Сервер не подтвердил сохранение отклика. Попробуйте ещё раз.");
+        return false;
       }
 
       // 2. Find or create conversation with the assigned dispatcher.
@@ -73,12 +79,14 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
       });
 
       if (convError || !conversationId) {
-        toast.error("Не удалось создать чат");
+        console.error("Response was saved but dispatcher chat could not be opened", convError);
+        toast.error("Отклик сохранён, но чат не открылся. Нажмите «Откликнуться» ещё раз, чтобы повторить открытие чата.");
         return false;
       }
 
       // Only create the initial message and notification for a newly inserted response.
       // Keep chat/notification behavior separate from the transactional response creation.
+      let initialMessageFailed = false;
       if (isNewResponse) {
         const { error: messageError } = await supabase.from("messages").insert({
           conversation_id: conversationId,
@@ -87,7 +95,8 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
           message_type: "text",
         });
         if (messageError) {
-          toast.error("Отклик сохранён, но сообщение не отправлено. Откройте чат и отправьте его повторно.");
+          initialMessageFailed = true;
+          console.error("Response saved but initial chat message failed", messageError);
         }
 
         supabase.functions.invoke("notify-email", {
@@ -100,10 +109,16 @@ export function useRespondToJob(onOpenChat?: OpenChatFn) {
         }).catch(() => {});
       }
 
-      // 3. Open chat
+      // 3. Open chat and report the persisted response separately from message delivery.
       if (navigator.vibrate) navigator.vibrate(50);
-      toast.success("Отклик отправлен ✓ Чат с диспетчером открыт");
       onOpenChat?.(conversationId, job.title || "Чат");
+      if (initialMessageFailed) {
+        toast.error("Отклик отправлен, чат открыт, но первое сообщение не доставлено. Напишите диспетчеру вручную.");
+      } else if (isNewResponse) {
+        toast.success(onOpenChat ? "Отклик отправлен ✓ Чат с диспетчером открыт" : "Отклик отправлен");
+      } else {
+        toast.success(onOpenChat ? "Вы уже откликались. Чат с диспетчером открыт." : "Вы уже откликались на этот заказ.");
+      }
       return true;
     },
     [user, profile, onOpenChat]
