@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:server": "node --test server/domain/*.test.mjs",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "start": "node server/index.mjs",
