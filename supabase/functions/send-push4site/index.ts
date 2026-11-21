@@ -1,3 +1,4 @@
+import { hasValidInternalBearer } from "../_shared/internalAuth.ts";
 // Edge function: отправка push-уведомлений через push4site.com
 // Вызывается из БД-триггеров (verify_jwt = false).
 const corsHeaders = {
@@ -59,6 +60,28 @@ async function sendPush(p: PushPayload): Promise<{ ok: boolean; status: number; 
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const internalSecret = Deno.env.get("SEND_PUSH_INTERNAL_SECRET") ?? "";
+  if (!internalSecret) {
+    return new Response(JSON.stringify({ error: "Push endpoint is not configured" }), {
+      status: 503,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  if (!hasValidInternalBearer(req, internalSecret)) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
 
   try {
     if (!PUSH4SITE_API_KEY || !PUSH4SITE_SITE_ID) {

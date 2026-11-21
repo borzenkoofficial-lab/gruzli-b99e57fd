@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DEMO_PROFILES, DEMO_USERS, type DemoRole } from "@/data/demoData";
+import { removeCurrentPushSubscription } from "@/lib/pushSubscriptionLifecycle";
 
 type AppRole = "client" | "worker" | "dispatcher" | "admin";
 type User = { id: string; email?: string; phone?: string | null; user_metadata: Record<string, any> };
@@ -135,6 +136,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     if (!DEMO_ENABLED || !demoMode) {
+      // Unlink this browser's push endpoint before clearing its auth session.
+      // Cleanup is best-effort and must never prevent the user from logging out.
+      if (user?.id) {
+        await removeCurrentPushSubscription(user.id);
+      }
       await supabase.auth.signOut();
     }
 
