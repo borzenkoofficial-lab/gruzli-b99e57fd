@@ -49,6 +49,7 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+      - run: npm run test:server
       - run: npm run build
       - name: Build Amvera Docker image
         run: docker build -t gruzli-amvera .
