@@ -14,6 +14,7 @@ test("committed notifications are delivered through the PostgreSQL event listene
   const fixture = await pool.connect();
   let recipientId;
   let stopListener = async () => {};
+  let timeout;
   try {
     await fixture.query("BEGIN");
     const user = await fixture.query(
@@ -39,12 +40,16 @@ test("committed notifications are delivered through the PostgreSQL event listene
     });
     const event = await Promise.race([
       eventPromise,
-      new Promise((_, reject) => setTimeout(() => reject(new Error("Timed out waiting for notification event")), 3000)),
+      new Promise((_, reject) => {
+        timeout = setTimeout(() => reject(new Error("Timed out waiting for notification event")), 3000);
+      }),
     ]);
+    clearTimeout(timeout);
     assert.equal(event.recipientId, recipientId);
     assert.equal(event.notification.id, notification.id);
     assert.equal(event.unreadCount, 1);
   } finally {
+    clearTimeout(timeout);
     await stopListener().catch(() => {});
     fixture.release();
     if (recipientId) await pool.query("DELETE FROM app_users WHERE id = $1", [recipientId]);
