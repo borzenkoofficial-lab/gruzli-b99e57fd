@@ -1080,3 +1080,5 @@ start().catch((error) => {
 });
 
 // CI validates migration branches against the Amvera backend workflow.
+
+// PostgreSQL migration CI: schema application is part of the validation pipeline.
