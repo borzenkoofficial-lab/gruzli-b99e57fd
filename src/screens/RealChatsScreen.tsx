@@ -97,7 +97,7 @@ const SwipeableChatItem = ({
               {initials}
             </div>
           )}
-          {!conv.isCommunity && conv.otherLastSeen && formatLastSeen(conv.otherLastSeen).isOnline && (
+          {!conv.isCommunity && (conv.otherIsOnline ?? (conv.otherLastSeen ? formatLastSeen(conv.otherLastSeen).isOnline : false)) && (
             <div className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-green-500 border-[2.5px] border-background" />
           )}
         </div>
@@ -133,6 +133,7 @@ interface ConversationItem {
   otherUserId?: string | null;
   unreadCount: number;
   otherLastSeen: string | null;
+  otherIsOnline?: boolean;
   isCommunity?: boolean;
 }
 
@@ -155,9 +156,9 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
     if (isDemo) {
       const now = new Date();
       setConversations([
-        { id: "demo-chat-dispatcher", title: "Анна Петрова", is_group: false, lastMessage: "Сергей, завтра в 10:00 начинаем.", lastTime: now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }), lastTimestamp: now.toISOString(), otherName: "Анна Петрова", otherAvatarUrl: null, unreadCount: 2, otherLastSeen: now.toISOString() },
+        { id: "demo-chat-dispatcher", title: "Анна Петрова", is_group: false, lastMessage: "Сергей, завтра в 10:00 начинаем.", lastTime: now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }), lastTimestamp: now.toISOString(), otherName: "Анна Петрова", otherAvatarUrl: null, unreadCount: 2, otherLastSeen: now.toISOString(), otherIsOnline: true },
         { id: "demo-chat-worker", title: "Алексей Морозов", is_group: false, lastMessage: "Грузчики подтверждены, всё в силе.", lastTime: "14:32", lastTimestamp: new Date(now.getTime() - 4 * 60000).toISOString(), otherName: "Алексей Морозов", otherAvatarUrl: null, unreadCount: 1, otherLastSeen: now.toISOString() },
-        { id: "demo-chat-gruzli", title: "Gruzli Official", is_group: true, lastMessage: "Добро пожаловать в Gruzli.", lastTime: "Вчера", lastTimestamp: new Date(now.getTime() - 86400000).toISOString(), otherName: "Gruzli Official", otherAvatarUrl: null, unreadCount: 0, otherLastSeen: null, isCommunity: true },
+        { id: "demo-chat-gruzli", title: "Gruzli Official", is_group: true, lastMessage: "Добро пожаловать в Gruzli.", lastTime: "Вчера", lastTimestamp: new Date(now.getTime() - 86400000).toISOString(), otherName: "Gruzli Official", otherAvatarUrl: null, unreadCount: 0, otherLastSeen: null, otherIsOnline: false, isCommunity: true },
       ]);
       setLoading(false);
       return;
@@ -181,11 +182,11 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
     if (isDemo) return;
     const interval = window.setInterval(fetchConversations, 10000);
     const handlePresence = (event: Event) => {
-      const detail = (event as CustomEvent<{ userId: string; lastSeenAt: string }>).detail;
+      const detail = (event as CustomEvent<{ userId: string; lastSeenAt: string; isOnline?: boolean }>).detail;
       if (!detail?.userId || !detail.lastSeenAt) return;
       setConversations((current) => current.map((conversation) =>
         conversation.otherUserId === detail.userId
-          ? { ...conversation, otherLastSeen: detail.lastSeenAt }
+          ? { ...conversation, otherLastSeen: detail.lastSeenAt, otherIsOnline: detail.isOnline ?? formatLastSeen(detail.lastSeenAt).isOnline }
           : conversation
       ));
     };
