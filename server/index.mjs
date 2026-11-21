@@ -644,6 +644,10 @@ app.post("/api/conversations/:conversationId/files", requireAuth, uploadSingleCh
         "INSERT INTO messages (conversation_id, sender_id, text, media_url, message_type) VALUES ($1,$2,$3,$4,$5) RETURNING id, conversation_id, sender_id, text, media_url, message_type, reply_to_id, created_at",
         [conversation.id, req.authUser.id, messageText, "/api/files/" + fileId, messageType],
       );
+      await client.query(
+        "INSERT INTO message_receipts (message_id, recipient_id) SELECT $1, user_id FROM conversation_participants WHERE conversation_id = $2 AND user_id <> $3 ON CONFLICT DO NOTHING",
+        [inserted.rows[0].id, conversation.id, req.authUser.id],
+      );
       await client.query("UPDATE conversation_participants SET last_read_at = now() WHERE conversation_id = $1 AND user_id = $2", [conversation.id, req.authUser.id]);
       await client.query("COMMIT");
       const message = { ...inserted.rows[0], sender_name: req.authUser.full_name };
@@ -694,9 +698,12 @@ app.get("/api/conversations/:conversationId/messages", requireAuth, async (req, 
     const conversation = await requireConversationMember(req.params.conversationId, req.authUser.id);
     if (!conversation) return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
     const result = await pool.query(
-      "SELECT m.id, m.conversation_id, m.sender_id, m.text, m.media_url, m.message_type, m.reply_to_id, m.created_at, p.full_name AS sender_name " +
-      "FROM messages m JOIN profiles p ON p.user_id = m.sender_id WHERE m.conversation_id = $1 " +
-      "ORDER BY m.created_at DESC LIMIT 300",
+      "SELECT m.id, m.conversation_id, m.sender_id, m.text, m.media_url, m.message_type, m.reply_to_id, m.created_at, p.full_name AS sender_name, " +
+      "COALESCE(receipts.recipient_count, 0)::int AS receipt_total, COALESCE(receipts.delivered_count, 0)::int AS receipt_delivered, COALESCE(receipts.read_count, 0)::int AS receipt_read " +
+      "FROM messages m JOIN profiles p ON p.user_id = m.sender_id " +
+      "LEFT JOIN LATERAL (SELECT count(*)::int AS recipient_count, count(*) FILTER (WHERE mr.delivered_at IS NOT NULL)::int AS delivered_count, " +
+      "count(*) FILTER (WHERE mr.read_at IS NOT NULL)::int AS read_count FROM message_receipts mr WHERE mr.message_id = m.id) receipts ON true " +
+      "WHERE m.conversation_id = $1 ORDER BY m.created_at DESC LIMIT 300",
       [conversation.id],
     );
     return res.json({ messages: result.rows.reverse(), conversation });
@@ -748,6 +755,10 @@ app.post("/api/conversations/:conversationId/messages", requireAuth, async (req,
       "RETURNING id, conversation_id, sender_id, text, media_url, message_type, reply_to_id, created_at",
       [conversationId, req.authUser.id, text, messageType, replyToId],
     );
+    await client.query(
+      "INSERT INTO message_receipts (message_id, recipient_id) SELECT $1, user_id FROM conversation_participants WHERE conversation_id = $2 AND user_id <> $3 ON CONFLICT DO NOTHING",
+      [result.rows[0].id, conversationId, req.authUser.id],
+    );
     await client.query("UPDATE conversation_participants SET last_read_at = now() WHERE conversation_id = $1 AND user_id = $2", [conversationId, req.authUser.id]);
     await client.query("COMMIT");
     const message = { ...result.rows[0], sender_name: req.authUser.full_name };
@@ -762,17 +773,71 @@ app.post("/api/conversations/:conversationId/messages", requireAuth, async (req,
   }
 });
 
-app.post("/api/conversations/:conversationId/read", requireAuth, async (req, res) => {
+app.post("/api/conversations/:conversationId/delivered", requireAuth, async (req, res) => {
+  const messageIds = Array.isArray(req.body?.messageIds) ? [...new Set(req.body.messageIds.map(String))].slice(0, 300) : [];
+  if (!messageIds.length) return res.status(204).end();
+  if (messageIds.some((id) => !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))) {
+    return sendError(res, 400, "INVALID_MESSAGE_IDS", "Некорректный список сообщений.");
+  }
   try {
-    const result = await pool.query(
+    const conversation = await requireConversationMember(req.params.conversationId, req.authUser.id);
+    if (!conversation) return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
+    const delivered = await pool.query(
+      "UPDATE message_receipts mr SET delivered_at = COALESCE(mr.delivered_at, now()) " +
+      "FROM messages m WHERE mr.message_id = m.id AND m.conversation_id = $1 AND m.id = ANY($2::uuid[]) " +
+      "AND mr.recipient_id = $3 AND m.sender_id <> $3 AND mr.delivered_at IS NULL " +
+      "RETURNING m.id, m.sender_id, mr.delivered_at",
+      [conversation.id, messageIds, req.authUser.id],
+    );
+    const bySender = new Map();
+    for (const row of delivered.rows) {
+      if (!bySender.has(row.sender_id)) bySender.set(row.sender_id, []);
+      bySender.get(row.sender_id).push(row.id);
+    }
+    for (const [senderId, ids] of bySender) {
+      sendUserEvent(senderId, { type: "message:receipt", conversationId: conversation.id, recipientId: req.authUser.id, messageIds: ids, delivered: true });
+    }
+    return res.json({ deliveredCount: delivered.rowCount });
+  } catch (error) {
+    console.error("[chat] Message delivery receipt failed:", error.message);
+    return sendError(res, 500, "MESSAGE_DELIVERY_FAILED", "Не удалось подтвердить доставку сообщений.");
+  }
+});
+
+app.post("/api/conversations/:conversationId/read", requireAuth, async (req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const member = await client.query(
       "UPDATE conversation_participants SET last_read_at = now() WHERE conversation_id = $1 AND user_id = $2 RETURNING conversation_id",
       [req.params.conversationId, req.authUser.id],
     );
-    if (!result.rowCount) return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
+    if (!member.rowCount) {
+      await client.query("ROLLBACK");
+      return sendError(res, 404, "CONVERSATION_NOT_FOUND", "Диалог не найден.");
+    }
+    const read = await client.query(
+      "UPDATE message_receipts mr SET delivered_at = COALESCE(mr.delivered_at, now()), read_at = COALESCE(mr.read_at, now()) " +
+      "FROM messages m WHERE mr.message_id = m.id AND m.conversation_id = $1 AND mr.recipient_id = $2 AND m.sender_id <> $2 " +
+      "AND mr.read_at IS NULL RETURNING m.id, m.sender_id",
+      [req.params.conversationId, req.authUser.id],
+    );
+    await client.query("COMMIT");
+    const bySender = new Map();
+    for (const row of read.rows) {
+      if (!bySender.has(row.sender_id)) bySender.set(row.sender_id, []);
+      bySender.get(row.sender_id).push(row.id);
+    }
+    for (const [senderId, ids] of bySender) {
+      sendUserEvent(senderId, { type: "message:receipt", conversationId: req.params.conversationId, recipientId: req.authUser.id, messageIds: ids, delivered: true, read: true });
+    }
     return res.status(204).end();
   } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
     console.error("[chat] Read receipt update failed:", error.message);
     return sendError(res, 500, "READ_RECEIPT_FAILED", "Не удалось отметить сообщения прочитанными.");
+  } finally {
+    client.release();
   }
 });
 
