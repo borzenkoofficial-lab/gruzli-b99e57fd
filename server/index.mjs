@@ -13,6 +13,7 @@ import { pool } from "./db.mjs";
 import { migrateDatabase } from "./migrate.mjs";
 import { calculateWorkerEarnings, isWorkerStatusTransitionAllowed, normalizeWorkedHours } from "./domain/workerLifecycle.mjs";
 import { submitWorkerResponse, WorkerResponseError } from "./domain/submitWorkerResponse.mjs";
+import { listNotifications, getUnreadNotificationCount, markNotificationRead, markAllNotificationsRead } from "./domain/notifications.mjs";
 
 const scrypt = promisify(crypto.scrypt);
 const app = express();
@@ -315,6 +316,56 @@ async function requireAuth(req, res, next) {
   }
 }
 
+
+app.get("/api/notifications", requireAuth, async (req, res) => {
+  try {
+    const limit = Math.max(1, Math.min(100, Number.parseInt(req.query.limit, 10) || 50));
+    const offset = Math.max(0, Math.min(10000, Number.parseInt(req.query.offset, 10) || 0));
+    const [notifications, unreadCount] = await Promise.all([
+      listNotifications(pool, req.authUser.id, limit, offset),
+      getUnreadNotificationCount(pool, req.authUser.id),
+    ]);
+    return res.json({ notifications, unreadCount, limit, offset });
+  } catch (error) {
+    console.error("[notifications] List failed:", error.message);
+    return sendError(res, 500, "NOTIFICATIONS_LIST_FAILED", "Не удалось загрузить уведомления.");
+  }
+});
+
+app.get("/api/notifications/unread-count", requireAuth, async (req, res) => {
+  try {
+    const unreadCount = await getUnreadNotificationCount(pool, req.authUser.id);
+    return res.json({ unreadCount });
+  } catch (error) {
+    console.error("[notifications] Unread count failed:", error.message);
+    return sendError(res, 500, "NOTIFICATIONS_COUNT_FAILED", "Не удалось получить счётчик уведомлений.");
+  }
+});
+
+app.patch("/api/notifications/read-all", requireAuth, async (req, res) => {
+  try {
+    const updatedCount = await markAllNotificationsRead(pool, req.authUser.id);
+    sendUserEvent(req.authUser.id, { type: "notifications:read", scope: "all" });
+    return res.json({ updatedCount, unreadCount: 0 });
+  } catch (error) {
+    console.error("[notifications] Read-all failed:", error.message);
+    return sendError(res, 500, "NOTIFICATIONS_READ_FAILED", "Не удалось отметить уведомления прочитанными.");
+  }
+});
+
+app.patch("/api/notifications/:notificationId/read", requireAuth, async (req, res) => {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(req.params.notificationId)) {
+    return sendError(res, 404, "NOTIFICATION_NOT_FOUND", "Уведомление не найдено.");
+  }
+  try {
+    const notification = await markNotificationRead(pool, req.authUser.id, req.params.notificationId);
+    if (!notification) return sendError(res, 404, "NOTIFICATION_NOT_FOUND", "Уведомление не найдено.");
+    return res.json({ notification });
+  } catch (error) {
+    console.error("[notifications] Read failed:", error.message);
+    return sendError(res, 500, "NOTIFICATION_READ_FAILED", "Не удалось отметить уведомление прочитанным.");
+  }
+});
 
 app.post("/api/profile/presence", requireAuth, async (req, res) => {
   try {
@@ -964,6 +1015,12 @@ app.post("/api/jobs/:jobId/responses", requireAuth, async (req, res) => {
         response: result.response,
         jobId: req.params.jobId,
       });
+      if (result.notification) {
+        sendUserEvent(result.dispatcherId, {
+          type: "notification:new",
+          notification: result.notification,
+        });
+      }
       if (result.message) {
         sendConversationEvent(result.conversationId, {
           type: "message:new",
