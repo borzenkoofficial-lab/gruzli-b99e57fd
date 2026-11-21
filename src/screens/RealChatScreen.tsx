@@ -40,8 +40,9 @@ const DeliveryStatusIcon = ({ msg }: { msg: Message }) => {
     return <Clock3 size={12} className="text-muted-foreground animate-pulse" />;
   }
 
-  const delivered = (msg.receipt_delivered ?? 0) > 0;
-  const fullyRead = (msg.receipt_total ?? 0) > 0 && (msg.receipt_read ?? 0) >= (msg.receipt_total ?? 0);
+  const receiptTotal = msg.receipt_total ?? 0;
+  const delivered = receiptTotal > 0 && (msg.receipt_delivered ?? 0) >= receiptTotal;
+  const fullyRead = receiptTotal > 0 && (msg.receipt_read ?? 0) >= receiptTotal;
   if (!delivered) return <Check size={12} className="text-muted-foreground" />;
   return <CheckCheck size={12} className={fullyRead ? "text-primary" : "text-muted-foreground"} />;
 };
@@ -495,7 +496,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       }
     }, 4000);
     return () => window.clearInterval(interval);
-  }, [conversationId, fetchMessages, markAsRead, user?.id, isNearBottom, scrollToBottom, isDemo]);
+  }, [conversationId, fetchMessages, markAsRead, markDelivered, user?.id, isNearBottom, scrollToBottom, isDemo]);
 
     useEffect(() => { if (isNearBottom()) scrollToBottom(); }, [messages, scrollToBottom, isNearBottom]);
 
