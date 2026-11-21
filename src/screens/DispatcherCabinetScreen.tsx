@@ -210,17 +210,24 @@ const DispatcherCabinetScreen = ({ onBack, onChatWithWorker, onViewProfile, onOp
     const newRate = Math.max(0, (job.hourly_rate || 0) + delta);
     if (newRate === job.hourly_rate) return;
     setAdjustingId(job.id);
-    const { error } = await supabase.rpc("dispatcher_update_job", {
+    if (newRate <= 0) {
+      toast.error("Ставка должна быть больше 0 ₽/час");
+      return;
+    }
+    const { data: updatedJob, error } = await supabase.rpc("dispatcher_update_job", {
       _job_id: job.id,
       _hourly_rate: newRate,
     });
     setAdjustingId(null);
-    if (error) {
+    if (error || !updatedJob) {
       toast.error(error?.message?.includes("hourly_rate_locked") ? "Нельзя менять ставку после отклика/назначения грузчиков" : "Не удалось изменить оплату");
       return;
     }
-    setMyJobs((prev) => prev.map((j) => (j.id === job.id ? { ...j, hourly_rate: newRate, status: "active" } : j)));
-    toast.success(`Оплата ${delta > 0 ? "повышена" : "понижена"} до ${newRate} ₽/час · переопубликована`);
+    // Keep the server's lifecycle status. Editing a rate is not a republish operation.
+    setMyJobs((prev) => prev.map((j) => (
+      j.id === job.id ? { ...j, ...updatedJob, response_count: j.response_count } : j
+    )));
+    toast.success(`Оплата ${delta > 0 ? "повышена" : "понижена"} до ${updatedJob.hourly_rate} ₽/час`);
   };
 
   const handleJobSaved = (updated: Tables<"jobs">) => {
