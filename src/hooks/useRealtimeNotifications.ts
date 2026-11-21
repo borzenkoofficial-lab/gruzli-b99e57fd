@@ -194,7 +194,9 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
       socket.onmessage = (event) => {
       try {
         const payload = JSON.parse(String(event.data));
-        if (payload.type === "job:created" && payload.job) {
+        if (payload.type === "notifications:new" || payload.type === "notifications:read") {
+          window.dispatchEvent(new CustomEvent("gruzli:notifications", { detail: payload }));
+        } else if (payload.type === "job:created" && payload.job) {
           handleNewJob({ new: payload.job });
         } else if (payload.type === "message:new" && payload.message) {
           handleNewMessage({ new: { ...payload.message, conversation_id: payload.conversationId } });
