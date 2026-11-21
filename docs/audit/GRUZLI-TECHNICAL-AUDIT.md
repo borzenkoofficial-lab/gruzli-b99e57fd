@@ -14,9 +14,9 @@
 
 - Frontend: React 18, TypeScript, Vite, React Router, TanStack Query, Framer Motion.
 - Текущий data layer: `@supabase/supabase-js`; фронтенд напрямую вызывает таблицы, RPC, Edge Functions, Realtime и Storage.
-- В дереве `main`: 166 файлов под `src/`, 93 SQL-миграции Supabase, 26 каталогов Edge Functions с `index.ts` (точный счёт по дереву на дату аудита).
+- В дереве `main`: 170 файлов под `src/`, 93 SQL-миграции Supabase, 26 Edge Functions с `index.ts` (точный счёт по дереву на дату обновления).
 - npm scripts: lint, typecheck, Vitest, Vite build. CI workflow также запускает Playwright Chromium.
-- В текущей ветке обнаружены два Vitest-файла; один из них — тест-заглушка `expect(true).toBe(true)`. Playwright содержит два smoke-теста оболочки/demo-ленты, но не покрывает ключевые бизнес-транзакции.
+- Сейчас в `main` четыре Vitest-файла и 14 unit-тестов: demo session (2), dispatcher completion date (2), realtime feed state (5), job category classification (5). Тест-заглушка `expect(true).toBe(true)` удалена. Playwright содержит четыре smoke-теста: запуск demo workspace, mobile 390 px, desktop 1024 px и desktop 1440 px с проверкой горизонтального overflow. Это всё ещё не покрывает ключевые бизнес-транзакции, DB-конкурентность и реальные сценарии всех трёх ролей.
 
 ## Подтверждённый дефект P1: отклик на заказ без назначенного диспетчера
 
