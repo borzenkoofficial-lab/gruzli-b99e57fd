@@ -12,6 +12,10 @@ interface CreateJobScreenProps {
 }
 
 const JOB_POSTING_FEE = 20;
+const defaultContractBody = `1. Исполнитель обязуется выполнить грузо-погрузочные работы по адресу и в срок, указанные выше.
+2. Заказчик обязуется оплатить работы по согласованной ставке за фактически отработанное время.
+3. Исполнитель несёт ответственность за сохранность перемещаемого имущества в пределах своей вины.
+4. Стороны обязуются соблюдать технику безопасности и нормы общения.`;
 
 const Section = ({ title, icon: Icon, hint, children }: { title: string; icon: any; hint?: string; children: React.ReactNode }) => (
   <motion.div
@@ -70,82 +74,114 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
   const canAfford = isClient || balance >= JOB_POSTING_FEE;
   const totalCost = parseInt(hourlyRate || "0") * parseFloat(durationHours || "0") * parseInt(workersNeeded || "0");
 
-  const handleShowPreview = () => {
+  const validateJobForm = () => {
+    const rate = Number(hourlyRate);
+    const duration = Number(durationHours);
+    const workers = Number(workersNeeded);
+
     if (!title.trim()) {
       toast.error("Укажите название заявки");
-      return;
+      return false;
     }
-    if (!hourlyRate || parseInt(hourlyRate) <= 0) {
-      toast.error("Укажите оплату за час");
-      return;
+    if (title.trim().length < 3 || title.trim().length > 120) {
+      toast.error("Название должно содержать от 3 до 120 символов");
+      return false;
+    }
+    if (!Number.isFinite(rate) || rate <= 0 || rate > 100000) {
+      toast.error("Укажите корректную оплату за час");
+      return false;
+    }
+    if (!Number.isFinite(duration) || duration < 1 || duration > 24 || Math.round(duration * 2) !== duration * 2) {
+      toast.error("Длительность должна быть от 1 до 24 часов с шагом 30 минут");
+      return false;
+    }
+    if (!Number.isInteger(workers) || workers < 1 || workers > 99) {
+      toast.error("Количество грузчиков должно быть от 1 до 99");
+      return false;
+    }
+    if (startTime) {
+      const start = new Date(startTime).getTime();
+      if (!Number.isFinite(start) || start <= Date.now()) {
+        toast.error("Время начала должно быть в будущем");
+        return false;
+      }
+    }
+    if (requiresContract && (contractTitle.trim() !== "Договор подряда" || contractBody.trim() !== defaultContractBody.trim())) {
+      toast.error("Индивидуальные условия договора пока не сохраняются. Оставьте стандартный шаблон или отключите договор.");
+      return false;
     }
     if (!canAfford) {
       toast.error(`Недостаточно средств. Нужно ${JOB_POSTING_FEE} ₽, на балансе ${balance} ₽`);
-      return;
+      return false;
     }
+    return true;
+  };
+
+  const handleShowPreview = () => {
+    if (!validateJobForm()) return;
     setShowPreview(true);
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (!user) return;
-
+    if (!user) {
+      toast.error("Войдите в аккаунт, чтобы создать заявку");
+      return;
+    }
     if (!isClient) {
       toast.error("Создавать заявки может только заказчик");
       return;
     }
+    if (loading || !validateJobForm()) return;
 
     setLoading(true);
-
-    // AI moderation check
-    const textToCheck = `${title.trim()} ${description.trim()}`.trim();
-    if (textToCheck.length > 5) {
-      try {
+    try {
+      // AI moderation check
+      const textToCheck = `${title.trim()} ${description.trim()}`.trim();
+      if (textToCheck.length > 5) {
         const { data: modResult, error: moderationError } = await supabase.functions.invoke("moderate-content", {
           body: { text: textToCheck, type: "job" },
         });
         if (moderationError) {
+          console.error("Job moderation failed", moderationError);
           toast.error("Не удалось проверить заявку. Попробуйте ещё раз.");
-          setLoading(false);
           return;
         }
         if (!modResult?.safe) {
-          toast.error(modResult.reason || "Содержимое не прошло модерацию");
-          setLoading(false);
+          toast.error(modResult?.reason || "Содержимое не прошло модерацию");
           return;
         }
-      } catch {
-        toast.error("Не удалось проверить заявку. Попробуйте ещё раз.");
-        setLoading(false);
+      }
+
+      const { data: createdJob, error } = await supabase.rpc("client_create_job", {
+        _title: title.trim(),
+        _description: description.trim(),
+        _hourly_rate: Number(hourlyRate),
+        _start_time: startTime ? new Date(startTime).toISOString() : null,
+        _duration_hours: Number(durationHours),
+        _address: address.trim(),
+        _metro: metro.trim(),
+        _workers_needed: Number(workersNeeded),
+        _urgent: urgent,
+        _quick_minimum: quickMinimum,
+        _requires_contract: requiresContract,
+      });
+
+      if (error || !createdJob) {
+        console.error("client_create_job failed", error);
+        toast.error(error?.message || "Не удалось создать заявку");
         return;
       }
-    }
-
-    const { data: createdJob, error } = await supabase.rpc("client_create_job", {
-      _title: title.trim(),
-      _description: description.trim(),
-      _hourly_rate: parseFloat(hourlyRate),
-      _start_time: startTime ? new Date(startTime).toISOString() : null,
-      _duration_hours: parseFloat(durationHours) || 4,
-      _address: address.trim(),
-      _metro: metro.trim(),
-      _workers_needed: parseInt(workersNeeded) || 2,
-      _urgent: urgent,
-      _quick_minimum: quickMinimum,
-      _requires_contract: requiresContract,
-    });
-
-    if (error || !createdJob) {
-      console.error("client_create_job failed", error);
-      toast.error(error?.message || "Не удалось создать заявку");
+      // Contract creation is intentionally deferred until a dispatcher is assigned.
+      // job_contracts requires dispatcher_id, while a new client request has none yet.
+      toast.success("Запрос отправлен диспетчерам");
+      onCreated();
+    } catch (error) {
+      console.error("Unexpected job creation failure", error);
+      toast.error("Не удалось создать заявку из-за ошибки сети. Попробуйте ещё раз.");
+    } finally {
       setLoading(false);
-      return;
     }
-    // Contract creation is intentionally deferred until a dispatcher is assigned.
-    // job_contracts requires dispatcher_id, while a new client request has none yet.
-    toast.success(isClient ? "Запрос отправлен диспетчерам" : "Заявка создана!");
-    onCreated();
-    setLoading(false);
   };
 
   return (
