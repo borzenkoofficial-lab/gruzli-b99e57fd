@@ -197,3 +197,22 @@ test("Compact desktop navigation keeps icon-only actions accessible", async ({ p
   await expect(feedButton).toHaveAttribute("title", "Лента");
   await expect(chatsButton).toHaveAttribute("title", "Сообщения");
 });
+
+
+test("Desktop chat list opens a conversation with the keyboard", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.addInitScript(() => {
+    localStorage.setItem("gruzli_demo_worker", "1");
+    localStorage.setItem("gruzli_demo_role", "worker");
+    localStorage.setItem("onboarding_completed", "1");
+  });
+
+  await page.goto("/");
+  await page.locator(".desktop-sidebar").getByRole("button", { name: "Сообщения" }).click();
+
+  const conversation = page.getByRole("button", { name: "Открыть чат: Анна Петрова" });
+  await expect(conversation).toBeVisible();
+  await conversation.focus();
+  await conversation.press("Enter");
+  await expect(page.locator(".desktop-detail")).toBeVisible();
+});
