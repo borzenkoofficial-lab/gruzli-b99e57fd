@@ -702,7 +702,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
 
       {/* Header */}
       <div className="relative z-40 flex items-center gap-2 px-3 safe-top pb-2.5 border-b border-border bg-background">
-        <button onClick={onBack} className="w-10 h-10 rounded-[14px] flex items-center justify-center text-foreground bg-card border border-border active:bg-muted transition-colors">
+        <button type="button" aria-label="Назад к чатам" onClick={onBack} className="w-10 h-10 rounded-[14px] flex items-center justify-center text-foreground bg-card border border-border active:bg-muted transition-colors">
           <ArrowLeft size={20} />
         </button>
 
@@ -752,7 +752,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
           </button>
 
           <div className="relative" ref={menuRef}>
-            <button onClick={() => setShowMenu(!showMenu)} className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors">
+            <button type="button" aria-label="Дополнительные действия" onClick={() => setShowMenu(!showMenu)} className="w-9 h-9 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors">
               <MoreVertical size={18} />
             </button>
             {showMenu && (
@@ -881,7 +881,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
           <div className="absolute bottom-20 left-3 right-3 bg-card rounded-2xl p-4 z-50 border border-border shadow-md">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-semibold text-foreground">Прикрепить</span>
-              <button onClick={() => setShowAttach(false)}><X size={16} className="text-muted-foreground" /></button>
+              <button type="button" aria-label="Закрыть меню вложений" onClick={() => setShowAttach(false)}><X size={16} className="text-muted-foreground" /></button>
             </div>
             <div className="flex gap-4">
               <button onClick={() => { if (fileInputRef.current) { fileInputRef.current.accept = "image/*"; fileInputRef.current.click(); } }} className="flex flex-col items-center gap-2">
@@ -907,7 +907,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
               <p className="text-[12px] font-semibold text-primary truncate">Ответ {replyTo.senderName}</p>
               <p className="text-[12px] text-muted-foreground truncate">{replyTo.text}</p>
             </div>
-            <button onClick={() => setReplyTo(null)} className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50">
+            <button type="button" aria-label="Отменить ответ" onClick={() => setReplyTo(null)} className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50">
               <X size={14} />
             </button>
           </div>
@@ -920,12 +920,14 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
           />
         ) : (
           <div className="flex items-end gap-1.5">
-              <button onClick={() => { setShowAttach(!showAttach); setShowEmoji(false); }} className="native-press w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0 mb-0.5">
+              <button type="button" aria-label="Прикрепить файл" onClick={() => { setShowAttach(!showAttach); setShowEmoji(false); }} className="native-press w-10 h-10 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0 mb-0.5">
                 <Paperclip size={20} />
               </button>
 
               <div className="flex-1 flex items-end bg-card rounded-[18px] px-3 py-2 border border-border gap-1">
                 <button
+                  type="button"
+                  aria-label="Открыть эмодзи"
                   onClick={() => { setShowEmoji(!showEmoji); setShowAttach(false); }}
                   className="native-press w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0"
                 >
@@ -952,7 +954,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
                   <Send size={18} className="text-primary-foreground ml-0.5" />
                 </button>
               ) : (
-                <button onClick={() => setIsRecording(true)}
+                <button type="button" aria-label="Записать голосовое сообщение" onClick={() => setIsRecording(true)}
                   className="native-press w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0 mb-0.5"
                 >
                   <Mic size={18} className="text-primary-foreground" />

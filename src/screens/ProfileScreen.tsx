@@ -301,7 +301,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
         <div>
           <div className="px-5 safe-top pb-2 flex items-center justify-between">
             <div><p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Gruzli</p><h1 className="text-[29px] font-extrabold text-foreground tracking-[-.045em] leading-none">Профиль</h1></div>
-            <button onClick={onOpenNotifications} className="w-11 h-11 rounded-[16px] bg-white/72 border border-white/90 flex items-center justify-center shadow-sm backdrop-blur-xl">
+            <button type="button" aria-label="Уведомления" onClick={onOpenNotifications} className="w-11 h-11 rounded-[16px] bg-white/72 border border-white/90 flex items-center justify-center shadow-sm backdrop-blur-xl">
               <Bell size={18} className="text-muted-foreground" />
             </button>
           </div>
@@ -724,8 +724,8 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             <h1 className="mt-1 text-[28px] leading-none font-extrabold tracking-[-.045em]">Аккаунт</h1>
           </div>
           <div className="flex gap-2">
-            <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center"><Bell size={18} className="text-muted-foreground"/></button>
-            <button onClick={onOpenSettings} className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center"><Settings size={18} className="text-muted-foreground"/></button>
+            <button type="button" aria-label="Уведомления" onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center"><Bell size={18} className="text-muted-foreground"/></button>
+            <button type="button" aria-label="Настройки" onClick={onOpenSettings} className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center"><Settings size={18} className="text-muted-foreground"/></button>
           </div>
         </div>
 
@@ -800,7 +800,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
       )}
       <div className="px-5 safe-top pb-2 flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground">Профиль</h1>
-        <button onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center">
+        <button type="button" aria-label="Уведомления" onClick={onOpenNotifications} className="w-11 h-11 rounded-2xl bg-card border border-border flex items-center justify-center">
           <Bell size={18} className="text-muted-foreground" />
         </button>
       </div>
@@ -1032,7 +1032,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
             <span key={skill} className="px-3 py-2 rounded-xl bg-card border border-border text-xs font-medium text-muted-foreground flex items-center gap-1.5">
               {skill}
               {editingSkills && userSkills.includes(skill) && (
-                <button onClick={() => removeSkill(skill)} className="text-destructive"><X size={12} /></button>
+                <button type="button" aria-label={`Удалить навык ${skill}`} onClick={() => removeSkill(skill)} className="text-destructive"><X size={12} /></button>
               )}
             </span>
           ))}
@@ -1045,7 +1045,7 @@ const ProfileScreen = ({ onOpenSettings, onOpenNotifications, onOpenSupport, onO
                 placeholder="Навык..."
                 className="w-24 px-3 py-2 rounded-xl bg-surface-1 border border-border text-xs text-foreground placeholder:text-muted-foreground outline-none"
               />
-              <button onClick={addSkill} className="w-8 h-8 rounded-xl bg-foreground flex items-center justify-center">
+              <button type="button" aria-label="Добавить навык" onClick={addSkill} className="w-8 h-8 rounded-xl bg-foreground flex items-center justify-center">
                 <Plus size={14} className="text-primary-foreground" />
               </button>
             </div>

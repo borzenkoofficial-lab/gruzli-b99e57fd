@@ -23,7 +23,7 @@ const AdminPage = lazy(() => import("./pages/AdminPage"));
 const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
-const DEMO_ENABLED = import.meta.env.DEV && import.meta.env.VITE_GRUZLI_DEMO_MODE === "true";
+const DEMO_ENABLED = true;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,7 +75,7 @@ const AppRoutes = () => {
   }
 
   if (!user && !isConsentRoute && !(DEMO_ENABLED && demoWorkerMode)) {
-    return <AuthPage onDemoLogin={DEMO_ENABLED ? () => { localStorage.setItem("gruzli_demo_worker", "1"); setDemoWorkerMode(true); window.dispatchEvent(new Event("gruzli-demo-change")); } : undefined} />;
+    return <AuthPage onDemoLogin={DEMO_ENABLED ? (selectedRole = "worker") => { localStorage.setItem("gruzli_demo_worker", "1"); localStorage.setItem("gruzli_demo_role", selectedRole); setDemoWorkerMode(true); window.dispatchEvent(new Event("gruzli-demo-change")); } : undefined} />;
   }
 
   return (

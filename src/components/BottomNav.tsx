@@ -53,6 +53,7 @@ const BottomNav = memo(({ active, onNavigate, isDispatcher, isClient, unreadMess
           const Icon = tab.icon;
           return (
             <button
+              type="button"
               key={tab.id}
               onClick={() => onNavigate(tab.id)}
               role="tab"
