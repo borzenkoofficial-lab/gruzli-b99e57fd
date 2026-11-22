@@ -1,6 +1,5 @@
 import { useState, forwardRef, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
 import { User, Users, Building2, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Phone, Lock, ShieldCheck, Fingerprint, X, Calendar, Sparkles, Wallet, ChevronRight } from "lucide-react";
 import { LegalCheckboxes } from "@/components/LegalDocuments";
 import { ForgotPasswordModal } from "@/components/ForgotPasswordModal";
@@ -111,7 +110,7 @@ const onboardingSlides = [
   },
 ];
 
-const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props, _ref) => {
+const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: (role: Role) => void }>((props, _ref) => {
   const [mode, setMode] = useState<Mode>("welcome");
   const [role, setRole] = useState<Role>("client");
   const [password, setPassword] = useState("");
@@ -131,7 +130,8 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    props.onDemoLogin?.(role);
+    return;
 
     try {
       const input = phone.trim();
@@ -224,7 +224,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
     const isLastSlide = slideIndex === onboardingSlides.length - 1;
 
     const goNext = () => {
-      if (isLastSlide) setMode("register");
+      if (isLastSlide) props.onDemoLogin?.(role);
       else setSlideIndex((i) => Math.min(i + 1, onboardingSlides.length - 1));
     };
     const goPrev = () => setSlideIndex((i) => Math.max(i - 1, 0));
@@ -272,7 +272,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
               <span className="text-base font-extrabold text-foreground tracking-tight">Gruzli</span>
             </div>
             <button
-              onClick={() => setMode("login")}
+              onClick={() => props.onDemoLogin?.(role)}
               className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-full border border-border"
             >
               Войти
@@ -361,17 +361,17 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
               onClick={goNext}
               className="w-full py-4 rounded-2xl bg-foreground text-background text-sm font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
             >
-              {isLastSlide ? "Создать аккаунт" : "Далее"}
+              {isLastSlide ? "Открыть демо-режим" : "Далее"}
               <ChevronRight size={16} />
             </button>
 
             {props.onDemoLogin && (
               <button
                 type="button"
-                onClick={props.onDemoLogin}
+                onClick={() => props.onDemoLogin?.(role)}
                 className="w-full py-3 rounded-2xl border border-border bg-card text-foreground text-sm font-semibold active:bg-muted transition-colors"
               >
-                Открыть демо-версию · 3 роли
+                Открыть демо-режим
               </button>
             )}
 
