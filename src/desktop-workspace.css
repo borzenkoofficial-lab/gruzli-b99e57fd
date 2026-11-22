@@ -1,0 +1,330 @@
+/* Desktop workspace layout foundation.
+   Kept separate from the legacy editorial skin so layout geometry has one source of truth. */
+@media (min-width: 768px) {
+  html, body, #root {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .desktop-shell {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .desktop-sidebar {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    flex: 0 0 248px;
+    flex-direction: column;
+    width: 248px;
+    min-width: 248px;
+    height: 100%;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .desktop-sidebar-section {
+    flex: 0 0 auto;
+    min-width: 0;
+  }
+
+  .desktop-sidebar-footer {
+    flex: 0 0 auto;
+    margin-top: auto;
+    padding-top: 16px;
+  }
+
+  .desktop-workspace {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    width: 0;
+    min-width: 0;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .desktop-topbar {
+    position: relative;
+    z-index: 10;
+    flex: 0 0 auto;
+    width: 100%;
+  }
+
+  .desktop-topbar-inner {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    width: 100%;
+    min-width: 0;
+    padding: 0 28px;
+  }
+
+  .desktop-page-heading {
+    flex: 0 1 auto;
+    min-width: 150px;
+  }
+
+  .desktop-page-heading h2,
+  .desktop-page-heading p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .desktop-search {
+    display: flex;
+    flex: 1 1 320px;
+    align-items: center;
+    gap: 10px;
+    width: auto;
+    max-width: 560px;
+    min-width: 160px;
+    margin-inline: auto;
+  }
+
+  .desktop-search input {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .desktop-top-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+  }
+
+  .desktop-body {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .desktop-main {
+    flex: 1 1 auto;
+    width: 0;
+    min-width: 0;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .desktop-main-inner {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    margin-inline: auto;
+  }
+
+  .desktop-detail {
+    display: flex;
+    flex: 0 1 390px;
+    flex-direction: column;
+    width: min(390px, 38vw);
+    min-width: 300px;
+    max-width: 440px;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .desktop-detail-header {
+    display: flex;
+    flex: 0 0 58px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 18px;
+  }
+
+  .desktop-detail-body {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .desktop-icon-button {
+    display: inline-flex;
+    flex: 0 0 38px;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    min-width: 38px;
+    height: 38px;
+    min-height: 38px;
+    border: 1px solid #e7e7e9;
+    border-radius: 11px;
+    background: #fff;
+    color: #414248;
+  }
+
+  .desktop-icon-button:hover {
+    border-color: #d8d8dc;
+    background: #f7f7f8;
+  }
+
+  .desktop-primary-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 11px;
+    background: #191a1d;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 650;
+    white-space: nowrap;
+  }
+
+  .desktop-primary-action:hover {
+    background: #303136;
+  }
+
+  .desktop-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .desktop-nav-item > span:not(.desktop-nav-badge) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .desktop-nav-badge {
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1100px) {
+  .desktop-sidebar {
+    flex-basis: 216px;
+    width: 216px;
+    min-width: 216px;
+  }
+
+  .desktop-topbar-inner {
+    gap: 12px;
+    padding-inline: 20px;
+  }
+
+  .desktop-main-inner {
+    padding-inline: 24px;
+  }
+
+  .desktop-detail {
+    flex-basis: 320px;
+    width: 320px;
+    min-width: 280px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 900px) {
+  .desktop-sidebar {
+    flex-basis: 76px;
+    width: 76px;
+    min-width: 76px;
+    align-items: center;
+    padding-inline: 8px;
+  }
+
+  .desktop-brand {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .desktop-brand > div:last-child,
+  .desktop-section-label,
+  .desktop-nav-item > span:not(.desktop-nav-badge),
+  .desktop-profile-copy,
+  .desktop-profile-card > svg:last-child,
+  .desktop-logout {
+    display: none;
+  }
+
+  .desktop-sidebar-section,
+  .desktop-sidebar nav {
+    width: 100%;
+  }
+
+  .desktop-nav-item {
+    justify-content: center;
+    width: 52px;
+    height: 48px;
+    margin-inline: auto;
+    padding: 0 !important;
+  }
+
+  .desktop-nav-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    margin: 0;
+  }
+
+  .desktop-profile-card {
+    justify-content: center;
+    width: 52px;
+    min-width: 52px;
+    padding: 6px !important;
+  }
+
+  .desktop-topbar-inner {
+    flex-wrap: wrap;
+    min-height: 68px;
+    padding-inline: 16px;
+  }
+
+  .desktop-page-heading {
+    min-width: 110px;
+  }
+
+  .desktop-search {
+    max-width: none;
+  }
+
+  .desktop-main-inner {
+    padding-inline: 18px;
+  }
+
+  .desktop-detail {
+    flex-basis: 290px;
+    width: 290px;
+    min-width: 260px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .desktop-icon-button,
+  .desktop-primary-action {
+    transition: none;
+  }
+}
