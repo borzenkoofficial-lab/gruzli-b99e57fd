@@ -168,11 +168,13 @@ test("Client order form stays inside the desktop application shell", async ({ pa
       sidebarRight: sidebarRect?.right ?? 0,
       formLeft: formRect?.left ?? 0,
       formPosition: formRect ? getComputedStyle(document.querySelector(".gruzli-create-job-screen")!).position : "",
+      formWidth: formRect?.width ?? 0,
       viewportWidth: window.innerWidth,
     };
   });
 
   expect(geometry.formPosition).not.toBe("fixed");
+  expect(geometry.formWidth).toBeLessThanOrEqual(861);
   expect(geometry.formLeft).toBeGreaterThanOrEqual(geometry.sidebarRight - 1);
   expect(geometry.formLeft).toBeLessThan(geometry.viewportWidth);
 });
