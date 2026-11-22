@@ -9,6 +9,7 @@ import MoscowMetroPicker from "@/components/MoscowMetroPicker";
 interface CreateJobScreenProps {
   onBack: () => void;
   onCreated: () => void;
+  embedded?: boolean;
 }
 
 const JOB_POSTING_FEE = 20;
@@ -39,7 +40,7 @@ const InputBox = ({ children, focused }: { children: React.ReactNode; focused?: 
   </div>
 );
 
-const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
+const CreateJobScreen = ({ onBack, onCreated, embedded = false }: CreateJobScreenProps) => {
   const { user, profile, role } = useAuth();
   const isClient = role === "client";
   const [loading, setLoading] = useState(false);
@@ -152,9 +153,9 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
     <div className="gruzli-create-job-screen fixed inset-0 bg-background flex flex-col" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
       {/* Header */}
       <div className="flex items-center gap-3 px-4 safe-top pb-3 flex-shrink-0 min-w-0">
-        <button onClick={onBack} className="w-10 h-10 shrink-0 rounded-2xl bg-card border border-border flex items-center justify-center active:scale-95 transition-all">
+        {!embedded && <button onClick={onBack} className="w-10 h-10 shrink-0 rounded-2xl bg-card border border-border flex items-center justify-center active:scale-95 transition-all">
           <ArrowLeft size={18} className="text-foreground" />
-        </button>
+        </button>}
         <div className="min-w-0 flex-1">
           <h1 className="text-lg font-bold text-foreground break-words">{isClient ? "Заказать грузчиков" : "Новая заявка"}</h1>
           <p className="text-[11px] leading-snug text-muted-foreground -mt-0.5 break-words">{isClient ? "Опишите задачу — диспетчер соберёт команду" : "Заполните детали работы"}</p>
@@ -166,7 +167,7 @@ const CreateJobScreen = ({ onBack, onCreated }: CreateJobScreenProps) => {
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="px-4 flex-1 min-h-0 overflow-y-auto pb-8 overscroll-contain touch-pan-y">
+      <form onSubmit={handleSubmit} className={`px-4 pb-8 ${embedded ? "flex-none overflow-visible" : "flex-1 min-h-0 overflow-y-auto"} overscroll-contain touch-pan-y`}>
         <div className="space-y-5">
           {/* Title */}
           <Section title="Название" icon={FileText} hint="Кратко и понятно">
