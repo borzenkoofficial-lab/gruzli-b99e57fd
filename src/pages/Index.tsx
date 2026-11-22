@@ -641,10 +641,9 @@ const Index = () => {
     <DesktopTopBar
       title={pageMeta.title}
       subtitle={pageMeta.subtitle}
-      unreadNotifications={0}
       onOpenNotifications={() => setShowNotifications(true)}
       onCreateJob={() => setShowCreateJob(true)}
-      showCreateJob={false}
+      showCreateJob={isDispatcher}
     />
   );
 
