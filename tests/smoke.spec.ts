@@ -216,3 +216,47 @@ test("Desktop chat list opens a conversation with the keyboard", async ({ page }
   await conversation.press("Enter");
   await expect(page.locator(".desktop-detail")).toBeVisible();
 });
+
+for (const viewport of [
+  { width: 320, height: 740 },
+  { width: 360, height: 800 },
+  { width: 390, height: 844 },
+  { width: 430, height: 932 },
+]) {
+  test(`Gruzli mobile navigation fits safely at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.addInitScript(() => {
+      localStorage.setItem("gruzli_demo_worker", "1");
+      localStorage.setItem("gruzli_demo_role", "worker");
+      localStorage.setItem("onboarding_completed", "1");
+    });
+
+    await page.goto("/");
+    const navigation = page.locator(".bottom-nav-wrapper");
+    const pill = page.locator(".bottom-nav-pill");
+    await expect(navigation).toBeVisible();
+    await expect(pill).toBeVisible();
+
+    const geometry = await page.evaluate(() => {
+      const nav = document.querySelector(".bottom-nav-wrapper")?.getBoundingClientRect();
+      const buttons = [...document.querySelectorAll<HTMLButtonElement>(".bottom-nav-pill button")];
+      return {
+        viewportWidth: window.innerWidth,
+        documentWidth: document.documentElement.scrollWidth,
+        navLeft: nav?.left ?? 0,
+        navRight: nav?.right ?? 0,
+        navBottom: nav?.bottom ?? 0,
+        viewportHeight: window.innerHeight,
+        buttonWidths: buttons.map((button) => button.getBoundingClientRect().width),
+        buttonHeights: buttons.map((button) => button.getBoundingClientRect().height),
+      };
+    });
+
+    expect(geometry.documentWidth).toBeLessThanOrEqual(geometry.viewportWidth);
+    expect(geometry.navLeft).toBeGreaterThanOrEqual(-1);
+    expect(geometry.navRight).toBeLessThanOrEqual(geometry.viewportWidth + 1);
+    expect(geometry.navBottom).toBeLessThanOrEqual(geometry.viewportHeight + 1);
+    expect(geometry.buttonWidths.every((width) => width >= 44)).toBe(true);
+    expect(geometry.buttonHeights.every((height) => height >= 44)).toBe(true);
+  });
+}
