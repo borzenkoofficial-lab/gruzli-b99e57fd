@@ -178,3 +178,22 @@ test("Client order form stays inside the desktop application shell", async ({ pa
   expect(geometry.formLeft).toBeGreaterThanOrEqual(geometry.sidebarRight - 1);
   expect(geometry.formLeft).toBeLessThan(geometry.viewportWidth);
 });
+
+
+test("Compact desktop navigation keeps icon-only actions accessible", async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 900 });
+  await page.addInitScript(() => {
+    localStorage.setItem("gruzli_demo_worker", "1");
+    localStorage.setItem("gruzli_demo_role", "worker");
+    localStorage.setItem("onboarding_completed", "1");
+  });
+
+  await page.goto("/");
+  const feedButton = page.getByRole("button", { name: "Лента" });
+  const chatsButton = page.getByRole("button", { name: "Сообщения" });
+
+  await expect(feedButton).toBeVisible();
+  await expect(chatsButton).toBeVisible();
+  await expect(feedButton).toHaveAttribute("title", "Лента");
+  await expect(chatsButton).toHaveAttribute("title", "Сообщения");
+});
