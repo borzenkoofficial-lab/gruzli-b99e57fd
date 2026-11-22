@@ -643,7 +643,7 @@ const Index = () => {
       subtitle={pageMeta.subtitle}
       onOpenNotifications={() => setShowNotifications(true)}
       onCreateJob={() => setShowCreateJob(true)}
-      showCreateJob={isDispatcher}
+      showCreateJob={false}
     />
   );
 
