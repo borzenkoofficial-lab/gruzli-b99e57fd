@@ -150,7 +150,7 @@ const CreateJobScreen = ({ onBack, onCreated, embedded = false }: CreateJobScree
   };
 
   return (
-    <div className="gruzli-create-job-screen fixed inset-0 bg-background flex flex-col" style={{ height: 'calc(var(--vh, 1vh) * 100)' }}>
+    <div className={`gruzli-create-job-screen ${embedded ? "relative w-full min-h-full" : "fixed inset-0"} bg-background flex flex-col`} style={embedded ? undefined : { height: "calc(var(--vh, 1vh) * 100)" }}>
       {/* Header */}
       <div className="flex items-center gap-3 px-4 safe-top pb-3 flex-shrink-0 min-w-0">
         {!embedded && <button onClick={onBack} className="w-10 h-10 shrink-0 rounded-2xl bg-card border border-border flex items-center justify-center active:scale-95 transition-all">
