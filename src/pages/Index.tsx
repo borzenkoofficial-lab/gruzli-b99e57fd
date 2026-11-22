@@ -566,7 +566,7 @@ const Index = () => {
               onCreateJob={() => setShowCreateJob(true)}
             />
           ) : isClient ? (
-            <CreateJobScreen onBack={() => {}} onCreated={() => { setTab("orders"); }} />
+            <CreateJobScreen embedded onBack={() => {}} onCreated={() => { setTab("orders"); }} />
           ) : (
             <FeedScreen onOpenChat={handleOpenChat} onOpenProfile={setViewProfileUserId} onOpenJob={setViewJobDetail} onRefreshRef={feedRefreshRef} />
           )
@@ -609,7 +609,9 @@ const Index = () => {
   const pageTitleMap: Record<string, { title: string; subtitle?: string }> = {
     feed: isDispatcher
       ? { title: "Мои заявки", subtitle: "Управляйте набором и активными заказами" }
-      : { title: "Лента заявок", subtitle: "Свежие заказы от диспетчеров" },
+      : isClient
+        ? { title: "Новый заказ", subtitle: "Опишите задачу — диспетчер поможет собрать команду" }
+        : { title: "Лента заявок", subtitle: "Свежие заказы от диспетчеров" },
     orders: { title: "Мои заказы", subtitle: "История и активные смены" },
     chats: { title: "Сообщения", subtitle: "Чаты, каналы и сообщество" },
     kartoteka: { title: "Картотека", subtitle: "База контактов и компаний" },
