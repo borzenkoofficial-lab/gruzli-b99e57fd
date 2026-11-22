@@ -131,90 +131,6 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: (role: Role) => void
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     props.onDemoLogin?.(role);
-    return;
-
-    try {
-      const input = phone.trim();
-
-      if (!input) {
-        toast.error("Укажите email или номер телефона");
-        setLoading(false);
-        return;
-      }
-
-      // Determine auth email: if input looks like email use directly, otherwise convert phone
-      let email: string;
-      if (isEmail(input)) {
-        email = input;
-      } else {
-        const cleanPhone = input.replace(/\D/g, "");
-        if (!cleanPhone || cleanPhone.length < 10) {
-          toast.error("Укажите корректный номер телефона или email");
-          setLoading(false);
-          return;
-        }
-        email = phoneToEmail(input);
-      }
-
-      if (mode === "register") {
-        if (!allLegalAccepted) {
-          toast.error("Примите все юридические документы");
-          setLoading(false);
-          return;
-        }
-        if (!fullName.trim()) {
-          toast.error("Укажите ФИО");
-          setLoading(false);
-          return;
-        }
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { full_name: fullName, role, phone: isEmail(input) ? "" : input },
-          },
-        });
-        if (error) throw error;
-
-        // Detect fake signup (user already exists) — Supabase returns user with empty identities
-        if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
-          toast.error("Аккаунт с таким номером или email уже существует. Войдите.");
-          setLoading(false);
-          return;
-        }
-
-        if (data.user) {
-          await supabase
-            .from("profiles")
-            .update({
-              phone: isEmail(input) ? "" : input,
-              ...(birthDate ? { birth_date: birthDate } : {}),
-            })
-            .eq("user_id", data.user.id);
-
-          // Show recovery code banner before entering the app.
-          // The user is signed in, so RLS allows reading their own recovery_code.
-          setShowRecoveryFor(data.user.id);
-          setLoading(false);
-          return;
-        }
-
-        toast.success("Регистрация успешна!");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast.success("Добро пожаловать!");
-      }
-    } catch (err: any) {
-      const msg = err.message || "Ошибка авторизации";
-      if (msg.includes("Invalid login")) {
-        toast.error("Неверный email/телефон или пароль");
-      } else {
-        toast.error(msg);
-      }
-    } finally {
-      setLoading(false);
-    }
   };
 
   // ─── WELCOME / ONBOARDING ───
@@ -354,6 +270,25 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: (role: Role) => void
                   }`}
                   aria-label={`Слайд ${i + 1}`}
                 />
+              ))}
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { id: "client" as Role, label: "Клиент", icon: Building2 },
+                { id: "dispatcher" as Role, label: "Диспетчер", icon: Users },
+                { id: "worker" as Role, label: "Грузчик", icon: User },
+              ]).map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setRole(item.id)}
+                  aria-pressed={role === item.id}
+                  className={`rounded-xl border px-2 py-3 text-xs font-semibold transition-colors ${role === item.id ? "bg-foreground text-background border-foreground" : "bg-card text-muted-foreground border-border"}`}
+                >
+                  <item.icon size={17} className="mx-auto mb-1" />
+                  {item.label}
+                </button>
               ))}
             </div>
 
