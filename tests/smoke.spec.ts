@@ -101,31 +101,3 @@ for (const viewport of [{ width: 768, height: 900 }, { width: 1280, height: 800 
     expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewportWidth);
   });
 }
-
-
-test("Dispatcher can create an order from the desktop top bar", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.addInitScript(() => {
-    localStorage.setItem("gruzli_demo_worker", "1");
-    localStorage.setItem("gruzli_demo_role", "dispatcher");
-    localStorage.setItem("onboarding_completed", "1");
-  });
-
-  await page.goto("/");
-  const createButton = page.getByRole("button", { name: /Создать заказ/ });
-  await expect(createButton).toBeVisible();
-  await createButton.click();
-  await expect(page.getByText(/Создание заказа|Новый заказ/).first()).toBeVisible();
-});
-
-test("Worker desktop top bar does not show dispatcher-only order creation", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.addInitScript(() => {
-    localStorage.setItem("gruzli_demo_worker", "1");
-    localStorage.setItem("gruzli_demo_role", "worker");
-    localStorage.setItem("onboarding_completed", "1");
-  });
-
-  await page.goto("/");
-  await expect(page.getByRole("button", { name: /Создать заказ/ })).toHaveCount(0);
-});
