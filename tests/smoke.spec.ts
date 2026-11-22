@@ -141,3 +141,38 @@ for (const viewport of [{ width: 1024, height: 768 }, { width: 1440, height: 900
     expect(geometry.shellRight).toBeLessThanOrEqual(geometry.viewportWidth + 1);
   });
 }
+
+
+test("Client order form stays inside the desktop application shell", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.addInitScript(() => {
+    localStorage.setItem("gruzli_demo_worker", "1");
+    localStorage.setItem("gruzli_demo_role", "client");
+    localStorage.setItem("onboarding_completed", "1");
+  });
+
+  await page.goto("/");
+  const shell = page.locator(".desktop-shell");
+  const sidebar = page.locator(".desktop-sidebar");
+  const form = page.locator(".gruzli-create-job-screen");
+
+  await expect(shell).toBeVisible();
+  await expect(sidebar).toBeVisible();
+  await expect(form).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Новый заказ" })).toBeVisible();
+
+  const geometry = await page.evaluate(() => {
+    const sidebarRect = document.querySelector(".desktop-sidebar")?.getBoundingClientRect();
+    const formRect = document.querySelector(".gruzli-create-job-screen")?.getBoundingClientRect();
+    return {
+      sidebarRight: sidebarRect?.right ?? 0,
+      formLeft: formRect?.left ?? 0,
+      formPosition: formRect ? getComputedStyle(document.querySelector(".gruzli-create-job-screen")!).position : "",
+      viewportWidth: window.innerWidth,
+    };
+  });
+
+  expect(geometry.formPosition).not.toBe("fixed");
+  expect(geometry.formLeft).toBeGreaterThanOrEqual(geometry.sidebarRight - 1);
+  expect(geometry.formLeft).toBeLessThan(geometry.viewportWidth);
+});
