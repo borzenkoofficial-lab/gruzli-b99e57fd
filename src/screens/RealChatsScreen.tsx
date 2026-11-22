@@ -62,11 +62,11 @@ const SwipeableChatItem = ({
         className="absolute right-0 top-0 bottom-0 flex items-stretch gap-0 z-0"
         style={{ opacity: actionsOpacity }}
       >
-        <button onClick={() => { close(); onBlock(); }} className="native-press flex items-center justify-center w-16 bg-muted/80 text-foreground">
-          <Ban size={18} />
+        <button type="button" aria-label={`Заблокировать ${conv.otherName}`} title="Заблокировать" onClick={() => { close(); onBlock(); }} className="native-press flex items-center justify-center w-16 bg-muted/80 text-foreground">
+          <Ban size={18} aria-hidden="true" />
         </button>
-        <button onClick={() => { close(); onDelete(); }} className="native-press flex items-center justify-center w-16 bg-destructive text-destructive-foreground">
-          <Trash2 size={18} />
+        <button type="button" aria-label={`Удалить чат с ${conv.otherName}`} title="Удалить чат" onClick={() => { close(); onDelete(); }} className="native-press flex items-center justify-center w-16 bg-destructive text-destructive-foreground">
+          <Trash2 size={18} aria-hidden="true" />
         </button>
       </motion.div>
 
@@ -78,7 +78,16 @@ const SwipeableChatItem = ({
         dragElastic={0.1}
         onDragEnd={handleDragEnd}
         onClick={() => !swiped && onOpen()}
-        className="relative z-10 flex items-center gap-3 px-3.5 py-3.5 cursor-pointer active:bg-muted/50 transition-colors bg-background border-b border-border/70"
+        onKeyDown={(event) => {
+          if ((event.key === "Enter" || event.key === " ") && !swiped) {
+            event.preventDefault();
+            onOpen();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label={`Открыть чат: ${conv.otherName}`}
+        className="relative z-10 flex items-center gap-3 px-3.5 py-3.5 cursor-pointer active:bg-muted/50 transition-colors bg-background border-b border-border/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
       >
         <div className="relative shrink-0">
           {conv.isCommunity ? (
