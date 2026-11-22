@@ -4,20 +4,10 @@ import { User, Users, Building2, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Sh
 import { LegalCheckboxes } from "@/components/LegalDocuments";
 import { ForgotPasswordModal } from "@/components/ForgotPasswordModal";
 import { RecoveryCodeBanner } from "@/components/RecoveryCodeBanner";
-import { toast } from "sonner";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 
 type Mode = "welcome" | "login" | "register";
 type Role = "client" | "dispatcher" | "worker";
-
-/** Convert phone to a deterministic email for Supabase auth */
-const phoneToEmail = (phone: string) => {
-  const digits = phone.replace(/\D/g, "");
-  return `${digits}@phone.gruzli.app`;
-};
-
-/** Check if input looks like an email */
-const isEmail = (input: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.trim());
 
 const SecurityModal = forwardRef<HTMLDivElement, { open: boolean; onClose: () => void }>(({ open, onClose }, _ref) => {
   if (!open) return null;
@@ -118,7 +108,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: (role: Role) => void
   const [phone, setPhone] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [showRecoveryFor, setShowRecoveryFor] = useState<string | null>(null);
