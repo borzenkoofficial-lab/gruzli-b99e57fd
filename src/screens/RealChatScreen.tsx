@@ -926,6 +926,8 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
 
               <div className="flex-1 flex items-end bg-card rounded-[18px] px-3 py-2 border border-border gap-1">
                 <button
+                  type="button"
+                  aria-label="Открыть эмодзи"
                   onClick={() => { setShowEmoji(!showEmoji); setShowAttach(false); }}
                   className="native-press w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0"
                 >
@@ -952,7 +954,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
                   <Send size={18} className="text-primary-foreground ml-0.5" />
                 </button>
               ) : (
-                <button onClick={() => setIsRecording(true)}
+                <button type="button" aria-label="Записать голосовое сообщение" onClick={() => setIsRecording(true)}
                   className="native-press w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0 mb-0.5"
                 >
                   <Mic size={18} className="text-primary-foreground" />
