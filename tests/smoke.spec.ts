@@ -101,3 +101,43 @@ for (const viewport of [{ width: 768, height: 900 }, { width: 1280, height: 800 
     expect(layout.documentWidth).toBeLessThanOrEqual(layout.viewportWidth);
   });
 }
+
+
+for (const viewport of [{ width: 1024, height: 768 }, { width: 1440, height: 900 }]) {
+  test(`Gruzli keeps job details readable beside the feed at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport);
+    await page.addInitScript(() => {
+      localStorage.setItem("gruzli_demo_worker", "1");
+      localStorage.setItem("gruzli_demo_role", "worker");
+      localStorage.setItem("onboarding_completed", "1");
+    });
+
+    await page.goto("/");
+    const firstJob = page.locator(".gruzli-job-card").first();
+    await expect(firstJob).toBeVisible();
+    await firstJob.click();
+
+    const detail = page.locator(".desktop-detail");
+    await expect(detail).toBeVisible();
+
+    const geometry = await page.evaluate(() => {
+      const main = document.querySelector(".desktop-main")?.getBoundingClientRect();
+      const detail = document.querySelector(".desktop-detail")?.getBoundingClientRect();
+      const shell = document.querySelector(".desktop-shell")?.getBoundingClientRect();
+      return {
+        mainWidth: main?.width ?? 0,
+        detailWidth: detail?.width ?? 0,
+        detailLeft: detail?.left ?? 0,
+        detailRight: detail?.right ?? 0,
+        shellRight: shell?.right ?? 0,
+        viewportWidth: window.innerWidth,
+      };
+    });
+
+    expect(geometry.mainWidth).toBeGreaterThanOrEqual(280);
+    expect(geometry.detailWidth).toBeGreaterThanOrEqual(260);
+    expect(geometry.detailLeft).toBeGreaterThan(0);
+    expect(geometry.detailRight).toBeLessThanOrEqual(geometry.viewportWidth + 1);
+    expect(geometry.shellRight).toBeLessThanOrEqual(geometry.viewportWidth + 1);
+  });
+}
