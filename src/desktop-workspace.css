@@ -623,3 +623,20 @@
     display: none;
   }
 }
+
+
+@media (min-width: 768px) {
+  .desktop-main-inner > .gruzli-create-job-screen {
+    width: 100%;
+    max-width: 860px;
+    min-width: 0;
+    margin-inline: auto;
+  }
+
+  .desktop-main-inner > .gruzli-create-job-screen > form {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 760px;
+    margin-inline: auto;
+  }
+}
