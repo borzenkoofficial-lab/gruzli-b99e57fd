@@ -14,7 +14,7 @@ import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 import { DEMO_FEED_JOBS, DEMO_DISPATCHER_NAMES, DEMO_RESPONSE_COUNTS } from "@/data/demoData";
 import MetroBadge from "@/components/MetroBadge";
 import EnablePushButton from "@/components/EnablePushButton";
-import MaxChannelBanner from "@/components/MaxChannelBanner";
+import { MaxChannelBanner } from "@/components/MaxChannelBanner";
 import CategorySubscriptionModal from "@/components/CategorySubscriptionModal";
 import {
   getCategory,
