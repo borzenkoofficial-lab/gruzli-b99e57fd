@@ -11,12 +11,20 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:4173",
     trace: "retain-on-failure",
   },
-  webServer: {
-    command: "VITE_GRUZLI_DEMO_MODE=true npm run dev -- --host 127.0.0.1 --port 4173",
-    url: "http://127.0.0.1:4173",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120000,
-  },
+  webServer: [
+    {
+      command: "npm run dev:server",
+      url: "http://127.0.0.1:3000/api/health",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
+    {
+      command: "VITE_GRUZLI_DEMO_MODE=true npm run dev -- --host 127.0.0.1 --port 4173",
+      url: "http://127.0.0.1:4173",
+      reuseExistingServer: !process.env.CI,
+      timeout: 120000,
+    },
+  ],
   projects: [
     {
       name: "chromium",
