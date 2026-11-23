@@ -9,7 +9,7 @@ interface TopWorker {
   fullName: string;
   avatarUrl: string | null;
   isPremium: boolean;
-  rating: number;
+  rating: number | null;
   jobsWithMe: number;
   totalEarned: number;
   avgReview: number | null;
@@ -72,7 +72,7 @@ const TopWorkersModal = ({ open, onClose, onChat, onViewProfile }: Props) => {
           fullName: p.full_name,
           avatarUrl: p.avatar_url,
           isPremium: p.is_premium,
-          rating: Number(p.rating) || 5,
+          rating: p.rating == null || !Number.isFinite(Number(p.rating)) ? null : Number(p.rating),
           jobsWithMe: m.count,
           totalEarned: m.earned,
           avgReview: avg,
@@ -80,8 +80,8 @@ const TopWorkersModal = ({ open, onClose, onChat, onViewProfile }: Props) => {
         };
       });
       list.sort((a, b) => {
-        const sa = (a.avgReview || a.rating) * Math.log(a.jobsWithMe + 1);
-        const sb = (b.avgReview || b.rating) * Math.log(b.jobsWithMe + 1);
+        const sa = (a.avgReview ?? a.rating ?? 0) * Math.log(a.jobsWithMe + 1);
+        const sb = (b.avgReview ?? b.rating ?? 0) * Math.log(b.jobsWithMe + 1);
         return sb - sa;
       });
       setWorkers(list.slice(0, 30));
@@ -150,7 +150,7 @@ const TopWorkersModal = ({ open, onClose, onChat, onViewProfile }: Props) => {
                           {w.isPremium && <Crown size={12} className="text-yellow-500 fill-yellow-500 shrink-0" />}
                         </div>
                         <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5 flex-wrap">
-                          <span className="flex items-center gap-0.5"><Star size={10} className="text-yellow-500 fill-yellow-500" /> {(w.avgReview || w.rating).toFixed(1)}</span>
+                          <span className="flex items-center gap-0.5"><Star size={10} className="text-yellow-500 fill-yellow-500" /> {w.avgReview != null ? w.avgReview.toFixed(1) : w.rating != null ? w.rating.toFixed(1) : "—"}</span>
                           <span>·</span>
                           <span>{w.jobsWithMe} с вами</span>
                           {w.totalEarned > 0 && <><span>·</span><span className="text-green-500">{w.totalEarned.toLocaleString("ru-RU")} ₽</span></>}

@@ -1467,6 +1467,17 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_dispatcher_directory: {
+        Args: never
+        Returns: {
+          user_id: string
+          full_name: string
+          avatar_url: string | null
+          rating: number | null
+          completed_orders: number | null
+          last_seen_at: string | null
+        }[]
+      }
       get_job_party_profiles: {
         Args: { _job_id: string; _target_user_ids: string[] }
         Returns: {

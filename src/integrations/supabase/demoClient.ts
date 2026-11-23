@@ -291,7 +291,32 @@ async function rpc(name: string, args: Record<string, any> = {}) {
   const session = currentSession();
   const user = session?.user || null;
 
-  if (name === "get_user_role") return { data: user?.user_metadata?.role || profileFor(user)?.role || "worker", error: null };
+  if (name === "get_user_role") {
+    const targetId = String(args._user_id || user?.id || "");
+    const role = db.user_roles.find((row) => row.user_id === targetId)?.role
+      || db.profiles.find((profile) => profile.user_id === targetId)?.role
+      || (targetId === user?.id ? user?.user_metadata?.role : null)
+      || null;
+    return { data: role, error: null };
+  }
+  if (name === "get_dispatcher_directory") {
+    const rows = db.profiles
+      .filter((profile) => profile.role === "dispatcher")
+      .map((profile) => {
+        const publicProfile = db.profiles_public.find((item) => item.user_id === profile.user_id);
+        return {
+          user_id: profile.user_id,
+          full_name: String(publicProfile?.full_name || profile.full_name || ""),
+          avatar_url: publicProfile?.avatar_url || profile.avatar_url || null,
+          rating: publicProfile?.rating ?? profile.rating ?? null,
+          completed_orders: publicProfile?.completed_orders ?? profile.completed_orders ?? 0,
+          last_seen_at: publicProfile?.last_seen_at
+            || profile.last_seen_at
+            || (profile.user_id === user?.id ? new Date().toISOString() : null),
+        };
+      });
+    return { data: rows, error: null };
+  }
   if (name === "has_role") return { data: args._role === (user?.user_metadata?.role || profileFor(user)?.role), error: null };
   if (name === "is_admin") return { data: (user?.user_metadata?.role || profileFor(user)?.role) === "admin", error: null };
   if (name === "get_weekly_completed_jobs") return { data: 0, error: null };

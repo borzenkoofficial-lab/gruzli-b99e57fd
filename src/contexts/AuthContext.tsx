@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DEMO_PROFILES, DEMO_USERS, type DemoRole } from "@/data/demoData";
 
@@ -34,6 +34,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<AppRole | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const activeUserIdRef = useRef<string | null>(null);
+  const profileRequestId = useRef(0);
+  const loadedProfileUserId = useRef<string | null>(null);
   const [demoMode, setDemoMode] = useState(() => DEMO_ENABLED && localStorage.getItem("gruzli_demo_worker") === "1");
   const [demoRole, setDemoRole] = useState<AppRole>(() => {
     if (!DEMO_ENABLED) return "worker";
@@ -42,13 +45,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const fetchRoleAndProfile = useCallback(async (nextUser: User) => {
+    const requestId = ++profileRequestId.current;
+
+    // Keep the current profile during same-user refreshes, but clear it when
+    // switching accounts so one user's data is never shown for another.
+    if (loadedProfileUserId.current !== nextUser.id) {
+      loadedProfileUserId.current = nextUser.id;
+      setRole(null);
+      setProfile(null);
+    }
+
     const [roleRes, profileRes] = await Promise.all([
       supabase.rpc("get_user_role", { _user_id: nextUser.id }),
       supabase.from("profiles").select("*").eq("user_id", nextUser.id).maybeSingle(),
     ]);
 
-    if (roleRes.data) setRole(roleRes.data as AppRole);
-    if (profileRes.data) setProfile(profileRes.data);
+    // Authentication may switch accounts while these requests are in flight.
+    // Ignore stale responses so one user's profile can never render for another.
+    if (activeUserIdRef.current !== nextUser.id || requestId !== profileRequestId.current) return {
+      roleError: roleRes.error?.message ?? null,
+      profileError: profileRes.error?.message ?? null,
+    };
+
+    if (roleRes.error) {
+      console.error("[Gruzli Auth] failed to load user role:", roleRes.error);
+    }
+    if (profileRes.error) {
+      console.error("[Gruzli Auth] failed to load user profile:", profileRes.error);
+    }
+
+    // Clear stale values when a new account has no readable row; never leave
+    // the previous account's role/profile rendered as if it belonged to this user.
+    setRole(roleRes.data ? (roleRes.data as AppRole) : null);
+    setProfile(profileRes.data ?? null);
 
     return {
       roleError: roleRes.error?.message ?? null,
@@ -71,6 +100,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const nextSession = data.session as Session | null;
+      activeUserIdRef.current = nextSession?.user?.id ?? null;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
 
@@ -86,10 +116,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (!mounted) return;
 
       const normalized = nextSession as Session | null;
+      activeUserIdRef.current = normalized?.user?.id ?? null;
       setSession(normalized);
       setUser(normalized?.user ?? null);
 
       if (!normalized?.user) {
+        profileRequestId.current += 1;
+        loadedProfileUserId.current = null;
         setRole(null);
         setProfile(null);
         setLoading(false);
@@ -102,21 +135,75 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     void initialize();
 
-    const handleAvatarUpdate = () => {
+    const handleProfileUpdate = () => {
       if (!mounted) return;
       void supabase.auth.getSession().then(({ data }) => {
-        if (data.session?.user) void fetchRoleAndProfile(data.session.user as User);
+        const currentUser = data.session?.user as User | undefined;
+        if (currentUser && activeUserIdRef.current === currentUser.id) {
+          void fetchRoleAndProfile(currentUser);
+        }
       });
     };
 
-    window.addEventListener("profile-avatar-updated", handleAvatarUpdate);
+    // Keep the legacy avatar event temporarily for existing call sites.
+    window.addEventListener("profile-updated", handleProfileUpdate);
+    window.addEventListener("profile-avatar-updated", handleProfileUpdate);
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
-      window.removeEventListener("profile-avatar-updated", handleAvatarUpdate);
+      window.removeEventListener("profile-updated", handleProfileUpdate);
+      window.removeEventListener("profile-avatar-updated", handleProfileUpdate);
     };
   }, [fetchRoleAndProfile]);
+
+  // Keep last_seen_at current so user cards never show a hard-coded online status.
+  useEffect(() => {
+    const userId = user?.id;
+    if (!userId || userId.startsWith("demo-")) return;
+
+    let active = true;
+    let hasLoggedFailure = false;
+
+    const touchPresence = async () => {
+      if (document.visibilityState === "hidden") return;
+
+      const lastSeenAt = new Date().toISOString();
+      const { error } = await supabase
+        .from("profiles")
+        .update({ last_seen_at: lastSeenAt })
+        .eq("user_id", userId);
+
+      if (!active) return;
+      if (error) {
+        if (!hasLoggedFailure) {
+          console.warn("[Gruzli Presence] failed to update last_seen_at:", error);
+          hasLoggedFailure = true;
+        }
+        return;
+      }
+
+      hasLoggedFailure = false;
+      setProfile((current) =>
+        current?.user_id === userId
+          ? { ...current, last_seen_at: lastSeenAt }
+          : current
+      );
+    };
+
+    void touchPresence();
+    const timer = window.setInterval(() => { void touchPresence(); }, 60_000);
+    const handleVisibilityChange = () => { if (document.visibilityState === "visible") void touchPresence(); };
+    window.addEventListener("focus", handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", handleVisibilityChange);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     if (!DEMO_ENABLED) return;
@@ -138,6 +225,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await supabase.auth.signOut();
     }
 
+    activeUserIdRef.current = null;
+    profileRequestId.current += 1;
+    loadedProfileUserId.current = null;
     setUser(null);
     setSession(null);
     setRole(null);
