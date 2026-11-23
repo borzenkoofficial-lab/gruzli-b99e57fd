@@ -31,7 +31,7 @@ interface FeedScreenProps {
 }
 
 const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: FeedScreenProps) => {
-  const { user, role } = useAuth();
+  const { user } = useAuth();
   const { respondAndOpenChat } = useRespondToJob(onOpenChat);
   const [jobs, setJobs] = useState<Tables<"jobs">[]>([]);
   const [dispatcherNames, setDispatcherNames] = useState<Record<string, string>>({});
