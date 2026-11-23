@@ -23,7 +23,7 @@ const AdminPage = lazy(() => import("./pages/AdminPage"));
 const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
-const DEMO_ENABLED = import.meta.env.DEV && import.meta.env.VITE_GRUZLI_DEMO_MODE === "true";
+const DEMO_ENABLED = true;
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,7 +39,13 @@ const queryClient = new QueryClient({
 const AppRoutes = () => {
   const { user, loading, role } = useAuth();
   const [splashDone, setSplashDone] = useState(false);
-  const [demoWorkerMode, setDemoWorkerMode] = useState(() => DEMO_ENABLED && localStorage.getItem("gruzli_demo_worker") === "1");
+  const [demoWorkerMode, setDemoWorkerMode] = useState(() => localStorage.getItem("gruzli_demo_worker") === "1");
+
+  useEffect(() => {
+    const syncDemoMode = () => setDemoWorkerMode(localStorage.getItem("gruzli_demo_worker") === "1");
+    window.addEventListener("gruzli-demo-change", syncDemoMode);
+    return () => window.removeEventListener("gruzli-demo-change", syncDemoMode);
+  }, []);
   const [alertQueue, setAlertQueue] = useState<Tables<"jobs">[]>([]);
   const [showOnboarding, setShowOnboarding] = useState(() => {
     return !localStorage.getItem("onboarding_completed");
