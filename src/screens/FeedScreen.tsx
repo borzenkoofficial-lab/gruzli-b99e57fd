@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import {
   MapPin, Clock, Users, ArrowRight, Ban,
-  Search, X, Sparkles, Loader2, TrendingUp, Check, ArrowLeft, Hourglass, SlidersHorizontal,
+  Search, X, Loader2, TrendingUp, Check, ArrowLeft, Hourglass, SlidersHorizontal, Zap,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { removeFeedJob, upsertActiveFeedJob } from "@/lib/jobFeedState";
@@ -243,8 +243,6 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
   const avgJobPay = jobPay.length > 0
     ? jobPay.reduce((sum, value) => sum + value, 0) / jobPay.length
     : 0;
-  const maxJobPay = jobPay.length > 0 ? Math.max(...jobPay) : 0;
-
   const filtered = jobs
     .filter((j) => !skippedJobs.has(j.id))
     .filter((j) => {
