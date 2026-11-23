@@ -147,6 +147,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem("gruzli_demo_worker");
       localStorage.removeItem("gruzli_demo_role");
       setDemoMode(false);
+      window.dispatchEvent(new Event("gruzli-demo-change"));
     }
   };
 
