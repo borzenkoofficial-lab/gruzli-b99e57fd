@@ -14,7 +14,7 @@ import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 import { DEMO_FEED_JOBS, DEMO_DISPATCHER_NAMES, DEMO_RESPONSE_COUNTS } from "@/data/demoData";
 import MetroBadge from "@/components/MetroBadge";
 import EnablePushButton from "@/components/EnablePushButton";
-import { MaxChannelBanner } from "@/components/MaxChannelBanner";
+import MaxChannelBanner from "@/components/MaxChannelBanner";
 import CategorySubscriptionModal from "@/components/CategorySubscriptionModal";
 import {
   getCategory,
@@ -43,11 +43,11 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchResultIds, setSearchResultIds] = useState<string[] | null>(null);
 
-  // ─── Category subscription ───
+  // Категорийные подписки хранятся отдельно и меняются только в модалке предпочтений.
   const [subscribed, setSubscribed] = useState<CategoryKey[] | null>(() => loadSubscribedCategories());
   const [subModalOpen, setSubModalOpen] = useState(false);
 
-  // Category preferences are opened only from the explicit "Настроить" control.
+  // Category preferences are opened only from the explicit "Подписки" control.
   const jobCategory = useMemo(() => {
     const m = new Map<string, CategoryKey>();
     jobs.forEach((j) => m.set(j.id, classifyJob(j)));
@@ -148,7 +148,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
           // Keep realtime inserts consistent with the initial active-jobs query.
           if (newJob.status !== "active") return;
           setJobs((prev) => upsertActiveFeedJob(prev, newJob));
-        }
+        },
       )
       .on(
         'postgres_changes',
@@ -163,7 +163,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
               return next;
             });
           }
-        }
+        },
       )
       .on(
         'postgres_changes',
@@ -177,7 +177,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
             delete next[deletedJob.id!];
             return next;
           });
-        }
+        },
       )
       .on(
         'postgres_changes',
@@ -187,9 +187,9 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
           if (!response.job_id) return;
           setWorkersFound((prev) => ({
             ...prev,
-            [response.job_id]: (prev[response.job_id] || 0) + 1,
+            [response.job_id!]: (prev[response.job_id!] || 0) + 1,
           }));
-        }
+        },
       )
       .on(
         'postgres_changes',
@@ -199,9 +199,9 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
           if (!response.job_id) return;
           setWorkersFound((prev) => ({
             ...prev,
-            [response.job_id]: Math.max(0, (prev[response.job_id] || 0) - 1),
+            [response.job_id!]: Math.max(0, (prev[response.job_id!] || 0) - 1),
           }));
-        }
+        },
       )
       .subscribe();
 
@@ -229,8 +229,9 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
       if (error) throw error;
       if (data?.error) { toast.error(data.error); }
       else if (data?.job_ids) { setSearchResultIds(data.job_ids); }
-    } catch { toast.error("Ошибка умного поиска"); }
-    finally { setSearchLoading(false); }
+    } catch {
+      toast.error("Ошибка умного поиска");
+    } finally { setSearchLoading(false); }
   };
 
   const clearSearch = () => {
@@ -242,7 +243,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
   const filtered = jobs
     .filter((j) => !skippedJobs.has(j.id))
     .filter((j) => {
-      // Подписка на категории: если пользователь ещё не выбрал — показываем всё
+      // Фильтр заказов по категориям: только выбранные пользователем
       if (!subscribed) return true;
       const cat = jobCategory.get(j.id) || "other";
       return subscribed.includes(cat);
@@ -290,15 +291,15 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
               <span className="gruzli-feed-eyebrow">GRUZLI / WORK</span>
               <span className="gruzli-feed-live"><i /> LIVE</span>
             </div>
-            <h1 className="gruzli-feed-title">Работа<br /><span>рядом.</span></h1>
-            <p className="gruzli-feed-subtitle"><b>{nearbyCount}</b> заявок доступны прямо сейчас</p>
+            <h1 className="gruzli-feed-title">Добро пожаловать<br /><span>на смену.</span></h1>
+            <p className="gruzli-feed-subtitle"><b>{nearbyCount}</b> открытых заказов рядом</p>
           </div>
           <div className="gruzli-feed-mark"><img src={gruzliLogo} alt="Gruzli" loading="lazy" /></div>
         </div>
         <div className="gruzli-feed-earnings">
-          <div><span>Средний заказ</span><strong>{avgJobPay ? Math.round(avgJobPay).toLocaleString("ru-RU") : "—"} ₽</strong></div>
+          <div><span>Средний заработок</span><strong>{avgJobPay ? Math.round(avgJobPay).toLocaleString("ru-RU") : "—"} ₽</strong></div>
           <div className="gruzli-feed-earnings-divider" />
-          <div><span>Макс. заказ</span><strong>{maxJobPay ? `~${Math.round(maxJobPay).toLocaleString("ru-RU")} ₽` : "—"}</strong></div>
+          <div><span>Доходность до</span><strong>{maxJobPay ? `~${Math.round(maxJobPay).toLocaleString("ru-RU")} ₽` : "—"}</strong></div>
           <div className="gruzli-feed-earnings-arrow">↗</div>
         </div>
       </header>
@@ -317,11 +318,11 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
               <Search size={17} className="text-muted-foreground shrink-0" />
             )}
             <input
-              aria-label="Поиск заявок"
+              aria-label="Поиск заказов"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") handleSmartSearch(); }}
-              placeholder="Найти заявку: переезд, Москва..."
+              placeholder="Например: вечерние, грузчики..."
               className="gruzli-feed-search-input flex-1 min-w-0 bg-transparent text-sm text-foreground placeholder:text-muted-foreground/60 outline-none"
             />
             {searchQuery ? (
@@ -348,7 +349,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
             <span className="inline-flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium">
               <Search size={11} className="text-muted-foreground" /> Найдено: <b className="text-foreground">{filtered.length}</b>
             </span>
-            <button onClick={clearSearch} className="text-[11px] font-semibold text-foreground">Сбросить</button>
+            <button onClick={clearSearch} className="text-[11px] font-semibold text-foreground">Очистить</button>
           </div>
         )}
       </div>
@@ -356,13 +357,13 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
       {/* Work preferences — categories are configured from one control. */}
       <section className="gruzli-mobile-section !px-5 !pt-2 !pb-2">
         <div className="gruzli-mobile-section-title !mb-0">
-          <h2>Заявки</h2>
+          <h2>Лента</h2>
           <button
             onClick={() => setSubModalOpen(true)}
             className="native-press flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-[11.5px] font-semibold text-foreground/80 shadow-sm hover:text-foreground transition-colors tap-scale"
           >
             <SlidersHorizontal size={13} />
-            Настроить
+            Подписки
           </button>
         </div>
       </section>
@@ -384,7 +385,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
                 index={i}
                 responded={respondedJobs.has(job.id)}
                 workersFound={workersFound}
-                dispatcherName={job.dispatcher_id ? (dispatcherNames[job.dispatcher_id] || "Диспетчер") : "Ищем диспетчера"}
+                dispatcherName={job.dispatcher_id ? (dispatcherNames[job.dispatcher_id] || "Диспетчер") : "Диспетчер не назначен"}
                 onRespond={() => handleRespond(job.id)}
                 onSkip={() => setSkippedJobs((prev) => new Set(prev).add(job.id))}
                 onOpenProfile={onOpenProfile && job.dispatcher_id ? () => onOpenProfile(job.dispatcher_id!) : undefined}
@@ -405,7 +406,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
   );
 };
 
-// ─── Skeleton ────────────────────────────────────────────
+// ── Skeleton ────────────────────────────────────────────────────────────────
 const JobSkeleton = ({ delay = 0 }: { delay?: number }) => (
   <motion.div
     initial={{ opacity: 0 }}
@@ -418,45 +419,46 @@ const JobSkeleton = ({ delay = 0 }: { delay?: number }) => (
       <div className="h-4 w-20 rounded-md bg-muted/30" />
     </div>
     <div className="h-4 w-3/4 rounded-md bg-muted/40" />
-    <div className="h-3 w-1/3 rounded-md bg-muted/30" />
-    <div className="h-12 w-full rounded-xl bg-muted/20" />
-    <div className="flex justify-between items-center pt-2">
+    <div className="h-3 w-full rounded-md bg-muted/30" />
+    <div className="flex justify-between pt-2">
       <div className="h-4 w-20 rounded-md bg-muted/30" />
       <div className="h-9 w-24 rounded-xl bg-muted/30" />
     </div>
   </motion.div>
 );
 
-// ─── Empty State ─────────────────────────────────────────
+// ── Empty State ─────────────────────────────────────────────────────────────
 const EmptyState = ({ hasJobs, onReset }: { hasJobs: boolean; onReset: () => void }) => (
   <motion.div
     initial={{ opacity: 0, y: 8 }}
     animate={{ opacity: 1, y: 0 }}
     className="text-center py-10 px-6"
   >
-    <div className="mx-auto h-16 w-16 rounded-2xl bg-card border border-border flex items-center justify-center mb-4">
-      <Search size={26} className="text-muted-foreground" />
+    <div className="mx-auto mb-4 h-16 w-16 rounded-2xl bg-card border border-border flex items-center justify-center">
+      <Search size={26} className="text-muted-foreground" aria-hidden="true" />
     </div>
     <h3 className="text-[15px] font-semibold text-foreground">
-      {hasJobs ? "Нет подходящих заявок" : "Пока нет заявок"}
+      {hasJobs ? "Ничего не нашлось" : "Пока нет заказов"}
     </h3>
     <p className="text-xs text-muted-foreground mt-1.5 max-w-[260px] mx-auto">
       {hasJobs
-        ? "Измените настройки категорий или сбросьте поиск"
-        : "Диспетчеры ещё не разместили заказы. Загляни позже."}
+        ? "Попробуйте изменить поиск или выбрать другую категорию."
+        : "Новые заказы появятся в ленте, когда их опубликуют."}
     </p>
     {hasJobs && (
       <button
+        type="button"
         onClick={onReset}
-        className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-foreground text-background text-xs font-semibold tap-scale"
+        className="mt-4 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-xs font-semibold text-background tap-scale focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
-        <X size={12} /> Сбросить фильтры
+        <X size={12} aria-hidden="true" />
+        Сбросить поиск и фильтры
       </button>
     )}
   </motion.div>
 );
 
-// ─── Swipeable Job Card ──────────────────────────────────
+// ── Swipeable Job Card ──────────────────────────────────────────────────────
 interface SwipeableJobCardProps {
   job: Tables<"jobs"> & { is_bot?: boolean };
   index: number;
@@ -560,7 +562,7 @@ const SwipeableJobCard = ({
         style={{ opacity: bgRight, background: 'hsl(145 65% 50% / 0.12)' }}
       >
         <div className="flex items-center gap-2 text-online">
-          <span className="text-xs font-semibold">Беру</span>
+          <span className="text-xs font-semibold">Откликнуться</span>
           <ArrowRight size={20} />
         </div>
       </motion.div>
@@ -572,7 +574,7 @@ const SwipeableJobCard = ({
         style={{
           x,
           ...(isOfficial ? {
-            background: "linear-gradient(135deg, hsl(45 90% 55% / 0.12), hsl(38 85% 50% / 0.06) 40%, hsl(var(--card)) 100%)",
+            background: "linear-gradient(135deg, hsl(45 90% 55% / 0.12), hsl(38 85% 50% / 0.06) 40%, hsl(var(--card) / 100%))",
             boxShadow: "0 0 0 1px hsl(45 90% 55% / 0.25), 0 8px 24px -8px hsl(45 90% 55% / 0.25)",
           } : {}),
         }}
@@ -594,20 +596,20 @@ const SwipeableJobCard = ({
         <div className="gruzli-order-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</div>
         <div className={`gruzli-order-accent ${accentClass}`} />
 
-        {/* "Место занято" — corner badge, не перекрывает контент */}
+        {/* "Заказ с проверкой" — corner badge, закреплён справа сверху */}
         {isBot && (
           <div className="absolute top-2.5 right-2.5 z-20 flex items-center gap-1 px-2 py-0.5 rounded-md bg-destructive/15 border border-destructive/30">
             <Ban size={10} className="text-destructive" />
-            <span className="text-[10px] font-semibold text-destructive uppercase tracking-wide">Занято</span>
+            <span className="text-[10px] font-semibold text-destructive uppercase tracking-wide">Демо</span>
           </div>
         )}
 
         {/* Editorial meta row */}
         <div className="gruzli-order-meta-top flex items-center justify-between gap-3 mb-3">
-          <span className="gruzli-order-kicker">{isLiveOrder ? "LIVE / " : isOfficial ? "OFFICIAL / " : "ЗАЯВКА / "}{String(index + 1).padStart(2, "0")}</span>
-          <span className="gruzli-order-open">ОТКРЫТЬ ↗</span>
+          <span className="gruzli-order-kicker">{isLiveOrder ? "LIVE / " : isOfficial ? "OFFICIAL / " : "ПУБЛИЧНЫЙ / "}{String(index + 1).padStart(2, "0")}</span>
+          <span className="gruzli-order-open">ОТКРЫТ<ArrowRight size={12} /></span>
         </div>
-        <div className="gruzli-card-swipe-hint" aria-hidden="true"><span><ArrowLeft size={9}/> пропустить</span><i/> <span>взять <ArrowRight size={9}/></span></div>
+        <div className="gruzli-card-swipe-hint" aria-hidden="true"><span><ArrowLeft size={9}/> Не откликаться</span><i/> <span>Откликнуться <ArrowRight size={9}/></span></div>
 
         {/* Tags */}
         <div className="gruzli-order-tags flex items-center gap-1.5 mb-2 flex-wrap">
@@ -630,7 +632,7 @@ const SwipeableJobCard = ({
           {isOfficial && (
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-gradient-to-r from-yellow-400/25 to-amber-400/15 text-yellow-600 dark:text-yellow-400 text-[10.5px] font-bold border border-yellow-400/40">
               <img src={gruzliLogo} alt="Gruzli" className="w-3 h-3 rounded-sm object-cover" />
-              <span>Официально от Gruzli</span>
+              <span>Верифицировано Gruzli</span>
               <Check size={9} strokeWidth={3} className="text-yellow-500" />
             </span>
           )}
@@ -645,12 +647,12 @@ const SwipeableJobCard = ({
           )}
           {job.quick_minimum && (
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-online/10 text-online text-[10.5px] font-semibold border border-online/20">
-              <Hourglass size={9} /> Быстрая минималка
+              <Hourglass size={9} /> Быстрый минимум
             </span>
           )}
           {isNew && (
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-foreground/10 text-foreground text-[10.5px] font-semibold">
-              <span className="h-1.5 w-1.5 rounded-full bg-online" /> Новое
+              <span className="h-1.5 w-1.5 rounded-full bg-online" /> Новый
             </span>
           )}
         </div>
@@ -660,23 +662,23 @@ const SwipeableJobCard = ({
           <h3 className="min-w-0 flex-1 text-[17px] font-bold text-foreground leading-[1.14] tracking-[-0.025em] break-words">{job.title}</h3>
           <div className="w-[78px] shrink-0 text-right">
             <div className="text-[16px] font-extrabold tracking-[-0.02em] text-foreground">{job.hourly_rate.toLocaleString("ru-RU")} ₽</div>
-            <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.08em]">в час</div>
+            <div className="text-[9px] font-semibold text-muted-foreground uppercase tracking-[0.08em]">за час</div>
           </div>
         </div>
 
         {/* Mockup scene: location + time + team become one visual composition */}
-        <div className="gruzli-order-scene" aria-label="Ключевые параметры заявки">
+        <div className="gruzli-order-scene" aria-label="Детали заказа">
           <div className="gruzli-order-scene-main">
             <div className="gruzli-order-route min-w-0">
               <span className="gruzli-order-route-dot" />
               <div className="min-w-0 flex-1">
-                <span className="gruzli-order-scene-label">ЛОКАЦИЯ</span>
-                {job.metro ? <MetroBadge value={job.metro} /> : <strong>{job.address || "Москва"}</strong>}
+                <span className="gruzli-order-scene-label">Место встречи</span>
+                {job.metro ? <MetroBadge value={job.metro} /> : <strong>{job.address || "Адрес уточняется"}</strong>}
               </div>
             </div>
             <div className="gruzli-order-time">
-              <span className="gruzli-order-scene-label">КОГДА</span>
-              <strong>{job.start_time ? new Date(job.start_time).toLocaleString("ru-RU",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "Сегодня"}</strong>
+              <span className="gruzli-order-scene-label">Начало</span>
+              <strong>{job.start_time ? new Date(job.start_time).toLocaleString("ru-RU",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}) : "Время уточняется"}</strong>
             </div>
           </div>
           <div className="gruzli-order-scene-line" />
@@ -720,18 +722,18 @@ const SwipeableJobCard = ({
                     {workersReady} <span className="text-white/35">/</span> {workersNeeded}
                   </div>
                   <div className="mt-1 text-[9px] font-medium text-white/50">
-                    грузчиков откликнулось · нужно {workersNeeded}
+                    Подтверждено B7 осталось {workersNeeded - workersReady}
                   </div>
                 </div>
                 <span className="rounded-full border border-white/10 bg-white/8 px-2 py-1 text-[8px] font-bold text-white/65">
-                  {workersReady >= workersNeeded ? "КОМАНДА СОБРАНА" : "ИДЁТ НАБОР"}
+                  {workersReady >= workersNeeded ? "Команда собрана" : "Ищем исполнителей"}
                 </span>
               </div>
 
               <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-yellow-400 to-yellow-200"
-                  style={{ width: staffingProgress + "%" }}
+                  style={{ width: `${staffingProgress}%` }}
                 />
               </div>
             </div>
@@ -748,10 +750,10 @@ const SwipeableJobCard = ({
                   </span>
                 ))}
                 {workersReady === 0 && (
-                  <span className="text-[9px] text-white/40">Пока никто не откликнулся</span>
+                  <span className="text-[9px] text-white/40">Пока нет подтверждённых исполнителей</span>
                 )}
               </div>
-              <span className="text-[9px] font-semibold text-white/45">обновляется в реальном времени</span>
+              <span className="text-[9px] font-semibold text-white/45">Набор идёт в реальном времени</span>
             </div>
           </div>
         )}
@@ -767,7 +769,7 @@ const SwipeableJobCard = ({
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 min-w-0">
                 <TrendingUp size={12} className="text-online shrink-0" />
-                <span className="text-[11px] text-muted-foreground">Ты получишь</span>
+                <span className="text-[11px] text-muted-foreground">К выплате исполнителю</span>
               </div>
               <div className="flex items-baseline gap-0.5">
                 <span className="text-[24px] font-extrabold text-foreground tracking-[-0.04em]">
@@ -777,7 +779,7 @@ const SwipeableJobCard = ({
               </div>
             </div>
             <p className="text-[10.5px] text-muted-foreground mt-0.5 flex items-center gap-1.5">
-              <span>{job.hourly_rate} ₽/час</span><span className="opacity-30">·</span><span>{job.duration_hours || 4} ч смена</span>
+              <span>{job.hourly_rate} ₽/час</span><span className="opacity-30">·</span><span>{job.duration_hours || 4} часа</span>
             </p>
           </div>
         </div>
@@ -793,21 +795,36 @@ const SwipeableJobCard = ({
         <div className="gruzli-order-footer flex items-center justify-between mt-4 pt-3 border-t border-border/70">
           {isBot ? (
             <span className="px-4 py-2.5 rounded-xl text-[13px] font-medium bg-muted text-muted-foreground">
-              Не успели
+              Заказ проверяется
             </span>
           ) : responded ? (
             <span className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-online/15 text-online border border-online/20">
               <span className="h-4 w-4 rounded-full bg-online/20 flex items-center justify-center">
-                <Check size={10} className="text-online" strokeWidth={3} />
+                <Check size={10} strokeWidth={3} />
               </span>
-              Отклик
+              Вы откликнулись
             </span>
           ) : (
             <motion.button
               onClick={(e) => { e.stopPropagation(); onRespond(); }}
               className="btn-shimmer native-press flex min-h-[44px] items-center justify-center gap-2 px-5 rounded-[14px] text-[13px] font-bold bg-foreground text-background shadow-[0_8px_20px_-6px_hsl(var(--foreground)/0.42)] hover:shadow-[0_10px_24px_-6px_hsl(var(--foreground)/0.5)] transition-all"
             >
-              Беру!
+              Откликнуться
+              <ArrowRight size={13} />
+            </motion.button>
+          )}
+          {isBot ? (
+            <span className="px-4 py-2.5 rounded-xl text-[12px] text-muted-foreground">Демо-запись</span>
+          ) : responded ? (
+            <span className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+              <Check size={13} className="text-online" /> Чат создан
+            </span>
+          ) : (
+            <motion.button
+              onClick={(e) => { e.stopPropagation(); onRespond(); }}
+              className="btn-shimmer native-press flex min-h-[44px] items-center justify-center gap-2 px-5 rounded-[14px] text-[13px] font-bold bg-foreground text-background shadow-[0_8px_20px_-6px_hsl(var(--foreground)/0.42)] hover:shadow-[0_10px_24px_-6px_hsl(var(--foreground)/0.5)] transition-all"
+            >
+              Откликнуться
               <ArrowRight size={13} />
             </motion.button>
           )}
@@ -817,7 +834,7 @@ const SwipeableJobCard = ({
   );
 };
 
-// ─── Meta Chip ───────────────────────────────────────────
+// ── Meta Chip ───────────────────────────────────────────────────────────────
 const MetaChip = ({ icon: Icon, text }: { icon: typeof MapPin; text: string }) => (
   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-surface-3/60 border border-border text-[10.5px] text-muted-foreground max-w-full">
     <Icon size={10} className="shrink-0" />
@@ -826,4 +843,3 @@ const MetaChip = ({ icon: Icon, text }: { icon: typeof MapPin; text: string }) =
 );
 
 export default FeedScreen;
-
