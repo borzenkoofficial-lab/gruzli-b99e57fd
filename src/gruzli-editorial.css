@@ -6899,7 +6899,7 @@ button.bg-foreground:active{
   line-height:1.3!important;
   color:#68645a!important;
 }
-.gruzli-mobile-feed .gruzli-order-pay .text-\\[24px\\] {
+.gruzli-mobile-feed .gruzli-order-pay [class~="text-[24px]"] {
   font-size:30px!important;
   line-height:1!important;
   letter-spacing:-.055em!important;
@@ -6953,68 +6953,68 @@ button.bg-foreground:active{
   align-items:center;
   font-size:13px!important;
 }
-.gruzli-mobile-feed .gruzli-job-card .absolute.top-2\\.5.right-2\\.5 {
+.gruzli-mobile-feed .gruzli-job-card [class~="absolute"][class~="top-2.5"][class~="right-2.5"] {
   min-height:25px;
   padding:0 8px!important;
   border-radius:7px!important;
   font-size:11px!important;
 }
-.gruzli-mobile-feed .gruzli-job-card .absolute.top-2\\.5.right-2\\.5 span {
+.gruzli-mobile-feed .gruzli-job-card [class~="absolute"][class~="top-2.5"][class~="right-2.5"] span {
   font-size:10px!important;
 }
-.gruzli-mobile-feed .gruzli-job-card .absolute.top-2\\.5.right-2\\.5 svg {
+.gruzli-mobile-feed .gruzli-job-card [class~="absolute"][class~="top-2.5"][class~="right-2.5"] svg {
   width:12px!important;
   height:12px!important;
 }
-.gruzli-mobile-feed .gruzli-job-card .mt-3\\.5.rounded-\\[18px\\] {
+.gruzli-mobile-feed .gruzli-job-card [class~="mt-3.5"][class~="rounded-[18px]"] {
   border-radius:14px!important;
   box-shadow:none!important;
 }
-.gruzli-mobile-feed .gruzli-job-card .mt-3\\.5.rounded-\\[18px\\] .text-\\[8px\\],
-.gruzli-mobile-feed .gruzli-job-card .mt-3\\.5.rounded-\\[18px\\] .text-\\[9px\\] {
+.gruzli-mobile-feed .gruzli-job-card [class~="mt-3.5"][class~="rounded-[18px]"] [class~="text-[8px]"],
+.gruzli-mobile-feed .gruzli-job-card [class~="mt-3.5"][class~="rounded-[18px]"] [class~="text-[9px]"] {
   font-size:11px!important;
   line-height:1.35!important;
 }
-.gruzli-mobile-feed .gruzli-job-card .mt-3\\.5.rounded-\\[18px\\] .text-\\[19px\\] {
+.gruzli-mobile-feed .gruzli-job-card [class~="mt-3.5"][class~="rounded-[18px]"] [class~="text-[19px]"] {
   font-size:22px!important;
 }
-.gruzli-mobile-feed .gruzli-job-card .mt-3\\.5.rounded-\\[18px\\] .h-1\\.5 {
+.gruzli-mobile-feed .gruzli-job-card [class~="mt-3.5"][class~="rounded-[18px]"] [class~="h-1.5"] {
   height:6px!important;
 }
-.gruzli-mobile-feed .gruzli-job-card .mt-3\\.5.rounded-\\[18px\\] .h-6.w-6 {
+.gruzli-mobile-feed .gruzli-job-card [class~="mt-3.5"][class~="rounded-[18px]"] [class~="h-6"][class~="w-6"] {
   width:27px!important;
   height:27px!important;
   font-size:10px!important;
 }
-.gruzli-mobile-feed .gruzli-job-card .mt-3\\.5.rounded-\\[18px\\] .px-3\\.5 {
+.gruzli-mobile-feed .gruzli-job-card [class~="mt-3.5"][class~="rounded-[18px]"] [class~="px-3.5"] {
   padding-left:14px!important;
   padding-right:14px!important;
 }
-.gruzli-mobile-feed .gruzli-job-card .mt-3\\.5.rounded-\\[18px\\] .py-2\\.5 {
+.gruzli-mobile-feed .gruzli-job-card [class~="mt-3.5"][class~="rounded-[18px]"] [class~="py-2.5"] {
   padding-top:10px!important;
   padding-bottom:10px!important;
 }
-.gruzli-mobile-feed .gruzli-job-card .mt-3\\.5.rounded-\\[18px\\] .text-white\\/45,
-.gruzli-mobile-feed .gruzli-job-card .mt-3\\.5.rounded-\\[18px\\] .text-white\\/50,
-.gruzli-mobile-feed .gruzli-job-card .mt-3\\.5.rounded-\\[18px\\] .text-white\\/55 {
+.gruzli-mobile-feed .gruzli-job-card [class~="mt-3.5"][class~="rounded-[18px]"] [class~="text-white/45"],
+.gruzli-mobile-feed .gruzli-job-card [class~="mt-3.5"][class~="rounded-[18px]"] [class~="text-white/50"],
+.gruzli-mobile-feed .gruzli-job-card [class~="mt-3.5"][class~="rounded-[18px]"] [class~="text-white/55"] {
   color:rgba(255,255,255,.72)!important;
 }
-.gruzli-mobile-feed .gruzli-job-card .mt-3\\.5.rounded-\\[18px\\] .text-white\\/35 {
+.gruzli-mobile-feed .gruzli-job-card [class~="mt-3.5"][class~="rounded-[18px]"] [class~="text-white/35"] {
   color:rgba(255,255,255,.55)!important;
 }
-.gruzli-mobile-feed .gruzli-job-card .text-\\[10px\\],
-.gruzli-mobile-feed .gruzli-job-card .text-\\[10\\.5px\\] {
+.gruzli-mobile-feed .gruzli-job-card [class~="text-[10px]"],
+.gruzli-mobile-feed .gruzli-job-card [class~="text-[10.5px]"] {
   font-size:11px!important;
 }
-.gruzli-mobile-feed .gruzli-job-card .text-\\[9px\\] {
+.gruzli-mobile-feed .gruzli-job-card [class~="text-[9px]"] {
   font-size:10px!important;
 }
-.gruzli-mobile-feed .gruzli-job-card .text-\\[8px\\] {
+.gruzli-mobile-feed .gruzli-job-card [class~="text-[8px]"] {
   font-size:10px!important;
 }
-.gruzli-mobile-feed .gruzli-job-card .text-\\[6px\\],
-.gruzli-mobile-feed .gruzli-job-card .text-\\[6\\.5px\\],
-.gruzli-mobile-feed .gruzli-job-card .text-\\[7px\\] {
+.gruzli-mobile-feed .gruzli-job-card [class~="text-[6px]"],
+.gruzli-mobile-feed .gruzli-job-card [class~="text-[6.5px]"],
+.gruzli-mobile-feed .gruzli-job-card [class~="text-[7px]"] {
   font-size:9px!important;
 }
 .gruzli-mobile-feed .gruzli-job-card .gruzli-order-route .rounded-full > span:last-child {
