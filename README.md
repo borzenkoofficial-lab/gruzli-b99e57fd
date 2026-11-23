@@ -1,6 +1,6 @@
 # Gruzli
 
-Gruzli — mobile-first marketplace for the workflow «Заказчик → Диспетчер → Грузчик».
+Gruzli — mobile-first marketplace prototype for the workflow «Заказчик → Диспетчер → Грузчик».
 
 ## Development
 
@@ -9,25 +9,20 @@ npm ci
 npm run dev
 ```
 
-Production builds use the real Supabase backend.
+## Runtime mode
 
-The production branch keeps demo mode isolated behind an explicit build flag. Demo mode is enabled only with:
+The application currently runs as a standalone local demo. It does not require Supabase, remote database credentials, or a backend connection.
 
-```env
-VITE_GRUZLI_DEMO_MODE=true
-```
-
-Required production variables:
-
-```env
-VITE_SUPABASE_URL=
-VITE_SUPABASE_PUBLISHABLE_KEY=
-```
+- Authentication is simulated locally.
+- Demo profiles, orders, responses, and related records are stored in the browser's local storage.
+- Data is isolated to the current browser and device; it is not shared between users.
+- Realtime updates and server-side workflows are represented by local demo behavior and are not production services.
 
 ## Validation
 
 ```bash
 npm run lint
+npm run typecheck
 npm test
 npm run build
 npx playwright test --project=chromium

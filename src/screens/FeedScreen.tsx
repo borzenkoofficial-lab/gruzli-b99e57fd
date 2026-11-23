@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, PanInfo } from "framer-motion";
 import {
   MapPin, Clock, Users, ArrowRight, Ban,
-  Search, X, Sparkles, Loader2, TrendingUp, Check, ArrowLeft, Hourglass, SlidersHorizontal,
+  Search, X, Loader2, TrendingUp, Check, ArrowLeft, Hourglass, SlidersHorizontal, Zap,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { removeFeedJob, upsertActiveFeedJob } from "@/lib/jobFeedState";
@@ -31,7 +31,7 @@ interface FeedScreenProps {
 }
 
 const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: FeedScreenProps) => {
-  const { user, role } = useAuth();
+  const { user } = useAuth();
   const { respondAndOpenChat } = useRespondToJob(onOpenChat);
   const [jobs, setJobs] = useState<Tables<"jobs">[]>([]);
   const [dispatcherNames, setDispatcherNames] = useState<Record<string, string>>({});
@@ -42,6 +42,7 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
   const [searchQuery, setSearchQuery] = useState("");
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchResultIds, setSearchResultIds] = useState<string[] | null>(null);
+  const [quickFilter, setQuickFilter] = useState<"all" | "urgent" | "above-average">("all");
 
   // ─── Category subscription ───
   const [subscribed, setSubscribed] = useState<CategoryKey[] | null>(() => loadSubscribedCategories());
@@ -238,17 +239,26 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
     setSearchResultIds(null);
   };
 
-  // Counts per filter (for chip badges)
+  const jobPay = jobs.map((j) => j.hourly_rate * (Number(j.duration_hours) || 4));
+  const avgJobPay = jobPay.length > 0
+    ? jobPay.reduce((sum, value) => sum + value, 0) / jobPay.length
+    : 0;
   const filtered = jobs
     .filter((j) => !skippedJobs.has(j.id))
     .filter((j) => {
-      // Подписка на категории: если пользователь ещё не выбрал — показываем всё
       if (!subscribed) return true;
       const cat = jobCategory.get(j.id) || "other";
       return subscribed.includes(cat);
     })
     .filter((j) => {
       if (searchResultIds !== null) return searchResultIds.includes(j.id);
+      return true;
+    })
+    .filter((j) => {
+      if (quickFilter === "urgent") return Boolean(j.urgent);
+      if (quickFilter === "above-average") {
+        return avgJobPay > 0 && j.hourly_rate * (Number(j.duration_hours) || 4) >= avgJobPay;
+      }
       return true;
     })
     .sort((a, b) => {
@@ -259,11 +269,6 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
     });
 
   const nearbyCount = filtered.length;
-  const jobPay = jobs.map((j) => j.hourly_rate * (Number(j.duration_hours) || 4));
-  const avgJobPay = jobPay.length > 0
-    ? jobPay.reduce((sum, value) => sum + value, 0) / jobPay.length
-    : 0;
-  const maxJobPay = jobPay.length > 0 ? Math.max(...jobPay) : 0;
 
   const handleRespond = async (jobId: string) => {
     if (!user) return;
@@ -295,11 +300,10 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
           </div>
           <div className="gruzli-feed-mark"><img src={gruzliLogo} alt="Gruzli" loading="lazy" /></div>
         </div>
-        <div className="gruzli-feed-earnings">
-          <div><span>Средний заказ</span><strong>{avgJobPay ? Math.round(avgJobPay).toLocaleString("ru-RU") : "—"} ₽</strong></div>
+        <div className="gruzli-feed-earnings" aria-label="Статистика доступных заказов">
+          <div><span>Доступно сейчас</span><strong>{jobs.length.toLocaleString("ru-RU")} <small>заказов</small></strong></div>
           <div className="gruzli-feed-earnings-divider" />
-          <div><span>Макс. заказ</span><strong>{maxJobPay ? `~${Math.round(maxJobPay).toLocaleString("ru-RU")} ₽` : "—"}</strong></div>
-          <div className="gruzli-feed-earnings-arrow">↗</div>
+          <div><span>Средний расчёт за смену</span><strong>{avgJobPay ? `~${Math.round(avgJobPay).toLocaleString("ru-RU")} ₽` : "—"}</strong></div>
         </div>
       </header>
 
@@ -367,14 +371,32 @@ const FeedScreen = ({ onOpenChat, onOpenProfile, onOpenJob, onRefreshRef }: Feed
         </div>
       </section>
 
+      <section className="gruzli-feed-quick-filters px-5 pb-3" aria-label="Быстрые фильтры заказов">
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <span className="text-[11px] font-semibold text-muted-foreground">Быстрый отбор</span>
+          <span className="text-[11px] tabular-nums text-muted-foreground">{nearbyCount} из {jobs.length}</span>
+        </div>
+        <div className="flex items-center gap-2 overflow-x-auto pb-1" role="group" aria-label="Фильтр заказов">
+          <button type="button" aria-pressed={quickFilter === "all"} onClick={() => setQuickFilter("all")} className={`gruzli-feed-filter-chip ${quickFilter === "all" ? "is-active" : ""}`}>
+            Все <span>{jobs.length}</span>
+          </button>
+          <button type="button" aria-pressed={quickFilter === "urgent"} onClick={() => setQuickFilter(quickFilter === "urgent" ? "all" : "urgent")} className={`gruzli-feed-filter-chip ${quickFilter === "urgent" ? "is-active" : ""}`}>
+            <Zap size={13} /> Срочные <span>{jobs.filter((job) => job.urgent).length}</span>
+          </button>
+          <button type="button" aria-pressed={quickFilter === "above-average"} onClick={() => setQuickFilter(quickFilter === "above-average" ? "all" : "above-average")} className={`gruzli-feed-filter-chip ${quickFilter === "above-average" ? "is-active" : ""}`}>
+            <TrendingUp size={13} /> Выше среднего
+          </button>
+        </div>
+      </section>
+
       {/* Job Cards */}
-      <div className="px-5 space-y-3 pb-6">
+      <div className="gruzli-feed-job-list px-5 space-y-3 pb-6">
         {loading ? (
           <div className="space-y-3">
             {[0, 1, 2].map((i) => <JobSkeleton key={i} delay={i * 0.06} />)}
           </div>
         ) : filtered.length === 0 ? (
-          <EmptyState hasJobs={jobs.length > 0} onReset={resetAll} />
+          <EmptyState hasJobs={jobs.length > 0} onReset={() => { resetAll(); setQuickFilter("all"); }} />
         ) : (
           <AnimatePresence mode="sync">
             {filtered.map((job, i) => (
@@ -767,7 +789,7 @@ const SwipeableJobCard = ({
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 min-w-0">
                 <TrendingUp size={12} className="text-online shrink-0" />
-                <span className="text-[11px] text-muted-foreground">Ты получишь</span>
+                <span className="text-[11px] text-muted-foreground">Расчёт за смену</span>
               </div>
               <div className="flex items-baseline gap-0.5">
                 <span className="text-[24px] font-extrabold text-foreground tracking-[-0.04em]">

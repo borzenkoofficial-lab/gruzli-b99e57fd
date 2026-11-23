@@ -6,7 +6,7 @@ type AppRole = "client" | "worker" | "dispatcher" | "admin";
 type User = { id: string; email?: string; phone?: string | null; user_metadata: Record<string, any> };
 type Session = { user: User; access_token: string };
 
-const DEMO_ENABLED = import.meta.env.DEV && import.meta.env.VITE_GRUZLI_DEMO_MODE === "true";
+const DEMO_ENABLED = true;
 
 interface AuthContextType {
   user: User | null;
@@ -147,6 +147,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.removeItem("gruzli_demo_worker");
       localStorage.removeItem("gruzli_demo_role");
       setDemoMode(false);
+      window.dispatchEvent(new Event("gruzli-demo-change"));
     }
   };
 
