@@ -26,12 +26,11 @@ The existing Amvera gap review also records that the migration branch has an API
 
 **Risk:** merging a backend or demo-mode branch without an explicit product decision can leave the deployed application disconnected from its expected data/auth services.
 
-**Required decision:** select one target for the next release:
-1. Supabase remains the production backend for now; or
-2. Amvera + Node.js API + PostgreSQL becomes the production backend after frontend migration and acceptance; or
-3. the next deliverable is explicitly a local/demo-only build, not a production replacement.
+**Owner decision recorded on 2026-11-24:** keep a demo mode available for testing while leaving the production backend decision open. This is a product-mode decision, not approval to replace production auth/data services or to make demo mode the default in production.
 
-Do not infer this decision from an open PR.
+**Required boundary:** preserve the current production path unchanged; keep demo behavior behind an explicit, environment-scoped opt-in; ensure demo data/storage cannot be mistaken for or overwrite production data. The target production backend (Supabase vs Amvera/PostgreSQL) remains undecided.
+
+Do not infer approval for backend migration or production demo mode from an open PR.
 
 ### P1 — Main branch has no enforced GitHub protection
 
@@ -84,11 +83,13 @@ The existing UI review reports a 6,508-line editorial stylesheet with 1,212 `!im
 
 **Recommendation:** avoid a wholesale redesign or mechanical component split. Extract domain hooks/services and view components only when a concrete feature or bug requires it; add responsive regression coverage around the changed screen.
 
-### Confirmed demo-mode wiring
+### Demo mode: preserve opt-in isolation; do not merge PR #44 as-is
 
-The Playwright web server starts Vite with `VITE_GRUZLI_DEMO_MODE=true`. `src/App.tsx` additionally requires `import.meta.env.DEV` and the same flag before enabling demo worker mode. The smoke tests preseed the expected localStorage keys.
+The current `main` branch gates demo mode behind both `import.meta.env.DEV` and `VITE_GRUZLI_DEMO_MODE === "true"`; the Playwright web server explicitly sets that flag and seeds the demo localStorage keys. By inspection, this keeps demo mode scoped to development/test builds.
 
-This configuration is internally consistent by inspection. It has not been executed in this review, so runtime success is not claimed.
+Open PR #44 changes `DEMO_ENABLED` to unconditional `true` in `App.tsx` and the auth context, replaces the Supabase client with the local demo client, and removes the Supabase SDK/configuration. That is not merely enabling a test mode: it changes the application runtime and can route production builds into demo behavior. **Do not merge PR #44 in its current form.** If demo mode needs a separately deployable preview, implement an explicit build/runtime target with isolated data and a production guard, while leaving the production backend path intact.
+
+The current Playwright wiring is internally consistent by inspection. It has not been executed in this review, so runtime success is not claimed.
 
 ## Open change-set coordination
 
@@ -107,13 +108,14 @@ Older PRs also cover order validation, response preconditions, realtime feed con
 
 ## Recommended execution order
 
-1. **Owner decision:** confirm production backend/runtime and whether demo mode is a separate build target.
-2. **PR triage:** classify open PRs as mergeable, needs rebase, superseded, or blocked by architecture; resolve overlapping changes before implementation.
-3. **CI gate:** verify the actual Actions run for the current base; then enable required checks on `main` through repository settings.
-4. **Domain safety:** audit and test order/response state transitions, dispatcher assignment, completion, and financial settlement at the server/database boundary.
-5. **Frontend migration:** map each Supabase query/RPC/Edge Function/Storage/Realtime call to an approved API contract; migrate one bounded workflow at a time.
-6. **UI regression:** expand Playwright coverage for the exact screens and states changed by each PR.
-7. **Strictness and maintainability:** reduce TypeScript/ESLint debt incrementally, not through a risky global rewrite.
+1. **Demo boundary:** retain the existing dev/test-only opt-in; do not merge PR #44 as-is. If a hosted demo is needed, build it as a separate, isolated target without replacing production auth/data services.
+2. **Backend decision later:** keep Supabase vs Amvera/PostgreSQL open until the owner has evaluated the options.
+3. **PR triage:** classify open PRs as mergeable, needs rebase, superseded, or blocked by architecture; resolve overlapping changes before implementation.
+4. **CI gate:** verify the actual Actions run for the current base; then enable required checks on `main` through repository settings.
+5. **Domain safety:** audit and test order/response state transitions, dispatcher assignment, completion, and financial settlement at the server/database boundary.
+6. **Backend migration:** only after the owner selects a target, map each Supabase query/RPC/Edge Function/Storage/Realtime call to an approved API contract; migrate one bounded workflow at a time.
+7. **UI regression:** expand Playwright coverage for the exact screens and states changed by each PR.
+8. **Strictness and maintainability:** reduce TypeScript/ESLint debt incrementally, not through a risky global rewrite.
 
 ## Verification limitations
 
