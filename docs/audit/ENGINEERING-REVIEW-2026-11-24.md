@@ -91,6 +91,39 @@ Open PR #44 changes `DEMO_ENABLED` to unconditional `true` in `App.tsx` and the 
 
 The current Playwright wiring is internally consistent by inspection. It has not been executed in this review, so runtime success is not claimed.
 
+
+### Role-level demo audit (static code review, not yet an end-to-end runtime test)
+
+The demo entry point is currently worker-only despite its label:
+
+- The button in `src/pages/AuthPage.tsx` is labelled “Открыть демо-версию · 3 роли”, but invokes a zero-argument callback.
+- `src/App.tsx` handles that callback by setting only `gruzli_demo_worker=1`; it does not set `gruzli_demo_role`.
+- `src/contexts/AuthContext.tsx` defaults the role to `worker` when no valid role is stored.
+- Client and dispatcher views can be selected by pre-seeding `gruzli_demo_role` in localStorage, but the public demo entry UI does not expose that choice.
+
+**Finding:** the UI currently advertises three demo roles but exposes only the worker role through its normal entry point.
+
+The seeded dispatcher data also does not provide a useful initial dispatcher workspace:
+
+- `DEMO_USERS.dispatcher.id` is `demo-dispatcher`.
+- The five seeded feed jobs use dispatcher IDs `demo-dispatcher-1` through `demo-dispatcher-5`, and all are `active`.
+- `DispatcherCabinetScreen.fetchMyJobs()` filters owned jobs by the current dispatcher's exact ID and available requests by `dispatcher_id IS NULL AND status = 'open'`.
+
+**Finding:** a newly opened demo dispatcher sees neither owned jobs nor open requests from the initial seed. A client-created request can create an open request for the dispatcher flow, but this cross-role scenario is not covered by the current Playwright suite.
+
+The demo RPC implementation contains explicit success-shaped stubs:
+
+- `dispatcher_finish_job`, `dispatcher_complete_job`, and `dispatcher_review_worker` return `{ data: {}, error: null }` without changing demo records.
+- Demo auth's `signInWithPassword` does not validate the password and can synthesize a worker session.
+- Demo Storage returns synthetic paths; demo Realtime channels only retain handlers and do not deliver database changes.
+- Demo Functions return canned responses for moderation and job-description assistance.
+
+These are acceptable only as clearly labelled simulation behavior. They must not be used to validate real authentication, authorization, file storage, realtime delivery, or final settlement.
+
+**Current test coverage:** `tests/smoke.spec.ts` seeds the worker role for all tests. It does not exercise client/dispatcher role navigation or a client → dispatcher → worker order lifecycle. The green CI run for this review therefore validates the existing worker smoke tests and build/lint/typecheck only; it does not establish that all three demo roles or the complete marketplace lifecycle work.
+
+**Recommended next test slice:** add isolated Playwright coverage for (1) each role's entry/workspace and navigation, and (2) a cross-role order flow using a fresh demo localStorage database. Before treating the workflow as complete, replace or explicitly mark the no-op RPC stubs and verify the simulated lifecycle transitions.
+
 ## Open change-set coordination
 
 The repository currently has a substantial open PR queue. Important current proposals include:
