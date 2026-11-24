@@ -165,6 +165,22 @@ const Index = () => {
 
   const isDispatcher = role === "dispatcher" || role === "admin";
   const feedRefreshRef = useRef<(() => Promise<void>) | null>(null);
+  const previousRoleRef = useRef(role);
+
+  useEffect(() => {
+    if (previousRoleRef.current && role && previousRoleRef.current !== role) {
+      // Role changes in demo mode must land on a screen valid for the new persona.
+      setTab("feed");
+      setOpenChatId(null);
+      setViewProfileUserId(null);
+      setShowCreateJob(false);
+      setViewResponsesJob(null);
+      setShowCabinet(false);
+      setShowCommunity(false);
+      setViewJobDetail(null);
+    }
+    previousRoleRef.current = role;
+  }, [role]);
 
   const handlePullRefresh = useCallback(async () => {
     if (feedRefreshRef.current) {
