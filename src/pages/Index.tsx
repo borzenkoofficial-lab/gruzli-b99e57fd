@@ -168,7 +168,12 @@ const Index = () => {
   const previousRoleRef = useRef(role);
 
   useEffect(() => {
-    if (previousRoleRef.current && role && previousRoleRef.current !== role) {
+    if (
+      localStorage.getItem("gruzli_demo_worker") === "1" &&
+      previousRoleRef.current &&
+      role &&
+      previousRoleRef.current !== role
+    ) {
       // Role changes in demo mode must land on a screen valid for the new persona.
       setTab("feed");
       setOpenChatId(null);
