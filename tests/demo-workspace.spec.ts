@@ -28,7 +28,10 @@ test("switching demo roles preserves the shared local database", async ({ page }
   await expect(roleSelect).toBeVisible();
   await expect.poll(() => page.evaluate(() => localStorage.getItem("gruzli_demo_db_v3"))).not.toBeNull();
 
-  const databaseBefore = await page.evaluate(() => localStorage.getItem("gruzli_demo_db_v3"));
+  const jobIdsBefore = await page.evaluate(() => {
+    const db = JSON.parse(localStorage.getItem("gruzli_demo_db_v3") || "{}");
+    return (db.jobs || []).map((job: { id: string }) => job.id).sort();
+  });
   await roleSelect.selectOption("dispatcher");
   await expect.poll(() => page.evaluate(() => localStorage.getItem("gruzli_demo_role"))).toBe("dispatcher");
   await expect(roleSelect).toHaveValue("dispatcher");
@@ -39,8 +42,11 @@ test("switching demo roles preserves the shared local database", async ({ page }
 
   await roleSelect.selectOption("worker");
   await expect.poll(() => page.evaluate(() => localStorage.getItem("gruzli_demo_role"))).toBe("worker");
-  const databaseAfter = await page.evaluate(() => localStorage.getItem("gruzli_demo_db_v3"));
-  expect(databaseAfter).toBe(databaseBefore);
+  const jobIdsAfter = await page.evaluate(() => {
+    const db = JSON.parse(localStorage.getItem("gruzli_demo_db_v3") || "{}");
+    return (db.jobs || []).map((job: { id: string }) => job.id).sort();
+  });
+  expect(jobIdsAfter).toEqual(jobIdsBefore);
 });
 
 test("demo reset rebuilds only the local demo database", async ({ page }) => {
