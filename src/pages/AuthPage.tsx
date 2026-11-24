@@ -111,7 +111,7 @@ const onboardingSlides = [
   },
 ];
 
-const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props, _ref) => {
+const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: (role: Role) => void }>((props, _ref) => {
   const [mode, setMode] = useState<Mode>("welcome");
   const [role, setRole] = useState<Role>("client");
   const [password, setPassword] = useState("");
@@ -366,13 +366,36 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
             </button>
 
             {props.onDemoLogin && (
-              <button
-                type="button"
-                onClick={props.onDemoLogin}
-                className="w-full py-3 rounded-2xl border border-border bg-card text-foreground text-sm font-semibold active:bg-muted transition-colors"
-              >
-                Открыть демо-версию · 3 роли
-              </button>
+              <div className="space-y-2">
+                <p className="text-center text-[10px] font-bold uppercase tracking-[.14em] text-muted-foreground">Выберите роль для тестирования</p>
+                <div className="grid grid-cols-3 gap-2" role="group" aria-label="Роль в демоверсии">
+                  {([
+                    { id: "client" as Role, label: "Заказчик", icon: Building2 },
+                    { id: "dispatcher" as Role, label: "Диспетчер", icon: Users },
+                    { id: "worker" as Role, label: "Грузчик", icon: User },
+                  ]).map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      data-testid={`demo-role-${item.id}`}
+                      aria-pressed={role === item.id}
+                      onClick={() => setRole(item.id)}
+                      className={`rounded-xl border px-2 py-3 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${role === item.id ? "border-primary bg-primary/10 text-foreground" : "border-border bg-card text-muted-foreground"}`}
+                    >
+                      <item.icon size={18} className="mx-auto mb-1" />
+                      <span className="text-[11px] font-bold">{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  data-testid="open-demo"
+                  onClick={() => props.onDemoLogin?.(role)}
+                  className="w-full py-3 rounded-2xl border border-primary/40 bg-primary text-primary-foreground text-sm font-bold active:opacity-90 transition-opacity"
+                >
+                  Открыть демо · {role === "client" ? "Заказчик" : role === "dispatcher" ? "Диспетчер" : "Грузчик"}
+                </button>
+              </div>
             )}
 
             <button

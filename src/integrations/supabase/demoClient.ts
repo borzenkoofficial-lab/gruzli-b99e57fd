@@ -25,7 +25,36 @@ const DEMO_DISPATCHER_PROFILES = Object.entries(DEMO_DISPATCHER_NAMES).map(([use
 }));
 
 const seed: Record<string, Row[]> = {
-  jobs: DEMO_FEED_JOBS.map((job) => ({ ...job })),
+  jobs: [
+    ...DEMO_FEED_JOBS.map((job) => ({ ...job })),
+    {
+      id: "demo-job-open-dispatch",
+      client_id: DEMO_USERS.client.id,
+      title: "Тестовая заявка · Демонтаж и вынос",
+      description: "Демо-заказ для проверки цепочки: предложение диспетчера → отклик грузчика → выполнение.",
+      address: "Москва, Тестовый объект, 1",
+      metro: "Тестовая",
+      hourly_rate: 900,
+      duration_hours: 4,
+      workers_needed: 1,
+      urgent: false,
+      quick_minimum: false,
+      is_bot: false,
+      is_official: true,
+      dispatcher_id: null,
+      dispatcher_income: null,
+      expense_per_worker: null,
+      requires_contract: false,
+      recurring_rule: null,
+      replacement_for_job_id: null,
+      replacement_for_worker_id: null,
+      template_id: null,
+      status: "open",
+      created_at: "2026-11-24T09:00:00.000Z",
+      updated_at: "2026-11-24T09:00:00.000Z",
+      start_time: "2026-11-25T10:00:00+03:00",
+    },
+  ],
   profiles: [
     {
       user_id: DEMO_USERS.worker.id,
@@ -78,8 +107,21 @@ const seed: Record<string, Row[]> = {
 function loadDb(): Record<string, Row[]> {
   try {
     const raw = localStorage.getItem(DB_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch {}
+    if (raw) {
+      const parsed = JSON.parse(raw) as Record<string, Row[]>;
+      for (const [table, rows] of Object.entries(seed)) {
+        if (!Array.isArray(parsed[table])) parsed[table] = JSON.parse(JSON.stringify(rows));
+      }
+      const starterRequest = seed.jobs.find((job) => job.id === "demo-job-open-dispatch");
+      if (starterRequest && !parsed.jobs.some((job) => job.id === starterRequest.id)) {
+        parsed.jobs.push({ ...starterRequest });
+      }
+      localStorage.setItem(DB_KEY, JSON.stringify(parsed));
+      return parsed;
+    }
+  } catch {
+    // A malformed demo-only database is safely rebuilt from the demo seed.
+  }
   const copy = JSON.parse(JSON.stringify(seed));
   localStorage.setItem(DB_KEY, JSON.stringify(copy));
   return copy;
@@ -299,6 +341,9 @@ async function rpc(name: string, args: Record<string, any> = {}) {
   if (name === "get_support_user_id") return { data: "demo-support", error: null };
   if (name === "client_create_job") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "client") {
+      return { data: null, error: { code: "42501", message: "client_role_required" } };
+    }
     const title = String(args._title || "").trim();
     const address = String(args._address || "").trim();
     const rate = Number(args._hourly_rate);
@@ -312,6 +357,9 @@ async function rpc(name: string, args: Record<string, any> = {}) {
   }
   if (name === "dispatcher_submit_offer") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "dispatcher") {
+      return { data: null, error: { code: "42501", message: "dispatcher_role_required" } };
+    }
     const job = db.jobs.find((j) => j.id === args._job_id);
     if (!job || job.status !== "open" || job.dispatcher_id) return { data: null, error: { code: "P0001", message: "Заказ уже недоступен" } };
     const rate = Number(args._proposed_hourly_rate);
@@ -326,6 +374,9 @@ async function rpc(name: string, args: Record<string, any> = {}) {
   }
   if (name === "client_select_dispatcher_offer") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "client") {
+      return { data: null, error: { code: "42501", message: "client_role_required" } };
+    }
     const offer = db.dispatcher_offers.find((o) => o.id === args._offer_id && o.status === "pending");
     if (!offer) return { data: null, error: { code: "P0002", message: "Предложение уже недоступно" } };
     const job = db.jobs.find((j) => j.id === offer.job_id);
@@ -358,6 +409,9 @@ async function rpc(name: string, args: Record<string, any> = {}) {
   }
   if (name === "accept_job_response") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "dispatcher") {
+      return { data: null, error: { code: "42501", message: "dispatcher_role_required" } };
+    }
     const response = db.job_responses.find((r) => r.id === args._response_id && r.status === "pending");
     if (!response) return { data: null, error: { code: "P0002", message: "Отклик уже обработан" } };
     const job = db.jobs.find((j) => j.id === response.job_id);
@@ -378,29 +432,57 @@ async function rpc(name: string, args: Record<string, any> = {}) {
   }
   if (name === "worker_update_response_status") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "worker") {
+      return { data: null, error: { code: "42501", message: "Нужна роль грузчика" } };
+    }
     const response = db.job_responses.find((r) => r.id === args._response_id && r.worker_id === user.id && r.status === "accepted");
     if (!response) return { data: null, error: { code: "42501", message: "Нет доступа к назначенному заказу" } };
-    const allowed = ["confirmed", "en_route", "late", "arrived", "finishing", "completed"];
-    if (!allowed.includes(args._next_status)) return { data: null, error: { code: "22023", message: "Недопустимый статус" } };
+    const nextStatus = String(args._next_status || "");
+    const current = response.worker_status ?? "ready";
     const transitions: Record<string, string[]> = {
-      accepted: ["confirmed"], confirmed: ["en_route", "late"], en_route: ["arrived", "late"],
-      late: ["en_route", "arrived"], arrived: ["finishing", "completed"], finishing: ["completed"],
+      ready: ["confirmed"],
+      confirmed: ["en_route", "late"],
+      en_route: ["arrived", "late"],
+      late: ["en_route", "arrived"],
+      arrived: ["completed"],
+      finishing: ["completed"],
     };
-    const current = response.worker_status || "accepted";
-    if (!transitions[current]?.includes(args._next_status)) return { data: null, error: { code: "P0001", message: "Сначала выполните предыдущий шаг" } };
-    const now = new Date().toISOString();
-    response.worker_status = args._next_status;
-    if (args._next_status === "arrived") response.work_started_at = response.work_started_at || now;
-    if (args._next_status === "completed") {
-      response.work_finished_at = now;
-      const started = response.work_started_at ? new Date(response.work_started_at).getTime() : Date.now();
-      response.hours_worked = Math.max(0, Math.round(((Date.now() - started) / 3600000) * 100) / 100);
-      const job = db.jobs.find((j) => j.id === response.job_id);
-      response.earned = response.hours_worked * Number(response.agreed_hourly_rate || job?.hourly_rate || 0);
-      const otherActive = db.job_responses.some((r) => r.job_id === response.job_id && r.id !== response.id && r.status === "accepted" && r.worker_status !== "completed");
-      if (!otherActive && job) job.status = "completed";
+    if (!transitions[current]?.includes(nextStatus)) {
+      return { data: null, error: { code: "P0001", message: "invalid_transition" } };
     }
-    saveDb(db); return { data: response, error: null };
+
+    const now = new Date().toISOString();
+    if (nextStatus === "completed" && !response.work_started_at) {
+      return { data: null, error: { code: "P0001", message: "work_not_started" } };
+    }
+
+    response.worker_status = nextStatus;
+    if (nextStatus === "arrived") response.work_started_at = response.work_started_at || now;
+    if (nextStatus === "completed") {
+      response.work_finished_at = now;
+      const startedAt = new Date(response.work_started_at).getTime();
+      const elapsedHours = Math.max(0, (Date.now() - startedAt) / 3600000);
+      response.hours_worked = Math.max(0.5, Math.round(elapsedHours * 10) / 10);
+      response.earned = Math.round(response.hours_worked * Number(response.agreed_hourly_rate || 0));
+      const workerProfile = db.profiles.find((profile) => profile.user_id === user.id);
+      if (workerProfile) {
+        workerProfile.completed_orders = Number(workerProfile.completed_orders || 0) + 1;
+        workerProfile.total_earned = Number(workerProfile.total_earned || 0) + Number(response.earned || 0);
+      }
+    }
+
+    saveDb(db);
+    return {
+      data: {
+        response_id: response.id,
+        worker_status: response.worker_status,
+        work_started_at: response.work_started_at ?? null,
+        work_finished_at: response.work_finished_at ?? null,
+        hours_worked: response.hours_worked ?? null,
+        earned: response.earned ?? null,
+      },
+      error: null,
+    };
   }
   if (name === "worker_withdraw_response") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
@@ -534,7 +616,78 @@ async function rpc(name: string, args: Record<string, any> = {}) {
       totalRatings: ratings.length,
     }, error: null };
   }
-  if (name === "dispatcher_finish_job" || name === "dispatcher_complete_job" || name === "dispatcher_review_worker") return { data: {}, error: null };
+  if (name === "dispatcher_finish_job") {
+    if (!user) return { data: null, error: { code: "42501", message: "not_authenticated" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "dispatcher") {
+      return { data: null, error: { code: "42501", message: "dispatcher_role_required" } };
+    }
+    const job = db.jobs.find((row) => row.id === args._job_id);
+    if (!job || job.dispatcher_id !== user.id) {
+      return { data: null, error: { code: "42501", message: "not_job_dispatcher" } };
+    }
+    const pendingWorkers = db.job_responses.filter((response) =>
+      response.job_id === job.id && response.status === "accepted" && response.worker_status !== "completed"
+    );
+    pendingWorkers.forEach((response) => { response.worker_status = "finishing"; });
+    job.status = "finishing";
+    job.updated_at = new Date().toISOString();
+    saveDb(db);
+    return { data: { job_id: job.id, status: "finishing", workers_not_completed: pendingWorkers.length }, error: null };
+  }
+
+  if (name === "dispatcher_complete_job") {
+    if (!user) return { data: null, error: { code: "42501", message: "not_authenticated" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "dispatcher") {
+      return { data: null, error: { code: "42501", message: "dispatcher_role_required" } };
+    }
+    const expense = Number(args._expense_per_worker);
+    const income = Number(args._dispatcher_income);
+    if (!Number.isFinite(expense) || !Number.isFinite(income) || expense < 0 || income < 0) {
+      return { data: null, error: { code: "22023", message: "invalid_amount" } };
+    }
+    const job = db.jobs.find((row) => row.id === args._job_id);
+    if (!job || job.dispatcher_id !== user.id) {
+      return { data: null, error: { code: "42501", message: "not_job_dispatcher" } };
+    }
+    if (!["active", "filled", "finishing"].includes(job.status)) {
+      return { data: null, error: { code: "P0001", message: "job_not_completable" } };
+    }
+    const accepted = db.job_responses.filter((response) => response.job_id === job.id && response.status === "accepted");
+    if (accepted.length === 0) return { data: null, error: { code: "P0001", message: "no_assigned_workers" } };
+    if (accepted.some((response) => response.worker_status !== "completed")) {
+      return { data: null, error: { code: "P0001", message: "workers_not_completed" } };
+    }
+    job.status = "completed";
+    job.expense_per_worker = expense;
+    job.dispatcher_income = income;
+    job.updated_at = new Date().toISOString();
+    saveDb(db);
+    return { data: { job_id: job.id, status: "completed" }, error: null };
+  }
+
+  if (name === "dispatcher_review_worker") {
+    if (!user) return { data: null, error: { code: "42501", message: "not_authenticated" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "dispatcher") {
+      return { data: null, error: { code: "42501", message: "dispatcher_role_required" } };
+    }
+    const rating = Number(args._rating);
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      return { data: null, error: { code: "22023", message: "invalid_rating" } };
+    }
+    const response = db.job_responses.find((row) => row.id === args._response_id);
+    if (!response) return { data: null, error: { code: "P0002", message: "response_not_found" } };
+    const job = db.jobs.find((row) => row.id === response.job_id);
+    if (!job || job.dispatcher_id !== user.id) {
+      return { data: null, error: { code: "42501", message: "not_job_dispatcher" } };
+    }
+    if (response.worker_status !== "completed") {
+      return { data: null, error: { code: "P0001", message: "worker_not_completed" } };
+    }
+    response.dispatcher_review_rating = rating;
+    response.dispatcher_review_text = String(args._text || "").trim() || null;
+    saveDb(db);
+    return { data: { response_id: response.id, rating }, error: null };
+  }
   if (name === "create_direct_conversation") {
     if (!user || !args._other_user_id) return { data: null, error: { message: "invalid_participant" } };
     const existing = db.conversation_participants
@@ -638,6 +791,12 @@ const demoSupabase = {
   removeChannel: (_channel: any) => {},
   removeAllChannels: () => {},
 } as any;
+
+export function resetDemoDatabase() {
+  localStorage.removeItem(SESSION_KEY);
+  // Re-seed synchronously so the workspace is ready even before the first screen query.
+  localStorage.setItem(DB_KEY, JSON.stringify(JSON.parse(JSON.stringify(seed))));
+}
 
 export const supabase = demoSupabase;
 export default demoSupabase;

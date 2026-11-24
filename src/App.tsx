@@ -9,6 +9,7 @@ import { usePresence } from "@/hooks/usePresence";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import SplashScreen from "@/components/SplashScreen";
+import DemoModeBar from "@/components/DemoModeBar";
 import NewJobAlert from "@/components/NewJobAlert";
 import AppRatingModal from "@/components/AppRatingModal";
 import OnboardingTour from "@/components/OnboardingTour";
@@ -75,11 +76,21 @@ const AppRoutes = () => {
   }
 
   if (!user && !isConsentRoute && !(DEMO_ENABLED && demoWorkerMode)) {
-    return <AuthPage onDemoLogin={DEMO_ENABLED ? () => { localStorage.setItem("gruzli_demo_worker", "1"); setDemoWorkerMode(true); window.dispatchEvent(new Event("gruzli-demo-change")); } : undefined} />;
+    return (
+      <AuthPage
+        onDemoLogin={DEMO_ENABLED ? (selectedRole) => {
+          localStorage.setItem("gruzli_demo_worker", "1");
+          localStorage.setItem("gruzli_demo_role", selectedRole);
+          setDemoWorkerMode(true);
+          window.dispatchEvent(new Event("gruzli-demo-change"));
+        } : undefined}
+      />
+    );
   }
 
   return (
     <>
+      <DemoModeBar />
       {showOnboarding && (
         <OnboardingTour onComplete={() => setShowOnboarding(false)} />
       )}

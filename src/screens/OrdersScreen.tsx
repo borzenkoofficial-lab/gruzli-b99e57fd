@@ -368,8 +368,10 @@ const OrdersScreen = () => {
     );
   }
 
-  const unconfirmed = jobs.filter((j) => !j.workerStatus);
-  const confirmed = jobs.filter((j) => j.workerStatus && j.workerStatus !== "finishing");
+  // The server initializes accepted responses with worker_status = "ready".
+  // Treat that state as awaiting the worker's explicit confirmation.
+  const unconfirmed = jobs.filter((j) => !j.workerStatus || j.workerStatus === "ready");
+  const confirmed = jobs.filter((j) => j.workerStatus && j.workerStatus !== "ready" && j.workerStatus !== "finishing");
   const finishing = jobs.filter((j) => j.workerStatus === "finishing");
 
   return (
