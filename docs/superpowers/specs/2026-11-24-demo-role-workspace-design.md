@@ -1,7 +1,7 @@
 # Gruzli demo role workspace — design
 
 Date: 2026-11-24
-Status: awaiting owner approval
+Status: approved by owner; implementation in progress
 Base: main at eb40eef3646813f7517d2559fa41d0576613b70c
 
 ## Intent
