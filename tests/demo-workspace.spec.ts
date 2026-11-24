@@ -72,3 +72,49 @@ test("demo reset rebuilds only the local demo database", async ({ page }) => {
       !db.jobs?.some((job: { id: string }) => job.id === "temporary-test-row");
   })).toBe(true);
 });
+
+
+test("worker can confirm an accepted response initialized as ready", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    localStorage.setItem("gruzli_demo_worker", "1");
+    localStorage.setItem("gruzli_demo_role", "worker");
+    localStorage.setItem("onboarding_completed", "1");
+    localStorage.setItem("gruzli_demo_db_v3", JSON.stringify({
+      jobs: [{
+        id: "demo-ready-job",
+        client_id: "demo-client",
+        dispatcher_id: "demo-dispatcher",
+        title: "Тест подтверждения заказа",
+        description: "Проверка статуса ready",
+        address: "Москва, Тестовая улица, 20",
+        metro: "Тестовая",
+        hourly_rate: 900,
+        duration_hours: 4,
+        workers_needed: 1,
+        status: "filled",
+        created_at: "2026-11-24T09:00:00.000Z",
+      }],
+      job_responses: [{
+        id: "demo-ready-response",
+        job_id: "demo-ready-job",
+        worker_id: "demo-worker",
+        status: "accepted",
+        worker_status: "ready",
+        agreed_hourly_rate: 900,
+        created_at: "2026-11-24T09:05:00.000Z",
+      }],
+      profiles_public: [{
+        user_id: "demo-dispatcher",
+        full_name: "Анна Петрова",
+        avatar_url: null,
+      }],
+    }));
+  });
+
+  await page.goto("/");
+  await page.getByRole("tab", { name: "Заказы" }).click();
+  await expect(page.getByRole("button", { name: /Подтвердить заказ/ })).toBeVisible();
+  await page.getByRole("button", { name: /Подтвердить заказ/ }).click();
+  await expect(page.getByRole("button", { name: "Выехал" })).toBeVisible();
+});
