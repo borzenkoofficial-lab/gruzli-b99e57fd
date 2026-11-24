@@ -54,6 +54,9 @@ test("switching demo roles preserves the shared local database", async ({ page }
 
 test("demo reset rebuilds only the local demo database", async ({ page }) => {
   await page.addInitScript(() => {
+    // addInitScript runs again after reload; seed the pre-reset fixture only once.
+    if (localStorage.getItem("demo-reset-test-initialized") === "1") return;
+    localStorage.setItem("demo-reset-test-initialized", "1");
     localStorage.setItem("gruzli_demo_worker", "1");
     localStorage.setItem("gruzli_demo_role", "dispatcher");
     localStorage.setItem("onboarding_completed", "1");
