@@ -341,6 +341,9 @@ async function rpc(name: string, args: Record<string, any> = {}) {
   if (name === "get_support_user_id") return { data: "demo-support", error: null };
   if (name === "client_create_job") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "client") {
+      return { data: null, error: { code: "42501", message: "client_role_required" } };
+    }
     const title = String(args._title || "").trim();
     const address = String(args._address || "").trim();
     const rate = Number(args._hourly_rate);
@@ -354,6 +357,9 @@ async function rpc(name: string, args: Record<string, any> = {}) {
   }
   if (name === "dispatcher_submit_offer") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "dispatcher") {
+      return { data: null, error: { code: "42501", message: "dispatcher_role_required" } };
+    }
     const job = db.jobs.find((j) => j.id === args._job_id);
     if (!job || job.status !== "open" || job.dispatcher_id) return { data: null, error: { code: "P0001", message: "Заказ уже недоступен" } };
     const rate = Number(args._proposed_hourly_rate);
@@ -368,6 +374,9 @@ async function rpc(name: string, args: Record<string, any> = {}) {
   }
   if (name === "client_select_dispatcher_offer") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "client") {
+      return { data: null, error: { code: "42501", message: "client_role_required" } };
+    }
     const offer = db.dispatcher_offers.find((o) => o.id === args._offer_id && o.status === "pending");
     if (!offer) return { data: null, error: { code: "P0002", message: "Предложение уже недоступно" } };
     const job = db.jobs.find((j) => j.id === offer.job_id);
@@ -400,6 +409,9 @@ async function rpc(name: string, args: Record<string, any> = {}) {
   }
   if (name === "accept_job_response") {
     if (!user) return { data: null, error: { code: "42501", message: "Не авторизован" } };
+    if ((user.user_metadata?.role || profileFor(user)?.role) !== "dispatcher") {
+      return { data: null, error: { code: "42501", message: "dispatcher_role_required" } };
+    }
     const response = db.job_responses.find((r) => r.id === args._response_id && r.status === "pending");
     if (!response) return { data: null, error: { code: "P0002", message: "Отклик уже обработан" } };
     const job = db.jobs.find((j) => j.id === response.job_id);
