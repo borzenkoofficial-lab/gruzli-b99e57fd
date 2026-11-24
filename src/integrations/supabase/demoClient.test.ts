@@ -204,7 +204,10 @@ describe("local demo order lifecycle", () => {
     expect(localStorage.getItem("gruzli_demo_role")).toBe("dispatcher");
     expect(localStorage.getItem("onboarding_completed")).toBe("1");
     expect(localStorage.getItem("unrelated-preference")).toBe("keep-me");
-    expect(localStorage.getItem(DB_KEY)).toBeNull();
+
+    const resetDb = JSON.parse(localStorage.getItem(DB_KEY) || "{}");
+    expect(resetDb.jobs.some((job: any) => job.id === "demo-job-open-dispatch")).toBe(true);
+    expect(resetDb.jobs.some((job: any) => job.title === "Временная заявка")).toBe(false);
 
     const seeded = await demoSupabase.from("jobs").select("*");
     expect(seeded.data.some((job: any) => job.id === "demo-job-open-dispatch")).toBe(true);
