@@ -18,7 +18,7 @@ Gruzli has a substantial frontend foundation and a real CI pipeline, but the rep
 
 ## Confirmed findings
 
-### P0 — Production architecture is not yet an approved, integrated target
+### P1 — Production architecture is not yet an approved, integrated target
 
 The current `main` application still uses the Supabase client and the existing Supabase integration layer. The repository contains a draft Amvera migration PR (#14), a demo-mode PR that removes the Supabase runtime dependency (#44), and an ADR proposal explicitly recording that backend/runtime selection requires an owner decision (#46).
 
