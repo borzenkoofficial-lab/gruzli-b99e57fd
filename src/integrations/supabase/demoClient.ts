@@ -793,8 +793,9 @@ const demoSupabase = {
 } as any;
 
 export function resetDemoDatabase() {
-  localStorage.removeItem(DB_KEY);
   localStorage.removeItem(SESSION_KEY);
+  // Re-seed synchronously so the workspace is ready even before the first screen query.
+  localStorage.setItem(DB_KEY, JSON.stringify(JSON.parse(JSON.stringify(seed))));
 }
 
 export const supabase = demoSupabase;
