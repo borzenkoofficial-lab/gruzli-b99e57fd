@@ -67,7 +67,7 @@ These changes affect the production client/runtime boundary and remove Supabase 
 - Keep one shared localStorage database for all three personas so records created in one role are visible to the others.
 - Add one unassigned, open demo request with client_id = demo-client, dispatcher_id = null, and valid fields required by the dispatcher offer flow.
 - Preserve existing active worker feed jobs.
-- Add an explicit “Сбросить демо” action. It clears only the demo database key, reinitializes from seed on next read, preserves the selected demo role and normal app preferences, then reloads the current page.
+- Add an explicit “Сбросить демо” action. It replaces only the local demo database with a fresh seed synchronously, preserves the selected demo role and normal app preferences, clears the demo auth session, then reloads the current page.
 - Do not clear arbitrary localStorage keys, Supabase auth state, or production data.
 
 ### Order lifecycle
