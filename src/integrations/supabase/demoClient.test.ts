@@ -187,13 +187,16 @@ describe("local demo order lifecycle", () => {
     localStorage.setItem("onboarding_completed", "1");
     localStorage.setItem("unrelated-preference", "keep-me");
 
-    await demoSupabase.rpc("client_create_job", {
+    useRole("client");
+    const temporaryJob = await demoSupabase.rpc("client_create_job", {
       _title: "Временная заявка",
       _address: "Москва, Тестовая улица, 12",
       _hourly_rate: 500,
       _duration_hours: 2,
       _workers_needed: 1,
     });
+    expect(temporaryJob.error).toBeNull();
+    useRole("dispatcher");
 
     resetDemoDatabase();
 
