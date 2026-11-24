@@ -36,6 +36,7 @@ test("switching demo roles preserves the shared local database", async ({ page }
   await expect.poll(() => page.evaluate(() => localStorage.getItem("gruzli_demo_role"))).toBe("dispatcher");
   await expect(roleSelect).toHaveValue("dispatcher");
   await expect(page.getByText("GRUZLI / DISPATCH")).toBeVisible();
+  await expect(page.getByText("Тестовая заявка · Демонтаж и вынос")).toBeVisible();
 
   await roleSelect.selectOption("client");
   await expect.poll(() => page.evaluate(() => localStorage.getItem("gruzli_demo_role"))).toBe("client");
