@@ -31,6 +31,7 @@ export default function DemoModeBar() {
     <div
       data-testid="demo-mode-bar"
       className="fixed right-3 top-[calc(env(safe-area-inset-top,0px)+8px)] z-[80] flex max-w-[calc(100vw-24px)] items-center gap-2 rounded-2xl border border-primary/30 bg-card/95 p-2 shadow-xl backdrop-blur-md"
+      role="group"
       aria-label="Управление деморежимом"
     >
       <span className="rounded-lg bg-primary px-2 py-1 text-[9px] font-black tracking-wider text-primary-foreground">DEMO</span>
@@ -40,7 +41,7 @@ export default function DemoModeBar() {
         aria-label="Тестовая роль"
         value={activeRole}
         onChange={(event) => switchRole(event.target.value as (typeof ROLES)[number]["value"])}
-        className="max-w-[112px] rounded-lg border border-border bg-background px-2 py-1.5 text-[11px] font-semibold text-foreground outline-none"
+        className="min-h-11 max-w-[120px] rounded-lg border border-border bg-background px-2.5 py-2 text-base font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       >
         {ROLES.map((item) => (
           <option key={item.value} value={item.value}>{item.label}</option>
@@ -49,7 +50,7 @@ export default function DemoModeBar() {
       <button
         type="button"
         onClick={reset}
-        className="rounded-lg border border-border px-2 py-1.5 text-[10px] font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className="min-h-11 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       >
         Сброс
       </button>
