@@ -380,7 +380,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: (role: Role) => void
                       data-testid={`demo-role-${item.id}`}
                       aria-pressed={role === item.id}
                       onClick={() => setRole(item.id)}
-                      className={`rounded-xl border px-2 py-3 text-center transition-colors ${role === item.id ? "border-primary bg-primary/10 text-foreground" : "border-border bg-card text-muted-foreground"}`}
+                      className={`rounded-xl border px-2 py-3 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${role === item.id ? "border-primary bg-primary/10 text-foreground" : "border-border bg-card text-muted-foreground"}`}
                     >
                       <item.icon size={18} className="mx-auto mb-1" />
                       <span className="text-[11px] font-bold">{item.label}</span>
