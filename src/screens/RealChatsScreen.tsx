@@ -211,7 +211,7 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
       });
 
       const allOtherIds = [...new Set(Object.values(participantsByConv).flat())];
-      let profileMap: Record<string, { name: string; lastSeen: string | null; avatarUrl: string | null }> = {};
+      const profileMap: Record<string, { name: string; lastSeen: string | null; avatarUrl: string | null }> = {};
       if (allOtherIds.length > 0) {
         const { data: profiles } = await supabase.from("profiles_public" as any).select("user_id, full_name, last_seen_at, avatar_url").in("user_id", allOtherIds);
         (profiles as any[])?.forEach(p => { profileMap[p.user_id] = { name: p.full_name, lastSeen: p.last_seen_at, avatarUrl: p.avatar_url }; });
