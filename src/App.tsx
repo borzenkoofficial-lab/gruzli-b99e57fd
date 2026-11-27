@@ -14,6 +14,7 @@ import AppRatingModal from "@/components/AppRatingModal";
 import OnboardingTour from "@/components/OnboardingTour";
 import IncomingCallListener from "@/components/chat/IncomingCallListener";
 import type { Tables } from "@/integrations/supabase/types";
+import { DEMO_ENABLED } from "@/integrations/supabase/client";
 
 import Index from "./pages/Index";
 import AuthPage from "./pages/AuthPage";
@@ -23,7 +24,6 @@ const AdminPage = lazy(() => import("./pages/AdminPage"));
 const UnsubscribePage = lazy(() => import("./pages/UnsubscribePage"));
 const OAuthConsent = lazy(() => import("./pages/OAuthConsent"));
 
-const DEMO_ENABLED = import.meta.env.DEV && import.meta.env.VITE_GRUZLI_DEMO_MODE === "true";
 
 const queryClient = new QueryClient({
   defaultOptions: {

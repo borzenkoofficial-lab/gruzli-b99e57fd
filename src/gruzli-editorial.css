@@ -5918,10 +5918,6 @@ button.bg-foreground:active{
     z-index:1000!important;
   }
 
-  .bottom-nav-pill {
-
-    pointer-events:auto;
-  }
 }
 
 @media (min-width:768px) and (max-width:1199px) {

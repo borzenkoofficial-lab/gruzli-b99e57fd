@@ -13,7 +13,9 @@ function vibrate() {
   if (!vibration) return;
   try {
     navigator.vibrate?.([200, 100, 200, 100, 300]);
-  } catch {}
+  } catch {
+    // Vibration is an optional browser capability.
+  }
 }
 
 async function showForegroundNotification(title: string, body: string, tag: string, url?: string) {
@@ -36,16 +38,25 @@ async function showForegroundNotification(title: string, body: string, tag: stri
       await registration.showNotification(title, options);
       return;
     }
-  } catch {}
+  } catch {
+    // Fall back to the Notification constructor when service workers are unavailable.
+  }
 
   try {
     new Notification(title, options);
-  } catch {}
+  } catch {
+    // The browser may reject notification creation; the in-app toast remains available.
+  }
 }
 
 interface UseRealtimeNotificationsOptions {
   onNewJob?: (job: Tables<"jobs">) => void;
 }
+
+type RealtimePayload<T> = {
+  new: T;
+  old: Partial<T>;
+};
 
 export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptions) {
   const { user, role } = useAuth();
@@ -62,7 +73,7 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
     onNewJobRef.current = options?.onNewJob;
   }, [options?.onNewJob]);
 
-  const handleNewJob = useCallback((payload: any) => {
+  const handleNewJob = useCallback((payload: RealtimePayload<Tables<"jobs">>) => {
     if (roleRef.current !== "worker") return;
     const job = payload.new as Tables<"jobs">;
     if (!job) return;
@@ -88,7 +99,7 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
     }
   }, []);
 
-  const handleNewMessage = useCallback((payload: any) => {
+  const handleNewMessage = useCallback((payload: RealtimePayload<Tables<"messages">>) => {
     const msg = payload.new;
     if (!msg) return;
     if (msg.sender_id === userIdRef.current) return;
@@ -123,7 +134,7 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
     }, userIdRef.current);
   }, []);
 
-  const handleResponseUpdate = useCallback((payload: any) => {
+  const handleResponseUpdate = useCallback((payload: RealtimePayload<Tables<"job_responses">>) => {
     const resp = payload.new;
     const old = payload.old;
     if (!resp) return;
@@ -185,9 +196,12 @@ export function useRealtimeNotifications(options?: UseRealtimeNotificationsOptio
 
     const channel = supabase
       .channel("realtime-notifications")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "jobs" }, handleNewJob)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, handleNewMessage)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "job_responses" }, handleResponseUpdate)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "jobs" }, (payload) =>
+        handleNewJob(payload as unknown as RealtimePayload<Tables<"jobs">>))
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) =>
+        handleNewMessage(payload as unknown as RealtimePayload<Tables<"messages">>))
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "job_responses" }, (payload) =>
+        handleResponseUpdate(payload as unknown as RealtimePayload<Tables<"job_responses">>))
       .subscribe();
 
     return () => {

@@ -390,7 +390,11 @@ const EntryDetail = ({ entry, isOwner, onBack, onEdit, onDelete }: EntryDetailPr
             <div className="space-y-2">
               {entry.social_links.map((link, li) => {
                 let hostname = link;
-                try { hostname = new URL(link).hostname.replace("www.", ""); } catch {}
+                try {
+                  hostname = new URL(link).hostname.replace("www.", "");
+                } catch {
+                  // Keep the original label when a saved link is not a valid URL.
+                }
                 return (
                   <a
                     key={li}

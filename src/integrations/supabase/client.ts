@@ -1,13 +1,22 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 import demoSupabase from "./demoClient";
+import { resolveDemoMode } from "./demoMode";
 
-const DEMO_ENABLED = import.meta.env.DEV && import.meta.env.VITE_GRUZLI_DEMO_MODE === "true";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const DEMO_MODE_SETTING = import.meta.env.VITE_GRUZLI_DEMO_MODE;
+
+export const DEMO_ENABLED = resolveDemoMode({
+  isDevelopment: import.meta.env.DEV,
+  vercelEnvironment: import.meta.env.VERCEL_ENV,
+  setting: DEMO_MODE_SETTING,
+  supabaseUrl: SUPABASE_URL,
+  supabasePublishableKey: SUPABASE_PUBLISHABLE_KEY,
+});
 
 if (!DEMO_ENABLED && (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY)) {
-  throw new Error("Gruzli: VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are required in production.");
+  throw new Error("Gruzli: VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are required when Demo Mode is disabled.");
 }
 
 export const supabase = DEMO_ENABLED

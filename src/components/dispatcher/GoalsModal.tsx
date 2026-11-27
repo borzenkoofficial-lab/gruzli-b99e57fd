@@ -7,6 +7,14 @@ import { toast } from "sonner";
 
 interface ChecklistItem { id: string; text: string; done: boolean }
 
+const isChecklistItem = (value: unknown): value is ChecklistItem => {
+  if (typeof value !== "object" || value === null) return false;
+  const item = value as Record<string, unknown>;
+  return typeof item.id === "string" &&
+    typeof item.text === "string" &&
+    typeof item.done === "boolean";
+};
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -37,7 +45,7 @@ const GoalsModal = ({ open, onClose, todayProfit, weekProfit }: Props) => {
         setDayGoal(String(data.daily_profit_goal || ""));
         setWeekGoal(String(data.weekly_profit_goal || ""));
         const stillToday = data.checklist_date === todayDate();
-        setChecklist(stillToday ? ((data.checklist as any) || []) : []);
+        setChecklist(stillToday && Array.isArray(data.checklist) ? data.checklist.filter(isChecklistItem) : []);
       }
       setLoading(false);
     };
@@ -46,11 +54,11 @@ const GoalsModal = ({ open, onClose, todayProfit, weekProfit }: Props) => {
 
   const persist = async (next: { day?: string; week?: string; list?: ChecklistItem[] }) => {
     if (!user) return;
-    const payload: any = {
+    const payload = {
       dispatcher_id: user.id,
       daily_profit_goal: parseInt(next.day ?? dayGoal) || 0,
       weekly_profit_goal: parseInt(next.week ?? weekGoal) || 0,
-      checklist: next.list ?? checklist,
+      checklist: (next.list ?? checklist).map(({ id, text, done }) => ({ id, text, done })),
       checklist_date: todayDate(),
     };
     const { error } = await supabase.from("dispatcher_goals").upsert(payload, { onConflict: "dispatcher_id" });

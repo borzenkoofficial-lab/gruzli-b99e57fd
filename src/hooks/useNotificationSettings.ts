@@ -30,7 +30,9 @@ function load(): NotificationSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return { ...defaults, ...JSON.parse(raw) };
-  } catch {}
+  } catch {
+    // Keep application defaults when local storage is unavailable or malformed.
+  }
   return { ...defaults };
 }
 
