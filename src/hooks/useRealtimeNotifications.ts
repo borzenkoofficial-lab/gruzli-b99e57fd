@@ -13,7 +13,9 @@ function vibrate() {
   if (!vibration) return;
   try {
     navigator.vibrate?.([200, 100, 200, 100, 300]);
-  } catch {}
+  } catch {
+    // Vibration is an optional browser capability.
+  }
 }
 
 async function showForegroundNotification(title: string, body: string, tag: string, url?: string) {
@@ -36,11 +38,15 @@ async function showForegroundNotification(title: string, body: string, tag: stri
       await registration.showNotification(title, options);
       return;
     }
-  } catch {}
+  } catch {
+    // Fall back to the Notification constructor when service workers are unavailable.
+  }
 
   try {
     new Notification(title, options);
-  } catch {}
+  } catch {
+    // The browser may reject notification creation; the in-app toast remains available.
+  }
 }
 
 interface UseRealtimeNotificationsOptions {
