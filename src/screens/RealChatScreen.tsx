@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
-import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, CheckCheck, Clock3, MoreVertical, Trash2, Ban, BellOff, Smile, Reply as ReplyIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -639,7 +638,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     else toast.success(`${resolvedTitle} добавлен в чёрный список`);
   };
 
-  const handleMuteNotifications = () => { setShowMenu(false); toast.success("Уведомления отключены"); };
 
   const hasActiveVoiceRoom = messages.some((m) => m.message_type === "voice_room" && m.sender_id !== user?.id);
 
@@ -757,9 +755,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
             </button>
             {showMenu && (
                 <div className="absolute right-0 top-11 w-52 bg-card border border-border rounded-2xl shadow-md z-50 overflow-hidden">
-                  <button onClick={handleMuteNotifications} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted/50 transition-colors">
-                    <BellOff size={16} className="text-muted-foreground" /> Без звука
-                  </button>
                   <button onClick={handleBlockUser} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted/50 transition-colors">
                     <Ban size={16} className="text-muted-foreground" /> Чёрный список
                   </button>
