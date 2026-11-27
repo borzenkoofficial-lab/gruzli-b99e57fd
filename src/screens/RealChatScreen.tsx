@@ -613,22 +613,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     }
   };
 
-  const handleDeleteConversation = async () => {
-    if (!user) return;
-    if (!window.confirm("Диалог будет удалён у всех участников. Продолжить?")) return;
-    setShowMenu(false);
-    const { data: mediaUrls, error } = await supabase.rpc('delete_conversation_fully', { _conversation_id: conversationId });
-    if (error) { toast.error("Ошибка удаления"); return; }
-    if (mediaUrls?.length) {
-      const paths = (mediaUrls as string[]).map(u => {
-        try { const url = new URL(u); const parts = url.pathname.split('/object/public/chat-media/'); return parts[1] || parts[0]; } catch { return u; }
-      }).filter(Boolean);
-      if (paths.length) await supabase.storage.from('chat-media').remove(paths);
-    }
-    toast.success("Диалог полностью удалён");
-    onBack();
-  };
-
   const handleBlockUser = async () => {
     if (!user || !otherUserId) return;
     setShowMenu(false);
@@ -757,9 +741,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
                 <div className="absolute right-0 top-11 w-52 bg-card border border-border rounded-2xl shadow-md z-50 overflow-hidden">
                   <button onClick={handleBlockUser} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted/50 transition-colors">
                     <Ban size={16} className="text-muted-foreground" /> Чёрный список
-                  </button>
-                  <button onClick={handleDeleteConversation} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 transition-colors">
-                    <Trash2 size={16} /> Удалить диалог
                   </button>
                 </div>
               )}
