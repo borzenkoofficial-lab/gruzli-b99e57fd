@@ -143,7 +143,7 @@ const THEMES: Record<BankCardTheme, ThemeConfig> = {
 
 const STORAGE_KEY = "gruzli-bank-card-theme";
 
-export const THEME_LIST: BankCardTheme[] = ["gruzli", "sber", "tinkoff", "alfa", "gold", "neon"];
+const THEME_LIST: BankCardTheme[] = ["gruzli", "sber", "tinkoff", "alfa", "gold", "neon"];
 
 interface BankCardProps {
   balance: number;
@@ -239,12 +239,18 @@ export const BankCard = ({
     try {
       const saved = localStorage.getItem(STORAGE_KEY) as BankCardTheme | null;
       if (saved && THEMES[saved]) setThemeId(saved);
-    } catch {}
+    } catch {
+      // Theme persistence is optional; keep the in-memory default.
+    }
   }, []);
 
   const setTheme = (t: BankCardTheme) => {
     setThemeId(t);
-    try { localStorage.setItem(STORAGE_KEY, t); } catch {}
+    try {
+      localStorage.setItem(STORAGE_KEY, t);
+    } catch {
+      // Theme persistence is optional; the current session still uses the selected theme.
+    }
   };
 
   const theme = THEMES[themeId];
