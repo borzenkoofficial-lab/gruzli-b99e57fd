@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, useMotionValue, useTransform, animate, type PanInfo } from "framer-motion";
-import { Search, Megaphone, Ban, MessageCircle } from "lucide-react";
+import { Search, Megaphone, Ban, MessageCircle, SlidersHorizontal, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -121,6 +121,7 @@ interface ConversationItem {
   id: string;
   title: string | null;
   is_group: boolean | null;
+  job_id?: string | null;
   lastMessage: string;
   lastTime: string;
   lastTimestamp: string;
@@ -143,6 +144,7 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [communityId, setCommunityId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<"all" | "unread" | "personal" | "work" | "groups">("all");
   const [loading, setLoading] = useState(true);
 
   const fetchConversations = useCallback(async () => {
@@ -236,6 +238,7 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
           id: conv.id,
           title: conv.title,
           is_group: conv.is_group,
+          job_id: conv.job_id,
           lastMessage: lastMsgText,
           lastTime: lastMsg?.created_at
             ? new Date(lastMsg.created_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
@@ -317,9 +320,26 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
     return () => { supabase.removeChannel(channel); };
   }, [user, fetchConversations, isDemo]);
 
-  const filtered = conversations.filter((c) =>
-    c.otherName.toLowerCase().includes(search.toLowerCase())
-  );
+  const normalizedSearch = search.trim().toLocaleLowerCase("ru-RU");
+  const filtered = conversations.filter((conv) => {
+    const matchesSearch = !normalizedSearch ||
+      conv.otherName.toLocaleLowerCase("ru-RU").includes(normalizedSearch) ||
+      conv.lastMessage.toLocaleLowerCase("ru-RU").includes(normalizedSearch);
+    if (!matchesSearch) return false;
+    if (activeTab === "unread") return conv.unreadCount > 0;
+    if (activeTab === "personal") return !conv.is_group && !conv.job_id && !conv.isCommunity;
+    if (activeTab === "work") return Boolean(conv.job_id);
+    if (activeTab === "groups") return Boolean(conv.is_group) && !conv.isCommunity;
+    return true;
+  });
+
+  const tabs = [
+    { id: "all", label: "Все", count: conversations.length },
+    { id: "unread", label: "Непрочитанные", count: conversations.filter((c) => c.unreadCount > 0).length },
+    { id: "personal", label: "Личные" },
+    { id: "work", label: "Рабочие" },
+    { id: "groups", label: "Группы" },
+  ] as const;
 
   return (
     <div className="gruzli-chats-screen">
@@ -330,14 +350,50 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
 
       {/* Search */}
       <div className="px-5 pb-3">
-        <div className="relative">
-          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative group">
+          <Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Поиск..."
-            className="w-full min-h-[46px] bg-card rounded-[14px] py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none border border-border focus:border-foreground/20 transition-colors"
+            placeholder="Поиск чатов и сообщений"
+            aria-label="Поиск чатов и последних сообщений"
+            className="w-full min-h-[48px] bg-card/80 rounded-[17px] py-3 pl-11 pr-11 text-sm text-foreground placeholder:text-muted-foreground outline-none border border-border/70 focus:border-primary/50 focus:bg-card transition-all"
           />
+          {search ? (
+            <button type="button" onClick={() => setSearch("")} aria-label="Очистить поиск" className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground">
+              <X size={16} />
+            </button>
+          ) : (
+            <SlidersHorizontal size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground/70" />
+          )}
+        </div>
+      </div>
+
+      {/* Built-in folders */}
+      <div className="pb-3">
+        <div className="flex items-center gap-2 overflow-x-auto px-5 scrollbar-none" role="tablist" aria-label="Фильтры чатов">
+          {tabs.map((tab) => {
+            const selected = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => setActiveTab(tab.id)}
+                className={`shrink-0 min-h-[36px] px-3.5 rounded-full text-[12px] font-semibold border transition-all ${
+                  selected
+                    ? "bg-foreground text-background border-foreground shadow-sm"
+                    : "bg-card/60 text-muted-foreground border-border/70 hover:border-foreground/25 hover:text-foreground"
+                }`}
+              >
+                {tab.label}
+                {"count" in tab && tab.count > 0 && (
+                  <span className={`ml-1.5 tabular-nums ${selected ? "opacity-70" : "opacity-60"}`}>{tab.count}</span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
