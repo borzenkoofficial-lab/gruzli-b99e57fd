@@ -1,17 +1,19 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 import demoSupabase from "./demoClient";
+import { resolveDemoMode } from "./demoMode";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const DEMO_MODE_SETTING = import.meta.env.VITE_GRUZLI_DEMO_MODE;
 
-// Local development uses the isolated browser-backed demo database by default
-// when Supabase credentials are not configured. Set VITE_GRUZLI_DEMO_MODE=false
-// to require Supabase locally, or true to force demo mode.
-export const DEMO_ENABLED =
-  DEMO_MODE_SETTING === "true" ||
-  (import.meta.env.DEV && DEMO_MODE_SETTING !== "false" && (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY));
+export const DEMO_ENABLED = resolveDemoMode({
+  isDevelopment: import.meta.env.DEV,
+  vercelEnvironment: import.meta.env.VERCEL_ENV,
+  setting: DEMO_MODE_SETTING,
+  supabaseUrl: SUPABASE_URL,
+  supabasePublishableKey: SUPABASE_PUBLISHABLE_KEY,
+});
 
 if (!DEMO_ENABLED && (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY)) {
   throw new Error("Gruzli: VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are required in production.");
