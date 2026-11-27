@@ -16,7 +16,7 @@ export const DEMO_ENABLED = resolveDemoMode({
 });
 
 if (!DEMO_ENABLED && (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY)) {
-  throw new Error("Gruzli: VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are required in production.");
+  throw new Error("Gruzli: VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY are required when Demo Mode is disabled.");
 }
 
 export const supabase = DEMO_ENABLED
