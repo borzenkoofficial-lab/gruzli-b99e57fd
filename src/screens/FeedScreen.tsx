@@ -530,7 +530,6 @@ const SwipeableJobCard = ({
   const workersNeeded = Math.max(1, Number(job.workers_needed) || 1);
   const workersReady = Math.min(workersNeeded, workersFound[job.id] || 0);
   const staffingProgress = Math.round((workersReady / workersNeeded) * 100);
-  const isLiveOrder = !isOfficial && (job.urgent || workersReady > 0);
 
   // Top accent bar color
   const accentClass = isOfficial
@@ -585,8 +584,6 @@ const SwipeableJobCard = ({
             ? "border-yellow-400/40"
             : isBot
             ? "border-destructive/25 opacity-70 bg-card"
-            : isLiveOrder
-            ? "border-foreground/15 bg-card"
             : "border-border hover:border-foreground/20 bg-card"
         }`}
       >
@@ -604,7 +601,7 @@ const SwipeableJobCard = ({
 
         {/* Editorial meta row */}
         <div className="gruzli-order-meta-top flex items-center justify-between gap-3 mb-3">
-          <span className="gruzli-order-kicker">{isLiveOrder ? "LIVE / " : isOfficial ? "OFFICIAL / " : "ЗАЯВКА / "}{String(index + 1).padStart(2, "0")}</span>
+          <span className="gruzli-order-kicker">{isOfficial ? "OFFICIAL / " : "ЗАЯВКА / "}{String(index + 1).padStart(2, "0")}</span>
           <span className="gruzli-order-open">ОТКРЫТЬ ↗</span>
         </div>
         <div className="gruzli-card-swipe-hint" aria-hidden="true"><span><ArrowLeft size={9}/> пропустить</span><i/> <span>взять <ArrowRight size={9}/></span></div>
@@ -693,68 +690,68 @@ const SwipeableJobCard = ({
           </div>
         </div>
 
-        {/* Live Order — staffing is a first-class visual, not hidden in metadata. */}
-        {isLiveOrder && (
-          <div
-            className="mt-3.5 rounded-[18px] overflow-hidden border border-foreground/10"
+        {/* Staffing status is shown on every active feed card, including zero responses. */}
+          <section
+            className="mt-3.5 overflow-hidden rounded-[20px] border border-white/[0.08] text-white"
+            aria-label={`Набор грузчиков: ${workersReady} из ${workersNeeded}`}
             style={{
-              background: "linear-gradient(135deg, #191a1d 0%, #25262a 62%, #303136 100%)",
-              boxShadow: "0 12px 28px rgba(17,18,20,.13)",
+              background: "linear-gradient(145deg, #191a1d 0%, #242529 58%, #2b2c31 100%)",
+              boxShadow: "0 10px 26px rgba(17,18,20,.12), inset 0 1px 0 rgba(255,255,255,.035)",
             }}
           >
-            <div className="px-3.5 pt-3 pb-2.5">
+            <div className="px-4 pb-3.5 pt-3.5">
               <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full rounded-full bg-yellow-300 opacity-60 animate-ping" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-yellow-300" />
-                  </span>
-                  <span className="text-[8px] font-extrabold tracking-[.16em] text-white/55 uppercase">LIVE ORDER</span>
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="h-2 w-2 shrink-0 rounded-full bg-[#FFD21F] shadow-[0_0_0_4px_rgba(255,210,31,.12)]" />
+                  <span className="text-[10px] font-extrabold uppercase tracking-[.17em] text-white/55">Набор команды</span>
                 </div>
-                <span className="text-[9px] font-bold text-white/45">{staffingProgress}%</span>
-              </div>
-
-              <div className="mt-2.5 flex items-end justify-between gap-3">
-                <div>
-                  <div className="text-[19px] leading-none font-extrabold tracking-[-.04em] text-white">
-                    {workersReady} <span className="text-white/35">/</span> {workersNeeded}
-                  </div>
-                  <div className="mt-1 text-[9px] font-medium text-white/50">
-                    грузчиков откликнулось · нужно {workersNeeded}
-                  </div>
-                </div>
-                <span className="rounded-full border border-white/10 bg-white/8 px-2 py-1 text-[8px] font-bold text-white/65">
-                  {workersReady >= workersNeeded ? "КОМАНДА СОБРАНА" : "ИДЁТ НАБОР"}
+                <span className="shrink-0 rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[9px] font-bold tracking-[.06em] text-white/65">
+                  {workersReady >= workersNeeded ? "КОМАНДА СОБРАНА" : "НАБОР ОТКРЫТ"}
                 </span>
               </div>
 
-              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
+              <div className="mt-3 flex items-end justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-[30px] font-extrabold leading-none tracking-[-.055em] tabular-nums">{workersReady}</span>
+                    <span className="text-[18px] font-semibold leading-none text-white/35">/ {workersNeeded}</span>
+                  </div>
+                  <p className="mt-1.5 text-[11px] font-medium leading-snug text-white/55">
+                    {workersReady >= workersNeeded
+                      ? "Все необходимые места набраны"
+                      : workersReady === 0
+                        ? "Пока нет откликов · команда свободна"
+                        : `Откликнулось · осталось ${workersNeeded - workersReady} ${workersNeeded - workersReady === 1 ? "место" : "места"}`}
+                  </p>
+                </div>
+                <span className="shrink-0 pb-0.5 text-[13px] font-bold tabular-nums text-white/55">{staffingProgress}%</span>
+              </div>
+
+              <div
+                className="mt-3.5 h-[7px] overflow-hidden rounded-full bg-white/[0.10]"
+                role="progressbar"
+                aria-label="Заполнение команды"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={staffingProgress}
+              >
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-yellow-400 to-yellow-200"
-                  style={{ width: staffingProgress + "%" }}
+                  className="h-full rounded-full bg-gradient-to-r from-[#F5BD00] via-[#FFD21F] to-[#FFE77A] transition-[width] duration-500 ease-out"
+                  style={{ width: `${staffingProgress}%` }}
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-between border-t border-white/10 px-3.5 py-2.5">
-              <div className="flex items-center">
-                {Array.from({ length: Math.min(workersReady, 4) }).map((_, workerIndex) => (
-                  <span
-                    key={workerIndex}
-                    className="grid h-6 w-6 place-items-center rounded-full border border-[#191a1d] bg-white/15 text-[8px] font-bold text-white/75"
-                    style={{ marginLeft: workerIndex === 0 ? 0 : -6 }}
-                  >
-                    {workerIndex + 1}
-                  </span>
-                ))}
-                {workersReady === 0 && (
-                  <span className="text-[9px] text-white/40">Пока никто не откликнулся</span>
-                )}
-              </div>
-              <span className="text-[9px] font-semibold text-white/45">обновляется в реальном времени</span>
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-t border-white/[0.08] px-4 py-2.5">
+              <span className="text-[10px] font-semibold text-white/55">
+                {workersReady} из {workersNeeded} грузчиков набрано
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-[9px] font-medium text-white/35">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#FFD21F]/80" />
+                Обновляется онлайн
+              </span>
             </div>
-          </div>
-        )}
+          </section>
 
         {job.description && (
           <p className="gruzli-order-description">{job.description}</p>
