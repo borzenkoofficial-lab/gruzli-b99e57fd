@@ -79,7 +79,9 @@ function loadDb(): Record<string, Row[]> {
   try {
     const raw = localStorage.getItem(DB_KEY);
     if (raw) return JSON.parse(raw);
-  } catch {}
+  } catch {
+    // Reset to isolated seed data when the local demo store is malformed.
+  }
   const copy = JSON.parse(JSON.stringify(seed));
   localStorage.setItem(DB_KEY, JSON.stringify(copy));
   return copy;
