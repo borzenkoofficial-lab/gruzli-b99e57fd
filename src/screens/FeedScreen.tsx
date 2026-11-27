@@ -530,7 +530,6 @@ const SwipeableJobCard = ({
   const workersNeeded = Math.max(1, Number(job.workers_needed) || 1);
   const workersReady = Math.min(workersNeeded, workersFound[job.id] || 0);
   const staffingProgress = Math.round((workersReady / workersNeeded) * 100);
-  const isLiveOrder = !isOfficial && (job.urgent || workersReady > 0);
 
   // Top accent bar color
   const accentClass = isOfficial
@@ -585,8 +584,6 @@ const SwipeableJobCard = ({
             ? "border-yellow-400/40"
             : isBot
             ? "border-destructive/25 opacity-70 bg-card"
-            : isLiveOrder
-            ? "border-foreground/15 bg-card"
             : "border-border hover:border-foreground/20 bg-card"
         }`}
       >
@@ -604,7 +601,7 @@ const SwipeableJobCard = ({
 
         {/* Editorial meta row */}
         <div className="gruzli-order-meta-top flex items-center justify-between gap-3 mb-3">
-          <span className="gruzli-order-kicker">{isLiveOrder ? "LIVE / " : isOfficial ? "OFFICIAL / " : "ЗАЯВКА / "}{String(index + 1).padStart(2, "0")}</span>
+          <span className="gruzli-order-kicker">{isOfficial ? "OFFICIAL / " : "ЗАЯВКА / "}{String(index + 1).padStart(2, "0")}</span>
           <span className="gruzli-order-open">ОТКРЫТЬ ↗</span>
         </div>
         <div className="gruzli-card-swipe-hint" aria-hidden="true"><span><ArrowLeft size={9}/> пропустить</span><i/> <span>взять <ArrowRight size={9}/></span></div>
@@ -693,8 +690,7 @@ const SwipeableJobCard = ({
           </div>
         </div>
 
-        {/* Live staffing — progress and remaining capacity, without fake worker avatars. */}
-        {isLiveOrder && (
+        {/* Staffing status is shown on every active feed card, including zero responses. */}
           <section
             className="mt-3.5 overflow-hidden rounded-[20px] border border-white/[0.08] text-white"
             aria-label={`Набор грузчиков: ${workersReady} из ${workersNeeded}`}
@@ -710,7 +706,7 @@ const SwipeableJobCard = ({
                   <span className="text-[10px] font-extrabold uppercase tracking-[.17em] text-white/55">Live order</span>
                 </div>
                 <span className="shrink-0 rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[9px] font-bold tracking-[.06em] text-white/65">
-                  {workersReady >= workersNeeded ? "КОМАНДА СОБРАНА" : "ИДЁТ НАБОР"}
+                  {workersReady >= workersNeeded ? "КОМАНДА СОБРАНА" : "НАБОР ОТКРЫТ"}
                 </span>
               </div>
 
@@ -721,10 +717,10 @@ const SwipeableJobCard = ({
                     <span className="text-[18px] font-semibold leading-none text-white/35">/ {workersNeeded}</span>
                   </div>
                   <p className="mt-1.5 text-[11px] font-medium leading-snug text-white/55">
-                    {workersReady === 0
-                      ? "Пока нет откликов"
-                      : workersReady >= workersNeeded
-                        ? "Все места заняты"
+                    {workersReady >= workersNeeded
+                      ? "Все необходимые места набраны"
+                      : workersReady === 0
+                        ? "Пока нет откликов · команда свободна"
                         : `Откликнулось · осталось ${workersNeeded - workersReady} ${workersNeeded - workersReady === 1 ? "место" : "места"}`}
                   </p>
                 </div>
