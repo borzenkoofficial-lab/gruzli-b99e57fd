@@ -57,7 +57,7 @@ const OrdersScreen = () => {
       }
 
       const clientJobIds = (clientJobs || []).map((j) => j.id);
-      let dispatcherNameMap: Record<string, string> = {};
+      const dispatcherNameMap: Record<string, string> = {};
       const assignedDispatcherIds = [...new Set((clientJobs || []).map((j) => j.dispatcher_id).filter(Boolean))] as string[];
       if (assignedDispatcherIds.length) {
         const { data: assignedProfiles } = await supabase
