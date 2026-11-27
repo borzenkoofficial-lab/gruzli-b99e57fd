@@ -123,8 +123,8 @@ const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup,
         )}
         <div className={`relative px-3 py-2 ${
           isOwn
-            ? `bubble-own ${isLastInGroup ? "rounded-2xl rounded-br-[4px]" : "rounded-2xl"}`
-            : `bubble-other ${isLastInGroup ? "rounded-2xl rounded-bl-[4px]" : "rounded-2xl"}`
+            ? `bg-[#202124] text-white border border-[#f2c230]/25 shadow-[0_3px_12px_rgba(0,0,0,0.12)] ${isLastInGroup ? "rounded-[20px] rounded-br-[6px]" : "rounded-[20px]"}`
+            : `bg-card text-foreground border border-border/80 shadow-[0_2px_8px_rgba(0,0,0,0.035)] ${isLastInGroup ? "rounded-[20px] rounded-bl-[6px]" : "rounded-[20px]"}`
         }`}>
           {replyPreview && (
             <button
@@ -699,7 +699,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
 
       {/* Header */}
-      <div className="relative z-40 flex items-center gap-2 px-3 safe-top pb-2.5 border-b border-border bg-background">
+      <div className="relative z-40 flex items-center gap-2 px-3 safe-top pb-3 border-b border-border/70 bg-background/95 backdrop-blur-xl shadow-[0_4px_18px_rgba(0,0,0,0.035)]">
         <button onClick={onBack} className="w-10 h-10 rounded-[14px] flex items-center justify-center text-foreground bg-card border border-border active:bg-muted transition-colors">
           <ArrowLeft size={20} />
         </button>
@@ -892,7 +892,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
         )}
 
       {/* Input area */}
-      <div className="px-3 pt-2.5 pb-[calc(0.75rem+env(safe-area-inset-bottom))] border-t border-border bg-background">
+      <div className="px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] border-t border-border/70 bg-background/95 backdrop-blur-xl shadow-[0_-5px_20px_rgba(0,0,0,0.035)]">
         {uploading && <div className="text-center text-xs text-primary mb-2 animate-pulse">Загрузка файла...</div>}
 
         {replyTo && (
@@ -919,7 +919,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
                 <Paperclip size={20} />
               </button>
 
-              <div className="flex-1 flex items-end bg-card rounded-[18px] px-3 py-2 border border-border gap-1">
+              <div className="flex-1 flex items-end bg-card/90 rounded-[21px] px-3 py-2 border border-border/80 focus-within:border-primary/60 focus-within:shadow-[0_0_0_3px_rgba(242,194,48,0.10)] gap-1 transition-all">
                 <button
                   onClick={() => { setShowEmoji(!showEmoji); setShowAttach(false); }}
                   className="native-press w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0"
@@ -942,13 +942,13 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
               {text.trim() ? (
                 <button onClick={handleSend}
                   disabled={sending}
-                  className="native-press w-10 h-10 rounded-full bg-primary flex items-center justify-center disabled:opacity-40 transition-opacity shrink-0 mb-0.5"
+                  className="native-press w-11 h-11 rounded-[16px] bg-primary flex items-center justify-center disabled:opacity-40 transition-all active:scale-95 shrink-0 mb-0.5 shadow-[0_4px_12px_rgba(242,194,48,0.22)]"
                 >
                   <Send size={18} className="text-primary-foreground ml-0.5" />
                 </button>
               ) : (
                 <button onClick={() => setIsRecording(true)}
-                  className="native-press w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0 mb-0.5"
+                  className="native-press w-11 h-11 rounded-[16px] bg-primary flex items-center justify-center shrink-0 mb-0.5 shadow-[0_4px_12px_rgba(242,194,48,0.22)] active:scale-95"
                 >
                   <Mic size={18} className="text-primary-foreground" />
                 </button>
