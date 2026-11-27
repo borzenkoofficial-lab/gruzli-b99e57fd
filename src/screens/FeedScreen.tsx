@@ -703,7 +703,7 @@ const SwipeableJobCard = ({
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">
                   <span className="h-2 w-2 shrink-0 rounded-full bg-[#FFD21F] shadow-[0_0_0_4px_rgba(255,210,31,.12)]" />
-                  <span className="text-[10px] font-extrabold uppercase tracking-[.17em] text-white/55">Live order</span>
+                  <span className="text-[10px] font-extrabold uppercase tracking-[.17em] text-white/55">Набор команды</span>
                 </div>
                 <span className="shrink-0 rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[9px] font-bold tracking-[.06em] text-white/65">
                   {workersReady >= workersNeeded ? "КОМАНДА СОБРАНА" : "НАБОР ОТКРЫТ"}
@@ -752,7 +752,6 @@ const SwipeableJobCard = ({
               </span>
             </div>
           </section>
-        )}
 
         {job.description && (
           <p className="gruzli-order-description">{job.description}</p>
