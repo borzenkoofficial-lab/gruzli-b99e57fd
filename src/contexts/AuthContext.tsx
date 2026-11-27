@@ -36,6 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const profileRequestId = useRef(0);
   const loadedProfileUserId = useRef<string | null>(null);
+  const authEventVersion = useRef(0);
   const [demoMode, setDemoMode] = useState(() => DEMO_ENABLED && localStorage.getItem("gruzli_demo_worker") === "1");
   const [demoRole, setDemoRole] = useState<AppRole>(() => {
     if (!DEMO_ENABLED) return "worker";
@@ -79,11 +80,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     let mounted = true;
-    let initialized = false;
 
     const initialize = async () => {
+      // If an auth event arrives while getSession() is pending, that event is
+      // authoritative. Do not let this older snapshot overwrite a newer login/logout.
+      const authEventVersionAtStart = authEventVersion.current;
       const { data, error } = await supabase.auth.getSession();
-      if (!mounted) return;
+      if (!mounted || authEventVersion.current !== authEventVersionAtStart) return;
 
       if (error) {
         console.error("[Gruzli Auth] getSession failed:", error);
@@ -96,15 +99,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(nextSession?.user ?? null);
 
       if (nextSession?.user) {
-        await fetchRoleAndProfile(nextSession.user);
+        try {
+          await fetchRoleAndProfile(nextSession.user);
+        } catch (fetchError) {
+          console.error("[Gruzli Auth] initial profile bootstrap failed:", fetchError);
+        }
       }
 
       if (mounted) setLoading(false);
-      initialized = true;
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
       if (!mounted) return;
+      authEventVersion.current += 1;
 
       const normalized = nextSession as Session | null;
       setSession(normalized);
@@ -121,8 +128,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      if (initialized) await fetchRoleAndProfile(normalized.user);
-      if (mounted) setLoading(false);
+      try {
+        await fetchRoleAndProfile(normalized.user);
+      } catch (fetchError) {
+        console.error("[Gruzli Auth] auth event profile refresh failed:", fetchError);
+      } finally {
+        if (mounted) setLoading(false);
+      }
     });
 
     void initialize();
