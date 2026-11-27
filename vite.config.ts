@@ -5,6 +5,9 @@ import path from "path";
 export default defineConfig({
   server: { host: "::", port: 8080, hmr: { overlay: false } },
   plugins: [react()],
+  define: {
+    "import.meta.env.VERCEL_ENV": JSON.stringify(process.env.VERCEL_ENV ?? ""),
+  },
   resolve: {
     alias: { "@": path.resolve(__dirname, "./src") },
     dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime", "@tanstack/react-query", "@tanstack/query-core"],
