@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DEMO_PROFILES, DEMO_USERS, type DemoRole } from "@/data/demoData";
 
@@ -34,6 +34,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [role, setRole] = useState<AppRole | null>(null);
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const profileRequestId = useRef(0);
+  const loadedProfileUserId = useRef<string | null>(null);
   const [demoMode, setDemoMode] = useState(() => DEMO_ENABLED && localStorage.getItem("gruzli_demo_worker") === "1");
   const [demoRole, setDemoRole] = useState<AppRole>(() => {
     if (!DEMO_ENABLED) return "worker";
@@ -42,13 +44,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const fetchRoleAndProfile = useCallback(async (nextUser: User) => {
+    const requestId = ++profileRequestId.current;
+
+    // Never show the previous account's role/profile while switching users.
+    // A refresh for the same account (for example, after an avatar update)
+    // keeps the current profile visible.
+    if (loadedProfileUserId.current !== nextUser.id) {
+      loadedProfileUserId.current = nextUser.id;
+      setRole(null);
+      setProfile(null);
+    }
+
     const [roleRes, profileRes] = await Promise.all([
       supabase.rpc("get_user_role", { _user_id: nextUser.id }),
       supabase.from("profiles").select("*").eq("user_id", nextUser.id).maybeSingle(),
     ]);
 
-    if (roleRes.data) setRole(roleRes.data as AppRole);
-    if (profileRes.data) setProfile(profileRes.data);
+    // Ignore stale responses when auth changes or a newer refresh finishes first.
+    if (requestId !== profileRequestId.current) {
+      return {
+        roleError: roleRes.error?.message ?? null,
+        profileError: profileRes.error?.message ?? null,
+      };
+    }
+
+    setRole(roleRes.data ? (roleRes.data as AppRole) : null);
+    setProfile(profileRes.data ?? null);
 
     return {
       roleError: roleRes.error?.message ?? null,
@@ -90,6 +111,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(normalized?.user ?? null);
 
       if (!normalized?.user) {
+        // Invalidate pending role/profile queries so a late response cannot
+        // restore the signed-out user's data.
+        profileRequestId.current += 1;
+        loadedProfileUserId.current = null;
         setRole(null);
         setProfile(null);
         setLoading(false);
@@ -138,6 +163,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await supabase.auth.signOut();
     }
 
+    profileRequestId.current += 1;
+    loadedProfileUserId.current = null;
     setUser(null);
     setSession(null);
     setRole(null);
