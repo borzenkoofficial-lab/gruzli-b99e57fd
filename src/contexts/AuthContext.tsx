@@ -1,12 +1,13 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DEMO_PROFILES, DEMO_USERS, type DemoRole } from "@/data/demoData";
+import { DEMO_ENABLED } from "@/lib/demoMode";
 
 type AppRole = "client" | "worker" | "dispatcher" | "admin";
 type User = { id: string; email?: string; phone?: string | null; user_metadata: Record<string, any> };
 type Session = { user: User; access_token: string };
 
-const DEMO_ENABLED = import.meta.env.DEV && import.meta.env.VITE_GRUZLI_DEMO_MODE === "true";
+
 
 interface AuthContextType {
   user: User | null;
