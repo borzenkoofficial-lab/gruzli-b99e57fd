@@ -26,8 +26,10 @@ export function useViewportHeight() {
 
     // Lock orientation to portrait
     try {
-      (screen.orientation as any)?.lock?.("portrait").catch(() => {});
-    } catch {}
+      void screen.orientation?.lock("portrait").catch(() => undefined);
+    } catch {
+      // Orientation locking is optional and unsupported in some browsers.
+    }
 
     return () => {
       window.removeEventListener("resize", setVH);
