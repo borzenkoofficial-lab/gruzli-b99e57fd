@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, useMotionValue, useTransform, animate, type PanInfo } from "framer-motion";
-import { Search, Megaphone, Trash2, Ban, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -24,22 +23,20 @@ const SwipeableChatItem = ({
   conv,
   index,
   onOpen,
-  onDelete,
   onBlock,
 }: {
   conv: ConversationItem;
   index: number;
   onOpen: () => void;
-  onDelete: () => void;
   onBlock: () => void;
 }) => {
   const x = useMotionValue(0);
   const actionsOpacity = useTransform(x, [-120, -60, 0], [1, 0.8, 0]);
   const [swiped, setSwiped] = useState(false);
 
-  const handleDragEnd = (_: any, info: PanInfo) => {
-    if (info.offset.x < -80) {
-      animate(x, -120, { duration: 0.2 });
+  const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (info.offset.x < -48) {
+      animate(x, -64, { duration: 0.2 });
       setSwiped(true);
     } else {
       animate(x, 0, { duration: 0.2 });
@@ -65,16 +62,13 @@ const SwipeableChatItem = ({
         <button onClick={() => { close(); onBlock(); }} className="native-press flex items-center justify-center w-16 bg-muted/80 text-foreground">
           <Ban size={18} />
         </button>
-        <button onClick={() => { close(); onDelete(); }} className="native-press flex items-center justify-center w-16 bg-destructive text-destructive-foreground">
-          <Trash2 size={18} />
-        </button>
       </motion.div>
 
       <motion.div
         style={{ x }}
         drag="x"
         dragDirectionLock
-        dragConstraints={{ left: -120, right: 0 }}
+        dragConstraints={{ left: -64, right: 0 }}
         dragElastic={0.1}
         onDragEnd={handleDragEnd}
         onClick={() => !swiped && onOpen()}
@@ -389,10 +383,8 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
                 if (conv.isCommunity && onOpenCommunity) onOpenCommunity();
                 else onOpenChat(conv.id, conv.otherName);
               }}
-              onDelete={async () => {
                 if (!user) return;
                 if (!window.confirm("Диалог будет удалён у всех участников. Продолжить?")) return;
-                const { data: mediaUrls, error } = await supabase.rpc('delete_conversation_fully', { _conversation_id: conv.id });
                 if (error) { toast.error("Ошибка удаления"); return; }
                 if (mediaUrls?.length) {
                   const paths = (mediaUrls as string[]).map(u => {
