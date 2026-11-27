@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback, useMemo, memo } from "react";
-import { ArrowLeft, Send, Paperclip, Phone, X, Image, Video, Mic, MicOff, MapPin, Users, Wallet, CheckCheck, Clock3, MoreVertical, Trash2, Ban, BellOff, Smile, Reply as ReplyIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -124,8 +123,8 @@ const MessageBubble = memo(({ msg, isOwn, showSender, senderName, isLastInGroup,
         )}
         <div className={`relative px-3 py-2 ${
           isOwn
-            ? `bubble-own ${isLastInGroup ? "rounded-2xl rounded-br-[4px]" : "rounded-2xl"}`
-            : `bubble-other ${isLastInGroup ? "rounded-2xl rounded-bl-[4px]" : "rounded-2xl"}`
+            ? `bg-[#202124] text-white border border-[#f2c230]/25 shadow-[0_3px_12px_rgba(0,0,0,0.12)] ${isLastInGroup ? "rounded-[20px] rounded-br-[6px]" : "rounded-[20px]"}`
+            : `bg-card text-foreground border border-border/80 shadow-[0_2px_8px_rgba(0,0,0,0.035)] ${isLastInGroup ? "rounded-[20px] rounded-bl-[6px]" : "rounded-[20px]"}`
         }`}>
           {replyPreview && (
             <button
@@ -614,22 +613,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     }
   };
 
-  const handleDeleteConversation = async () => {
-    if (!user) return;
-    if (!window.confirm("Диалог будет удалён у всех участников. Продолжить?")) return;
-    setShowMenu(false);
-    const { data: mediaUrls, error } = await supabase.rpc('delete_conversation_fully', { _conversation_id: conversationId });
-    if (error) { toast.error("Ошибка удаления"); return; }
-    if (mediaUrls?.length) {
-      const paths = (mediaUrls as string[]).map(u => {
-        try { const url = new URL(u); const parts = url.pathname.split('/object/public/chat-media/'); return parts[1] || parts[0]; } catch { return u; }
-      }).filter(Boolean);
-      if (paths.length) await supabase.storage.from('chat-media').remove(paths);
-    }
-    toast.success("Диалог полностью удалён");
-    onBack();
-  };
-
   const handleBlockUser = async () => {
     if (!user || !otherUserId) return;
     setShowMenu(false);
@@ -639,7 +622,6 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
     else toast.success(`${resolvedTitle} добавлен в чёрный список`);
   };
 
-  const handleMuteNotifications = () => { setShowMenu(false); toast.success("Уведомления отключены"); };
 
   const hasActiveVoiceRoom = messages.some((m) => m.message_type === "voice_room" && m.sender_id !== user?.id);
 
@@ -701,7 +683,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
       <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden" onChange={handleFileSelect} />
 
       {/* Header */}
-      <div className="relative z-40 flex items-center gap-2 px-3 safe-top pb-2.5 border-b border-border bg-background">
+      <div className="relative z-40 flex items-center gap-2 px-3 safe-top pb-3 border-b border-border/70 bg-background/95 backdrop-blur-xl shadow-[0_4px_18px_rgba(0,0,0,0.035)]">
         <button onClick={onBack} className="w-10 h-10 rounded-[14px] flex items-center justify-center text-foreground bg-card border border-border active:bg-muted transition-colors">
           <ArrowLeft size={20} />
         </button>
@@ -757,14 +739,8 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
             </button>
             {showMenu && (
                 <div className="absolute right-0 top-11 w-52 bg-card border border-border rounded-2xl shadow-md z-50 overflow-hidden">
-                  <button onClick={handleMuteNotifications} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted/50 transition-colors">
-                    <BellOff size={16} className="text-muted-foreground" /> Без звука
-                  </button>
                   <button onClick={handleBlockUser} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted/50 transition-colors">
                     <Ban size={16} className="text-muted-foreground" /> Чёрный список
-                  </button>
-                  <button onClick={handleDeleteConversation} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-destructive hover:bg-destructive/10 transition-colors">
-                    <Trash2 size={16} /> Удалить диалог
                   </button>
                 </div>
               )}
@@ -897,7 +873,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
         )}
 
       {/* Input area */}
-      <div className="px-3 pt-2.5 pb-[calc(0.75rem+env(safe-area-inset-bottom))] border-t border-border bg-background">
+      <div className="px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] border-t border-border/70 bg-background/95 backdrop-blur-xl shadow-[0_-5px_20px_rgba(0,0,0,0.035)]">
         {uploading && <div className="text-center text-xs text-primary mb-2 animate-pulse">Загрузка файла...</div>}
 
         {replyTo && (
@@ -924,7 +900,7 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
                 <Paperclip size={20} />
               </button>
 
-              <div className="flex-1 flex items-end bg-card rounded-[18px] px-3 py-2 border border-border gap-1">
+              <div className="flex-1 flex items-end bg-card/90 rounded-[21px] px-3 py-2 border border-border/80 focus-within:border-primary/60 focus-within:shadow-[0_0_0_3px_rgba(242,194,48,0.10)] gap-1 transition-all">
                 <button
                   onClick={() => { setShowEmoji(!showEmoji); setShowAttach(false); }}
                   className="native-press w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground active:bg-muted/50 transition-colors shrink-0"
@@ -947,13 +923,13 @@ const RealChatScreen = ({ conversationId, title, onBack, onOpenProfile, onMessag
               {text.trim() ? (
                 <button onClick={handleSend}
                   disabled={sending}
-                  className="native-press w-10 h-10 rounded-full bg-primary flex items-center justify-center disabled:opacity-40 transition-opacity shrink-0 mb-0.5"
+                  className="native-press w-11 h-11 rounded-[16px] bg-primary flex items-center justify-center disabled:opacity-40 transition-all active:scale-95 shrink-0 mb-0.5 shadow-[0_4px_12px_rgba(242,194,48,0.22)]"
                 >
                   <Send size={18} className="text-primary-foreground ml-0.5" />
                 </button>
               ) : (
                 <button onClick={() => setIsRecording(true)}
-                  className="native-press w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0 mb-0.5"
+                  className="native-press w-11 h-11 rounded-[16px] bg-primary flex items-center justify-center shrink-0 mb-0.5 shadow-[0_4px_12px_rgba(242,194,48,0.22)] active:scale-95"
                 >
                   <Mic size={18} className="text-primary-foreground" />
                 </button>
