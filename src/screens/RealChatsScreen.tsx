@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, useMotionValue, useTransform, animate, type PanInfo } from "framer-motion";
+import { Search, Megaphone, Ban, MessageCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -145,6 +146,244 @@ const RealChatsScreen = ({ onOpenChat, onOpenChannel, onOpenCommunity }: RealCha
   const [loading, setLoading] = useState(true);
 
   const fetchConversations = useCallback(async () => {
+    if (!user) return;
+
+    if (isDemo) {
+      const now = new Date();
+      setConversations([
+        { id: "demo-chat-dispatcher", title: "Анна Петрова", is_group: false, lastMessage: "Сергей, завтра в 10:00 начинаем.", lastTime: now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }), lastTimestamp: now.toISOString(), otherName: "Анна Петрова", otherAvatarUrl: null, unreadCount: 2, otherLastSeen: now.toISOString() },
+        { id: "demo-chat-worker", title: "Алексей Морозов", is_group: false, lastMessage: "Грузчики подтверждены, всё в силе.", lastTime: "14:32", lastTimestamp: new Date(now.getTime() - 4 * 60000).toISOString(), otherName: "Алексей Морозов", otherAvatarUrl: null, unreadCount: 1, otherLastSeen: now.toISOString() },
+        { id: "demo-chat-gruzli", title: "Gruzli Official", is_group: true, lastMessage: "Добро пожаловать в Gruzli.", lastTime: "Вчера", lastTimestamp: new Date(now.getTime() - 86400000).toISOString(), otherName: "Gruzli Official", otherAvatarUrl: null, unreadCount: 0, otherLastSeen: null, isCommunity: true },
+      ]);
+      setCommunityId("demo-community");
+      setLoading(false);
+      return;
+    }
+
+    const { data: participations } = await supabase
+      .from("conversation_participants")
+      .select("conversation_id, last_read_at")
+      .eq("user_id", user.id);
+
+    if (!participations || participations.length === 0) {
+      setConversations([]);
+      setLoading(false);
+      return;
+    }
+
+    const convIds = participations.map((p) => p.conversation_id);
+    const readMap: Record<string, string | null> = {};
+    participations.forEach((p) => { readMap[p.conversation_id] = (p as any).last_read_at; });
+
+    const { data: convs } = await supabase.from("conversations").select("*").in("id", convIds);
+
+    if (convs) {
+      const allConvIds = convs.map(c => c.id);
+      const [allParticipantsRes, allLastMsgsRes] = await Promise.all([
+        supabase.from("conversation_participants").select("conversation_id, user_id").in("conversation_id", allConvIds).neq("user_id", user.id),
+        supabase.from("messages").select("conversation_id, text, created_at, sender_id, message_type").in("conversation_id", allConvIds).order("created_at", { ascending: false }),
+      ]);
+
+      const participantsByConv: Record<string, string[]> = {};
+      allParticipantsRes.data?.forEach(p => {
+        if (!participantsByConv[p.conversation_id]) participantsByConv[p.conversation_id] = [];
+        participantsByConv[p.conversation_id].push(p.user_id);
+      });
+
+      const lastMsgByConv: Record<string, { text: string | null; created_at: string; sender_id: string; message_type: string | null }> = {};
+      allLastMsgsRes.data?.forEach(m => {
+        if (!lastMsgByConv[m.conversation_id]) lastMsgByConv[m.conversation_id] = m;
+      });
+
+      const unreadByConv: Record<string, number> = {};
+      allLastMsgsRes.data?.forEach(m => {
+        if (m.sender_id !== user.id) {
+          const lastRead = readMap[m.conversation_id];
+          if (!lastRead || m.created_at > lastRead) {
+            unreadByConv[m.conversation_id] = (unreadByConv[m.conversation_id] || 0) + 1;
+          }
+        }
+      });
+
+      const allOtherIds = [...new Set(Object.values(participantsByConv).flat())];
+      let profileMap: Record<string, { name: string; lastSeen: string | null; avatarUrl: string | null }> = {};
+      if (allOtherIds.length > 0) {
+        const { data: profiles } = await supabase.from("profiles_public" as any).select("user_id, full_name, last_seen_at, avatar_url").in("user_id", allOtherIds);
+        (profiles as any[])?.forEach(p => { profileMap[p.user_id] = { name: p.full_name, lastSeen: p.last_seen_at, avatarUrl: p.avatar_url }; });
+      }
+
+      const items = convs.map(conv => {
+        const otherIds = participantsByConv[conv.id] || [];
+        const otherProfile = otherIds.length > 0 ? profileMap[otherIds[0]] : null;
+        const isCommunity = communityId !== null && conv.id === communityId;
+        const otherName = isCommunity
+          ? "Сообщество диспетчеров"
+          : conv.is_group
+            ? (conv.title || "Группа")
+            : (otherProfile?.name || conv.title || "Чат");
+        const lastMsg = lastMsgByConv[conv.id];
+        
+        let lastMsgText = "Нет сообщений";
+        if (lastMsg) {
+          if (lastMsg.message_type === "voice") lastMsgText = "🎤 Голосовое сообщение";
+          else if (lastMsg.message_type === "sticker") lastMsgText = lastMsg.text || "Стикер";
+          else if (lastMsg.message_type === "image") lastMsgText = "📷 Фото";
+          else if (lastMsg.message_type === "video") lastMsgText = "📹 Видео";
+          else lastMsgText = lastMsg.text || "Медиа";
+        }
+
+        return {
+          id: conv.id,
+          title: conv.title,
+          is_group: conv.is_group,
+          lastMessage: lastMsgText,
+          lastTime: lastMsg?.created_at
+            ? new Date(lastMsg.created_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })
+            : "",
+          lastTimestamp: lastMsg?.created_at || conv.created_at,
+          otherName,
+          otherAvatarUrl: isCommunity ? null : (otherProfile?.avatarUrl || null),
+          unreadCount: unreadByConv[conv.id] || 0,
+          otherLastSeen: isCommunity ? null : (otherProfile?.lastSeen || null),
+          isCommunity,
+        };
+      });
+      items.sort((a, b) => new Date(b.lastTimestamp).getTime() - new Date(a.lastTimestamp).getTime());
+      setConversations(items);
+    }
+    setLoading(false);
+  }, [user, communityId, isDemo]);
+
+  useEffect(() => {
+    const loadCommunityId = async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("value")
+        .eq("id", "dispatcher_community_conversation_id")
+        .maybeSingle();
+      const id = (data?.value as any)?.conversation_id ?? null;
+      setCommunityId(id);
+    };
+    loadCommunityId();
+  }, []);
+
+  useEffect(() => {
+    fetchConversations();
+
+    const channel = supabase
+      .channel("chats-realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "conversation_participants" },
+        (payload) => {
+          const p = payload.new as any;
+          if (p.user_id === user?.id) fetchConversations();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        (payload) => {
+          const msg = payload.new as any;
+          setConversations((prev) => {
+            const idx = prev.findIndex((c) => c.id === msg.conversation_id);
+            if (idx === -1) { fetchConversations(); return prev; }
+            const updated = [...prev];
+            let msgText = msg.text || "Медиа";
+            if (msg.message_type === "voice") msgText = "🎤 Голосовое сообщение";
+            else if (msg.message_type === "sticker") msgText = msg.text || "Стикер";
+            else if (msg.message_type === "image") msgText = "📷 Фото";
+            updated[idx] = {
+              ...updated[idx],
+              lastMessage: msgText,
+              lastTime: new Date(msg.created_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
+              lastTimestamp: msg.created_at,
+            };
+            updated.sort((a, b) => new Date(b.lastTimestamp).getTime() - new Date(a.lastTimestamp).getTime());
+            return updated;
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "conversations" },
+        (payload) => {
+          const deleted = payload.old as any;
+          setConversations((prev) => prev.filter((c) => c.id !== deleted.id));
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [user, fetchConversations, isDemo]);
+
+  const filtered = conversations.filter((c) =>
+    c.otherName.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="gruzli-chats-screen">
+      {/* Header */}
+      <div className="px-5 safe-top pb-2 flex items-center justify-between">
+        <div><p className="text-[10px] font-semibold uppercase tracking-[.12em] text-muted-foreground">Gruzli</p><h1 className="text-[29px] font-extrabold text-foreground tracking-[-.045em] leading-none">Чаты</h1></div>
+      </div>
+
+      {/* Search */}
+      <div className="px-5 pb-3">
+        <div className="relative">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Поиск..."
+            className="w-full min-h-[46px] bg-card rounded-[14px] py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground outline-none border border-border focus:border-foreground/20 transition-colors"
+          />
+        </div>
+      </div>
+
+      {/* Channel */}
+      <div className="px-5 pb-2">
+        <button
+          onClick={onOpenChannel}
+          className="w-full flex items-center gap-3 px-3.5 py-3 rounded-[18px] border border-border bg-card active:bg-muted/50 transition-colors"
+        >
+          <div className="w-[48px] h-[48px] rounded-full flex items-center justify-center text-primary-foreground shrink-0"
+            style={{ background: "#191a1d" }}
+          >
+            <Megaphone size={22} />
+          </div>
+          <div className="flex-1 text-left min-w-0 border-b border-border/20 pb-3">
+            <span className="text-[16px] font-semibold text-foreground">Gruzli Official</span>
+            <p className="text-[14px] text-muted-foreground mt-0.5 truncate">Новости и обновления</p>
+          </div>
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="mx-5 mt-4 flex flex-col items-center justify-center py-16 text-muted-foreground rounded-[20px] border border-dashed border-border bg-card">
+          <MessageCircle size={40} className="mb-3 opacity-30" />
+          <p className="text-sm">
+            {conversations.length === 0 ? "Нет чатов" : "Ничего не найдено"}
+          </p>
+          {conversations.length === 0 && (
+            <p className="text-xs mt-1 opacity-60">Они появятся при отклике на заявку</p>
+          )}
+        </div>
+      ) : (
+        <div className="divide-y-0">
+          {filtered.map((conv, i) => (
+            <SwipeableChatItem
+              key={conv.id}
+              conv={conv}
+              index={i}
+              onOpen={() => {
+                if (conv.isCommunity && onOpenCommunity) onOpenCommunity();
+                else onOpenChat(conv.id, conv.otherName);
+              }}
               onBlock={async () => {
                 if (!user) return;
                 const { data: participants } = await supabase.from("conversation_participants").select("user_id").eq("conversation_id", conv.id).neq("user_id", user.id).limit(1);
