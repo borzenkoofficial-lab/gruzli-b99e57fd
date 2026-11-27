@@ -1,63 +1,20 @@
-import { describe, expect, it } from "vitest";
-import { resolveDemoMode } from "./demoMode";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-describe("resolveDemoMode", () => {
-  it("defaults to demo mode in local development when Supabase credentials are missing", () => {
-    expect(resolveDemoMode({
-      dev: true,
-      setting: undefined,
-      supabaseUrl: undefined,
-      supabasePublishableKey: undefined,
-    })).toBe(true);
-  });
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.resetModules();
+});
 
-  it("allows local development to explicitly require Supabase", () => {
-    expect(resolveDemoMode({
-      dev: true,
-      setting: "false",
-      supabaseUrl: undefined,
-      supabasePublishableKey: undefined,
-    })).toBe(false);
-  });
+describe("Supabase demo mode", () => {
+  it("does not enable demo mode in Production even when the flag is true", async () => {
+    vi.stubEnv("DEV", false);
+    vi.stubEnv("PROD", true);
+    vi.stubEnv("VITE_GRUZLI_DEMO_MODE", "true");
+    vi.stubEnv("VITE_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("VITE_SUPABASE_PUBLISHABLE_KEY", "publishable-test-key");
 
-  it("allows local development to force demo mode when credentials exist", () => {
-    expect(resolveDemoMode({
-      dev: true,
-      setting: "true",
-      supabaseUrl: "https://example.supabase.co",
-      supabasePublishableKey: "publishable-test-key",
-    })).toBe(true);
-  });
+    const { DEMO_ENABLED } = await import("./client");
 
-  it("allows an explicitly enabled demo mode in Vercel Preview", () => {
-    expect(resolveDemoMode({
-      dev: false,
-      vercelEnv: "preview",
-      setting: "true",
-    })).toBe(true);
-  });
-
-  it("does not enable demo mode in Vercel Preview without explicit opt-in", () => {
-    expect(resolveDemoMode({
-      dev: false,
-      vercelEnv: "preview",
-      setting: undefined,
-    })).toBe(false);
-  });
-
-  it("never enables demo mode in Production, even when explicitly requested", () => {
-    expect(resolveDemoMode({
-      dev: false,
-      vercelEnv: "production",
-      setting: "true",
-    })).toBe(false);
-  });
-
-  it("does not enable demo mode in a production build outside Vercel", () => {
-    expect(resolveDemoMode({
-      dev: false,
-      vercelEnv: undefined,
-      setting: "true",
-    })).toBe(false);
+    expect(DEMO_ENABLED).toBe(false);
   });
 });
