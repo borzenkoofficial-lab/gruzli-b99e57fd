@@ -1,24 +1,13 @@
 import { useState, forwardRef, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
 import { User, Users, Building2, Eye, EyeOff, ArrowRight, Loader2, Briefcase, Shield, Phone, Lock, ShieldCheck, Fingerprint, X, Calendar, Sparkles, Wallet, ChevronRight } from "lucide-react";
 import { LegalCheckboxes } from "@/components/LegalDocuments";
 import { ForgotPasswordModal } from "@/components/ForgotPasswordModal";
 import { RecoveryCodeBanner } from "@/components/RecoveryCodeBanner";
-import { toast } from "sonner";
 import gruzliLogo from "@/assets/gruzli-logo.jpeg";
 
 type Mode = "welcome" | "login" | "register";
 type Role = "client" | "dispatcher" | "worker";
-
-/** Convert phone to a deterministic email for Supabase auth */
-const phoneToEmail = (phone: string) => {
-  const digits = phone.replace(/\D/g, "");
-  return `${digits}@phone.gruzli.app`;
-};
-
-/** Check if input looks like an email */
-const isEmail = (input: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.trim());
 
 const SecurityModal = forwardRef<HTMLDivElement, { open: boolean; onClose: () => void }>(({ open, onClose }, _ref) => {
   if (!open) return null;
@@ -111,7 +100,7 @@ const onboardingSlides = [
   },
 ];
 
-const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props, _ref) => {
+const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: (role: Role) => void }>((props, _ref) => {
   const [mode, setMode] = useState<Mode>("welcome");
   const [role, setRole] = useState<Role>("client");
   const [password, setPassword] = useState("");
@@ -119,7 +108,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
   const [phone, setPhone] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [showRecoveryFor, setShowRecoveryFor] = useState<string | null>(null);
@@ -131,90 +120,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    try {
-      const input = phone.trim();
-
-      if (!input) {
-        toast.error("Укажите email или номер телефона");
-        setLoading(false);
-        return;
-      }
-
-      // Determine auth email: if input looks like email use directly, otherwise convert phone
-      let email: string;
-      if (isEmail(input)) {
-        email = input;
-      } else {
-        const cleanPhone = input.replace(/\D/g, "");
-        if (!cleanPhone || cleanPhone.length < 10) {
-          toast.error("Укажите корректный номер телефона или email");
-          setLoading(false);
-          return;
-        }
-        email = phoneToEmail(input);
-      }
-
-      if (mode === "register") {
-        if (!allLegalAccepted) {
-          toast.error("Примите все юридические документы");
-          setLoading(false);
-          return;
-        }
-        if (!fullName.trim()) {
-          toast.error("Укажите ФИО");
-          setLoading(false);
-          return;
-        }
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { full_name: fullName, role, phone: isEmail(input) ? "" : input },
-          },
-        });
-        if (error) throw error;
-
-        // Detect fake signup (user already exists) — Supabase returns user with empty identities
-        if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
-          toast.error("Аккаунт с таким номером или email уже существует. Войдите.");
-          setLoading(false);
-          return;
-        }
-
-        if (data.user) {
-          await supabase
-            .from("profiles")
-            .update({
-              phone: isEmail(input) ? "" : input,
-              ...(birthDate ? { birth_date: birthDate } : {}),
-            })
-            .eq("user_id", data.user.id);
-
-          // Show recovery code banner before entering the app.
-          // The user is signed in, so RLS allows reading their own recovery_code.
-          setShowRecoveryFor(data.user.id);
-          setLoading(false);
-          return;
-        }
-
-        toast.success("Регистрация успешна!");
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast.success("Добро пожаловать!");
-      }
-    } catch (err: any) {
-      const msg = err.message || "Ошибка авторизации";
-      if (msg.includes("Invalid login")) {
-        toast.error("Неверный email/телефон или пароль");
-      } else {
-        toast.error(msg);
-      }
-    } finally {
-      setLoading(false);
-    }
+    props.onDemoLogin?.(role);
   };
 
   // ─── WELCOME / ONBOARDING ───
@@ -224,7 +130,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
     const isLastSlide = slideIndex === onboardingSlides.length - 1;
 
     const goNext = () => {
-      if (isLastSlide) setMode("register");
+      if (isLastSlide) props.onDemoLogin?.(role);
       else setSlideIndex((i) => Math.min(i + 1, onboardingSlides.length - 1));
     };
     const goPrev = () => setSlideIndex((i) => Math.max(i - 1, 0));
@@ -272,7 +178,7 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
               <span className="text-base font-extrabold text-foreground tracking-tight">Gruzli</span>
             </div>
             <button
-              onClick={() => setMode("login")}
+              onClick={() => props.onDemoLogin?.(role)}
               className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors px-3 py-1.5 rounded-full border border-border"
             >
               Войти
@@ -357,21 +263,40 @@ const AuthPage = forwardRef<HTMLDivElement, { onDemoLogin?: () => void }>((props
               ))}
             </div>
 
+            <div className="grid grid-cols-3 gap-2">
+              {([
+                { id: "client" as Role, label: "Клиент", icon: Building2 },
+                { id: "dispatcher" as Role, label: "Диспетчер", icon: Users },
+                { id: "worker" as Role, label: "Грузчик", icon: User },
+              ]).map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setRole(item.id)}
+                  aria-pressed={role === item.id}
+                  className={`rounded-xl border px-2 py-3 text-xs font-semibold transition-colors ${role === item.id ? "bg-foreground text-background border-foreground" : "bg-card text-muted-foreground border-border"}`}
+                >
+                  <item.icon size={17} className="mx-auto mb-1" />
+                  {item.label}
+                </button>
+              ))}
+            </div>
+
             <button
               onClick={goNext}
               className="w-full py-4 rounded-2xl bg-foreground text-background text-sm font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
             >
-              {isLastSlide ? "Создать аккаунт" : "Далее"}
+              {isLastSlide ? "Открыть демо-режим" : "Далее"}
               <ChevronRight size={16} />
             </button>
 
             {props.onDemoLogin && (
               <button
                 type="button"
-                onClick={props.onDemoLogin}
+                onClick={() => props.onDemoLogin?.(role)}
                 className="w-full py-3 rounded-2xl border border-border bg-card text-foreground text-sm font-semibold active:bg-muted transition-colors"
               >
-                Открыть демо-версию · 3 роли
+                Открыть демо-режим
               </button>
             )}
 
